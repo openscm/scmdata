@@ -1,7 +1,7 @@
 SCMData
 =======
 
-.. sec-begin-index
+.. sec-begin-links
 
 +-------------------+----------------+-----------+-----------+
 | Repository health | |Build Status| | |Codecov| | |License| |
@@ -14,6 +14,23 @@ SCMData
 +-----------------+----------------+---------------+
 | Latest activity | |Contributors| | |Last Commit| |
 +-----------------+----------------+---------------+
+
+.. |Build Status| image:: https://travis-ci.com/lewisjared/scmdata.svg?branch=master
+    :target: https://travis-ci.com/lewisjared/scmdata
+.. |Codecov| image:: https://img.shields.io/codecov/c/github/lewisjared/scmdata.svg
+    :target: https://codecov.io/gh/lewisjared/scmdata/branch/master/graph/badge.svg
+.. |License| image:: https://img.shields.io/github/license/lewisjared/scmdata.svg
+    :target: https://github.com/lewisjared/scmdata/blob/master/LICENSE
+.. |Latest Version| image:: https://img.shields.io/github/tag/lewisjared/scmdata.svg
+    :target: https://github.com/lewisjared/scmdata/releases
+.. |Last Commit| image:: https://img.shields.io/github/last-commit/lewisjared/scmdata.svg
+    :target: https://github.com/lewisjared/scmdata/commits/master
+.. |Contributors| image:: https://img.shields.io/github/contributors/lewisjared/scmdata.svg
+    :target: https://github.com/lewisjared/scmdata/graphs/contributors
+
+.. sec-end-links
+
+.. sec-begin-index
 
 SCMData provides some useful data handling routines for dealing with data pertaining to Simple Climate Models (SCMs).
 
@@ -34,19 +51,3 @@ ScmData is free software under a BSD 3-Clause License, see `LICENSE <https://git
 
 .. sec-end-license
 
-.. sec-begin-links
-
-.. |Build Status| image:: https://travis-ci.com/lewisjared/scmdata.svg?branch=master
-    :target: https://travis-ci.com/lewisjared/scmdata
-.. |Codecov| image:: https://img.shields.io/codecov/c/github/lewisjared/scmdata.svg
-    :target: https://codecov.io/gh/lewisjared/scmdata/branch/master/graph/badge.svg
-.. |License| image:: https://img.shields.io/github/license/lewisjared/scmdata.svg
-    :target: https://github.com/lewisjared/scmdata/blob/master/LICENSE
-.. |Latest Version| image:: https://img.shields.io/github/tag/lewisjared/scmdata.svg
-    :target: https://github.com/lewisjared/scmdata/releases
-.. |Last Commit| image:: https://img.shields.io/github/last-commit/lewisjared/scmdata.svg
-    :target: https://github.com/lewisjared/scmdata/commits/master
-.. |Contributors| image:: https://img.shields.io/github/contributors/lewisjared/scmdata.svg
-    :target: https://github.com/lewisjared/scmdata/graphs/contributors
-
-.. sec-end-links
