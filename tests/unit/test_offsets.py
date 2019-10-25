@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from pandas.tseries.offsets import DateOffset, NaT
 
-from openscm.scmdataframe.offsets import apply_dt, generate_range, to_offset
+from scmdata.offsets import apply_dt, generate_range, to_offset
 
 
 @pytest.mark.parametrize(

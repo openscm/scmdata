@@ -23,7 +23,9 @@ README = "README.rst"
 
 SOURCE_DIR = "src"
 
-REQUIREMENTS = ["numpy", "scipy", "pandas==0.24.2", "python-dateutil"]
+PACKAGE_DATA = {"scmdata": ["data/*.csv"]}
+
+REQUIREMENTS = ["numpy", "scipy", "pandas==0.24.2", "python-dateutil", "pint"]
 REQUIREMENTS_PYAM = ["pyam-iamc>=0.2.0"]
 REQUIREMENTS_TESTS = ["codecov", "pytest-cov", "pytest>=4.0"]
 REQUIREMENTS_DOCS = ["sphinx>=1.4,<2.1", "sphinx_rtd_theme"]
@@ -31,12 +33,14 @@ REQUIREMENTS_DEPLOY = ["twine>=1.11.0", "setuptools>=38.6.0", "wheel>=0.31.0"]
 
 requirements_dev = [
     *["flake8"],
+    *REQUIREMENTS_PYAM,
     *REQUIREMENTS_TESTS,
     *REQUIREMENTS_DOCS,
     *REQUIREMENTS_DEPLOY,
 ]
 
 requirements_extras = {
+    "pyam": REQUIREMENTS_PYAM,
     "docs": REQUIREMENTS_DOCS,
     "tests": REQUIREMENTS_TESTS,
     "deploy": REQUIREMENTS_DEPLOY,

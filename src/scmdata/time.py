@@ -1,0 +1,335 @@
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
+from dateutil import parser
+from scipy import interpolate
+
+_TARGET_TYPE = np.int64
+
+
+class InsufficientDataError(Exception):
+    """
+    Insufficient data is available to interpolate
+    """
+    pass
+
+
+def _float_year_to_datetime(inp: float) -> np.datetime64:
+    year = int(inp)
+    fractional_part = inp - year
+    return np.datetime64(  # pylint: disable=too-many-function-args
+        year - 1970, "Y"
+    ) + np.timedelta64(  # pylint: disable=too-many-function-args
+        int(
+            (
+                    datetime(year + 1, 1, 1) - datetime(year, 1, 1)
+            ).total_seconds()
+            * fractional_part
+        ),
+        "s",
+    )
+
+
+_ufunc_float_year_to_datetime = np.frompyfunc(_float_year_to_datetime, 1, 1)
+_ufunc_str_to_datetime = np.frompyfunc(parser.parse, 1, 1)
+
+
+def _parse_datetime(inp: np.ndarray) -> np.ndarray:
+    try:
+        return _ufunc_float_year_to_datetime(inp.astype(float))
+    except (TypeError, ValueError):
+        return _ufunc_str_to_datetime(inp)
+
+
+def _format_datetime(dts: np.ndarray) -> np.ndarray:
+    """
+    Convert an array to an array of :class:`np.datetime64`.
+
+    Parameters
+    ----------
+    dts
+        Input to attempt to convert
+
+    Returns
+    -------
+    :class:`np.ndarray` of :class:`np.datetime64`
+        Converted array
+
+    Raises
+    ------
+    ValueError
+        If one of the values in :obj:`dts` cannot be converted to :class:`np.datetime64`
+    """
+    if len(dts) <= 0:  # pylint: disable=len-as-condition
+        return np.array([], dtype="datetime64[s]")
+
+    dtype = dts.dtype.type
+    if dts.dtype.kind == "O":
+        dtype = np.dtype(type(dts[0])).type
+    if issubclass(dtype, np.datetime64):
+        return np.asarray(dts, dtype="datetime64[s]")
+    if issubclass(dtype, np.floating):
+        return _ufunc_float_year_to_datetime(dts).astype("datetime64[s]")
+    if issubclass(dtype, np.integer):
+        return (np.asarray(dts) - 1970).astype("datetime64[Y]").astype("datetime64[s]")
+    if issubclass(dtype, str):
+        return _parse_datetime(dts).astype("datetime64[s]")
+    return np.asarray(dts, dtype="datetime64[s]")
+
+
+class TimePoints:
+    """
+    Handles time points by wrapping :class:`np.ndarray` of :class:`np.datetime64`..
+    """
+
+    _values: np.ndarray
+    """Actual time points array"""
+
+    def __init__(self, values):
+        """
+        Initialize.
+
+        Parameters
+        ----------
+        values
+            Time points array to handle
+        """
+        self._values = _format_datetime(np.asarray(values))
+
+    @property
+    def values(self) -> np.ndarray:
+        """
+        Time points
+        """
+        return self._values
+
+    def to_index(self) -> pd.Index:
+        """
+        Get time points as :class:`pd.Index`.
+
+        Returns
+        -------
+        :class:`pd.Index`
+            :class:`pd.Index` of :class:`np.dtype` :class:`object` with name ``"time"``
+            made from the time points represented as :class:`datetime.datetime`.
+        """
+        return pd.Index(self._values.astype(object), dtype=object, name="time")
+
+    def years(self) -> np.ndarray:
+        """
+        Get year of each time point.
+
+        Returns
+        -------
+        :obj:`np.array` of :obj:`int`
+            Year of each time point
+        """
+        return np.vectorize(getattr)(self._values.astype(object), "year")
+
+    def months(self) -> np.ndarray:
+        """
+        Get month of each time point.
+
+        Returns
+        -------
+        :obj:`np.array` of :obj:`int`
+            Month of each time point
+        """
+        return np.vectorize(getattr)(self._values.astype(object), "month")
+
+    def days(self) -> np.ndarray:
+        """
+        Get day of each time point.
+
+        Returns
+        -------
+        :obj:`np.array` of :obj:`int`
+            Day of each time point
+        """
+        return np.vectorize(getattr)(self._values.astype(object), "day")
+
+    def hours(self) -> np.ndarray:
+        """
+        Get hour of each time point.
+
+        Returns
+        -------
+        :obj:`np.array` of :obj:`int`
+            Hour of each time point
+        """
+        return np.vectorize(getattr)(self._values.astype(object), "hour")
+
+    def weekdays(self) -> np.ndarray:
+        """
+        Get weekday of each time point.
+
+        Returns
+        -------
+        :obj:`np.array` of :obj:`int`
+            Day of the week of each time point
+        """
+        return np.vectorize(datetime.weekday)(self._values.astype(object))
+
+
+class TimeseriesConverter:
+    def __init__(self, source_time_points: np.ndarray, target_time_points: np.ndarray,
+                 interpolation_type='linear', extrapolation_type='linear'
+                 ):
+        """
+        Interpolator used to convert data between different time bases
+
+        This was modified from the openscm.time.TimeseriesConverter
+
+        Parameters
+        ----------
+        source_time_points: np.ndarray
+            Source timeseries time points
+        target_time_points: np.ndarray
+            Target timeseries time points
+        interpolation_type: str
+            Interpolation type. Options are 'linear'
+        extrapolation_type: str or None
+            Extrapolation type. Options are None, 'linear' or 'constant'
+
+        Raises
+        ------
+        InsufficientDataError
+            Timeseries too short to extrapolate
+        """
+        self.source = np.array(source_time_points).astype(_TARGET_TYPE, copy=True)
+        self.target = np.array(target_time_points).astype(_TARGET_TYPE, copy=True)
+        self.interpolation_type = interpolation_type
+        self.extrapolation_type = extrapolation_type
+
+        if self.source[0] > self.target[1]:  # TODO: consider extrapolation type
+            raise InsufficientDataError
+
+    def _get_scipy_extrapolation_args(self, values: np.ndarray):
+        if self.extrapolation_type == 'linear':
+            return {"fill_value": "extrapolate"}
+        if self.extrapolation_type == 'constant':
+            return {"fill_value": (values[0], values[-1]), "bounds_error": False}
+        # TODO: add cubic support
+        return {}
+
+    def _get_scipy_interpolation_arg(self) -> str:
+        if self.interpolation_type == 'linear':
+            return "linear"
+        # TODO: add cubic support
+        raise NotImplementedError
+
+    def _convert(
+            self,
+            values: np.ndarray,
+            source_time_points: np.ndarray,
+            target_time_points: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Wrap :func:`_convert_unsafe` to provide proper error handling.
+
+        Parameters
+        ----------
+        values
+            Array of data to convert
+        source_time_points
+            Source timeseries time points
+        target_time_points
+            Target timeseries time points
+
+        Raises
+        ------
+        InsufficientDataError
+            Length of the time series is too short to convert
+        InsufficientDataError
+            Target time points are outside the source time points and
+            :attr:`extrapolation_type` is 'NONE'
+
+        Returns
+        -------
+        np.ndarray
+            Converted time period average data for timeseries :obj:`values`
+        """
+        if len(values) < 3:
+            raise InsufficientDataError
+
+        try:
+            return self._convert_unsafe(values, source_time_points, target_time_points)
+        except ValueError:
+            error_msg = (
+                "Target time points are outside the source time points, use an "
+                "extrapolation type other than None"
+            )
+            raise InsufficientDataError(error_msg)
+
+    def _convert_unsafe(
+            self,
+            values: np.ndarray,
+            source_time_points: np.ndarray,
+            target_time_points: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Convert time period average timeseries data :obj:`values` for timeseries time
+        points :obj:`source_time_points` to the time points :obj:`target_time_points`.
+
+        Parameters
+        ----------
+        values
+            Array of data to convert
+        source_time_points
+            Source timeseries time points
+        target_time_points
+            Target timeseries time points
+
+        Raises
+        ------
+        NotImplementedError
+            The timeseries type is not recognised
+
+        Returns
+        -------
+        np.ndarray
+            Converted time period average data for timeseries :obj:`values`
+        """
+        res_point = interpolate.interp1d(
+            source_time_points.astype(_TARGET_TYPE),
+            values,
+            kind=self._get_scipy_interpolation_arg(),
+            **self._get_scipy_extrapolation_args(values),
+        )
+
+        return res_point(target_time_points.astype(_TARGET_TYPE))
+
+    def convert_from(self, values: np.ndarray) -> np.ndarray:
+        """
+        Convert value **from** source timeseries time points to target timeseries time
+        points.
+
+        Parameters
+        ----------
+        values
+            Value
+
+        Returns
+        -------
+        np.ndarray
+            Converted array
+        """
+        return self._convert(values, self.source, self.target)
+
+    def convert_to(self, values: np.ndarray) -> np.ndarray:
+        """
+        Convert value from target timeseries time points **to** source timeseries time
+        points.
+
+        Parameters
+        ----------
+        values
+            Value
+
+        Returns
+        -------
+        np.ndarray
+            Converted array
+        """
+        return self._convert(values, self.target, self.source)

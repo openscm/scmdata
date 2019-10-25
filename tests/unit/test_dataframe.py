@@ -11,10 +11,8 @@ import pandas as pd
 import pytest
 from numpy import testing as npt
 from pandas.errors import UnsupportedFunctionCall
+from pint.errors import DimensionalityError, UndefinedUnitError
 
-from openscm.core.parameters import ParameterType
-from openscm.core.parameterset import ParameterSet
-from openscm.errors import DimensionalityError, UndefinedUnitError
 from scmdata.dataframe import (
     ScmDataFrame,
     df_append,
@@ -24,14 +22,12 @@ from scmdata.dataframe import (
 def test_init_df_year_converted_to_datetime(test_pd_df):
     res = ScmDataFrame(test_pd_df)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
-    assert (
-        res["time"].unique()
-        == [
-            datetime.datetime(2005, 1, 1),
-            datetime.datetime(2010, 1, 1),
-            datetime.datetime(2015, 1, 1),
-        ]
-    ).all()
+    assert (res["time"].unique() == [
+        datetime.datetime(2005, 1, 1),
+        datetime.datetime(2010, 1, 1),
+        datetime.datetime(2015, 1, 1),
+    ]
+            ).all()
 
 
 @pytest.mark.parametrize(
@@ -97,12 +93,12 @@ def test_init_df_formats(test_pd_df, in_format):
     res = ScmDataFrame(test_init)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
-        res["time"].unique()
-        == [
-            datetime.datetime(2005, 1, 1),
-            datetime.datetime(2010, 1, 1),
-            datetime.datetime(2015, 1, 1),
-        ]
+            res["time"].unique()
+            == [
+                datetime.datetime(2005, 1, 1),
+                datetime.datetime(2010, 1, 1),
+                datetime.datetime(2015, 1, 1),
+            ]
     ).all()
 
     res_df = res.timeseries()
@@ -162,7 +158,7 @@ def test_init_ts_missing_col_error(test_ts):
 def test_init_multiple_file_error():
     error_msg = re.escape(
         "Initialising from multiple files not supported, use "
-        "`openscm.ScmDataFrame.append()`"
+        "`scmdata.dataframe.ScmDataFrame.append()`"
     )
     with pytest.raises(ValueError, match=error_msg):
         ScmDataFrame(["file_1", "filepath_2"])
@@ -171,7 +167,7 @@ def test_init_multiple_file_error():
 def test_init_unrecognised_type_error():
     fail_type = {"dict": "key"}
     error_msg = re.escape(
-        "Cannot load <class 'openscm.scmdataframe.ScmDataFrame'> from {}".format(
+        "Cannot load <class 'scmdata.dataframe.ScmDataFrame'> from {}".format(
             type(fail_type)
         )
     )
@@ -307,12 +303,12 @@ def test_init_with_decimal_years():
 
     res = ScmDataFrame(d, columns=cols)
     assert (
-        res["time"].unique()
-        == [
-            datetime.datetime(1765, 1, 1, 0, 0),
-            datetime.datetime(1765, 1, 31, 7, 4, 48),
-            datetime.datetime(1765, 3, 2, 22, 55, 11),
-        ]
+            res["time"].unique()
+            == [
+                datetime.datetime(1765, 1, 1, 0, 0),
+                datetime.datetime(1765, 1, 31, 7, 4, 48),
+                datetime.datetime(1765, 3, 2, 22, 55, 11),
+            ]
     ).all()
     npt.assert_array_equal(res._data.loc[:, 0].values, inp_array)
 
@@ -368,37 +364,6 @@ def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
     tdf["year"] = tdf["time"].apply(lambda x: x.year)
     tdf.drop("time", axis="columns", inplace=True)
     pd.testing.assert_frame_equal(test_iam_df.data, tdf, check_like=True)
-
-
-@mock.patch("openscm.scmdataframe.base.LongDatetimeIamDataFrame", None)
-def test_pyam_missing(test_scm_df):
-    with pytest.raises(ImportError):
-        test_scm_df.to_iamdataframe()
-
-
-def test_pyam_missing_loading():
-    with mock.patch.dict(sys.modules, {"pyam": None}):
-        # not sure whether deleting like this is fine because of the context manager
-        # or a terrible idea...
-        del sys.modules["openscm.scmdataframe.pyam_compat"]
-        from openscm.scmdataframe.pyam_compat import IamDataFrame as res
-        from openscm.scmdataframe.pyam_compat import LongDatetimeIamDataFrame as res_3
-
-        assert all([r is None for r in [res, res_3]])
-
-    with mock.patch.dict(sys.modules, {"matplotlib.axes": None}):
-        # not sure whether deleting like this is fine because of the context manager
-        # or a terrible idea...
-        del sys.modules["openscm.scmdataframe.pyam_compat"]
-        from openscm.scmdataframe.pyam_compat import Axes as res_2
-
-        assert all([r is None for r in [res_2]])
-
-    from openscm.scmdataframe.pyam_compat import IamDataFrame as res
-    from openscm.scmdataframe.pyam_compat import Axes as res_2
-    from openscm.scmdataframe.pyam_compat import LongDatetimeIamDataFrame as res_3
-
-    assert all([r is not None for r in [res, res_2, res_3]])
 
 
 def test_get_item(test_scm_df):
@@ -949,16 +914,16 @@ def test_process_over_kwargs_error(test_scm_df):
     "tfilter,tappend_str,exp_append_str",
     [
         (
-            {"time": [datetime.datetime(y, 1, 1, 0, 0, 0) for y in range(2005, 2011)]},
-            None,
-            "(ref. period time: 2005-01-01 00:00:00 - 2010-01-01 00:00:00)",
+                {"time": [datetime.datetime(y, 1, 1, 0, 0, 0) for y in range(2005, 2011)]},
+                None,
+                "(ref. period time: 2005-01-01 00:00:00 - 2010-01-01 00:00:00)",
         ),
         ({"month": [1, 2, 3]}, "(Jan - Mar)", "(Jan - Mar)"),
         ({"day": [1, 2, 3]}, None, "(ref. period day: 1 - 3)"),
     ],
 )
 def test_relative_to_ref_period_mean(
-    test_processing_scm_df, tfilter, tappend_str, exp_append_str
+        test_processing_scm_df, tfilter, tappend_str, exp_append_str
 ):
     exp = pd.DataFrame(
         [
@@ -1272,7 +1237,7 @@ def test_append_column_order_time_interpolation(test_scm_df):
 
 
 def test_df_append_inplace_wrong_base(test_scm_df):
-    error_msg = "Can only append inplace to an ScmDataFrameBase"
+    error_msg = "Can only append inplace to an ScmDataFrame"
     with pytest.raises(TypeError, match=error_msg):
         with warnings.catch_warnings(record=True):  # ignore warnings in this test
             df_append([test_scm_df.timeseries(), test_scm_df], inplace=True)
@@ -1299,8 +1264,8 @@ def test_append_inplace_column_order_time_interpolation(test_scm_df):
     pd.testing.assert_frame_equal(
         test_scm_df.timeseries().sort_index(),
         exp.timeseries()
-        .reorder_levels(test_scm_df.timeseries().index.names)
-        .sort_index(),
+            .reorder_levels(test_scm_df.timeseries().index.names)
+            .sort_index(),
         check_like=True,
     )
 
@@ -1333,72 +1298,10 @@ def test_interpolate(combo_df):
     target = combo.target
 
     res = df.interpolate(
-        target,
-        interpolation_type=combo.interpolation_type,
-        extrapolation_type=combo.extrapolation_type,
+        target
     )
 
     npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
-
-
-def test_interpolate_missing_param_type(combo_df, doesnt_warn):
-    combo, df = combo_df
-    df._meta.pop("parameter_type")
-
-    target = combo.target
-
-    warning_msg = "`parameter_type` metadata not available. Guessing parameter types where unavailable."
-    with pytest.warns(UserWarning, match=warning_msg):
-        res = df.interpolate(
-            target,
-            interpolation_type=combo.interpolation_type,
-            extrapolation_type=combo.extrapolation_type,
-        )
-
-    assert "parameter_type" in res.meta
-
-    df.set_meta("point", "parameter_type")
-    with doesnt_warn():
-        df.interpolate(
-            target,
-            interpolation_type=combo.interpolation_type,
-            extrapolation_type=combo.extrapolation_type,
-        )
-
-
-def test_interpolate_parameter_type(combo_df):
-    combo, df = combo_df
-    df["parameter_type"] = combo.timeseries_type
-    res = df.interpolate(
-        combo.target,
-        interpolation_type=combo.interpolation_type,
-        extrapolation_type=combo.extrapolation_type,
-    )
-
-    npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
-    if combo.timeseries_type == ParameterType.POINT_TIMESERIES:
-        assert (res["parameter_type"] == "point").all()
-    else:
-        assert (res["parameter_type"] == "average").all()
-
-    res_rerun = res.interpolate(
-        combo.target,
-        interpolation_type=combo.interpolation_type,
-        extrapolation_type=combo.extrapolation_type,
-    )
-    npt.assert_array_almost_equal(res_rerun.values.squeeze(), combo.target_values)
-    if combo.timeseries_type == ParameterType.POINT_TIMESERIES:
-        assert (res_rerun["parameter_type"] == "point").all()
-    else:
-        assert (res_rerun["parameter_type"] == "average").all()
-
-
-def test_interpolate_bad_type(combo_df):
-    combo, df = combo_df
-    df["parameter_type"] = "junk"
-
-    with pytest.raises(ValueError):
-        df.interpolate(combo.target)
 
 
 def test_set_meta_no_name(test_scm_df):
@@ -1704,23 +1607,23 @@ def test_rename_col_fail(test_scm_df):
         ("EJ/yr", "EJ/yr", {}, [1.0, 0.5, 2.0], ["EJ/yr", "EJ/yr", "EJ/yr"]),
         ("PJ/yr", "EJ/yr", {}, [1000.0, 500.0, 2000.0], ["PJ/yr", "PJ/yr", "PJ/yr"]),
         (
-            "PJ/yr",
-            "EJ/yr",
-            {"scenario": "a_scenario2"},
-            [1.0, 0.5, 2000.0],
-            ["EJ/yr", "EJ/yr", "PJ/yr"],
+                "PJ/yr",
+                "EJ/yr",
+                {"scenario": "a_scenario2"},
+                [1.0, 0.5, 2000.0],
+                ["EJ/yr", "EJ/yr", "PJ/yr"],
         ),
         (
-            "PJ/yr",
-            ["EJ/yr", "TJ/yr", "Gt C / yr"],
-            {"variable": "Primary Energy|Coal"},
-            [1.0, 0.5 * 1e-3, 2.0],
-            ["EJ/yr", "PJ/yr", "Gt C / yr"],
+                "PJ/yr",
+                ["EJ/yr", "TJ/yr", "Gt C / yr"],
+                {"variable": "Primary Energy|Coal"},
+                [1.0, 0.5 * 1e-3, 2.0],
+                ["EJ/yr", "PJ/yr", "Gt C / yr"],
         ),
     ],
 )
 def test_convert_unit(
-    test_scm_df, target_unit, input_units, filter_kwargs, expected, expected_units
+        test_scm_df, target_unit, input_units, filter_kwargs, expected, expected_units
 ):
     test_scm_df["unit"] = input_units
     obs = test_scm_df.convert_unit(target_unit, **filter_kwargs)
@@ -1796,148 +1699,6 @@ def test_convert_existing_unit_context(test_scm_df):
     # TODO: warning if unit_context is different
 
 
-@pytest.mark.parametrize("prefill", [True, False])
-def test_scmdataframe_to_parameterset(rcp26, prefill):
-    tdata = rcp26
-
-    if prefill:
-        res = ParameterSet()
-        tdata.to_parameterset(parameterset=res)
-    else:
-        res = tdata.to_parameterset()
-
-    def get_comparison_times_for_year(yr):
-        return np.asarray(
-            [datetime.datetime(yr, 1, 1), datetime.datetime(yr + 1, 1, 1)],
-            dtype="datetime64[s]",
-        )
-
-    np.testing.assert_allclose(
-        9.14781,
-        res.timeseries(
-            ("Emissions", "CO2", "MAGICC Fossil and Industrial"),
-            "GtC / yr",
-            get_comparison_times_for_year(2017),
-            region="World",
-            timeseries_type="average",
-        ).values,
-    )
-
-    np.testing.assert_allclose(
-        6.124 + 1.2981006,
-        res.timeseries(
-            ("Emissions", "CO2"),
-            "GtC / yr",
-            get_comparison_times_for_year(1993),
-            region="World",
-            timeseries_type="average",
-        ).values,
-    )
-
-    np.testing.assert_allclose(
-        7.2168971,
-        res.timeseries(
-            ("Emissions", "N2O"),
-            "MtN2ON / yr",
-            get_comparison_times_for_year(1983),
-            region="World",
-            timeseries_type="average",
-        ).values,
-    )
-
-    np.testing.assert_allclose(
-        0.56591996,
-        res.timeseries(
-            ("Emissions", "OC"),
-            "MtOC / yr",
-            get_comparison_times_for_year(1766),
-            region="World",
-            timeseries_type="average",
-        ).values,
-    )
-
-    np.testing.assert_allclose(
-        0.22445,
-        res.timeseries(
-            ("Emissions", "SF6"),
-            "ktSF6 / yr",
-            get_comparison_times_for_year(2087),
-            region="World",
-            timeseries_type="average",
-        ).values,
-    )
-
-
-def test_scmdataframe_non_unique_metadata_to_parameterset_raises(test_scm_df):
-    with pytest.raises(ValueError, match="Not all timeseries have identical metadata"):
-        test_scm_df.to_parameterset()
-
-
-def test_scmdataframe_climate_model_to_parameterset_raises(test_scm_df):
-    with pytest.raises(
-        ValueError,
-        match="Only input data can be converted to a ParameterSet. Remove climate_model first",
-    ):
-        test_scm_df.filter(scenario="a_scenario2").to_parameterset()
-
-
-def test_parameterset_non_world_generic_para_to_scmdataframe_raises(rcp26):
-    start_point = rcp26.filter(variable="*CO2*").to_parameterset()
-
-    start_point.generic("blowup", region=("World|Region")).value = 12
-    with pytest.raises(
-        ValueError, match="Only generic types with Region==World can be extracted"
-    ):
-        convert_openscm_to_scmdataframe(start_point, rcp26.time_points)
-
-
-def test_parameterset_non_world_scalar_para_to_scmdataframe_raises(rcp26):
-    start_point = rcp26.filter(variable="*CO2*").to_parameterset()
-
-    start_point.scalar("blowup", "K", region=("World|Region")).value = 12
-    with pytest.raises(
-        ValueError, match="Only scalar types with Region==World can be extracted"
-    ):
-        convert_openscm_to_scmdataframe(start_point, rcp26.time_points)
-
-
-def test_convert_openscm_to_scmdataframe_circularity(rcp26):
-    tdata = rcp26.copy()
-    tdata.set_meta("average", name="parameter_type")
-    tdata.set_meta(True, name="test_generic")
-    tdata.set_meta(3.2, name="test_scalar (delta_degC)")
-    tdata.set_meta([(1, 2, 3)] * len(tdata), name="test_gen_list")
-
-    append_meta = tdata.meta.iloc[0].to_dict()
-    append_meta["variable"] = "Cumulative test"
-    append_meta["unit"] = "kg"
-    append_meta["region"] = "World|Aus"
-    append_meta["parameter_type"] = "point"
-    append_meta["test_gen_list"] = [append_meta["test_gen_list"]]
-    tdata = tdata.append(
-        ScmDataFrame(
-            data=np.arange(len(tdata.time_points)),
-            index=tdata.time_points,
-            columns=append_meta,
-        )
-    )
-    tdata.timeseries()
-
-    intermediate = tdata.to_parameterset()
-
-    res = convert_openscm_to_scmdataframe(
-        intermediate,
-        tdata["time"],
-        model="IMAGE",
-        scenario="RCP26",
-        climate_model="unspecified",
-    )
-
-    pd.testing.assert_frame_equal(
-        tdata.timeseries().sort_index(), res.timeseries().sort_index(), check_like=True
-    )
-
-
 def test_resample():
     df_dts = [
         datetime.datetime(2000, 1, 1),
@@ -1955,8 +1716,7 @@ def test_resample():
             "model": ["a_model"],
             "region": ["World"],
             "variable": ["Emissions|BC"],
-            "unit": ["Mg /yr"],
-            "parameter_type": ["point"],
+            "unit": ["Mg /yr"]
         },
         index=df_dts,
     )
@@ -1977,7 +1737,6 @@ def test_resample_long_datetimes():
             "region": ["World"],
             "variable": ["Emissions|BC"],
             "unit": ["Mg /yr"],
-            "parameter_type": ["point"],
         },
         index=df_dts,
     )
@@ -1986,30 +1745,6 @@ def test_resample_long_datetimes():
     obs = res.values.squeeze()
     exp = np.arange(1700, 2500 + 1)
     npt.assert_almost_equal(obs, exp, decimal=1)
-
-
-def interpolate_with_meta(test_scm_df):
-    expected = ["average", "point", "average"]
-
-    test_scm_df.set_meta(expected, "parameter_type")
-    res = test_scm_df.interpolate([6.0, 6.2, 6.4, 6.6, 6.8, 7.0, 7.2, 7.4])
-    npt.assert_array_almost_equal(res["parameter_type"].values, expected)
-
-
-def interpolate_guessing(test_scm_df):
-    assert "parameter_type" not in test_scm_df.meta.columns
-
-    variables = [
-        "Emissions|BC",
-        "Surface Temperature",
-        "Radiative Forcing|Greenhouse Gases",
-    ]
-    test_scm_df["variable"] = variables
-    res = test_scm_df.interpolate([6.0, 6.2, 6.4, 6.6, 6.8, 7.0, 7.2, 7.4])
-
-    expected = ["average", "point", "average"]
-
-    npt.assert_array_almost_equal(res["parameter_type"].values, expected)
 
 
 def test_init_no_file():
@@ -2023,48 +1758,48 @@ def test_init_no_file():
     ("test_file", "test_kwargs"),
     [
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "../..",
-                "test_data",
-                "rcp26_emissions.csv",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions.csv",
+                ),
+                {},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "../..",
-                "test_data",
-                "rcp26_emissions.xls",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions.xls",
+                ),
+                {},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "../..",
-                "test_data",
-                "rcp26_emissions_multi_sheet.xlsx",
-            ),
-            {"sheet_name": "rcp26_emissions"},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions_multi_sheet.xlsx",
+                ),
+                {"sheet_name": "rcp26_emissions"},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "../..",
-                "test_data",
-                "rcp26_emissions_multi_sheet_data.xlsx",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions_multi_sheet_data.xlsx",
+                ),
+                {},
         ),
     ],
 )
 def test_read_from_disk(test_file, test_kwargs):
     loaded = ScmDataFrame(test_file, **test_kwargs)
     assert (
-        loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
-        == 0.010116813
+            loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
+            == 0.010116813
     )
 
 

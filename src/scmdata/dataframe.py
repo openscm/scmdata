@@ -18,15 +18,8 @@ import numpy as np
 import pandas as pd
 from dateutil import parser
 
-from ..core.parameterset import ParameterSet
-from ..core.time import (
-    ExtrapolationType,
-    InterpolationType,
-    ParameterType,
-    TimePoints,
-    TimeseriesConverter,
-)
-from ..core.units import UnitConverter
+from .time import TimePoints, TimeseriesConverter
+from .units import UnitConverter
 from .filters import (
     datetime_match,
     day_match,
@@ -34,9 +27,9 @@ from .filters import (
     month_match,
     pattern_match,
     years_match,
+    HIERARCHY_SEPARATOR
 )
 from .offsets import generate_range, to_offset
-from .parameter_type import guess_parameter_type
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 
 _logger = getLogger(__name__)
@@ -44,14 +37,12 @@ _logger = getLogger(__name__)
 REQUIRED_COLS: List[str] = ["model", "scenario", "region", "variable", "unit"]
 """Minimum metadata columns required by an ScmDataFrame"""
 
-HIERARCHY_SEPARATOR = '|'
-
 
 def _read_file(  # pylint: disable=missing-return-doc
     fnames: str, *args: Any, **kwargs: Any
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmDataFrameBase` from a file.
+    Prepare data to initialize :class:`ScmDataFrame` from a file.
 
     Parameters
     ----------
@@ -113,10 +104,10 @@ def _format_data(  # pylint: disable=missing-return-doc
     df: Union[pd.DataFrame, pd.Series]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmDataFrameBase` from :class:`pd.DataFrame` or
+    Prepare data to initialize :class:`ScmDataFrame` from :class:`pd.DataFrame` or
     :class:`pd.Series`.
 
-    See docstring of :func:`ScmDataFrameBase.__init__` for details.
+    See docstring of :func:`ScmDataFrame.__init__` for details.
 
     Parameters
     ----------
@@ -220,9 +211,9 @@ def _from_ts(
     df: Any, index: Any = None, **columns: Union[str, bool, float, int, List]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmDataFrameBase` from wide timeseries.
+    Prepare data to initialize :class:`ScmDataFrame` from wide timeseries.
 
-    See docstring of :func:`ScmDataFrameBase.__init__` for details.
+    See docstring of :func:`ScmDataFrame.__init__` for details.
 
     Returns
     -------
@@ -319,11 +310,11 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         index
             Only used if :obj:`columns` is not ``None``. If :obj:`index` is not
             ``None``, too, then this value sets the time index of the
-            :class:`ScmDataFrameBase` instance. If :obj:`index` is ``None`` and
+            :class:`ScmDataFrame` instance. If :obj:`index` is ``None`` and
             :obj:`columns` is not ``None``, the index is taken from :obj:`data`.
 
         columns
-            If None, ScmDataFrameBase will attempt to infer the values from the source.
+            If None, ScmDataFrame will attempt to infer the values from the source.
             Otherwise, use this dict to write the metadata for each timeseries in data.
             For each metadata key (e.g. "model", "scenario"), an array of values (one
             per time series) is expected. Alternatively, providing a list of length 1
@@ -348,8 +339,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
                     "unit": ["unspecified"]
                 }
                 >>> assert pd.testing.assert_frame_equal(
-                    ScmDataFrameBase(d, columns=col_1).meta,
-                    ScmDataFrameBase(d, columns=col_2).meta
+                    ScmDataFrame(d, columns=col_1).meta,
+                    ScmDataFrame(d, columns=col_2).meta
                 )
 
         **kwargs:
@@ -367,8 +358,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         """
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
-        elif isinstance(data, ScmDataFrameBase):
-            # turn off mypy type checking here as ScmDataFrameBase isn't defined
+        elif isinstance(data, ScmDataFrame):
+            # turn off mypy type checking here as ScmDataFrame isn't defined
             # when mypy does type checking
             (_df, _meta) = (
                 data._data.copy(),  # pylint: disable=protected-access
@@ -383,7 +374,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
                 if isinstance(data, list) and isinstance(data[0], str):
                     raise ValueError(
                         "Initialising from multiple files not supported, "
-                        "use `scmdata.ScmDataFrame.append()`"
+                        "use `scmdata.dataframe.ScmDataFrame.append()`"
                     )
                 error_msg = "Cannot load {} from {}".format(type(self), type(data))
                 raise TypeError(error_msg)
@@ -403,7 +394,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrameBase`
+        :obj:`ScmDataFrame`
             :func:`copy.deepcopy` of ``self``
         """
         return copy.deepcopy(self)
@@ -452,89 +443,6 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             self._data.index = self._time_points.to_index()
             return value
         return self.set_meta(value, name=key)
-
-    def to_parameterset(
-        self, parameterset: Optional[ParameterSet] = None
-    ) -> ParameterSet:
-        """
-        Add parameters in this :class:`ScmDataFrameBase` to a :class:`ParameterSet`.
-
-        It can only be transformed if all timeseries have the same metadata. This is
-        typically the case if all data comes from a single scenario/model input
-        dataset. If that is not the case, further filtering is needed to reduce to a
-        dataframe with identical metadata.
-
-        Parameters
-        ----------
-        parameterset
-            ParameterSet to add this :class:`ScmDataFrameBase`'s parameters to. A new
-            :class:`ParameterSet` is created if this is ``None``.
-
-        Returns
-        -------
-        ParameterSet
-            :class:`ParameterSet` containing the data in ``self`` (equals
-            :obj:`parameterset` if not ``None``)
-
-        Raises
-        ------
-        ValueError
-            Not all timeseries have the same metadata or :obj:`climate_model` is given
-            and does not equal "unspecified"
-        """
-        # pylint: disable=too-many-locals
-
-        meta_values = self._meta.drop(
-            ["variable", "region", "unit", "parameter_type"], axis=1, errors="ignore"
-        ).drop_duplicates()
-        if len(meta_values) > 1:
-            raise ValueError("Not all timeseries have identical metadata")
-        meta_values = meta_values.squeeze()
-
-        if meta_values.get("climate_model", "unspecified") != "unspecified":
-            raise ValueError(
-                "Only input data can be converted to a ParameterSet. Remove climate_model first."
-            )
-
-        if parameterset is None:
-            parameterset = ParameterSet()
-
-        for i in self._data:
-            vals = self._data[i]
-            metadata = self._meta.loc[i]
-            variable = metadata.pop("variable")
-            region = metadata.pop("region")
-            unit = metadata.pop("unit")
-            try:
-                timeseries_type = ParameterType.from_timeseries_type(
-                    metadata.pop("parameter_type")
-                )
-            except KeyError:
-                timeseries_type = guess_parameter_type(variable, unit)
-
-            time_points = self.time_points
-            if timeseries_type == ParameterType.AVERAGE_TIMESERIES:
-                delta_t = time_points[-1] - time_points[-2]
-                time_points = np.concatenate((time_points, [time_points[-1] + delta_t]))
-
-            parameterset.timeseries(
-                variable,
-                unit,
-                time_points,
-                region=region,
-                timeseries_type=timeseries_type,
-            ).values = vals.values
-
-        unit_regexp = re.compile(r".*\(.*\)")
-        for k, v in meta_values.iteritems():
-            if unit_regexp.match(k):
-                para_name = k.split("(")[0].strip()
-                para_unit = k.split("(")[1].split(")")[0].strip()
-                parameterset.scalar(para_name, para_unit).value = v
-            else:
-                parameterset.generic(k).value = v
-
-        return parameterset
 
     @property
     def time_points(self) -> np.ndarray:
@@ -598,7 +506,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         inplace: bool = False,
         has_nan: bool = True,
         **kwargs: Any
-    ) -> Optional[ScmDataFrameBase]:
+    ) -> Optional[ScmDataFrame]:
         """
         Return a filtered ScmDataFrame (i.e., a subset of the data).
 
@@ -641,7 +549,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrameBase`
+        :obj:`ScmDataFrame`
             If not :obj:`inplace`, return a new instance with the filtered data.
 
         Raises
@@ -825,7 +733,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
     def rename(
         self, mapping: Dict[str, Dict[str, str]], inplace: bool = False
-    ) -> Optional[ScmDataFrameBase]:
+    ) -> Optional[ScmDataFrame]:
         """
         Rename and aggregate column entries using :func:`groupby.sum()` on values. When
         renaming models or scenarios, the uniqueness of the index must be maintained,
@@ -847,8 +755,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrameBase`
-            If :obj:`inplace` is ``True``, return a new :class:`ScmDataFrameBase`
+        :obj:`ScmDataFrame`
+            If :obj:`inplace` is ``True``, return a new :class:`ScmDataFrame`
             instance
 
         Raises
@@ -942,34 +850,20 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
     def interpolate(  # pylint: disable=too-many-locals
         self,
-        target_times: Union[np.ndarray, List[Union[datetime.datetime, int]]],
-        interpolation_type: Union[InterpolationType, str] = InterpolationType.LINEAR,
-        extrapolation_type: Union[ExtrapolationType, str] = ExtrapolationType.CONSTANT,
+        target_times: Union[np.ndarray, List[Union[datetime.datetime, int]]]
     ) -> ScmDataFrame:
         """
         Interpolate the dataframe onto a new time frame.
-
-        Uses :class:`scmdata.timeseries_converter.TimeseriesConverter` internally. For
-        each time series a :class:`ParameterType` is guessed from the variable name. To
-        override the guessed parameter type, specify a "parameter_type" meta column
-        before calling interpolate. The guessed parameter types are returned in meta.
 
         Parameters
         ----------
         target_times
             Time grid onto which to interpolate
 
-        interpolation_type
-            How to interpolate the data between timepoints
-
-        extrapolation_type
-            If and how to extrapolate the data beyond the data in
-            :func:`self.timeseries()`
-
         Returns
         -------
-        :obj:`ScmDataFrameBase`
-            A new :class:`ScmDataFrameBase` containing the data interpolated onto the
+        :obj:`ScmDataFrame`
+            A new :class:`ScmDataFrame` containing the data interpolated onto the
             :obj:`target_times` grid
         """
         # pylint: disable=protected-access
@@ -984,72 +878,28 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         res = self.copy()
 
-        # Add in a parameter_type column if it doesn't exist
-        if "parameter_type" not in res._meta:
-            res._meta["parameter_type"] = None
-            res._sort_meta_cols()
-
-        def guess(r):
-            if r.parameter_type is None:
-                warnings.warn(
-                    "`parameter_type` metadata not available. Guessing parameter types where unavailable."
-                )
-                parameter_type = guess_parameter_type(r.variable, r.unit)
-                r.parameter_type = (
-                    "average"
-                    if parameter_type == ParameterType.AVERAGE_TIMESERIES
-                    else "point"
-                )
-            return r
-
-        res._meta.apply(guess, axis=1)
-
         # Resize dataframe to new index length
         old_data = res._data
         res._data = pd.DataFrame(index=timeseries_index, columns=res._data.columns)
 
-        for parameter_type, grp in res._meta.groupby("parameter_type"):
-            p_type = ParameterType.from_timeseries_type(parameter_type)
-            time_points = self.time_points
+        time_points = self.time_points
 
-            if p_type == ParameterType.AVERAGE_TIMESERIES:
-                # With an average time series we are making the assumption that the last value is the
-                # average value between t[-1] and (t[-1] - t[-2]). This will ensure that both the
-                # point and average timeseries can use the same time grid.
-                delta_t = target_times[-1] - target_times[-2]
-                target_times = np.concatenate(
-                    (target_times, [target_times[-1] + delta_t])
-                )
+        timeseries_converter = TimeseriesConverter(
+            time_points,
+            target_times,
+            p_type
+        )
 
-                delta_t = time_points[-1] - time_points[-2]
-                time_points = np.concatenate((time_points, [time_points[-1] + delta_t]))
-
-            timeseries_converter = TimeseriesConverter(
-                time_points,
-                target_times,
-                p_type,
-                InterpolationType.from_interpolation_type(interpolation_type),
-                ExtrapolationType.from_extrapolation_type(extrapolation_type),
+        res._data[grp.index] = old_data[
+            grp.index
+        ].apply(  # pylint: disable=protected-access
+            lambda col: pd.Series(
+                timeseries_converter.convert_from(  # pylint: disable=cell-var-from-loop
+                    col.values
+                ),
+                index=timeseries_index,
             )
-
-            res._data[grp.index] = old_data[
-                grp.index
-            ].apply(  # pylint: disable=protected-access
-                lambda col: pd.Series(
-                    timeseries_converter.convert_from(  # pylint: disable=cell-var-from-loop
-                        col.values
-                    ),
-                    index=timeseries_index,
-                )
-            )
-
-            # Convert from ParameterType to str
-            parameter_type_str = (
-                "average" if p_type == ParameterType.AVERAGE_TIMESERIES else "point"
-            )
-            res._meta.loc[grp.index] = res._meta.loc[grp.index].assign(
-                parameter_type=parameter_type_str
-            )
+        )
 
         res["time"] = timeseries_index
         return res
@@ -1075,8 +925,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrameBase`
-            New :class:`ScmDataFrameBase` instance on a new time index
+        :obj:`ScmDataFrame`
+            New :class:`ScmDataFrame` instance on a new time index
 
         Examples
         --------
@@ -1226,7 +1076,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         """
         Convert the units of a selection of timeseries.
 
-        Uses :class:`openscm.units.UnitConverter` to perform the conversion.
+        Uses :class:`scmdata.units.UnitConverter` to perform the conversion.
 
         Parameters
         ----------
@@ -1241,17 +1091,17 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         inplace
             If ``True``, the operation is performed inplace, updating the underlying
-            data. Otherwise a new :class:`ScmDataFrameBase` instance is returned.
+            data. Otherwise a new :class:`ScmDataFrame` instance is returned.
 
         **kwargs
-            Extra arguments which are passed to :func:`~ScmDataFrameBase.filter` to
+            Extra arguments which are passed to :func:`~ScmDataFrame.filter` to
             limit the timeseries which are attempted to be converted. Defaults to
             selecting the entire ScmDataFrame, which will likely fail.
 
         Returns
         -------
-        :obj:`ScmDataFrameBase`
-            If :obj:`inplace` is not ``False``, a new :class:`ScmDataFrameBase` instance
+        :obj:`ScmDataFrame`
+            If :obj:`inplace` is not ``False``, a new :class:`ScmDataFrame` instance
             with the converted units.
         """
         # pylint: disable=protected-access
@@ -1335,11 +1185,11 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         Parameters
         ----------
         other
-            Data (in format which can be cast to :class:`ScmDataFrameBase`) to append
+            Data (in format which can be cast to :class:`ScmDataFrame`) to append
 
         inplace
             If ``True``, append data in place and return ``None``. Otherwise, return a
-            new :class:`ScmDataFrameBase` instance with the appended data.
+            new :class:`ScmDataFrame` instance with the appended data.
 
         duplicate_msg
             If "warn", raise a warning if duplicate data is detected. If "return",
@@ -1347,13 +1197,13 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             inspect further. If ``False``, take the average and do not raise a warning.
 
         **kwargs
-            Keywords to pass to :func:`ScmDataFrameBase.__init__` when reading
+            Keywords to pass to :func:`ScmDataFrame.__init__` when reading
             :obj:`other`
 
         Returns
         -------
-        :obj:`ScmDataFrameBase`
-            If not :obj:`inplace`, return a new :class:`ScmDataFrameBase` instance
+        :obj:`ScmDataFrame`
+            If not :obj:`inplace`, return a new :class:`ScmDataFrame` instance
             containing the result of the append.
         """
         if not isinstance(other, ScmDataFrame):
@@ -1439,11 +1289,11 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
 def df_append(
     dfs: List[
-        Union[ScmDataFrameBase, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str]
+        Union[ScmDataFrame, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str]
     ],
     inplace: bool = False,
     duplicate_msg: Union[str, bool] = "warn",
-) -> Optional[ScmDataFrameBase]:
+) -> Optional[ScmDataFrame]:
     """
     Append together many objects.
 
@@ -1457,7 +1307,7 @@ def df_append(
     ----------
     dfs
         The dataframes to append. Values will be attempted to be cast to
-        :class:`ScmDataFrameBase`.
+        :class:`ScmDataFrame`.
 
     inplace
         If ``True``, then the operation updates the first item in :obj:`dfs` and returns
@@ -1470,7 +1320,7 @@ def df_append(
 
     Returns
     -------
-    :obj:`ScmDataFrameBase`
+    :obj:`ScmDataFrame`
         If not :obj:`inplace`, the return value is the object containing the merged
         data. The resultant class will be determined by the type of the first object. If
         ``duplicate_msg == "return"``, a `pd.DataFrame` will be returned instead.
@@ -1479,13 +1329,13 @@ def df_append(
     ------
     TypeError
         If :obj:`inplace` is ``True`` but the first element in :obj:`dfs` is not an
-        instance of :class:`ScmDataFrameBase`
+        instance of :class:`ScmDataFrame`
 
     ValueError
         :obj:`duplicate_msg` option is not recognised.
     """
     scm_dfs = [
-        df if isinstance(df, ScmDataFrameBase) else ScmDataFrameBase(df) for df in dfs
+        df if isinstance(df, ScmDataFrame) else ScmDataFrame(df) for df in dfs
     ]
     joint_dfs = [d.copy() for d in scm_dfs]
     joint_meta = []  # type: List[str]
@@ -1520,8 +1370,8 @@ def df_append(
     data = data.groupby(data.index.names).mean()
 
     if inplace:
-        if not isinstance(dfs[0], ScmDataFrameBase):
-            raise TypeError("Can only append inplace to an ScmDataFrameBase")
+        if not isinstance(dfs[0], ScmDataFrame):
+            raise TypeError("Can only append inplace to an ScmDataFrame")
         ret = dfs[0]
     else:
         ret = scm_dfs[0].copy()

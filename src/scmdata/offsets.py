@@ -176,7 +176,7 @@ def generate_range(
 
     >>> import datetime as dt
     >>> from pprint import pprint
-    >>> from openscm.scmdataframe.offsets import to_offset, generate_range
+    >>> from scmdata.offsets import to_offset, generate_range
     >>> g = generate_range(
     ...     dt.datetime(2001, 4, 1),
     ...     dt.datetime(2005, 6, 3),
