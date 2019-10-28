@@ -142,8 +142,42 @@ For more information on these, `here is the full guide <https://numpydoc.readthe
 Releasing
 ---------
 
-Instructions on how to release versions of scmdata will go here.
+First step
+~~~~~~~~~~
 
+#. Test installation with dependencies ``make test-install``
+#. Update ``CHANGELOG.rst``:
+
+    - add a header for the new version between ``master`` and the latest bullet point
+    - this should leave the section underneath the master header empty
+
+#. ``git add .``
+#. ``git commit -m "Prepare for release of vX.Y.Z"``
+#. Test version updated as intended with ``make test-install``
+
+PyPI
+~~~~
+
+If uploading to PyPI, do the following (otherwise skip these steps)
+
+#. ``make publish-on-testpypi``
+#. Go to `test PyPI <https://test.pypi.org/project/scmdata/>`_ and check that the new release is as intended. If it isn't, stop and debug.
+#. Test the install with ``make test-testpypi-install`` (this doesn't test all the imports as most required packages are not on test PyPI).
+
+Assuming test PyPI worked, now upload to the main repository
+
+#. ``make publish-on-pypi``
+#. Go to `SCMData's PyPI`_ and check that the new release is as intended.
+#. Test the install with ``make test-pypi-install``
+
+Push to repository
+~~~~~~~~~~~~~~~~~~
+
+Finally, push the tags and commit to the repository
+
+#. ``git push``
+#. ``git tag vX.Y.Z``
+#. ``git push --tags``
 
 Why is there a ``Makefile`` in a pure Python repository?
 --------------------------------------------------------
@@ -153,3 +187,4 @@ Hence we have one here which basically acts as a notes file for how to do all th
 
 .. _Sphinx: http://www.sphinx-doc.org/en/master/
 .. _SCMData issue tracker: https://github.com/lewisjared/scmdata/issues
+.. _`SCMData's PyPI`: https://pypi.org/project/scmdata/
