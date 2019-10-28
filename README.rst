@@ -15,8 +15,8 @@ SCMData
 | Latest activity | |Contributors| | |Last Commit| |
 +-----------------+----------------+---------------+
 
-.. |Build Status| image:: https://travis-ci.com/lewisjared/scmdata.svg?branch=master
-    :target: https://travis-ci.com/lewisjared/scmdata
+.. |Build Status| image:: https://travis-ci.org/lewisjared/scmdata.svg?branch=master
+    :target: https://travis-ci.org/lewisjared/scmdata
 .. |Codecov| image:: https://img.shields.io/codecov/c/github/lewisjared/scmdata.svg
     :target: https://codecov.io/gh/lewisjared/scmdata/branch/master/graph/badge.svg
 .. |License| image:: https://img.shields.io/github/license/lewisjared/scmdata.svg
