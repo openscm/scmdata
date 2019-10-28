@@ -9,7 +9,7 @@ from dateutil import parser
 try:
     from pyam import IamDataFrame
 
-    # mypy can't work out try-except block forces IamDataFrame to be ok here
+    # mypy can't work out try-except block forces IamDataFrame to be here
     class LongDatetimeIamDataFrame(IamDataFrame):  # type: ignore
         """
         Custom implementation of :class:`pyam.IamDataFrame` which handles long datetime
