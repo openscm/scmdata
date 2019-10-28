@@ -88,9 +88,7 @@ setup(
     keywords=["data", "simple climate model", "climate", "scm"],
     packages=find_packages(SOURCE_DIR),  # no exclude as only searching in `src`
     package_dir={"": SOURCE_DIR},
-    # next line is only required if you have data files that have to be included
-    # e.g. csvs which define certain conventions etc.
-    # include_package_data=True,
+    package_data=PACKAGE_DATA,
     install_requires=REQUIREMENTS,
     extras_require=requirements_extras,
     cmdclass=cmdclass,
