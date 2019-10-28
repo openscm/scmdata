@@ -2,15 +2,14 @@ language: python
 cache: pip
 dist: xenial
 python:
-  - "3.5"
-  - "3.6"
+  #- "3.6"
   - "3.7"
 
 before_install:
   - pip install pip --upgrade
 
 install:
-  - pip install .[tests]
+  - pip install .[tests,pyam]
 
 script:
   - pytest --cov -rfsxEX
