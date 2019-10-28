@@ -1298,7 +1298,9 @@ def test_interpolate(combo_df):
     target = combo.target
 
     res = df.interpolate(
-        target
+        target,
+        interpolation_type=combo.interpolation_type,
+        extrapolation_type=combo.extrapolation_type
     )
 
     npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)

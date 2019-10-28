@@ -848,9 +848,11 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             self._meta.drop("level_0", axis=1, inplace=True)
         self._sort_meta_cols()
 
-    def interpolate(  # pylint: disable=too-many-locals
+    def interpolate(
         self,
-        target_times: Union[np.ndarray, List[Union[datetime.datetime, int]]]
+        target_times: Union[np.ndarray, List[Union[datetime.datetime, int]]],
+        interpolation_type: str = 'linear',
+        extrapolation_type: str = 'linear'
     ) -> ScmDataFrame:
         """
         Interpolate the dataframe onto a new time frame.
@@ -859,6 +861,10 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         ----------
         target_times
             Time grid onto which to interpolate
+        interpolation_type: str
+            Interpolation type. Options are 'linear'
+        extrapolation_type: str or None
+            Extrapolation type. Options are None, 'linear' or 'constant'
 
         Returns
         -------
@@ -887,12 +893,11 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         timeseries_converter = TimeseriesConverter(
             time_points,
             target_times,
-            p_type
+            interpolation_type=interpolation_type,
+            extrapolation_type=extrapolation_type
         )
 
-        res._data[grp.index] = old_data[
-            grp.index
-        ].apply(  # pylint: disable=protected-access
+        res._data = old_data.apply(  # pylint: disable=protected-access
             lambda col: pd.Series(
                 timeseries_converter.convert_from(  # pylint: disable=cell-var-from-loop
                     col.values

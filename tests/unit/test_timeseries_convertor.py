@@ -50,7 +50,7 @@ def test_really_long_timespan():
         ],
         dtype=np.datetime64,
     )
-    source_vals = [1., 2., 3.]
+    source_vals = [1., 2.0, 3.5]
     target = np.asarray(
         [
             np.datetime64("1000-01-01"),
@@ -59,11 +59,11 @@ def test_really_long_timespan():
         ],
         dtype=np.datetime64,
     )
-    target_vals = [1., 2.0, 3.5]
+    target_vals = [1., 2., 3.]
     c = TimeseriesConverter(
         source,
         target,
     )
 
-    np.testing.assert_allclose(c.convert_to(target_vals), source_vals)
-    np.testing.assert_allclose(c.convert_from(source_vals), target_vals)
+    np.testing.assert_allclose(c.convert_to(target_vals), source_vals, rtol=1e-3)
+    np.testing.assert_allclose(c.convert_from(source_vals), target_vals, rtol=1e-3)
