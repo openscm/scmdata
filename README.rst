@@ -34,6 +34,9 @@ SCMData
 
 SCMData provides some useful data handling routines for dealing with data pertaining to Simple Climate Models (SCMs).
 
+An ``ScmDataFrame`` provides a subset of the functionality provided by `pyam <https://github.com/IAMconsortium/pyam>`_'s IamDataFrame,
+but is adapted to provide better performance for timeseries data. This package was originally part of `openscm <https://github.com/openclimatedata/openscm>`_.
+
 .. sec-end-index
 
 Contributing

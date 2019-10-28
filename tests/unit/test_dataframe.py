@@ -158,7 +158,7 @@ def test_init_ts_missing_col_error(test_ts):
 def test_init_multiple_file_error():
     error_msg = re.escape(
         "Initialising from multiple files not supported, use "
-        "`scmdata.dataframe.ScmDataFrame.append()`"
+        "`scmdata.dataframe.rst.ScmDataFrame.append()`"
     )
     with pytest.raises(ValueError, match=error_msg):
         ScmDataFrame(["file_1", "filepath_2"])
@@ -167,7 +167,7 @@ def test_init_multiple_file_error():
 def test_init_unrecognised_type_error():
     fail_type = {"dict": "key"}
     error_msg = re.escape(
-        "Cannot load <class 'scmdata.dataframe.ScmDataFrame'> from {}".format(
+        "Cannot load <class 'scmdata.dataframe.rst.ScmDataFrame'> from {}".format(
             type(fail_type)
         )
     )

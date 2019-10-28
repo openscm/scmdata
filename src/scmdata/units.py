@@ -1,9 +1,4 @@
 """
-Unit handling.
-
-..
-   TODO: move this documentation to a separate rst document
-
 Unit handling makes use of the `Pint <https://github.com/hgrecco/pint>`_ library. This
 allows us to easily define units as well as contexts. Contexts allow us to perform
 conversions which would not normally be allowed e.g. in the 'AR4GWP100'

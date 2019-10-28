@@ -374,7 +374,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
                 if isinstance(data, list) and isinstance(data[0], str):
                     raise ValueError(
                         "Initialising from multiple files not supported, "
-                        "use `scmdata.dataframe.ScmDataFrame.append()`"
+                        "use `scmdata.dataframe.rst.ScmDataFrame.append()`"
                     )
                 error_msg = "Cannot load {} from {}".format(type(self), type(data))
                 raise TypeError(error_msg)

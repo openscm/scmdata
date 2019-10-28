@@ -1,12 +1,13 @@
 """
-A simplified version of :class:`pandas.DateOffset`s which use datetime-like
+A simplified version of :class:`pandas.DateOffset` which use datetime-like
 objects instead of :class:`pandas.Timestamp`.
 
-This differentiation allows for times which exceed the range of :class`pandas.Timestamp`
+This differentiation allows for times which exceed the range of :class:`pandas.Timestamp`
 (see `here <https://stackoverflow.com/a/37226672>`__) which is particularly important
 for longer running models.
 
-TODO: use np.timedelta64 instead?
+..  TODO: use np.timedelta64 instead?
+
 """
 import datetime
 import functools
@@ -31,8 +32,8 @@ def apply_dt(func, self):
 
     This decorator is a simplified version of
     :func:`pandas.tseries.offsets.apply_wraps`. It is required to avoid running into
-    errors when our time data is outside panda's limited time range of 1677-09-22
-    00:12:43.145225 to 2262-04-11 23:47:16.854775807, see `this discussion
+    errors when our time data is outside panda's limited time range of ``1677-09-22
+    00:12:43.145225`` to ``2262-04-11 23:47:16.854775807``, see `this discussion
     <https://stackoverflow.com/a/37226672>`_.
     """
     # should self be renamed in the function signature to something else, `ipt`?
@@ -93,7 +94,7 @@ def to_offset(rule: str) -> DateOffset:
 
     The :class:`DateOffset` class is manipulated to return datetimes instead of
     :class:`pd.Timestamp`, allowing it to handle times outside panda's limited time
-    range of 1677-09-22 00:12:43.145225 to 2262-04-11 23:47:16.854775807, see `this
+    range of ``1677-09-22 00:12:43.145225`` to ``2262-04-11 23:47:16.854775807``, see `this
     discussion <https://stackoverflow.com/a/37226672>`_.
 
     Parameters
@@ -146,17 +147,17 @@ def generate_range(
 
     Parameters
     ----------
-    start
+    start: datetime.datetime
         Starting datetime from which to generate the range (noting roll backward
         mentioned above and illustrated in the examples).
 
-    end
+    end: datetime.datetime
         Last datetime from which to generate the range (noting roll forward mentioned
         above and illustrated in the examples).
 
-    offset
+    offset: :obj:`pandas.tseries.DateOffset`
         Offset object for determining the timesteps. An offsetter obtained from
-        :func`to_offset` *must* be used.
+        :func:`to_offset` *must* be used.
 
     Yields
     ------
