@@ -446,6 +446,7 @@ SCMData standard unit registry
 The unit registry contains all of the recognised units.
 """
 _unit_registry.add_standards()
+_unit_registry.enable_contexts()
 
 
 class UnitConverter:
@@ -501,7 +502,16 @@ class UnitConverter:
             t2 = s2.to(target_unit)
         else:
             with _unit_registry.context(context):
+                ts = _unit_registry.Quantity(1, "CH4")
+                tsa = _unit_registry.Quantity(1, "tCH4 / yr")
+                tsb = _unit_registry.Quantity(1, "tCH4")
+                tsc = _unit_registry.Quantity(1, "CH4 / yr")
+                # import pdb
+                # pdb.set_trace()
+                ts.to("C")
+                ts.to("C", "CH4_conversions")
                 t1 = s1.to(target_unit)
+                s1.to(target_unit, "CH4_conversions")
                 t2 = s2.to(target_unit)
 
         if np.isnan(t1) or np.isnan(t2):
