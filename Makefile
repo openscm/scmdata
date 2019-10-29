@@ -44,28 +44,6 @@ black: $(VENV_DIR)  ## use black to autoformat code
 		echo Not trying any formatting, working directory is dirty... >&2; \
 	fi;
 
-.PHONY: format
-format:  ## re-format files
-	make isort
-	make black
-
-.PHONY: flake8
-flake8: $(VENV_DIR)  ## check compliance with pep8
-	$(VENV_DIR)/bin/flake8 $(FILES_TO_FORMAT_PYTHON)
-
-.PHONY: isort
-isort: $(VENV_DIR)  ## format the imports in the source and tests
-	$(VENV_DIR)/bin/isort -y --recursive $(FILES_TO_FORMAT_PYTHON)
-
-.PHONY: black
-black: $(VENV_DIR)  ## use black to autoformat code
-	@status=$$(git status --porcelain); \
-	if test "x$${status}" = x; then \
-		$(VENV_DIR)/bin/black --exclude _version.py --target-version py37 $(FILES_TO_FORMAT_PYTHON); \
-	else \
-		echo Not trying any formatting, working directory is dirty... >&2; \
-	fi;
-
 virtual-environment:  ## update venv, create a new venv if it doesn't exist
 	make $(VENV_DIR)
 
