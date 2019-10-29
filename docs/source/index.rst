@@ -25,6 +25,11 @@ SCMData
    :maxdepth: 2
    :caption: API reference
 
+   scmdata.dataframe
+   scmdata.offsets
+   scmdata.time
+   scmdata.units
+
 .. toctree::
    :maxdepth: 2
    :caption: Versions

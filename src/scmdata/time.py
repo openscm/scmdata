@@ -1,3 +1,7 @@
+"""
+Time period handling and interpolation
+"""
+
 from datetime import datetime
 
 import numpy as np
@@ -173,30 +177,33 @@ class TimePoints:
 
 
 class TimeseriesConverter:
+    """
+    Interpolator used to convert data between different time bases
+
+    This is a modified version originally in :mod:`openscm.time.TimeseriesConverter`. The integral preserving interpolation was
+    removed as it is outside the scope of this package.
+
+    Parameters
+    ----------
+    source_time_points: np.ndarray
+        Source timeseries time points
+    target_time_points: np.ndarray
+        Target timeseries time points
+    interpolation_type : {"linear"}
+        Interpolation type. Options are 'linear'
+    extrapolation_type : {"linear", "constant", None}
+        Extrapolation type. Options are None, 'linear' or 'constant'
+
+    Raises
+    ------
+    InsufficientDataError
+        Timeseries too short to extrapolate
+    """
+
     def __init__(self, source_time_points: np.ndarray, target_time_points: np.ndarray,
                  interpolation_type='linear', extrapolation_type='linear'
                  ):
-        """
-        Interpolator used to convert data between different time bases
 
-        This was modified from the openscm.time.TimeseriesConverter
-
-        Parameters
-        ----------
-        source_time_points: np.ndarray
-            Source timeseries time points
-        target_time_points: np.ndarray
-            Target timeseries time points
-        interpolation_type: str
-            Interpolation type. Options are 'linear'
-        extrapolation_type: str or None
-            Extrapolation type. Options are None, 'linear' or 'constant'
-
-        Raises
-        ------
-        InsufficientDataError
-            Timeseries too short to extrapolate
-        """
         self.source = np.array(source_time_points).astype(_TARGET_TYPE, copy=True)
         self.target = np.array(target_time_points).astype(_TARGET_TYPE, copy=True)
         self.interpolation_type = interpolation_type
@@ -268,29 +275,6 @@ class TimeseriesConverter:
             source_time_points: np.ndarray,
             target_time_points: np.ndarray,
     ) -> np.ndarray:
-        """
-        Convert time period average timeseries data :obj:`values` for timeseries time
-        points :obj:`source_time_points` to the time points :obj:`target_time_points`.
-
-        Parameters
-        ----------
-        values
-            Array of data to convert
-        source_time_points
-            Source timeseries time points
-        target_time_points
-            Target timeseries time points
-
-        Raises
-        ------
-        NotImplementedError
-            The timeseries type is not recognised
-
-        Returns
-        -------
-        np.ndarray
-            Converted time period average data for timeseries :obj:`values`
-        """
         res_point = interpolate.interp1d(
             source_time_points.astype(_TARGET_TYPE),
             values,
@@ -307,13 +291,13 @@ class TimeseriesConverter:
 
         Parameters
         ----------
-        values
+        values: np.ndarray
             Value
 
         Returns
         -------
         np.ndarray
-            Converted array
+            Converted data for timeseries :obj:`values` into the target timebase
         """
         return self._convert(values, self.source, self.target)
 
@@ -324,12 +308,12 @@ class TimeseriesConverter:
 
         Parameters
         ----------
-        values
+        values: np.ndarray
             Value
 
         Returns
         -------
         np.ndarray
-            Converted array
+            Converted data for timeseries :obj:`values` into the source timebase
         """
         return self._convert(values, self.target, self.source)
