@@ -391,6 +391,10 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
     def _add_transformations_to_context(
         context, base_unit, base_unit_ureg, other_unit, other_unit_ureg, conv_val
     ):
+        """
+        Add all the transformations between units (mass x unit per time, mass x unit
+        etc. to a context for the two given units)
+        """
 
         def _get_transform_func(forward=True):
             if forward:
