@@ -3,15 +3,12 @@ import re
 import numpy as np
 import pytest
 
-from scmdata.time import TimeseriesConverter, InsufficientDataError
+from scmdata.time import InsufficientDataError, TimeseriesConverter
 
 
 def test_short_data(combo):
     timeseriesconverter = TimeseriesConverter(
-        combo.source,
-        combo.target,
-        combo.interpolation_type,
-        combo.extrapolation_type,
+        combo.source, combo.target, combo.interpolation_type, combo.extrapolation_type,
     )
     for a in [[], [0], [0, 1]]:
         with pytest.raises(InsufficientDataError):
@@ -28,10 +25,7 @@ def test_none_extrapolation_error(combo):
         dtype=np.datetime64,
     )
     timeseriesconverter = TimeseriesConverter(
-        combo.source,
-        target,
-        combo.interpolation_type,
-        None
+        combo.source, target, combo.interpolation_type, None
     )
     error_msg = re.escape(
         "Target time points are outside the source time points, use an "
@@ -50,7 +44,7 @@ def test_really_long_timespan():
         ],
         dtype=np.datetime64,
     )
-    source_vals = [1., 2.0, 3.5]
+    source_vals = [1.0, 2.0, 3.5]
     target = np.asarray(
         [
             np.datetime64("1000-01-01"),
@@ -59,11 +53,8 @@ def test_really_long_timespan():
         ],
         dtype=np.datetime64,
     )
-    target_vals = [1., 2., 3.]
-    c = TimeseriesConverter(
-        source,
-        target,
-    )
+    target_vals = [1.0, 2.0, 3.0]
+    c = TimeseriesConverter(source, target,)
 
     np.testing.assert_allclose(c.convert_to(target_vals), source_vals, rtol=1e-3)
     np.testing.assert_allclose(c.convert_from(source_vals), target_vals, rtol=1e-3)

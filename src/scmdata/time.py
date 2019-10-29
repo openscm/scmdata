@@ -16,6 +16,7 @@ class InsufficientDataError(Exception):
     """
     Insufficient data is available to interpolate
     """
+
     pass
 
 
@@ -26,9 +27,7 @@ def _float_year_to_datetime(inp: float) -> np.datetime64:
         year - 1970, "Y"
     ) + np.timedelta64(  # pylint: disable=too-many-function-args
         int(
-            (
-                    datetime(year + 1, 1, 1) - datetime(year, 1, 1)
-            ).total_seconds()
+            (datetime(year + 1, 1, 1) - datetime(year, 1, 1)).total_seconds()
             * fractional_part
         ),
         "s",
@@ -200,9 +199,13 @@ class TimeseriesConverter:
         Timeseries too short to extrapolate
     """
 
-    def __init__(self, source_time_points: np.ndarray, target_time_points: np.ndarray,
-                 interpolation_type='linear', extrapolation_type='linear'
-                 ):
+    def __init__(
+        self,
+        source_time_points: np.ndarray,
+        target_time_points: np.ndarray,
+        interpolation_type="linear",
+        extrapolation_type="linear",
+    ):
 
         self.source = np.array(source_time_points).astype(_TARGET_TYPE, copy=True)
         self.target = np.array(target_time_points).astype(_TARGET_TYPE, copy=True)
@@ -213,24 +216,24 @@ class TimeseriesConverter:
             raise InsufficientDataError
 
     def _get_scipy_extrapolation_args(self, values: np.ndarray):
-        if self.extrapolation_type == 'linear':
+        if self.extrapolation_type == "linear":
             return {"fill_value": "extrapolate"}
-        if self.extrapolation_type == 'constant':
+        if self.extrapolation_type == "constant":
             return {"fill_value": (values[0], values[-1]), "bounds_error": False}
         # TODO: add cubic support
         return {}
 
     def _get_scipy_interpolation_arg(self) -> str:
-        if self.interpolation_type == 'linear':
+        if self.interpolation_type == "linear":
             return "linear"
         # TODO: add cubic support
         raise NotImplementedError
 
     def _convert(
-            self,
-            values: np.ndarray,
-            source_time_points: np.ndarray,
-            target_time_points: np.ndarray,
+        self,
+        values: np.ndarray,
+        source_time_points: np.ndarray,
+        target_time_points: np.ndarray,
     ) -> np.ndarray:
         """
         Wrap :func:`_convert_unsafe` to provide proper error handling.
@@ -270,10 +273,10 @@ class TimeseriesConverter:
             raise InsufficientDataError(error_msg)
 
     def _convert_unsafe(
-            self,
-            values: np.ndarray,
-            source_time_points: np.ndarray,
-            target_time_points: np.ndarray,
+        self,
+        values: np.ndarray,
+        source_time_points: np.ndarray,
+        target_time_points: np.ndarray,
     ) -> np.ndarray:
         res_point = interpolate.interp1d(
             source_time_points.astype(_TARGET_TYPE),

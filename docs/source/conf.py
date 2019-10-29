@@ -47,7 +47,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",  # pass numpy style docstrings
-    #"sphinx_click.ext",
+    # "sphinx_click.ext",
 ]
 
 autodoc_default_flags = [

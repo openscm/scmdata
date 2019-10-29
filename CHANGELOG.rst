@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#6 <https://github.com/lewisjared/scmdata/pull/6>`_) Add auto-formatting
+
 v0.1.1
 ------
 

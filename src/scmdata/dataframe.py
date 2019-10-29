@@ -18,19 +18,19 @@ import numpy as np
 import pandas as pd
 from dateutil import parser
 
-from .time import TimePoints, TimeseriesConverter
-from .units import UnitConverter
 from .filters import (
+    HIERARCHY_SEPARATOR,
     datetime_match,
     day_match,
     hour_match,
     month_match,
     pattern_match,
     years_match,
-    HIERARCHY_SEPARATOR
 )
 from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
+from .time import TimePoints, TimeseriesConverter
+from .units import UnitConverter
 
 _logger = getLogger(__name__)
 
@@ -295,7 +295,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         ],
         index: Any = None,
         columns: Optional[Dict[str, list]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """
         Initialize.
@@ -505,7 +505,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         keep: bool = True,
         inplace: bool = False,
         has_nan: bool = True,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Optional[ScmDataFrame]:
         """
         Return a filtered ScmDataFrame (i.e., a subset of the data).
@@ -851,8 +851,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
     def interpolate(
         self,
         target_times: Union[np.ndarray, List[Union[datetime.datetime, int]]],
-        interpolation_type: str = 'linear',
-        extrapolation_type: str = 'linear'
+        interpolation_type: str = "linear",
+        extrapolation_type: str = "linear",
     ) -> ScmDataFrame:
         """
         Interpolate the dataframe onto a new time frame.
@@ -894,7 +894,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             time_points,
             target_times,
             interpolation_type=interpolation_type,
-            extrapolation_type=extrapolation_type
+            extrapolation_type=extrapolation_type,
         )
 
         res._data = old_data.apply(  # pylint: disable=protected-access
@@ -1076,7 +1076,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         unit: str,
         context: Optional[str] = None,
         inplace: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Optional[ScmDataFrame]:
         """
         Convert the units of a selection of timeseries.
@@ -1180,7 +1180,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         ],
         inplace: bool = False,
         duplicate_msg: Union[str, bool] = "warn",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Optional[ScmDataFrame]:
         """
         Append additional data to the current dataframe.
@@ -1280,7 +1280,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         self,
         index: Union[str, List[str]],
         columns: Union[str, List[str]],
-        **kwargs: Any
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         Pivot the underlying data series.
@@ -1339,9 +1339,7 @@ def df_append(
     ValueError
         :obj:`duplicate_msg` option is not recognised.
     """
-    scm_dfs = [
-        df if isinstance(df, ScmDataFrame) else ScmDataFrame(df) for df in dfs
-    ]
+    scm_dfs = [df if isinstance(df, ScmDataFrame) else ScmDataFrame(df) for df in dfs]
     joint_dfs = [d.copy() for d in scm_dfs]
     joint_meta = []  # type: List[str]
     for df in joint_dfs:
