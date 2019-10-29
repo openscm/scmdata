@@ -22,8 +22,17 @@ export PRINT_HELP_PYSCRIPT
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
+.PHONY: test-all
+test-all:  ## run the testsuite and test the notebooks
+	make test
+	make test-notebooks
+
 test:  $(VENV_DIR) ## run the full testsuite
 	$(VENV_DIR)/bin/pytest --cov -r a --cov-report term-missing
+
+.PHONY: test-notebooks
+test-notebooks: $(VENV_DIR)  ## test the notebooks
+	$(VENV_DIR)/bin/pytest -r a --nbval $(NOTEBOOKS_DIR) --sanitize $(NOTEBOOKS_SANITIZE_FILE)
 
 .PHONY: format
 format:  ## re-format files
