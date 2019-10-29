@@ -311,12 +311,7 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
         """
         _ch4_context = pint.Context("CH4_conversions")
         _ch4_context = self._add_transformations_to_context(
-            _ch4_context,
-            "[methane]",
-            self.CH4,
-            "[carbon]",
-            self.C,
-            12 / 16,
+            _ch4_context, "[methane]", self.CH4, "[carbon]", self.C, 12 / 16,
         )
         self.add_context(_ch4_context)
 
@@ -377,12 +372,7 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
                 )
 
                 tc = self._add_transformations_to_context(
-                    tc,
-                    base_unit,
-                    base_unit_ureg,
-                    "[carbon]",
-                    other_unit_ureg,
-                    conv_val
+                    tc, base_unit, base_unit_ureg, "[carbon]", other_unit_ureg, conv_val
                 )
 
             self.add_context(tc)
@@ -409,18 +399,12 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
 
             return result_backward
 
+        context.add_transformation(base_unit, other_unit, _get_transform_func())
         context.add_transformation(
-            base_unit, other_unit, _get_transform_func()
+            other_unit, base_unit, _get_transform_func(forward=False),
         )
         context.add_transformation(
-            other_unit,
-            base_unit,
-            _get_transform_func(forward=False),
-        )
-        context.add_transformation(
-            "{}".format(base_unit),
-            "{}".format(other_unit),
-            _get_transform_func(),
+            "{}".format(base_unit), "{}".format(other_unit), _get_transform_func(),
         )
         context.add_transformation(
             "{}".format(other_unit),
