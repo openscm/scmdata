@@ -386,61 +386,36 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
         etc. to a context for the two given units)
         """
 
-        def _get_transform_func(forward=True):
+        def _get_transform_func(forward):
             if forward:
 
-                def result_forward(ur, strt):
+                def result_forward(_, strt):
                     return strt * other_unit_ureg / base_unit_ureg * conv_val
 
                 return result_forward
 
-            def result_backward(ur, strt):
-                return strt * base_unit_ureg / other_unit_ureg / conv_val
+            def result_backward(_, strt):
+                return strt * (base_unit_ureg / other_unit_ureg) / conv_val
 
             return result_backward
 
-        context.add_transformation(base_unit, other_unit, _get_transform_func())
-        context.add_transformation(
-            other_unit, base_unit, _get_transform_func(forward=False),
-        )
-        context.add_transformation(
-            "{}".format(base_unit), "{}".format(other_unit), _get_transform_func(),
-        )
-        context.add_transformation(
-            "{}".format(other_unit),
-            "{}".format(base_unit),
-            _get_transform_func(forward=False),
-        )
-        context.add_transformation(
-            "[mass] * {} / [time]".format(base_unit),
-            "[mass] * {} / [time]".format(other_unit),
-            _get_transform_func(),
-        )
-        context.add_transformation(
-            "[mass] * {} / [time]".format(other_unit),
-            "[mass] * {} / [time]".format(base_unit),
-            _get_transform_func(forward=False),
-        )
-        context.add_transformation(
-            "[mass] * {}".format(base_unit),
-            "[mass] * {}".format(other_unit),
-            _get_transform_func(),
-        )
-        context.add_transformation(
-            "[mass] * {}".format(other_unit),
-            "[mass] * {}".format(base_unit),
-            _get_transform_func(forward=False),
-        )
-        context.add_transformation(
-            "{} / [time]".format(base_unit),
-            "{} / [time]".format(other_unit),
-            _get_transform_func(),
-        )
-        context.add_transformation(
-            "{} / [time]".format(other_unit),
-            "{} / [time]".format(base_unit),
-            _get_transform_func(forward=False),
-        )
+        formatters = [
+            "{}",
+            "[mass] * {} / [time]",
+            "[mass] * {}",
+            "{} / [time]",
+        ]
+        for fmt_str in formatters:
+            context.add_transformation(
+                fmt_str.format(base_unit),
+                fmt_str.format(other_unit),
+                _get_transform_func(forward=True),
+            )
+            context.add_transformation(
+                fmt_str.format(other_unit),
+                fmt_str.format(base_unit),
+                _get_transform_func(forward=False),
+            )
 
         return context
 
