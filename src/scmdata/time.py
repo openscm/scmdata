@@ -189,7 +189,7 @@ class TimeseriesConverter:
         Source timeseries time points
     target_time_points: np.ndarray
         Target timeseries time points
-    interpolation_type: str
+    interpolation_type : {"linear"}
         Interpolation type. Options are 'linear'
     extrapolation_type : {"linear", "constant", None}
         Extrapolation type. Options are None, 'linear' or 'constant'
