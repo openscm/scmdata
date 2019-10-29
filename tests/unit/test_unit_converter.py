@@ -2,12 +2,12 @@ import warnings
 
 import numpy as np
 import pytest
-
-from scmdata.units import UnitConverter, _unit_registry
 from pint.errors import (  # noqa: F401 # pylint: disable=unused-import
     DimensionalityError,
     UndefinedUnitError,
 )
+
+from scmdata.units import UnitConverter, _unit_registry
 
 
 def test_conversion_without_offset():

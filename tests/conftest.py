@@ -310,7 +310,7 @@ append_scm_df_pairs = [
             columns={
                 "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
                 "variable": append_scm_df_pairs_vars
-                            + ["Primary Energy|Coal", "Primary Energy"],
+                + ["Primary Energy|Coal", "Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
         ),
@@ -347,7 +347,7 @@ append_scm_df_pairs = [
             columns={
                 "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
                 "variable": append_scm_df_pairs_vars
-                            + ["Primary Energy|Coal", "Primary Energy"],
+                + ["Primary Energy|Coal", "Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
         ),
@@ -405,8 +405,8 @@ possible_target_values = [  # TODO: Use years here after create_time_points has 
         target_period_length=np.timedelta64(5, "D"),
         source_values=possible_source_values[0],
         target_values=[-1, 1, 3, 5, 4, 3, 4, 5, 6, 7, 5, 3, 2.5, 2, 5.5, 9, 12.5],
-        interpolation_type='linear',
-        extrapolation_type='linear',
+        interpolation_type="linear",
+        extrapolation_type="linear",
     ),
     dict(
         source_start_time=np.datetime64("2000-01-01"),
@@ -415,18 +415,16 @@ possible_target_values = [  # TODO: Use years here after create_time_points has 
         target_period_length=np.timedelta64(50, "D"),
         source_values=possible_source_values[0],
         target_values=[1, 1, 3, 9],
-        interpolation_type='linear',
-        extrapolation_type='constant',
-    )
+        interpolation_type="linear",
+        extrapolation_type="constant",
+    ),
 ]
 
 test_combinations = []
 
 
 def create_time_points(
-        start_time: np.datetime64,
-        period_length: np.timedelta64,
-        points_num: int
+    start_time: np.datetime64, period_length: np.timedelta64, points_num: int
 ):
     end_time_output = start_time + (points_num - 1) * period_length
     return np.linspace(

@@ -110,7 +110,6 @@ from typing import Dict, Optional, Sequence, Union
 import numpy as np
 import pint
 
-
 # Standard gases. If the value is:
 # - str: this entry defines a base gas unit
 # - list: this entry defines a derived unit
@@ -356,9 +355,7 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
 
         metric_conversions = pd.read_csv(
             path.join(
-                path.dirname(path.abspath(__file__)),
-                "data",
-                "metric_conversions.csv",
+                path.dirname(path.abspath(__file__)), "data", "metric_conversions.csv",
             ),
             skiprows=1,  # skip source row
             header=0,

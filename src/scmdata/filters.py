@@ -12,7 +12,7 @@ from typing import Iterable, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-HIERARCHY_SEPARATOR = '|'
+HIERARCHY_SEPARATOR = "|"
 
 
 def is_in(vals: List, items: List) -> np.ndarray:
@@ -38,10 +38,10 @@ def is_in(vals: List, items: List) -> np.ndarray:
 
 
 def find_depth(
-        meta_col: pd.Series,
-        s: str,
-        level: Union[int, str],
-        separator: str = HIERARCHY_SEPARATOR,
+    meta_col: pd.Series,
+    s: str,
+    level: Union[int, str],
+    separator: str = HIERARCHY_SEPARATOR,
 ) -> np.ndarray:
     """
     Find all values which match given depth from a filter keyword.
@@ -105,12 +105,12 @@ def find_depth(
 
 
 def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
-        meta_col: pd.Series,
-        values: Union[Iterable[str], str],
-        level: Optional[Union[str, int]] = None,
-        regexp: bool = False,
-        has_nan: bool = True,
-        separator: str = HIERARCHY_SEPARATOR,
+    meta_col: pd.Series,
+    values: Union[Iterable[str], str],
+    level: Optional[Union[str, int]] = None,
+    regexp: bool = False,
+    has_nan: bool = True,
+    separator: str = HIERARCHY_SEPARATOR,
 ) -> np.ndarray:
     """
     Filter data by matching metadata columns to given patterns.
@@ -170,15 +170,15 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     for s in _values:
         if isinstance(s, str):
             _regexp = (
-                          str(s)
-                              .replace("|", "\\|")
-                              .replace(".", r"\.")  # `.` has to be replaced before `*`
-                              .replace("*", ".*")
-                              .replace("+", r"\+")
-                              .replace("(", r"\(")
-                              .replace(")", r"\)")
-                              .replace("$", "\\$")
-                      ) + "$"
+                str(s)
+                .replace("|", "\\|")
+                .replace(".", r"\.")  # `.` has to be replaced before `*`
+                .replace("*", ".*")
+                .replace("+", r"\+")
+                .replace("(", r"\(")
+                .replace(")", r"\)")
+                .replace("$", "\\$")
+            ) + "$"
             pattern = re.compile(_regexp if not regexp else str(s))
             try:
                 subset = [m for m in _meta_col if pattern.match(m)]
@@ -242,7 +242,7 @@ def years_match(data: List, years: Union[List[int], int]) -> np.ndarray:
 
 
 def month_match(
-        data: List, months: Union[List[str], List[int], int, str]
+    data: List, months: Union[List[str], List[int], int, str]
 ) -> np.ndarray:
     """
     Match months in time columns for data filtering.
@@ -305,11 +305,11 @@ def hour_match(data: List, hours: Union[List[int], int]) -> np.ndarray:
 
 
 def time_match(
-        data: List,
-        times: Union[List[str], List[int], int, str],
-        conv_codes: List[str],
-        strptime_attr: str,
-        name: str,
+    data: List,
+    times: Union[List[str], List[int], int, str],
+    conv_codes: List[str],
+    strptime_attr: str,
+    name: str,
 ) -> np.ndarray:
     """
     Match times by applying conversion codes to filtering list.
@@ -395,7 +395,7 @@ def time_match(
 
 
 def datetime_match(
-        data: List, dts: Union[List[datetime.datetime], datetime.datetime]
+    data: List, dts: Union[List[datetime.datetime], datetime.datetime]
 ) -> np.ndarray:
     """
     Match datetimes in time columns for data filtering.

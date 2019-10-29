@@ -14,9 +14,7 @@ PROJECT_URLS = {
     "Documentation": "https://scmdata.readthedocs.io/en/latest",
     "Source": "https://github.com/lewisjared/scmdata",
 }
-DESCRIPTION = (
-    "Simple data handling for Simple Climate Model data"
-)
+DESCRIPTION = "Simple data handling for Simple Climate Model data"
 README = "README.rst"
 
 SOURCE_DIR = "src"

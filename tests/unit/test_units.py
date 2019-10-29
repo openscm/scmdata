@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
-from pint.errors import (
-    DimensionalityError,
-)
+from pint.errors import DimensionalityError
 
 from scmdata.units import _unit_registry
 
@@ -126,24 +124,24 @@ def test_context_dimensionality_error():
 @pytest.mark.parametrize(
     "metric_name,species,conversion",
     (
-            ["AR4GWP100", "CH4", 25],
-            ["AR4GWP100", "N2O", 298],
-            ["AR4GWP100", "CCl4", 1400],
-            ["AR4GWP100", "HFC32", 675],
-            ["AR4GWP100", "SF6", 22800],
-            ["AR4GWP100", "C2F6", 12200],
-            ["AR4GWP100", "HCFC142b", 2310],
-            ["AR4GWP100", "HFC32", 675],
-            ["AR4GWP100", "cC4F8", 10300],
-            ["AR4GWP100", "cC4F8", 10300],
-            ["AR4GWP100", "HFE356pcc3", 413],
-            ["AR4GWP100", "CH2Cl2", 8.7],
-            ["SARGWP100", "CH4", 21],
-            ["SARGWP100", "N2O", 310],
-            ["SARGWP100", "HFC32", 650],
-            ["SARGWP100", "SF6", 23900],
-            ["SARGWP100", "CF4", 6500],
-            ["SARGWP100", "C2F6", 9200],
+        ["AR4GWP100", "CH4", 25],
+        ["AR4GWP100", "N2O", 298],
+        ["AR4GWP100", "CCl4", 1400],
+        ["AR4GWP100", "HFC32", 675],
+        ["AR4GWP100", "SF6", 22800],
+        ["AR4GWP100", "C2F6", 12200],
+        ["AR4GWP100", "HCFC142b", 2310],
+        ["AR4GWP100", "HFC32", 675],
+        ["AR4GWP100", "cC4F8", 10300],
+        ["AR4GWP100", "cC4F8", 10300],
+        ["AR4GWP100", "HFE356pcc3", 413],
+        ["AR4GWP100", "CH2Cl2", 8.7],
+        ["SARGWP100", "CH4", 21],
+        ["SARGWP100", "N2O", 310],
+        ["SARGWP100", "HFC32", 650],
+        ["SARGWP100", "SF6", 23900],
+        ["SARGWP100", "CF4", 6500],
+        ["SARGWP100", "C2F6", 9200],
     ),
 )
 def test_metric_conversion(metric_name, species, conversion):
