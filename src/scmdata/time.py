@@ -191,7 +191,7 @@ class TimeseriesConverter:
         Target timeseries time points
     interpolation_type: str
         Interpolation type. Options are 'linear'
-    extrapolation_type: str or None
+    extrapolation_type : {"linear", "constant", None}
         Extrapolation type. Options are None, 'linear' or 'constant'
 
     Raises
