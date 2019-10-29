@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.1.2
+------
+
 - (`#7 <https://github.com/lewisjared/scmdata/pull/7>`_) Add notebook tests
 - (`#4 <https://github.com/lewisjared/scmdata/pull/4>`_) Unit conversions for CH4 and N2O contexts now work for compound units (e.g. 'Mt CH4 / yr' to 'Gt C / day')
 - (`#6 <https://github.com/lewisjared/scmdata/pull/6>`_) Add auto-formatting
