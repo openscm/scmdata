@@ -452,7 +452,6 @@ SCMData standard unit registry
 The unit registry contains all of the recognised units.
 """
 _unit_registry.add_standards()
-_unit_registry.enable_contexts()
 
 
 class UnitConverter:
