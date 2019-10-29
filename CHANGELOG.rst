@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.1.1
+------
+
 - (`#5 <https://github.com/lewisjared/scmdata/pull/5>`_) Add ``scmdata.dataframe.df_append`` to ``__init__.py``
 
 v0.1.0
