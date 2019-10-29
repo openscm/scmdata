@@ -127,7 +127,7 @@ _standard_gases = {
     "NOx": "NOx",
     "nox": ["NOx"],
     "NH3": ["14/17 * N", "ammonia"],
-    "S": ["sulfur"],
+    "S": "sulfur",
     "SO2": ["32/64 * S", "sulfur_dioxide"],
     "SOx": ["SO2"],
     "BC": "black_carbon",
@@ -310,35 +310,19 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
         Load contexts.
         """
         _ch4_context = pint.Context("CH4_conversions")
-        _ch4_context.add_transformation(
-            "[carbon]",
-            "[methane]",
-            lambda registry, x: 16 / 12 * registry.CH4 * x / registry.C,
-        )
-        _ch4_context.add_transformation(
-            "[methane]",
-            "[carbon]",
-            lambda registry, x: x * registry.C / registry.CH4 / (16 / 12),
+        _ch4_context = self._add_transformations_to_context(
+            _ch4_context, "[methane]", self.CH4, "[carbon]", self.C, 12 / 16,
         )
         self.add_context(_ch4_context)
 
         _n2o_context = pint.Context("NOx_conversions")
-        _n2o_context.add_transformation(
+        _n2o_context = self._add_transformations_to_context(
+            _n2o_context,
             "[nitrogen]",
+            self.nitrogen,
             "[NOx]",
-            lambda registry, x: (14 + 2 * 16)
-            / 14
-            * registry.NOx
-            * x
-            / registry.nitrogen,
-        )
-        _n2o_context.add_transformation(
-            "[NOx]",
-            "[nitrogen]",
-            lambda registry, x: x
-            * registry.nitrogen
-            / registry.NOx
-            / ((14 + 2 * 16) / 14),
+            self.NOx,
+            (14 + 2 * 16) / 14,
         )
         self.add_context(_n2o_context)
 
@@ -364,18 +348,7 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
             1:, :
         ]  # drop out 'SCMData base unit' row
 
-        def _get_transform_func(ureg_unit, conversion_factor, forward=True):
-            if forward:
-
-                def result_forward(ur, strt):
-                    return strt * ur.carbon / ureg_unit * conversion_factor
-
-                return result_forward
-
-            def result_backward(ur, strt):
-                return strt * ureg_unit / ur.carbon / conversion_factor
-
-            return result_backward
+        other_unit_ureg = self.carbon
 
         for col in metric_conversions:
             tc = pint.Context(col)
@@ -394,49 +367,57 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
                     ).items()
                 ][0]
 
-                unit_reg_unit = getattr(
+                base_unit_ureg = getattr(
                     self, base_unit.replace("[", "").replace("]", "")
                 )
-                tc.add_transformation(
-                    base_unit, "[carbon]", _get_transform_func(unit_reg_unit, conv_val)
-                )
-                tc.add_transformation(
-                    "[carbon]",
-                    base_unit,
-                    _get_transform_func(unit_reg_unit, conv_val, forward=False),
-                )
-                tc.add_transformation(
-                    "[mass] * {} / [time]".format(base_unit),
-                    "[mass] * [carbon] / [time]",
-                    _get_transform_func(unit_reg_unit, conv_val),
-                )
-                tc.add_transformation(
-                    "[mass] * [carbon] / [time]",
-                    "[mass] * {} / [time]".format(base_unit),
-                    _get_transform_func(unit_reg_unit, conv_val, forward=False),
-                )
-                tc.add_transformation(
-                    "[mass] * {}".format(base_unit),
-                    "[mass] * [carbon]",
-                    _get_transform_func(unit_reg_unit, conv_val),
-                )
-                tc.add_transformation(
-                    "[mass] * [carbon]",
-                    "[mass] * {}".format(base_unit),
-                    _get_transform_func(unit_reg_unit, conv_val, forward=False),
-                )
-                tc.add_transformation(
-                    "{} / [time]".format(base_unit),
-                    "[carbon] / [time]",
-                    _get_transform_func(unit_reg_unit, conv_val),
-                )
-                tc.add_transformation(
-                    "[carbon] / [time]",
-                    "{} / [time]".format(base_unit),
-                    _get_transform_func(unit_reg_unit, conv_val, forward=False),
+
+                tc = self._add_transformations_to_context(
+                    tc, base_unit, base_unit_ureg, "[carbon]", other_unit_ureg, conv_val
                 )
 
             self.add_context(tc)
+
+    @staticmethod
+    def _add_transformations_to_context(
+        context, base_unit, base_unit_ureg, other_unit, other_unit_ureg, conv_val
+    ):
+        """
+        Add all the transformations between units (mass x unit per time, mass x unit
+        etc. to a context for the two given units)
+        """
+
+        def _get_transform_func(forward):
+            if forward:
+
+                def result_forward(_, strt):
+                    return strt * other_unit_ureg / base_unit_ureg * conv_val
+
+                return result_forward
+
+            def result_backward(_, strt):
+                return strt * (base_unit_ureg / other_unit_ureg) / conv_val
+
+            return result_backward
+
+        formatters = [
+            "{}",
+            "[mass] * {} / [time]",
+            "[mass] * {}",
+            "{} / [time]",
+        ]
+        for fmt_str in formatters:
+            context.add_transformation(
+                fmt_str.format(base_unit),
+                fmt_str.format(other_unit),
+                _get_transform_func(forward=True),
+            )
+            context.add_transformation(
+                fmt_str.format(other_unit),
+                fmt_str.format(base_unit),
+                _get_transform_func(forward=False),
+            )
+
+        return context
 
 
 _unit_registry = ScmUnitRegistry()
