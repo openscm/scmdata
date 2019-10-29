@@ -4,6 +4,9 @@ VENV_DIR ?= ./venv
 
 FILES_TO_FORMAT_PYTHON=setup.py scripts src tests docs/source/conf.py
 
+NOTEBOOKS_DIR=./notebooks
+NOTEBOOKS_SANITIZE_FILE=$(NOTEBOOKS_DIR)/tests_sanitize.cfg
+
 define PRINT_HELP_PYSCRIPT
 import re, sys
 
