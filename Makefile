@@ -1,6 +1,7 @@
 .DEFAULT_GOAL := help
 
 VENV_DIR ?= ./venv
+DOCS_DIR ?= ./docs
 
 FILES_TO_FORMAT_PYTHON=setup.py scripts src tests docs/source/conf.py
 
@@ -55,6 +56,13 @@ black: $(VENV_DIR)  ## use black to autoformat code
 	else \
 		echo Not trying any formatting, working directory is dirty... >&2; \
 	fi;
+
+.PHONY: docs
+docs:  ## make docs
+	make $(DOCS_DIR)/build/html/index.html
+
+$(DOCS_DIR)/build/html/index.html: $(DOCS_DIR)/source/*.py $(DOCS_DIR)/source/*.rst src/scmdata/**.py README.rst CHANGELOG.rst $(VENV_DIR)
+	cd $(DOCS_DIR); make html
 
 virtual-environment:  ## update venv, create a new venv if it doesn't exist
 	make $(VENV_DIR)
