@@ -1,8 +1,6 @@
 import versioneer
-
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 from setuptools.command.test import test as TestCommand
-
 
 PACKAGE_NAME = "scmdata"
 AUTHORS = [
@@ -32,7 +30,7 @@ REQUIREMENTS_DOCS = ["sphinx>=1.4,<2.1", "sphinx_rtd_theme"]
 REQUIREMENTS_DEPLOY = ["twine>=1.11.0", "setuptools>=38.6.0", "wheel>=0.31.0"]
 
 requirements_dev = [
-    *["flake8"],
+    *["black", "flake8", "isort"],
     *REQUIREMENTS_PYAM,
     *REQUIREMENTS_TESTS,
     *REQUIREMENTS_DOCS,
