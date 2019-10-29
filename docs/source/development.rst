@@ -152,7 +152,8 @@ First step
     - this should leave the section underneath the master header empty
 
 #. ``git add .``
-#. ``git commit -m "Prepare for release of vX.Y.Z"``
+#. ``git commit -m "release(vX.Y.Z)"``
+#. ``git tag vX.Y.Z``
 #. Test version updated as intended with ``make test-install``
 
 PyPI
@@ -176,7 +177,6 @@ Push to repository
 Finally, push the tags and commit to the repository
 
 #. ``git push``
-#. ``git tag vX.Y.Z``
 #. ``git push --tags``
 
 Why is there a ``Makefile`` in a pure Python repository?

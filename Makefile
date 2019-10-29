@@ -87,3 +87,11 @@ check-pypi-distribution: $(VENV_DIR)  ## check the PyPI distribution for errors
 	else \
 		echo Working directory is dirty >&2; \
 	fi;
+
+.PHONY: test-install
+test-install: $(VENV_DIR)  ## test whether installing the local setup works
+	$(eval TEMPVENV := $(shell mktemp -d))
+	python3 -m venv $(TEMPVENV)
+	$(TEMPVENV)/bin/pip install pip --upgrade
+	$(TEMPVENV)/bin/pip install .
+	$(TEMPVENV)/bin/python scripts/test_install.py
