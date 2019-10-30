@@ -1,7 +1,7 @@
 """
 Fixtures and data for tests.
 """
-
+import datetime as dt
 from collections import namedtuple
 from contextlib import contextmanager
 from copy import deepcopy
@@ -209,6 +209,49 @@ def test_iam_df():
 def test_scm_df(request):
     if IamDataFrame is None:
         pytest.skip("pyam is not installed")
+    yield ScmDataFrame(**request.param)
+
+
+_misru = [
+    "a_model",
+    "a_iam",
+    "a_scenario",
+    "World",
+    "W / m**2",
+]
+TEST_DF_MONTHLY = pd.DataFrame(
+    [
+        _misru + ["Radiative Forcing"] + list(np.arange(45)),
+        _misru + ["Radiative Forcing|Aerosols"] + list(np.sin(np.arange(45))),
+        _misru
+        + ["Radiative Forcing|GHGs"]
+        + list(np.cos(np.arange(45)) + np.sin(np.arange(45))),
+    ],
+    columns=["climate_model", "model", "scenario", "region", "unit", "variable",]
+    + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
+)
+
+
+@pytest.fixture(
+    scope="function",
+    params=[
+        {"data": TEST_DF_MONTHLY.copy()},
+        pytest.param(
+            {"data": IamDataFrame(TEST_DF_MONTHLY.copy()).data},
+            marks=pytest.mark.skipif(
+                IamDataFrame is None, reason="pyam is not available"
+            ),
+        ),
+        pytest.param(
+            {"data": IamDataFrame(TEST_DF_MONTHLY.copy()).timeseries()},
+            marks=pytest.mark.skipif(
+                IamDataFrame is None, reason="pyam is not available"
+            ),
+        ),
+        {"data": TEST_DF_MONTHLY.copy()},
+    ],
+)
+def test_scm_df_monthly(request):
     yield ScmDataFrame(**request.param)
 
 
