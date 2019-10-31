@@ -1034,9 +1034,9 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         Parameters
         ----------
         rule : ["AC", "AS", "A"]
-            How to take the time mean. The names reflect the pandas `user guide <
-            http://pandas.pydata.org/pandas-docs/stable/user_guide/
-            timeseries.html#dateoffset-objects>`_ where they can, but only the options
+            How to take the time mean. The names reflect the pandas
+            `user guide <http://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects>`_
+            where they can, but only the options
             given above are supported. For clarity, if ``rule`` is ``'AC'``, then the
             mean is an annual mean i.e. each time point in the result is the mean of
             all values for that particular year. If ``rule`` is ``'AS'``, then the
