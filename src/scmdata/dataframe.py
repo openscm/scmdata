@@ -7,7 +7,7 @@ ensembles of model runs.
 from __future__ import annotations
 
 import copy
-import datetime
+import datetime as dt
 import os
 import re
 import warnings
@@ -178,7 +178,7 @@ def _format_wide_data(df):
     time_cols, extra_cols = False, []
     for i in cols:
         # if in wide format, check if columns are years (int) or datetime
-        if isinstance(i, datetime.datetime):
+        if isinstance(i, dt.datetime):
             time_cols = True
         else:
             try:
@@ -188,7 +188,7 @@ def _format_wide_data(df):
                 try:
                     try:
                         # most common format
-                        datetime.datetime.strptime(i, "%Y-%m-%d %H:%M:%S")
+                        dt.datetime.strptime(i, "%Y-%m-%d %H:%M:%S")
                     except ValueError:
                         # this is super slow so avoid if possible
                         parser.parse(str(i))  # if no ValueError, this is datetime
@@ -850,7 +850,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
     def interpolate(
         self,
-        target_times: Union[np.ndarray, List[Union[datetime.datetime, int]]],
+        target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
         interpolation_type: str = "linear",
         extrapolation_type: str = "linear",
     ) -> ScmDataFrame:
@@ -1023,6 +1023,80 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             orig_dts.iloc[0], orig_dts.iloc[-1], to_offset(rule)
         )
         return self.interpolate(list(target_dts), **kwargs)
+
+    def time_mean(self, rule: str) -> ScmDataFrame:
+        """
+        Take time mean of self
+
+        Note that this method will not copy the ``metadata`` attribute to the returned
+        value.
+
+        Parameters
+        ----------
+        rule : ["AC", "AS", "A"]
+            How to take the time mean. The names reflect the pandas
+            `user guide <http://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects>`_
+            where they can, but only the options
+            given above are supported. For clarity, if ``rule`` is ``'AC'``, then the
+            mean is an annual mean i.e. each time point in the result is the mean of
+            all values for that particular year. If ``rule`` is ``'AS'``, then the
+            mean is an annual mean centred on the beginning of the year i.e. each time
+            point in the result is the mean of all values from July 1st in the
+            previous year to June 30 in the given year. If ``rule`` is ``'A'``, then
+            the mean is an annual mean centred on the end of the year i.e. each time
+            point in the result is the mean of all values from July 1st of the given
+            year to June 30 in the next year.
+
+        Returns
+        -------
+        :obj:`ScmDataFrame`
+            The time mean of ``self``.
+        """
+        if rule == "AS":
+
+            def group_annual_mean_beginning_of_year(x):
+                if x.month <= 6:
+                    return x.year
+                return x.year + 1
+
+            ts_resampled = (
+                self.timeseries()
+                .T.groupby(group_annual_mean_beginning_of_year)
+                .mean()
+                .T
+            )
+            ts_resampled.columns = ts_resampled.columns.map(
+                lambda x: dt.datetime(x, 1, 1)
+            )
+            return ScmDataFrame(ts_resampled)
+
+        if rule == "AC":
+
+            def group_annual_mean(x):
+                return x.year
+
+            ts_resampled = self.timeseries().T.groupby(group_annual_mean).mean().T
+            ts_resampled.columns = ts_resampled.columns.map(
+                lambda x: dt.datetime(x, 7, 1)
+            )
+            return ScmDataFrame(ts_resampled)
+
+        if rule == "A":
+
+            def group_annual_mean_end_of_year(x):
+                if x.month >= 7:
+                    return x.year
+                return x.year - 1
+
+            ts_resampled = (
+                self.timeseries().T.groupby(group_annual_mean_end_of_year).mean().T
+            )
+            ts_resampled.columns = ts_resampled.columns.map(
+                lambda x: dt.datetime(x, 12, 31)
+            )
+            return ScmDataFrame(ts_resampled)
+
+        raise ValueError("`rule` = `{}` is not supported".format(rule))
 
     def process_over(
         self, cols: Union[str, List[str]], operation: str, **kwargs: Any
