@@ -1051,7 +1051,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         :obj:`ScmDataFrame`
             The time mean of ``self``.
         """
-        if rule == "year_beginning_of_year":
+        if rule == "AS":
 
             def group_annual_mean_beginning_of_year(x):
                 if x.month <= 6:
@@ -1069,7 +1069,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             )
             return ScmDataFrame(ts_resampled)
 
-        if rule == "year":
+        if rule == "AC":
 
             def group_annual_mean(x):
                 return x.year
@@ -1080,7 +1080,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             )
             return ScmDataFrame(ts_resampled)
 
-        if rule == "year_end_of_year":
+        if rule == "A":
 
             def group_annual_mean_end_of_year(x):
                 if x.month >= 7:
