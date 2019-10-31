@@ -1291,7 +1291,7 @@ def test_interpolate(combo_df):
 
 def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
     # should be annual mean centred on January 1st of each year
-    res = test_scm_df_monthly.time_mean("year_beginning_of_year")
+    res = test_scm_df_monthly.time_mean("AS")
 
     # test by hand
     npt.assert_allclose(
@@ -1322,7 +1322,7 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
 
 def test_time_mean_year(test_scm_df_monthly):
     # should be annual mean (using all values in that year)
-    res = test_scm_df_monthly.time_mean("year")
+    res = test_scm_df_monthly.time_mean("AC")
 
     # test by hand
     npt.assert_allclose(
@@ -1348,7 +1348,7 @@ def test_time_mean_year(test_scm_df_monthly):
 
 def test_time_mean_year_end_of_year(test_scm_df_monthly):
     # should be annual mean centred on December 31st of each year
-    res = test_scm_df_monthly.time_mean("year_end_of_year")
+    res = test_scm_df_monthly.time_mean("A")
 
     # test by hand
     npt.assert_allclose(
@@ -1378,7 +1378,7 @@ def test_time_mean_year_end_of_year(test_scm_df_monthly):
 
 
 def test_time_mean_unsupported_style(test_scm_df_monthly):
-    error_msg = re.escape("`style` = `junk` is not supported")
+    error_msg = re.escape("`rule` = `junk` is not supported")
     with pytest.raises(ValueError, match=error_msg):
         test_scm_df_monthly.time_mean("junk")
 

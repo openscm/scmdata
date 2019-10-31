@@ -536,8 +536,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             - 'level': the maximum "depth" of IAM variables (number of hierarchy levels,
               excluding the strings given in the 'variable' argument)
 
-            - 'time': takes a :class:`dt.datetime` or list of
-              :class:`dt.datetime`'s
+            - 'time': takes a :class:`datetime.datetime` or list of
+              :class:`datetime.datetime`'s
               TODO: default to np.datetime64
 
             - 'year', 'month', 'day', hour': takes an :class:`int` or list of
@@ -1024,25 +1024,34 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         )
         return self.interpolate(list(target_dts), **kwargs)
 
-    def time_mean(self, style: str) -> ScmDataFrame:
+    def time_mean(self, rule: str) -> ScmDataFrame:
         """
         Take time mean of self
-
-        TODO: decide whether this would be better as some sort of groupby operation...
 
         TODO: decide whether to keep metadata or not
 
         Parameters
         ----------
-        style : ['year', 'year_beginning_of_year', 'year_end_of_year']
-            How to take the time mean. If ``'year'``, then the mean is an annual mean i.e. each time point in the result is the mean of all values for that particular year. If ``'year_beginning_of_year'``, then the mean is an annual mean centred on the beginning of the year i.e. each time point in the result is the mean of all values from July 1st in the previous year to June 30 in the given year. If ``'year_end_of_year'``, then the mean is an annual mean centred on the end of the year i.e. each time point in the result is the mean of all values from July 1st of the given year to June 30 in the next year.
+        rule : ["AC", "AS", "A"]
+            How to take the time mean. The names reflect the pandas `user guide <
+            http://pandas.pydata.org/pandas-docs/stable/user_guide/
+            timeseries.html#dateoffset-objects>`_ where they can, but only the options
+            given above are supported. For clarity, if ``rule`` is ``'AC'``, then the
+            mean is an annual mean i.e. each time point in the result is the mean of
+            all values for that particular year. If ``rule`` is ``'AS'``, then the
+            mean is an annual mean centred on the beginning of the year i.e. each time
+            point in the result is the mean of all values from July 1st in the
+            previous year to June 30 in the given year. If ``rule`` is ``'A'``, then
+            the mean is an annual mean centred on the end of the year i.e. each time
+            point in the result is the mean of all values from July 1st of the given
+            year to June 30 in the next year.
 
         Returns
         -------
         :obj:`ScmDataFrame`
             The time mean of ``self``.
         """
-        if style == "year_beginning_of_year":
+        if rule == "year_beginning_of_year":
 
             def group_annual_mean_beginning_of_year(x):
                 if x.month <= 6:
@@ -1060,7 +1069,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             )
             return ScmDataFrame(ts_resampled)
 
-        if style == "year":
+        if rule == "year":
 
             def group_annual_mean(x):
                 return x.year
@@ -1071,7 +1080,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             )
             return ScmDataFrame(ts_resampled)
 
-        if style == "year_end_of_year":
+        if rule == "year_end_of_year":
 
             def group_annual_mean_end_of_year(x):
                 if x.month >= 7:
@@ -1086,7 +1095,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             )
             return ScmDataFrame(ts_resampled)
 
-        raise ValueError("`style` = `{}` is not supported".format(style))
+        raise ValueError("`rule` = `{}` is not supported".format(rule))
 
     def process_over(
         self, cols: Union[str, List[str]], operation: str, **kwargs: Any
