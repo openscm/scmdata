@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+- (`#9 <https://github.com/lewisjared/scmdata/pull/9>`_) Add ``time_mean`` method
+- (`#8 <https://github.com/lewisjared/scmdata/pull/8>`_) Add ``make docs`` target
+
 v0.1.2
 ------
 

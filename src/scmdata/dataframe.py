@@ -1028,7 +1028,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         """
         Take time mean of self
 
-        TODO: decide whether to keep metadata or not
+        Note that this method will not copy the ``metadata`` attribute to the returned
+        value.
 
         Parameters
         ----------
