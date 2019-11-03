@@ -229,6 +229,7 @@ _standard_gases = {
     "CH3Br": "CH3Br",
     "SF5CF3": "SF5CF3",
     "SF6": "SF6",
+    "SO2F2": "SO2F2",
     "NF3": "NF3",
 }
 
