@@ -291,12 +291,9 @@ class TimeseriesConverter:
 
         try:
             return self._convert_unsafe(values, source_time_points, target_time_points)
-        except ValueError:
-            error_msg = (
-                "Target time points are outside the source time points, use an "
-                "extrapolation type other than None"
-            )
-            raise InsufficientDataError(error_msg)
+        except Exception:  # pragma: no cover # emergency valve
+            print("numpy interpolation failed...")
+            raise
 
     def _convert_unsafe(
         self,
