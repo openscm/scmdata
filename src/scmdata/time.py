@@ -222,12 +222,14 @@ class TimeseriesConverter:
     def points_are_compatible(self, source: np.ndarray, target: np.ndarray) -> bool:
         """
         Are the two sets of time points compatible i.e. can I convert between the two?
+
         Parameters
         ----------
         source
             Source timeseries time points
         target
             Target timeseries time points
+
         Returns
         -------
         bool

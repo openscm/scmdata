@@ -30,9 +30,7 @@ def test_none_extrapolation_error(combo):
         "extrapolation type other than None"
     )
     with pytest.raises(InsufficientDataError, match=error_msg):
-        TimeseriesConverter(
-            combo.source, target, combo.interpolation_type, None
-        )
+        TimeseriesConverter(combo.source, target, combo.interpolation_type, None)
 
 
 def test_really_long_timespan():
