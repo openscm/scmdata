@@ -2,9 +2,7 @@ import copy
 import datetime as dt
 import os
 import re
-import sys
 import warnings
-from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -21,7 +19,7 @@ def test_init_df_year_converted_to_datetime(test_pd_df):
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
         res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1),]
+        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
 
 
@@ -85,7 +83,7 @@ def test_init_df_formats(test_pd_df, in_format):
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
         res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1),]
+        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
 
     res_df = res.timeseries()
@@ -253,7 +251,7 @@ def test_init_with_years_as_str(test_pd_df, years):
 
     obs = df._data.index
     exp = pd.Index(
-        [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1),],
+        [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)],
         name="time",
         dtype="object",
     )

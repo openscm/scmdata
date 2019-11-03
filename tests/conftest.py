@@ -16,7 +16,7 @@ from scmdata import ScmDataFrame
 
 try:
     from pyam import IamDataFrame
-except ImportError as e:
+except ImportError:
     IamDataFrame = None
 
 TEST_DATA = join(dirname(abspath(__file__)), "test_data")
@@ -227,7 +227,7 @@ TEST_DF_MONTHLY = pd.DataFrame(
         + ["Radiative Forcing|GHGs"]
         + list(np.cos(np.arange(45)) + np.sin(np.arange(45))),
     ],
-    columns=["climate_model", "model", "scenario", "region", "unit", "variable",]
+    columns=["climate_model", "model", "scenario", "region", "unit", "variable"]
     + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
 )
 
