@@ -14,7 +14,7 @@ _TARGET_TYPE = np.int64
 
 class InsufficientDataError(Exception):
     """
-    Insufficient data is available to interpolate
+    Insufficient data is available to interpolate/extrapolate
     """
 
     pass
