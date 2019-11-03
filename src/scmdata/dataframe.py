@@ -9,7 +9,6 @@ from __future__ import annotations
 import copy
 import datetime as dt
 import os
-import re
 import warnings
 from logging import getLogger
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union

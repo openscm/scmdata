@@ -1,4 +1,4 @@
-from scmdata.dataframe import ScmDataFrame, df_append
+from scmdata.dataframe import ScmDataFrame, df_append  # noqa: F401
 
 from ._version import get_versions
 

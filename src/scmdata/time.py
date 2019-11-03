@@ -14,7 +14,7 @@ _TARGET_TYPE = np.int64
 
 class InsufficientDataError(Exception):
     """
-    Insufficient data is available to interpolate
+    Insufficient data is available to interpolate/extrapolate
     """
 
     pass
@@ -212,8 +212,34 @@ class TimeseriesConverter:
         self.interpolation_type = interpolation_type
         self.extrapolation_type = extrapolation_type
 
-        if self.source[0] > self.target[1]:  # TODO: consider extrapolation type
-            raise InsufficientDataError
+        if not self.points_are_compatible(self.source, self.target):
+            error_msg = (
+                "Target time points are outside the source time points, use an "
+                "extrapolation type other than None"
+            )
+            raise InsufficientDataError(error_msg)
+
+    def points_are_compatible(self, source: np.ndarray, target: np.ndarray) -> bool:
+        """
+        Are the two sets of time points compatible i.e. can I convert between the two?
+
+        Parameters
+        ----------
+        source
+            Source timeseries time points
+        target
+            Target timeseries time points
+
+        Returns
+        -------
+        bool
+            Can I convert between the time points?
+        """
+        if self.extrapolation_type is None:
+            if source[0] > target[0] or source[-1] < target[-1]:
+                return False
+
+        return True
 
     def _get_scipy_extrapolation_args(self, values: np.ndarray):
         if self.extrapolation_type == "linear":
@@ -265,12 +291,9 @@ class TimeseriesConverter:
 
         try:
             return self._convert_unsafe(values, source_time_points, target_time_points)
-        except ValueError:
-            error_msg = (
-                "Target time points are outside the source time points, use an "
-                "extrapolation type other than None"
-            )
-            raise InsufficientDataError(error_msg)
+        except Exception:  # pragma: no cover # emergency valve
+            print("numpy interpolation failed...")
+            raise
 
     def _convert_unsafe(
         self,

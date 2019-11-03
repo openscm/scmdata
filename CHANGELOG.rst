@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#10 <https://github.com/lewisjared/scmdata/pull/10>`_) Fix extrapolation bug which prevented any extrapolation from occuring
+
 v0.2.0
 ------
 
