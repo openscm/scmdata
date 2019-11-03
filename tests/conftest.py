@@ -440,7 +440,7 @@ def rcp26():
 
 possible_source_values = [[1, 5, 3, 5, 7, 3, 2, 9]]
 
-possible_target_values = [  # TODO: Use years here after create_time_points has been fixed
+possible_target_values = [
     dict(
         source_start_time=np.datetime64("2000-01-01"),
         source_period_length=np.timedelta64(10, "D"),
@@ -467,7 +467,7 @@ possible_target_values = [  # TODO: Use years here after create_time_points has 
         target_start_time=np.datetime64("2000-01-01"),
         target_period_length=np.timedelta64(4, "D"),
         source_values=possible_source_values[0],
-        target_values=[-5.0, 0.33333333, 4.58333333, 3.75, 6.66666667],
+        target_values=[-5.666667, -0.333333, 5.0, 3.666667, 6.333333],
         interpolation_type="linear",
         extrapolation_type="linear",
     ),

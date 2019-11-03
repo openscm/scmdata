@@ -1278,10 +1278,10 @@ def test_append_inplace_preexisinting_nan(test_scm_df):
 
 def test_interpolate(combo_df):
     combo, df = combo_df
-    target = combo.target
+    target_time_points = combo.target
 
     res = df.interpolate(
-        target,
+        target_time_points,
         interpolation_type=combo.interpolation_type,
         extrapolation_type=combo.extrapolation_type,
     )

@@ -24,15 +24,15 @@ def test_none_extrapolation_error(combo):
         ],
         dtype=np.datetime64,
     )
-    timeseriesconverter = TimeseriesConverter(
-        combo.source, target, combo.interpolation_type, None
-    )
+
     error_msg = re.escape(
         "Target time points are outside the source time points, use an "
         "extrapolation type other than None"
     )
     with pytest.raises(InsufficientDataError, match=error_msg):
-        timeseriesconverter._convert(combo.source_values, combo.source, target)
+        TimeseriesConverter(
+            combo.source, target, combo.interpolation_type, None
+        )
 
 
 def test_really_long_timespan():
