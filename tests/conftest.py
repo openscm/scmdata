@@ -461,6 +461,16 @@ possible_target_values = [  # TODO: Use years here after create_time_points has 
         interpolation_type="linear",
         extrapolation_type="constant",
     ),
+    dict(
+        source_start_time=np.datetime64("2000-01-06"),
+        source_period_length=np.timedelta64(3, "D"),
+        target_start_time=np.datetime64("2000-01-01"),
+        target_period_length=np.timedelta64(4, "D"),
+        source_values=possible_source_values[0],
+        target_values=[-5.0, 0.33333333, 4.58333333, 3.75, 6.66666667],
+        interpolation_type="linear",
+        extrapolation_type="linear",
+    ),
 ]
 
 test_combinations = []
