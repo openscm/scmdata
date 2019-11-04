@@ -59,18 +59,24 @@ def test_month_start():
     assert res.day == 1
 
 
-def test_generate_range():
+@pytest.mark.parametrize("start,end", (
+    [datetime(2000, 2, 12), datetime(2001, 2, 12)],
+    [datetime(2000, 2, 12), datetime(3001, 2, 12)],
+    [datetime(1000, 2, 12), datetime(2001, 2, 12)],
+))
+def test_generate_range(start, end):
     offset = to_offset("AS")
-    start = datetime(2000, 2, 12)
-    end = datetime(2001, 2, 12)
+    start = start
+    end = end
 
     res = generate_range(start, end, offset)
     assert isinstance(res, GeneratorType)
 
     dts = list(res)
-    assert dts[0] == datetime(2000, 1, 1)
-    assert dts[1] == datetime(2001, 1, 1)
-    assert dts[2] == datetime(2002, 1, 1)
+
+    exp = [datetime(y, 1, 1) for y in range(start.year, end.year + 2)]
+
+    assert dts == exp
 
 
 @pytest.mark.parametrize("inp", [np.nan, NaT])
