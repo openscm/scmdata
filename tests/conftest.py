@@ -16,7 +16,7 @@ from scmdata import ScmDataFrame
 
 try:
     from pyam import IamDataFrame
-except ImportError as e:
+except ImportError:
     IamDataFrame = None
 
 TEST_DATA = join(dirname(abspath(__file__)), "test_data")
@@ -227,7 +227,7 @@ TEST_DF_MONTHLY = pd.DataFrame(
         + ["Radiative Forcing|GHGs"]
         + list(np.cos(np.arange(45)) + np.sin(np.arange(45))),
     ],
-    columns=["climate_model", "model", "scenario", "region", "unit", "variable",]
+    columns=["climate_model", "model", "scenario", "region", "unit", "variable"]
     + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
 )
 
@@ -440,7 +440,7 @@ def rcp26():
 
 possible_source_values = [[1, 5, 3, 5, 7, 3, 2, 9]]
 
-possible_target_values = [  # TODO: Use years here after create_time_points has been fixed
+possible_target_values = [
     dict(
         source_start_time=np.datetime64("2000-01-01"),
         source_period_length=np.timedelta64(10, "D"),
@@ -460,6 +460,26 @@ possible_target_values = [  # TODO: Use years here after create_time_points has 
         target_values=[1, 1, 3, 9],
         interpolation_type="linear",
         extrapolation_type="constant",
+    ),
+    dict(
+        source_start_time=np.datetime64("2000-01-06"),
+        source_period_length=np.timedelta64(3, "D"),
+        target_start_time=np.datetime64("2000-01-01"),
+        target_period_length=np.timedelta64(4, "D"),
+        source_values=possible_source_values[0],
+        target_values=[-5.666667, -0.333333, 5.0, 3.666667, 6.333333],
+        interpolation_type="linear",
+        extrapolation_type="linear",
+    ),
+    dict(
+        source_start_time=np.datetime64("2000-01-06"),
+        source_period_length=np.timedelta64(3, "D"),
+        target_start_time=np.datetime64("2000-01-07"),
+        target_period_length=np.timedelta64(4, "D"),
+        source_values=possible_source_values[0],
+        target_values=[2.33333333, 3.6666667],
+        interpolation_type="linear",
+        extrapolation_type=None,
     ),
 ]
 
