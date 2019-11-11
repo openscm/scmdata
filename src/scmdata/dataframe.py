@@ -848,9 +848,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         self._sort_meta_cols()
 
     def get_unique_meta(
-        self,
-        meta: str,
-        no_duplicates: Optional[bool] = False,
+        self, meta: str, no_duplicates: Optional[bool] = False,
     ) -> Union[List[Any], Any]:
         """
         Get unique values in a metadata column.
@@ -879,7 +877,9 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         vals = self[meta].unique().tolist()
         if no_duplicates:
             if len(vals) != 1:
-                raise ValueError("`{}` column is not unique (found values: {})".format(meta, vals))
+                raise ValueError(
+                    "`{}` column is not unique (found values: {})".format(meta, vals)
+                )
 
             return vals[0]
 

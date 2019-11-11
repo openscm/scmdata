@@ -1903,20 +1903,31 @@ def test_separator_changes(test_scm_df, separator):
 def test_get_meta(test_scm_df):
     assert test_scm_df.get_unique_meta("climate_model") == ["a_model"]
     assert test_scm_df.get_unique_meta("variable") == [
-        "Primary Energy", "Primary Energy|Coal"
+        "Primary Energy",
+        "Primary Energy|Coal",
     ]
 
 
 @pytest.mark.parametrize("no_duplicates", [True, False])
 def test_get_meta_no_duplicates(test_scm_df, no_duplicates):
     if no_duplicates:
-        assert test_scm_df.get_unique_meta("climate_model", no_duplicates=no_duplicates) == "a_model"
+        assert (
+            test_scm_df.get_unique_meta("climate_model", no_duplicates=no_duplicates)
+            == "a_model"
+        )
 
-        error_msg = re.escape("`variable` column is not unique (found values: {})".format(test_scm_df["variable"].unique().tolist()))
+        error_msg = re.escape(
+            "`variable` column is not unique (found values: {})".format(
+                test_scm_df["variable"].unique().tolist()
+            )
+        )
         with pytest.raises(ValueError, match=error_msg):
             test_scm_df.get_unique_meta("variable", no_duplicates=no_duplicates)
     else:
-        assert test_scm_df.get_unique_meta("climate_model", no_duplicates=no_duplicates) == ["a_model"]
+        assert test_scm_df.get_unique_meta(
+            "climate_model", no_duplicates=no_duplicates
+        ) == ["a_model"]
         assert test_scm_df.get_unique_meta("variable", no_duplicates=no_duplicates) == [
-            "Primary Energy", "Primary Energy|Coal"
+            "Primary Energy",
+            "Primary Energy|Coal",
         ]
