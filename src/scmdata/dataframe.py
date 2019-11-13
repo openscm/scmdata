@@ -847,6 +847,44 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             self._meta.drop("level_0", axis=1, inplace=True)
         self._sort_meta_cols()
 
+    def get_unique_meta(
+        self, meta: str, no_duplicates: Optional[bool] = False,
+    ) -> Union[List[Any], Any]:
+        """
+        Get unique values in a metadata column.
+
+        Parameters
+        ----------
+        meta
+            Column to retrieve metadata for
+
+        no_duplicates
+            Should I raise an error if there is more than one unique value in the
+            metadata column?
+
+        Raises
+        ------
+        ValueError
+            There is more than one unique value in the metadata column and
+            ``no_duplicates`` is ``True``.
+
+        Returns
+        -------
+        [List[Any], Any]
+            List of unique metadata values. If ``no_duplicates`` is ``True`` the
+            metadata value will be returned (rather than a list).
+        """
+        vals = self[meta].unique().tolist()
+        if no_duplicates:
+            if len(vals) != 1:
+                raise ValueError(
+                    "`{}` column is not unique (found values: {})".format(meta, vals)
+                )
+
+            return vals[0]
+
+        return vals
+
     def interpolate(
         self,
         target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],

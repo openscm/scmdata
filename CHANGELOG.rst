@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#12 <https://github.com/lewisjared/scmdata/pull/12>`_) Add ``get_unique_meta`` convenience method
 - (`#10 <https://github.com/lewisjared/scmdata/pull/10>`_) Fix extrapolation bug which prevented any extrapolation from occuring
 
 v0.2.0
