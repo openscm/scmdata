@@ -4,6 +4,10 @@ Changelog
 master
 ------
 
+v0.2.1
+------
+
+- (`#13 <https://github.com/lewisjared/scmdata/pull/13>`_) Ensure ``LICENSE`` is included in package
 - (`#11 <https://github.com/lewisjared/scmdata/pull/11>`_) Add SO2F2 unit and update to Pyam v0.3.0
 - (`#12 <https://github.com/lewisjared/scmdata/pull/12>`_) Add ``get_unique_meta`` convenience method
 - (`#10 <https://github.com/lewisjared/scmdata/pull/10>`_) Fix extrapolation bug which prevented any extrapolation from occuring
