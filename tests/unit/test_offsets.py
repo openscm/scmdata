@@ -19,6 +19,8 @@ def test_invalid_offsets(offset_rule):
 
 def test_annual_start():
     offset = to_offset("AS")
+    assert offset.__class__.__name__ == "LongYearBegin"
+
     dt = datetime(2001, 2, 12)
 
     res = offset.apply(dt)
@@ -40,6 +42,8 @@ def test_annual_start():
 
 def test_month_start():
     offset = to_offset("MS")
+    assert offset.__class__.__name__ == "LongMonthBegin"
+
     dt = datetime(2001, 2, 12)
 
     res = offset.apply(dt)
@@ -82,11 +86,11 @@ def test_generate_range(start, end):
 @pytest.mark.parametrize("inp", [np.nan, NaT])
 def test_nan_apply_dt_errors(inp):
     offset = DateOffset()
-    test_func = apply_dt(lambda _, x: x, offset)
-    assert test_func(inp) is NaT
+    test_func = apply_dt(lambda _, x: x)
+    assert test_func(offset, inp) is NaT
 
 
 def test_nan_apply_dt_normalize():
     offset = DateOffset(normalize=True)
-    test_func = apply_dt(lambda _, x: x, offset)
-    assert test_func(datetime(2000, 1, 1, 13, 10, 1)) == datetime(2000, 1, 1, 0, 0, 0)
+    test_func = apply_dt(lambda _, x: x)
+    assert test_func(offset, datetime(2000, 1, 1, 13, 10, 1)) == datetime(2000, 1, 1, 0, 0, 0)
