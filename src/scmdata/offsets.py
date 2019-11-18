@@ -25,7 +25,7 @@ from pandas.tseries.offsets import (
 )
 
 
-def apply_dt(func, self):
+def apply_dt(func):
     """
     Apply a wrapper which keeps the result as a datetime instead of converting to
     :class:`pd.Timestamp`.
@@ -38,7 +38,7 @@ def apply_dt(func, self):
     """
     # should self be renamed in the function signature to something else, `ipt`?
     @functools.wraps(func)
-    def wrapper(other: datetime.datetime) -> Any:
+    def wrapper(self, other: datetime.datetime) -> Any:
         if pd.isnull(other):
             return NaT
 
@@ -60,32 +60,32 @@ def apply_dt(func, self):
     return wrapper
 
 
-def apply_rollforward(obj):
-    """
-    Roll provided date forward to next offset, only if not on offset.
-    """
-    # custom wrapper
-    def wrapper(dt: datetime.datetime) -> datetime.datetime:
-        dt = as_datetime(dt)
-        if not obj.onOffset(dt):
-            dt = dt + obj.__class__(1, normalize=obj.normalize, **obj.kwds)
-        return as_datetime(dt)  # type: ignore # pandas doesn't have type annotations
+def _long_class_factory(OffsetClass):
+    class LongOffsetClass(OffsetClass):
+        def _rollforward(self, dt: datetime.datetime) -> datetime.datetime:
+            """
+            Roll provided date forward to next offset, only if not on offset.
+            """
+            dt = as_datetime(dt)
+            if not self.onOffset(dt):
+                dt = dt + type(self)(1, normalize=self.normalize, **self.kwds)
+            return as_datetime(dt)  # type: ignore # pandas doesn't have type annotations
 
-    return wrapper
+        def _rollback(self, dt: datetime.datetime) -> datetime.datetime:
+            """
+            Roll provided date backward to previous offset, only if not on offset.
+            """
+            dt = as_datetime(dt)
+            if not self.onOffset(dt):
+                dt = dt - type(self)(1, normalize=self.normalize, **self.kwds)
+            return as_datetime(dt)  # type: ignore # pandas doesn't have type annotations
 
+    LongOffsetClass.__name__ = "Long{}".format(OffsetClass.__name__)
 
-def apply_rollback(obj):
-    """
-    Roll provided date backward to previous offset, only if not on offset.
-    """
-    # custom wrapper
-    def wrapper(dt: datetime.datetime) -> datetime.datetime:
-        dt = as_datetime(dt)
-        if not obj.onOffset(dt):
-            dt = dt - obj.__class__(1, normalize=obj.normalize, **obj.kwds)
-        return as_datetime(dt)  # type: ignore # pandas doesn't have type annotations
+    if hasattr(LongOffsetClass.apply, "__wrapped__"):  # pragma: no cover
+        LongOffsetClass.apply = apply_dt(LongOffsetClass.apply.__wrapped__)
 
-    return wrapper
+    return LongOffsetClass
 
 
 def to_offset(rule: str) -> DateOffset:
@@ -105,8 +105,8 @@ def to_offset(rule: str) -> DateOffset:
 
     Returns
     -------
-    :class:`DateOffset`
-        Wrapped :class:`DateOffset` class for the given rule
+    :obj:`DateOffset`
+        An object of a custom class which provides support for datetimes outside of Timesteps
 
     Raises
     ------
@@ -120,19 +120,9 @@ def to_offset(rule: str) -> DateOffset:
             "Invalid rule for offset - Business related offsets are not supported"
         )
 
-    def wrap_funcs(fname):
-        # Checks if the function has been wrapped and replace with `apply_dt` wrapper
-        func = getattr(offset, fname)
-
-        if hasattr(func, "__wrapped__"):  # pragma: no cover
-            orig_func = func.__wrapped__
-            object.__setattr__(offset, fname, apply_dt(orig_func, offset))
-
-    wrap_funcs("apply")
-    object.__setattr__(offset, "rollforward", apply_rollforward(offset))
-    object.__setattr__(offset, "rollback", apply_rollback(offset))
-
-    return offset
+    # Create a new offset using a *long* version of the offset - This provides support for datetimes outside of Timesteps
+    LongClass = _long_class_factory(type(offset))
+    return LongClass(n=offset.n, normalize=offset.normalize, **offset.kwds)
 
 
 def generate_range(
