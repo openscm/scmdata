@@ -26,7 +26,7 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.7",
 ]
 
-REQUIREMENTS = ["numpy", "scipy", "python-dateutil", "pint"]
+REQUIREMENTS = ["numpy", "scipy", "python-dateutil", "pint", "pandas"]
 REQUIREMENTS_PYAM = ["pyam-iamc>=0.3.0"]
 REQUIREMENTS_TESTS = ["codecov", "nbval", "pytest-cov", "pytest>=4.0,<5.0"]
 REQUIREMENTS_DOCS = ["sphinx>=1.4,<2.1", "sphinx_rtd_theme"]
