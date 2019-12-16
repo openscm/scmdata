@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#16 <https://github.com/lewisjared/scmdata/pull/16>`_) Only rename columns when initialising data if needed
+
 v0.2.1
 ------
 

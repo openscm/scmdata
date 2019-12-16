@@ -129,7 +129,8 @@ def _format_data(  # pylint: disable=missing-return-doc
 
     # all lower case
     str_cols = [c for c in df.columns if isinstance(c, str)]
-    df.rename(columns={c: str(c).lower() for c in str_cols}, inplace=True)
+    if str_cols:
+        df.rename(columns={c: str(c).lower() for c in str_cols}, inplace=True)
 
     # reset the index if meaningful entries are included there
     if list(df.index.names) != [None]:
