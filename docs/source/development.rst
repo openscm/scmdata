@@ -171,6 +171,30 @@ Assuming test PyPI worked, now upload to the main repository
 #. Go to `SCMData's PyPI`_ and check that the new release is as intended.
 #. Test the install with ``make test-pypi-install``
 
+Conda
+~~~~~
+
+#. If you haven't already, fork the `SCMData conda feedstock`_. In your fork, add the feedstock upstream with ``git remote add upstream https://github.com/conda-forge/scmdata-feedstock`` (``upstream`` should now appear in the output of ``git remote -v``)
+#. Update your fork's master to the upstream master with:
+
+    #. ``git checkout master``
+    #. ``git fetch upstream``
+    #. ``git reset --hard upstream/master``
+
+#. Create a new branch in the feedstock for the version you want to bump to.
+#. Edit ``recipe/meta.yaml`` and update:
+
+    - version number in line 2 (don't include the 'v' in the version tag)
+    - the build number to zero in line 13 (you should only be here if releasing a new version)
+    - update ``sha256`` in line 10 (you can get the sha from `SCMData's PyPI`_ by clicking on 'Download files' on the left and then clicking on 'SHA256' of the ``.tar.gz`` file to copy it to the clipboard)
+
+#. ``git add .``
+#. ``git commit -m "Update to vX.Y.Z"``
+#. ``git push``
+#. Make a PR into the `SCMData conda feedstock`_
+#. If the PR passes (give it at least 10 minutes to run all the CI), merge
+#. Check https://anaconda.org/conda-forge/scmdata to double check that the version has increased (this can take a few minutes to update)
+
 Push to repository
 ~~~~~~~~~~~~~~~~~~
 
@@ -188,3 +212,4 @@ Hence we have one here which basically acts as a notes file for how to do all th
 .. _Sphinx: http://www.sphinx-doc.org/en/master/
 .. _SCMData issue tracker: https://github.com/lewisjared/scmdata/issues
 .. _`SCMData's PyPI`: https://pypi.org/project/scmdata/
+.. _`SCMData conda feedstock`: https://github.com/conda-forge/scmdata-feedstock
