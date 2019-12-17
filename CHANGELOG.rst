@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.3.0
+------
+
 - (`#20 <https://github.com/lewisjared/scmdata/pull/20>`_) Add support for python=3.5
 - (`#19 <https://github.com/lewisjared/scmdata/pull/19>`_) Add support for python=3.6
 
