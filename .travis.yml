@@ -2,7 +2,7 @@ language: python
 cache: pip
 dist: xenial
 python:
-  #- "3.6"
+  - "3.6"
   - "3.7"
 
 before_install:
@@ -14,8 +14,8 @@ install:
 script:
   - pytest --cov -r a
   # Only test notebooks closely on Python 3.7 otherwise there's too many html errors etc.
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.7 ]]; then pytest -rfsxEX --nbval ./notebooks --sanitize ./notebooks/tests_sanitize.cfg; fi
-  - if [[ $TRAVIS_PYTHON_VERSION != 3.7 ]]; then pytest -rfsxEX --nbval-lax ./notebooks --sanitize ./notebooks/tests_sanitize.cfg; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.7 ]]; then pytest -rfsxEX --nbval ./notebooks --sanitize-with ./notebooks/tests_sanitize.cfg; fi
+  - if [[ $TRAVIS_PYTHON_VERSION != 3.7 ]]; then pytest -rfsxEX --nbval-lax ./notebooks --sanitize-with ./notebooks/tests_sanitize.cfg; fi
 
 after_success:
   - codecov

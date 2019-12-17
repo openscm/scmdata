@@ -4,8 +4,6 @@ data. It provides a simple interface for reading/writing, subsetting and visuali
 model data. ScmDataFrames are able to hold multiple model runs which aids in analysis of
 ensembles of model runs.
 """
-from __future__ import annotations
-
 import copy
 import datetime as dt
 import os
@@ -290,9 +288,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
     def __init__(
         self,
-        data: Union[
-            ScmDataFrame, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str
-        ],
+        data,
         index: Any = None,
         columns: Optional[Dict[str, list]] = None,
         **kwargs: Any,
@@ -302,7 +298,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         Parameters
         ----------
-        data
+        data: Union[ScmDataFrame, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str]
             A pd.DataFrame or data file with IAMC-format data columns, or a numpy array
             of timeseries data if :obj:`columns` is specified. If a string is passed,
             data will be attempted to be read from file.
@@ -388,7 +384,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         self._data, self._meta = (_df, _meta)
         self._sort_meta_cols()
 
-    def copy(self) -> ScmDataFrame:
+    def copy(self):
         """
         Return a :func:`copy.deepcopy` of self.
 
@@ -506,7 +502,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         inplace: bool = False,
         has_nan: bool = True,
         **kwargs: Any,
-    ) -> Optional[ScmDataFrame]:
+    ):
         """
         Return a filtered ScmDataFrame (i.e., a subset of the data).
 
@@ -733,7 +729,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
     def rename(
         self, mapping: Dict[str, Dict[str, str]], inplace: bool = False
-    ) -> Optional[ScmDataFrame]:
+    ):
         """
         Rename and aggregate column entries using :func:`groupby.sum()` on values. When
         renaming models or scenarios, the uniqueness of the index must be maintained,
@@ -891,7 +887,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
         interpolation_type: str = "linear",
         extrapolation_type: str = "linear",
-    ) -> ScmDataFrame:
+    ):
         """
         Interpolate the dataframe onto a new time frame.
 
@@ -947,7 +943,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         res["time"] = timeseries_index
         return res
 
-    def resample(self, rule: str = "AS", **kwargs: Any) -> ScmDataFrame:
+    def resample(self, rule: str = "AS", **kwargs: Any):
         """
         Resample the time index of the timeseries data onto a custom grid.
 
@@ -1062,7 +1058,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         )
         return self.interpolate(list(target_dts), **kwargs)
 
-    def time_mean(self, rule: str) -> ScmDataFrame:
+    def time_mean(self, rule: str):
         """
         Take time mean of self
 
@@ -1189,7 +1185,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         context: Optional[str] = None,
         inplace: bool = False,
         **kwargs: Any,
-    ) -> Optional[ScmDataFrame]:
+    ):
         """
         Convert the units of a selection of timeseries.
 
@@ -1287,13 +1283,11 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
     def append(
         self,
-        other: Union[
-            ScmDataFrame, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str
-        ],
+        other,
         inplace: bool = False,
         duplicate_msg: Union[str, bool] = "warn",
         **kwargs: Any,
-    ) -> Optional[ScmDataFrame]:
+    ):
         """
         Append additional data to the current dataframe.
 
@@ -1405,12 +1399,10 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
 
 def df_append(
-    dfs: List[
-        Union[ScmDataFrame, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str]
-    ],
+    dfs,
     inplace: bool = False,
     duplicate_msg: Union[str, bool] = "warn",
-) -> Optional[ScmDataFrame]:
+):
     """
     Append together many objects.
 

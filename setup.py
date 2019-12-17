@@ -23,12 +23,13 @@ CLASSIFIERS = [
     "License :: OSI Approved :: BSD License",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
 ]
 
 REQUIREMENTS = ["numpy", "scipy", "python-dateutil", "pint", "pandas"]
 REQUIREMENTS_PYAM = ["pyam-iamc>=0.3.0"]
-REQUIREMENTS_TESTS = ["codecov", "nbval", "pytest-cov", "pytest>=4.0,<5.0"]
+REQUIREMENTS_TESTS = ["codecov", "nbval", "pytest-cov", "pytest>=5.0.0"]
 REQUIREMENTS_DOCS = ["sphinx>=1.4,<2.1", "sphinx_rtd_theme"]
 REQUIREMENTS_DEPLOY = ["twine>=1.11.0", "setuptools>=38.6.0", "wheel>=0.31.0"]
 
