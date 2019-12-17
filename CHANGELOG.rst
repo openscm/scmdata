@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#19 <https://github.com/lewisjared/scmdata/pull/19>`_) Add support for python=3.6
+
 v0.2.2
 ------
 
