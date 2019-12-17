@@ -34,7 +34,7 @@ REQUIREMENTS_DOCS = ["sphinx>=1.4,<2.1", "sphinx_rtd_theme"]
 REQUIREMENTS_DEPLOY = ["twine>=1.11.0", "setuptools>=38.6.0", "wheel>=0.31.0"]
 
 REQUIREMENTS_DEV = [
-    *["black", "flake8", "isort", "nbdime", "notebook"],
+    *["flake8", "isort", "nbdime", "notebook"],
     *REQUIREMENTS_PYAM,
     *REQUIREMENTS_TESTS,
     *REQUIREMENTS_DOCS,

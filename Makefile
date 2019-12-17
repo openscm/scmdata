@@ -73,6 +73,11 @@ $(VENV_DIR): setup.py
 	$(VENV_DIR)/bin/pip install --upgrade pip
 	$(VENV_DIR)/bin/pip install -e .[dev]
 
+	# Check if py3.6 or greater, if so install black
+	# Note that the logic is reversed to ensure that the line runs successfully (Not py>3.6 or install black)
+	$(eval PY36 := $(shell python3 -c 'import sys; print("%i" % (sys.hexversion>0x03600000))'))
+	[ $(PY36) -eq 0 ] || $(VENV_DIR)/bin/pip install --upgrade black
+
 	touch $(VENV_DIR)
 
 

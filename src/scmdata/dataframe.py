@@ -31,7 +31,7 @@ from .units import UnitConverter
 
 _logger = getLogger(__name__)
 
-REQUIRED_COLS: List[str] = ["model", "scenario", "region", "variable", "unit"]
+REQUIRED_COLS = ["model", "scenario", "region", "variable", "unit"]
 """Minimum metadata columns required by an ScmDataFrame"""
 
 
@@ -269,15 +269,6 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
     with those time series.
     """
 
-    _data: pd.DataFrame
-    """Timeseries data"""
-
-    _meta: pd.DataFrame
-    """Meta data"""
-
-    _time_points: TimePoints
-    """Time points"""
-
     data_hierarchy_separator = HIERARCHY_SEPARATOR
     """
     str: String used to define different levels in our data hierarchies.
@@ -291,7 +282,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         data,
         index: Any = None,
         columns: Optional[Dict[str, list]] = None,
-        **kwargs: Any,
+        **kwargs: Any
     ):
         """
         Initialize.
@@ -501,7 +492,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         keep: bool = True,
         inplace: bool = False,
         has_nan: bool = True,
-        **kwargs: Any,
+        **kwargs: Any
     ):
         """
         Return a filtered ScmDataFrame (i.e., a subset of the data).
@@ -1184,7 +1175,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         unit: str,
         context: Optional[str] = None,
         inplace: bool = False,
-        **kwargs: Any,
+        **kwargs: Any
     ):
         """
         Convert the units of a selection of timeseries.
@@ -1286,7 +1277,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         other,
         inplace: bool = False,
         duplicate_msg: Union[str, bool] = "warn",
-        **kwargs: Any,
+        **kwargs: Any
     ):
         """
         Append additional data to the current dataframe.
@@ -1386,7 +1377,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         self,
         index: Union[str, List[str]],
         columns: Union[str, List[str]],
-        **kwargs: Any,
+        **kwargs: Any
     ) -> pd.DataFrame:
         """
         Pivot the underlying data series.
