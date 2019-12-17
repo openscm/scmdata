@@ -52,7 +52,7 @@ isort: $(VENV_DIR)  ## format the imports in the source and tests
 black: $(VENV_DIR)  ## use black to autoformat code
 	@status=$$(git status --porcelain); \
 	if test "x$${status}" = x; then \
-		$(VENV_DIR)/bin/black --exclude _version.py --target-version py37 $(FILES_TO_FORMAT_PYTHON); \
+		$(VENV_DIR)/bin/black --exclude _version.py --target-version py35 $(FILES_TO_FORMAT_PYTHON); \
 	else \
 		echo Not trying any formatting, working directory is dirty... >&2; \
 	fi;

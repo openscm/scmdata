@@ -63,11 +63,14 @@ def test_month_start():
     assert res.day == 1
 
 
-@pytest.mark.parametrize("start,end", (
-    [datetime(2000, 2, 12), datetime(2001, 2, 12)],
-    [datetime(2000, 2, 12), datetime(3001, 2, 12)],
-    [datetime(1000, 2, 12), datetime(2001, 2, 12)],
-))
+@pytest.mark.parametrize(
+    "start,end",
+    (
+        [datetime(2000, 2, 12), datetime(2001, 2, 12)],
+        [datetime(2000, 2, 12), datetime(3001, 2, 12)],
+        [datetime(1000, 2, 12), datetime(2001, 2, 12)],
+    ),
+)
 def test_generate_range(start, end):
     offset = to_offset("AS")
     start = start
@@ -93,4 +96,6 @@ def test_nan_apply_dt_errors(inp):
 def test_nan_apply_dt_normalize():
     offset = DateOffset(normalize=True)
     test_func = apply_dt(lambda _, x: x)
-    assert test_func(offset, datetime(2000, 1, 1, 13, 10, 1)) == datetime(2000, 1, 1, 0, 0, 0)
+    assert test_func(offset, datetime(2000, 1, 1, 13, 10, 1)) == datetime(
+        2000, 1, 1, 0, 0, 0
+    )

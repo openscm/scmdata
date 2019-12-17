@@ -718,9 +718,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         """
         return self.timeseries().tail(*args, **kwargs)
 
-    def rename(
-        self, mapping: Dict[str, Dict[str, str]], inplace: bool = False
-    ):
+    def rename(self, mapping: Dict[str, Dict[str, str]], inplace: bool = False):
         """
         Rename and aggregate column entries using :func:`groupby.sum()` on values. When
         renaming models or scenarios, the uniqueness of the index must be maintained,
@@ -1390,9 +1388,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
 
 def df_append(
-    dfs,
-    inplace: bool = False,
-    duplicate_msg: Union[str, bool] = "warn",
+    dfs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
 ):
     """
     Append together many objects.
