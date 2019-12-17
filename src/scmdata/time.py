@@ -86,9 +86,6 @@ class TimePoints:
     Handles time points by wrapping :class:`np.ndarray` of :class:`np.datetime64`..
     """
 
-    _values: np.ndarray
-    """Actual time points array"""
-
     def __init__(self, values):
         """
         Initialize.

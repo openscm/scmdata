@@ -240,7 +240,7 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
     unit and contexts.
     """
 
-    _contexts_loaded: bool = False
+    _contexts_loaded = False
 
     def add_standards(self):
         """
@@ -434,18 +434,6 @@ class UnitConverter:
     """
     Converts numbers between two units.
     """
-
-    _source: str
-    """Source unit"""
-
-    _target: str
-    """Target unit"""
-
-    _offset: float
-    """Offset for units (e.g. for temperature units)"""
-
-    _scaling: float
-    """Scaling factor between units"""
 
     def __init__(self, source: str, target: str, context: Optional[str] = None):
         """
