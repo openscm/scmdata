@@ -122,6 +122,46 @@ TEST_DF = pd.DataFrame(
 TEST_TS = np.array([[1, 6.0, 6], [0.5, 3, 3], [2, 7, 7]]).T
 
 
+TEST_RUN_DF = pd.DataFrame(
+    [
+        [
+            "a_model",
+            "a_iam",
+            "a_scenario",
+            "World",
+            "Primary Energy",
+            "EJ/yr",
+            1,
+            6.0,
+            6.0,
+        ],
+        [
+            "a_model",
+            "a_iam",
+            "a_scenario",
+            "World",
+            "Primary Energy|Coal",
+            "EJ/yr",
+            0.5,
+            3,
+            3.0,
+        ],
+    ],
+    columns=[
+        "climate_model",
+        "model",
+        "scenario",
+        "region",
+        "variable",
+        "unit",
+        2005,
+        2010,
+        2015,
+    ],
+)
+
+TEST_RUN_TS = np.array([[1, 6.0, 6], [0.5, 3, 3]]).T
+
 @pytest.fixture
 def test_data_path():
     return TEST_DATA
@@ -149,6 +189,11 @@ def test_pd_df():
 
 
 @pytest.fixture(scope="function")
+def test_pd_run_df():
+    yield TEST_RUN_DF.copy()
+
+
+@pytest.fixture(scope="function")
 def test_scm_datetime_df():
     tdf = TEST_DF.copy()
     tdf.rename(
@@ -167,6 +212,11 @@ def test_scm_datetime_df():
 @pytest.fixture(scope="function")
 def test_ts():
     yield TEST_TS.copy()
+
+
+@pytest.fixture(scope="function")
+def test_run_ts():
+    yield TEST_RUN_TS.copy()
 
 
 @pytest.fixture(scope="function")
