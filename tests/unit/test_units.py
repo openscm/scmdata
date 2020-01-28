@@ -26,6 +26,12 @@ def test_nitrogen():
 
 def test_nox():
     NOx = _unit_registry("NOx")
+
+    # assumed to be NO2
+    np.testing.assert_allclose(NOx.to("NO2").magnitude, 1)
+    np.testing.assert_allclose(_unit_registry("NO2").to("NOx").magnitude, 1)
+
+    # can only convert to N with right context
     with pytest.raises(DimensionalityError):
         NOx.to("N")
 
