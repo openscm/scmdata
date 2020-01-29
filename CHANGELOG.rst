@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#24 <https://github.com/lewisjared/scmdata/pull/24>`_) Fix missing "N2O" unit (see `#14 <https://github.com/lewisjared/scmdata/pull/14>`_)
+
 v0.3.0
 ------
 
