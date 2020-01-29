@@ -94,7 +94,7 @@ def test_h():
 
 def test_a():
     a = _unit_registry("a")
-    np.testing.assert_allclose(a.to("day").magnitude, 365.25, rtol=1e-5)
+    np.testing.assert_allclose(a.to("day").magnitude, 365.25, rtol=1e-4)
 
 
 def test_context():
