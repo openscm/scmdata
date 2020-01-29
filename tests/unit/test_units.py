@@ -22,23 +22,23 @@ def test_base_unit():
 def test_nitrogen():
     N = _unit_registry("N")
     np.testing.assert_allclose(N.to("N2ON").magnitude, 28 / 14)
+    np.testing.assert_allclose(N.to("NO2").magnitude, 46 / 14)
 
 
 def test_nox():
     NOx = _unit_registry("NOx")
-
-    # assumed to be NO2
-    np.testing.assert_allclose(NOx.to("NO2").magnitude, 1)
-    np.testing.assert_allclose(_unit_registry("NO2").to("NOx").magnitude, 1)
 
     # can only convert to N with right context
     with pytest.raises(DimensionalityError):
         NOx.to("N")
 
     N = _unit_registry("N")
+    NO2 = _unit_registry("NO2")
     with _unit_registry.context("NOx_conversions"):
         np.testing.assert_allclose(NOx.to("N").magnitude, 14 / 46)
         np.testing.assert_allclose(N.to("NOx").magnitude, 46 / 14)
+        np.testing.assert_allclose(NO2.to("NOx").magnitude, 1)
+        np.testing.assert_allclose(NOx.to("NO2").magnitude, 1)
         # this also becomes allowed, unfortunately...
         np.testing.assert_allclose(NOx.to("N2O").magnitude, 44 / 46)
 

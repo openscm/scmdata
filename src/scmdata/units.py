@@ -123,6 +123,7 @@ _standard_gases = {
     "N": "nitrogen",
     "N2O": ["14/44 * N", "nitrous_oxide"],
     "N2ON": ["14/28 * N", "nitrous_oxide_farming_style"],
+    "NO2": ["14/46 * N", "nitrogen_dioxide"],
     # aerosol precursors
     "NOx": "NOx",
     "nox": ["NOx"],
