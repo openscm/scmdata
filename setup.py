@@ -28,14 +28,14 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.7",
 ]
 
-REQUIREMENTS = ["numpy", "scipy", "python-dateutil", "pint", "pandas"]
+REQUIREMENTS = ["numpy", "python-dateutil", "pint", "pandas"]
 REQUIREMENTS_PYAM = ["pyam-iamc>=0.3.0"]
 REQUIREMENTS_TESTS = ["codecov", "nbval", "pytest-cov", "pytest>=5.0.0"]
 REQUIREMENTS_DOCS = ["sphinx>=1.4,<2.1", "sphinx_rtd_theme"]
 REQUIREMENTS_DEPLOY = ["twine>=1.11.0", "setuptools>=38.6.0", "wheel>=0.31.0"]
 
 REQUIREMENTS_DEV = [
-    *["flake8", "isort", "nbdime", "notebook"],
+    *["flake8", "isort", "nbdime", "notebook", "scipy"],
     *REQUIREMENTS_PYAM,
     *REQUIREMENTS_TESTS,
     *REQUIREMENTS_DOCS,

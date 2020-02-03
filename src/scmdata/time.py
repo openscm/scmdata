@@ -7,7 +7,6 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from dateutil import parser
-from scipy import interpolate
 
 _TARGET_TYPE = np.int64
 
@@ -277,6 +276,8 @@ class TimeseriesConverter:
         InsufficientDataError
             Target time points are outside the source time points and
             :attr:`extrapolation_type` is 'NONE'
+        ImportError
+            Optional dependency scipy has not been installed
 
         Returns
         -------
@@ -298,6 +299,9 @@ class TimeseriesConverter:
         source_time_points: np.ndarray,
         target_time_points: np.ndarray,
     ) -> np.ndarray:
+        # Lazy-load scipy.interpolate
+        from scipy import interpolate
+
         res_point = interpolate.interp1d(
             source_time_points.astype(_TARGET_TYPE),
             values,
