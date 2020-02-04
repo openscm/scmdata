@@ -28,7 +28,7 @@ from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints, TimeseriesConverter
 from .units import UnitConverter
-from .rw import df_to_nc
+from .rw import df_to_nc, nc_to_df
 
 _logger = getLogger(__name__)
 
@@ -55,6 +55,13 @@ def _read_file(  # pylint: disable=missing-return-doc
         First dataframe is the data. Second dataframe is metadata
     """
     _logger.info("Reading %s", fnames)
+
+    if fnames.endswith(".nc"):
+        df = nc_to_df(fnames)
+        return (
+                df._data.copy(),  # pylint: disable=protected-access
+                df._meta.copy(),  # pylint: disable=protected-access
+            )
 
     return _format_data(_read_pandas(fnames, *args, **kwargs))
 
@@ -546,21 +553,30 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             Data and meta become unaligned
         """
         _keep_ts, _keep_cols = self._apply_filters(kwargs, has_nan)
-        idx = _keep_ts[:, np.newaxis] & _keep_cols
-        if not idx.shape == self._data.shape:
-            raise AssertionError(
-                "Index shape does not match data shape"
-            )  # pragma: no cover  # don't think it's possible to get here...
-        idx = idx if keep else ~idx
-
         ret = self.copy() if not inplace else self
-        d = ret._data.where(idx)  # pylint: disable=protected-access
-        ret._data = d.dropna(  # pylint: disable=protected-access
-            axis=1, how="all"
-        ).dropna(axis=0, how="all")
-        ret._meta = ret._meta[  # pylint: disable=protected-access
-            (~d.isna()).sum(axis=0) > 0
-        ]
+        if keep:
+            d = ret._data.T[_keep_cols].T # pylint: disable=protected-access
+            d = d[_keep_ts]
+            ret._data = d.dropna(  # pylint: disable=protected-access
+                axis=1, how="all"
+            ).dropna(axis=0, how="all")
+            ret._meta = ret._meta.loc[ret._data.columns.values]  # pylint: disable=protected-access
+        else:
+            idx = _keep_ts[:, np.newaxis] & _keep_cols
+            if not idx.shape == self._data.shape:
+                raise AssertionError(
+                    "Index shape does not match data shape"
+                )  # pragma: no cover  # don't think it's possible to get here...
+            idx = ~idx
+
+            d = ret._data.where(idx)  # pylint: disable=protected-access
+            ret._data = d.dropna(  # pylint: disable=protected-access
+                axis=1, how="all"
+            ).dropna(axis=0, how="all")
+            ret._meta = ret._meta[  # pylint: disable=protected-access
+                (~d.isna()).sum(axis=0) > 0
+                ]
+
         ret["time"] = ret._data.index.values  # pylint: disable=protected-access
 
         if not (

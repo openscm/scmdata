@@ -1939,3 +1939,14 @@ def test_to_nc(test_scm_df):
         test_scm_df.to_nc(out_fname, dimensions=("scenario",))
 
         assert os.path.exists(out_fname)
+
+
+def test_init_nc(test_scm_df):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = os.path.join(tempdir, "out.nc")
+        test_scm_df.to_nc(out_fname, dimensions=("scenario",))
+
+        assert os.path.exists(out_fname)
+
+        df = ScmDataFrame(out_fname)
+        pd.testing.assert_frame_equal(test_scm_df.timeseries(), df.timeseries(), check_like=True)

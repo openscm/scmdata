@@ -6,11 +6,15 @@ except ImportError:
     nc = None
     has_netcdf = False
 
+from collections import defaultdict
 from datetime import datetime
+from logging import getLogger
 
 import numpy as np
 from scmdata import __version__
-from collections import defaultdict
+
+logger = getLogger(__name__)
+
 
 def _var_to_nc(var):
     return (
@@ -52,6 +56,7 @@ def _write_nc(ds, df, dimensions):
     ds.createVariable("time", "f8", "time", )
     ds.variables["time"][:] = df.time_points
 
+    dims = {}
     for d in dimensions:
         vals = sorted(df.meta[d].unique())
         ds.createDimension(d, len(vals))
@@ -59,6 +64,9 @@ def _write_nc(ds, df, dimensions):
         ds.createVariable(d, dtype, d)
         for i, v in enumerate(vals):  # Iteration needed for str types
             ds.variables[d][i] = v
+        dims[d] = np.asarray(vals)
+
+    var_shape = [len(dims[d]) for d in dimensions] + [len(df.time_points)]
 
     for v in df.meta["variable"].unique():
         var_df = df.filter(variable=v)
@@ -81,10 +89,14 @@ def _write_nc(ds, df, dimensions):
         ds.createVariable(var_name, "f8", all_dims, zlib=True, fill_value=np.nan)
 
         # We need to write in dimension at a time
+        data_to_write = np.zeros(var_shape)
+        data_to_write.fill(np.nan)
         for row_id, m in meta.iterrows():
-            idx = [_get_idx(ds.variables[d][:], m[d]) for d in dimensions]
+            idx = [_get_idx(dims[d], m[d]) for d in dimensions]
             idx.append(slice(None))  # time dim
-            ds.variables[var_name][idx] = var_df._data[row_id].values
+            data_to_write[tuple(idx)] = var_df._data[row_id].values
+        # Write in one call to the nc library
+        ds.variables[var_name][:] = data_to_write
 
         # Set variable metadata
         ds.variables[var_name].setncatts(var_attrs)
@@ -153,7 +165,7 @@ def df_to_nc(df, fname, dimensions=("region",)):
     if "time" in dimensions:
         dimensions.remove("time")
 
-    with nc.Dataset(fname, "w") as ds:
+    with nc.Dataset(fname, "w", diskless=True, persist=True) as ds:
         ds.created_at = datetime.utcnow().isoformat()
         ds._scmdata_version = __version__
         _write_nc(ds, df, dimensions)
@@ -173,4 +185,7 @@ def nc_to_df(fname):
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
 
     with nc.Dataset(fname) as ds:
-        return _read_nc(ds)
+        try:
+            return _read_nc(ds)
+        except:
+            logger.exception("Failed reading netdf file: {}".format(fname))
