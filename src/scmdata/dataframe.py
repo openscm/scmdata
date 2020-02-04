@@ -28,6 +28,7 @@ from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints, TimeseriesConverter
 from .units import UnitConverter
+from .rw import df_to_nc
 
 _logger = getLogger(__name__)
 
@@ -1346,6 +1347,21 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             Path to write the file into
         """
         self.to_iamdataframe().to_csv(path, **kwargs)
+
+    def to_nc(self, fname, dimensions=("region",)):
+        """
+        Write a dataframe to disk as a netCDF4 file
+
+        Parameters
+        ----------
+        path: str
+            Path to write the file into
+        dimensions: iterable of str
+            Dimensions to include in the netCDF file. The order of the dimensions in the netCDF file will be the same
+            as the order provided.
+            The time dimension is always included as the last dimension, even if not provided.
+        """
+        df_to_nc(self, fname, dimensions)
 
     def line_plot(self, x: str = "time", y: str = "value", **kwargs: Any) -> Axes:
         """

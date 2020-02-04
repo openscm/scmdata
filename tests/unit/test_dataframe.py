@@ -2,6 +2,7 @@ import copy
 import datetime as dt
 import os
 import re
+import tempfile
 import warnings
 
 import numpy as np
@@ -10,7 +11,6 @@ import pytest
 from numpy import testing as npt
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
-
 from scmdata.dataframe import ScmDataFrame, df_append
 
 
@@ -18,8 +18,8 @@ def test_init_df_year_converted_to_datetime(test_pd_df):
     res = ScmDataFrame(test_pd_df)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
-        res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
+            res["time"].unique()
+            == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
 
 
@@ -82,8 +82,8 @@ def test_init_df_formats(test_pd_df, in_format):
     res = ScmDataFrame(test_init)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
-        res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
+            res["time"].unique()
+            == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
 
     res_df = res.timeseries()
@@ -284,12 +284,12 @@ def test_init_with_decimal_years():
 
     res = ScmDataFrame(d, columns=cols)
     assert (
-        res["time"].unique()
-        == [
-            dt.datetime(1765, 1, 1, 0, 0),
-            dt.datetime(1765, 1, 31, 7, 4, 48),
-            dt.datetime(1765, 3, 2, 22, 55, 11),
-        ]
+            res["time"].unique()
+            == [
+                dt.datetime(1765, 1, 1, 0, 0),
+                dt.datetime(1765, 1, 31, 7, 4, 48),
+                dt.datetime(1765, 3, 2, 22, 55, 11),
+            ]
     ).all()
     npt.assert_array_equal(res._data.loc[:, 0].values, inp_array)
 
@@ -895,16 +895,16 @@ def test_process_over_kwargs_error(test_scm_df):
     "tfilter,tappend_str,exp_append_str",
     [
         (
-            {"time": [dt.datetime(y, 1, 1, 0, 0, 0) for y in range(2005, 2011)]},
-            None,
-            "(ref. period time: 2005-01-01 00:00:00 - 2010-01-01 00:00:00)",
+                {"time": [dt.datetime(y, 1, 1, 0, 0, 0) for y in range(2005, 2011)]},
+                None,
+                "(ref. period time: 2005-01-01 00:00:00 - 2010-01-01 00:00:00)",
         ),
         ({"month": [1, 2, 3]}, "(Jan - Mar)", "(Jan - Mar)"),
         ({"day": [1, 2, 3]}, None, "(ref. period day: 1 - 3)"),
     ],
 )
 def test_relative_to_ref_period_mean(
-    test_processing_scm_df, tfilter, tappend_str, exp_append_str
+        test_processing_scm_df, tfilter, tappend_str, exp_append_str
 ):
     exp = pd.DataFrame(
         [
@@ -1245,8 +1245,8 @@ def test_append_inplace_column_order_time_interpolation(test_scm_df):
     pd.testing.assert_frame_equal(
         test_scm_df.timeseries().sort_index(),
         exp.timeseries()
-        .reorder_levels(test_scm_df.timeseries().index.names)
-        .sort_index(),
+            .reorder_levels(test_scm_df.timeseries().index.names)
+            .sort_index(),
         check_like=True,
     )
 
@@ -1309,9 +1309,9 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
 
     ts_resampled = (
         test_scm_df_monthly.timeseries()
-        .T.groupby(group_annual_mean_beginning_of_year)
-        .mean()
-        .T
+            .T.groupby(group_annual_mean_beginning_of_year)
+            .mean()
+            .T
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 1, 1))
 
@@ -1366,9 +1366,9 @@ def test_time_mean_year_end_of_year(test_scm_df_monthly):
 
     ts_resampled = (
         test_scm_df_monthly.timeseries()
-        .T.groupby(group_annual_mean_end_of_year)
-        .mean()
-        .T
+            .T.groupby(group_annual_mean_end_of_year)
+            .mean()
+            .T
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 12, 31))
 
@@ -1684,23 +1684,23 @@ def test_rename_col_fail(test_scm_df):
         ("EJ/yr", "EJ/yr", {}, [1.0, 0.5, 2.0], ["EJ/yr", "EJ/yr", "EJ/yr"]),
         ("PJ/yr", "EJ/yr", {}, [1000.0, 500.0, 2000.0], ["PJ/yr", "PJ/yr", "PJ/yr"]),
         (
-            "PJ/yr",
-            "EJ/yr",
-            {"scenario": "a_scenario2"},
-            [1.0, 0.5, 2000.0],
-            ["EJ/yr", "EJ/yr", "PJ/yr"],
+                "PJ/yr",
+                "EJ/yr",
+                {"scenario": "a_scenario2"},
+                [1.0, 0.5, 2000.0],
+                ["EJ/yr", "EJ/yr", "PJ/yr"],
         ),
         (
-            "PJ/yr",
-            ["EJ/yr", "TJ/yr", "Gt C / yr"],
-            {"variable": "Primary Energy|Coal"},
-            [1.0, 0.5 * 1e-3, 2.0],
-            ["EJ/yr", "PJ/yr", "Gt C / yr"],
+                "PJ/yr",
+                ["EJ/yr", "TJ/yr", "Gt C / yr"],
+                {"variable": "Primary Energy|Coal"},
+                [1.0, 0.5 * 1e-3, 2.0],
+                ["EJ/yr", "PJ/yr", "Gt C / yr"],
         ),
     ],
 )
 def test_convert_unit(
-    test_scm_df, target_unit, input_units, filter_kwargs, expected, expected_units
+        test_scm_df, target_unit, input_units, filter_kwargs, expected, expected_units
 ):
     test_scm_df["unit"] = input_units
     obs = test_scm_df.convert_unit(target_unit, **filter_kwargs)
@@ -1835,48 +1835,48 @@ def test_init_no_file():
     ("test_file", "test_kwargs"),
     [
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions.csv",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions.csv",
+                ),
+                {},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions.xls",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions.xls",
+                ),
+                {},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions_multi_sheet.xlsx",
-            ),
-            {"sheet_name": "rcp26_emissions"},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions_multi_sheet.xlsx",
+                ),
+                {"sheet_name": "rcp26_emissions"},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions_multi_sheet_data.xlsx",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions_multi_sheet_data.xlsx",
+                ),
+                {},
         ),
     ],
 )
 def test_read_from_disk(test_file, test_kwargs):
     loaded = ScmDataFrame(test_file, **test_kwargs)
     assert (
-        loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
-        == 0.010116813
+            loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
+            == 0.010116813
     )
 
 
@@ -1912,8 +1912,8 @@ def test_get_meta(test_scm_df):
 def test_get_meta_no_duplicates(test_scm_df, no_duplicates):
     if no_duplicates:
         assert (
-            test_scm_df.get_unique_meta("climate_model", no_duplicates=no_duplicates)
-            == "a_model"
+                test_scm_df.get_unique_meta("climate_model", no_duplicates=no_duplicates)
+                == "a_model"
         )
 
         error_msg = re.escape(
@@ -1931,3 +1931,11 @@ def test_get_meta_no_duplicates(test_scm_df, no_duplicates):
             "Primary Energy",
             "Primary Energy|Coal",
         ]
+
+
+def test_to_nc(test_scm_df):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = os.path.join(tempdir, "out.nc")
+        test_scm_df.to_nc(out_fname, dimensions=("scenario",))
+
+        assert os.path.exists(out_fname)
