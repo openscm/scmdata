@@ -3,7 +3,8 @@ from os.path import join, exists
 
 import netCDF4 as nc
 import numpy.testing as npt
-from scmdata.rw import df_to_nc
+from scmdata.rw import df_to_nc, nc_to_df
+import pandas.testing as pdt
 
 
 def test_to_nc(test_scm_df):
@@ -27,3 +28,14 @@ def test_to_nc(test_scm_df):
                             test_scm_df.filter(variable="Primary Energy", scenario="a_scenario2").values[0])
         npt.assert_allclose(ds.variables["primary_energy__coal"][0, :],
                             test_scm_df.filter(variable="Primary Energy|Coal", scenario="a_scenario").values[0])
+
+
+def test_to_df(test_scm_df):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        df_to_nc(test_scm_df, out_fname, dimensions=("scenario",))
+
+        assert exists(out_fname)
+
+        df = nc_to_df(out_fname)
+        pdt.assert_frame_equal(test_scm_df.timeseries(), df.timeseries(), check_like=True)

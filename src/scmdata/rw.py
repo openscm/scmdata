@@ -10,7 +10,7 @@ from datetime import datetime
 
 import numpy as np
 from scmdata import __version__
-
+from collections import defaultdict
 
 def _var_to_nc(var):
     return (
@@ -24,7 +24,7 @@ def _nc_to_var(var):
     return (
         var.replace("__", "|")
             .replace("_", " ")
-            .capitalise()
+            .title()
     )
 
 
@@ -90,6 +90,47 @@ def _write_nc(ds, df, dimensions):
         ds.variables[var_name].setncatts(var_attrs)
 
 
+def _read_nc(ds):
+    dims = {d: ds.variables[d][:] for d in ds.dimensions}
+    dims["time"] = dims["time"].astype("datetime64[s]")
+
+    data = []
+    columns = defaultdict(list)
+    for var_name in ds.variables:
+        if var_name in dims:
+            continue
+        var = ds.variables[var_name]
+        name = _nc_to_var(var_name)
+        var_data = var[:]
+        valid_mask = ~np.isnan(var_data).all(axis=-1)
+
+        var_meta = {
+            "variable": name
+        }
+        for v in var.ncattrs():
+            if not v.startswith('_'):
+                var_meta[v] = var.getncattr(v)
+
+        # Iterate over all combinations of dimensions
+        meta_at_coord = np.asarray(np.meshgrid(*[dims[d] for d in var.dimensions[:-1]], indexing='ij'))
+        meta_at_coord = meta_at_coord.squeeze()
+
+        with np.nditer(meta_at_coord, ["refs_ok", "multi_index"], order="F") as it:
+            for _ in it:
+                if not valid_mask[it.multi_index]:
+                    continue
+                data.append(var_data[it.multi_index])
+                for i, v in enumerate(it.multi_index):
+                    dim_name = var.dimensions[i]
+                    columns[dim_name].append(dims[dim_name][v])
+                for v in var_meta:
+                    columns[v].append(var_meta[v])
+
+    # Circular dependency
+    from scmdata.dataframe import ScmDataFrame
+    return ScmDataFrame(np.asarray(data).T, columns=columns, index=dims["time"])
+
+
 def df_to_nc(df, fname, dimensions=("region",)):
     """
     Writes a ScmDataFrame to disk as a netCDF4 file
@@ -98,7 +139,7 @@ def df_to_nc(df, fname, dimensions=("region",)):
 
     Parameters
     ----------
-    path: str
+    fname: str
         Path to write the file into
     dimensions: iterable of str
         Dimensions to include in the netCDF file. The order of the dimensions in the netCDF file will be the same
@@ -116,3 +157,20 @@ def df_to_nc(df, fname, dimensions=("region",)):
         ds.created_at = datetime.utcnow().isoformat()
         ds._scmdata_version = __version__
         _write_nc(ds, df, dimensions)
+
+
+def nc_to_df(fname):
+    """
+    Reads a ScmDataFrame which has been serialized using ``df_to_nc``
+
+
+    Parameters
+    ----------
+    fname: str
+        Filename to read
+    """
+    if not has_netcdf:
+        raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
+
+    with nc.Dataset(fname) as ds:
+        return _read_nc(ds)
