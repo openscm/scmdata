@@ -10,7 +10,7 @@ before_install:
   - pip install pip --upgrade
 
 install:
-  - pip install .[tests,pyam]
+  - pip install .[tests,extras]
 
 script:
   - pytest --cov -r a
