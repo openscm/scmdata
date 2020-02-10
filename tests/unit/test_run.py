@@ -291,7 +291,7 @@ def test_init_with_decimal_years():
 def test_init_df_from_timeseries(test_scm_df_mulitple):
     df = ScmRun(test_scm_df_mulitple.timeseries())
 
-    assert_scmdf_almost_equal(df, test_scm_df_mulitple, allow_unordered=True)
+    assert_scmdf_almost_equal(df, test_scm_df_mulitple, check_ts_names=False)
 
 
 def test_init_df_with_extra_col(test_pd_df):

@@ -9,6 +9,23 @@ from scmdata.time import TimeseriesConverter
 from xarray.core.ops import inject_binary_ops
 
 
+class Counter:
+    def __init__(self):
+        self.count = 0
+
+    def __call__(self):
+        val = self.count
+        self.count += 1
+
+        return val
+
+    def reset(self):
+        self.count = 0
+
+
+default_name = Counter()
+
+
 class TimeSeries:
     """
     A 1D timeseries with metadata
@@ -24,6 +41,10 @@ class TimeSeries:
         if isinstance(data, xr.DataArray):
             self._data = data
         else:
+            # Auto incrementing name
+            if "name" not in kwargs:
+                kwargs["name"] = default_name()
+
             self._data = xr.DataArray(values, **kwargs)
 
     def __repr__(self):
