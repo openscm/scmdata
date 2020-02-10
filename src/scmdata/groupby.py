@@ -18,7 +18,7 @@ def maybe_wrap_array(original, new_array):
 
 class GroupBy(ImplementsArrayReduce):
     def __init__(self, meta, groups):
-        self._grouper = meta.groupby(groups, group_keys=True)
+        self._grouper = meta.groupby(list(groups), group_keys=True)
 
     def _iter_grouped(self):
         for indices in self._grouper.groups:
@@ -83,7 +83,7 @@ class RunGroupBy(GroupBy):
             return df_append(applied)
 
     def reduce(
-            self, func, dim=None, axis=None, keep_attrs=None, **kwargs
+            self, func, dim=None, axis=None, **kwargs
     ):
         """Reduce the items in this group by applying `func` along some
         dimension(s).
@@ -95,15 +95,11 @@ class RunGroupBy(GroupBy):
             `func(x, axis=axis, **kwargs)` to return the result of collapsing
             an np.ndarray over an integer valued axis.
         dim : `...`, str or sequence of str, optional
-            Dimension(s) over which to apply `func`.
+            Not used in this implementation
         axis : int or sequence of int, optional
             Axis(es) over which to apply `func`. Only one of the 'dimension'
             and 'axis' arguments can be supplied. If neither are supplied, then
             `func` is calculated over all dimension for each group item.
-        keep_attrs : bool, optional
-            If True, the datasets's attributes (`attrs`) will be copied from
-            the original object to the new one.  If False (default), the new
-            object will be returned without attributes.
         **kwargs : dict
             Additional keyword arguments passed on to `func`.
 
@@ -117,7 +113,7 @@ class RunGroupBy(GroupBy):
             assert dim is "time", "Only reduction along the time dimension is supported"
 
         def reduce_array(ar):
-            return ar.reduce(func, dim, axis, keep_attrs=keep_attrs, **kwargs)
+            return ar.reduce(func, dim, axis, **kwargs)
 
         return self.map(reduce_array)
 

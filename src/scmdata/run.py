@@ -386,12 +386,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Return a :func:`copy.deepcopy` of self.
 
+        Also creates copies the underlying Timeseries data
+
         Returns
         -------
         :obj:`ScmDataFrame`
             :func:`copy.deepcopy` of ``self``
         """
-        return copy.copy(self)
+        ret = copy.copy(self)
+        ret._ts = [ts.copy() for ts in self._ts]
+        return ret
 
     def __len__(self) -> int:
         """
@@ -489,8 +493,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             If the metadata are not unique between timeseries
         """
         df = pd.DataFrame(np.asarray(self._ts))
-        _meta = pd.DataFrame([ts.meta for ts in self._ts])
-        _meta = _meta if meta is None else _meta[meta]
+        _meta = self.meta if meta is None else self.meta[meta]
         if check_duplicated and _meta.duplicated().any():
             raise ValueError("Duplicated meta values")
 
@@ -500,6 +503,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         )
 
         return df
+
+    @property
+    def shape(self) -> tuple:
+        return (len(self._ts), len(self.time_points))
 
     @property
     def values(self) -> np.ndarray:
@@ -515,10 +522,17 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Metadata
         """
-        return pd.DataFrame([ts.meta for ts in self._ts])
+        return pd.DataFrame([ts.meta for ts in self._ts], index=[ts.name for ts in self._ts])
 
     def _meta_column(self, col) -> pd.Series:
-        return pd.Series([ts.meta[col] for ts in self._ts], name=col)
+        vals = []
+        for ts in self._ts:
+            try:
+                vals.append(ts.meta[col])
+            except KeyError:
+                vals.append(np.nan)
+
+        return pd.Series(vals, name=col, index=[ts.name for ts in self._ts])
 
     def filter(
             self,
@@ -577,26 +591,29 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         AssertionError
             Data and meta become unaligned
         """
-        _keep_ts, _keep_cols = self._apply_filters(kwargs, has_nan)
-        ret = self.copy() if not inplace else self
+        _keep_times, _keep_cols = self._apply_filters(kwargs, has_nan)
+        ret = copy.copy(self) if not inplace else self
 
-        if keep:
-            # Filter the timeseries first
-            # I wish lists had the same indexing interface as ndarrays
+        if not keep and sum(~_keep_cols) and sum(~_keep_times):
+            raise ValueError("If keep=False, filtering cannot be performed on temporally and with "
+                             "metadata at the same time")
+
+        reduce_times = (~_keep_times).sum() > 0
+        reduce_cols = (~_keep_cols).sum() > 0
+
+        if not keep:
+            _keep_times = ~_keep_times
+            _keep_cols = ~_keep_cols
+
+        # Filter the timeseries first
+        # I wish lists had the same indexing interface as ndarrays
+        if reduce_cols:
             ret._ts = [ret._ts[i] for i, v in enumerate(_keep_cols) if v]
 
-            # Then filter the timeseries if needed
-            if (~_keep_ts).sum():
-                ret._ts = [ts[_keep_ts] for ts in ret._ts]
-                ret["time"] = self.time_points[_keep_ts]
-        else:
-            raise NotImplementedError
-            idx = _keep_ts[:, np.newaxis] & _keep_cols
-            if not idx.shape == self._data.shape:
-                raise AssertionError(
-                    "Index shape does not match data shape"
-                )  # pragma: no cover  # don't think it's possible to get here...
-            idx = idx if keep else ~idx
+        # Then filter the timeseries if needed
+        if reduce_times:
+            ret._ts = [ts[_keep_times] for ts in ret._ts]
+            ret["time"] = self.time_points[_keep_times]
 
         if len(ret) == 0:
             _logger.warning("Filtered ScmDataFrame is empty!")
@@ -780,9 +797,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         ret = self.copy() if not inplace else self
         for col, _mapping in mapping.items():
-            if col not in self.meta_attributes:
+            if col not in ret.meta_attributes:
                 raise ValueError("Renaming by {} not supported!".format(col))
-            for ts in self._ts:
+            for ts in ret._ts:
                 orig = ts.meta[col]
                 if orig in _mapping:
                     ts.meta[col] = _mapping[orig]
@@ -1207,13 +1224,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         raise ValueError("operation must be one of ['median', 'mean', 'quantile']")
 
     def groupby(self, *group):
+        if len(group) == 1 and not isinstance(group[0], str):
+            group = tuple(group[0])
         return RunGroupBy(self, group)
 
     def convert_unit(
             self,
             unit: str,
             context: Optional[str] = None,
-            inplace: bool = False,
             **kwargs: Any
     ):
         """
@@ -1232,10 +1250,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             CO2-equivalent calculations. If ``None``, no metric will be applied and
             CO2-equivalent calculations will raise :class:`DimensionalityError`.
 
-        inplace
-            If ``True``, the operation is performed inplace, updating the underlying
-            data. Otherwise a new :class:`ScmDataFrame` instance is returned.
-
         **kwargs
             Extra arguments which are passed to :func:`~ScmDataFrame.filter` to
             limit the timeseries which are attempted to be converted. Defaults to
@@ -1248,24 +1262,27 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             with the converted units.
         """
         # pylint: disable=protected-access
-        ret = self if inplace else self.copy()
+        ret = self.copy()
 
         if "unit_context" not in ret.meta_attributes:
             ret["unit_context"] = None
 
         to_convert = ret.filter(**kwargs)
+        to_not_convert = ret.filter(**kwargs, keep=False)
 
         def apply_units(group):
-            orig_unit = group["unit"][0]
+            orig_unit = group.get_unique_meta("unit", no_duplicates=True)
             uc = UnitConverter(orig_unit, unit, context=context)
-            ret._data[grp.index] = ret._data[grp.index].apply(uc.convert_from)
+            for ts in group._ts:  # todo: fix when we have an apply function
+                ts._data[:] = uc.convert_from(ts._data.values)
             group["unit"] = unit
             group["unit_context"] = context
+            return group
 
-        to_convert.groupby("unit").apply(apply_units)
+        ret = to_convert.groupby("unit").map(apply_units)
 
         if not inplace:
-            return ret
+            return df_append([ret, to_not_convert])
         return None
 
     def relative_to_ref_period_mean(
@@ -1428,6 +1445,42 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             index, columns, **kwargs
         )  # pragma: no cover
 
+    def reduce(self, func, dim=None, axis=None, keep_attrs=None, **kwargs):
+        if dim is not None:
+            raise ValueError("ScmRun.reduce does not handle dim. Use axis instead")
+
+        input_data = self.values
+
+        if axis is None or axis == 1:
+            raise NotImplementedError("Cannot currently reduce along the time dimension")
+
+        if axis is not None:
+            data = func(input_data, axis=axis, **kwargs)
+        else:
+            data = func(input_data, **kwargs)
+
+        if getattr(data, "shape", ()) == self.shape:
+            return ScmRun(data, index=self.time_points, columns=self.meta.to_dict("list"))
+        else:
+            removed_axes = (
+                range(2) if axis is None else np.atleast_1d(axis) % 2
+            )
+            index = self.time_points
+            meta = self.meta.to_dict("list")
+            if 0 in removed_axes and len(meta):
+                # Reduced the timeseries
+                m = self.meta
+                n_unique = m.nunique(axis=0)
+                m = m.drop(n_unique[n_unique > 1]).drop_duplicates()
+                assert len(m) == 1
+
+                meta = m.to_dict("list")
+
+            if 1 in removed_axes:
+                raise NotImplementedError  # pragma: no cover
+
+            return ScmRun(data, index=index, columns=meta)
+
 
 def df_append(
         runs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
@@ -1482,13 +1535,25 @@ def df_append(
     for run in runs[1:]:
         ret._ts.extend(run._ts)
 
+    # Determine the new common timebase
+    new_t = np.asarray([r.time_points for r in runs]).ravel()
+    new_t = np.unique(new_t)
+    new_t.sort()
+
+    # reindex
+    if not np.array_equal(new_t, ret.time_points):
+        ret._ts = [ts.reindex(new_t) for ts in ret._ts]
+        ret._time_points = TimePoints(new_t)
+
     if duplicate_msg and ret.meta.duplicated().any():
         warn_handle_res = _handle_potential_duplicates_in_append(ret, duplicate_msg)
         if warn_handle_res is not None:
             return warn_handle_res  # type: ignore  # special case
 
         # average identical metadata
-        ret = ret.groupby(ret.meta_attributes).mean()
+        ret = ret.groupby(ret.meta_attributes).mean(axis=0)
+
+    ret._ts.sort(key=lambda a: a.name)
 
     if not inplace:
         return ret
@@ -1521,3 +1586,4 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
         return data
 
     raise ValueError("Unrecognised value for duplicate_msg")
+
