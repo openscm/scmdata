@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from scmdata.run import ScmRun
+from scmdata.dataframe import ScmDataFrame
 from scmdata.timeseries import default_name
 
 try:
@@ -268,8 +269,12 @@ def test_scm_df_mulitple(request):
 
 
 @pytest.fixture(scope="function")
-def test_scm_df(request):
+def test_scm_run(request):
     yield ScmRun(TEST_DF.copy())
+
+@pytest.fixture(scope="function")
+def test_scm_df(request):
+    yield ScmDataFrame(TEST_DF.copy())
 
 
 _misru = [
