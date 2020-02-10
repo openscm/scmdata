@@ -1035,7 +1035,7 @@ def test_append_duplicates(test_scm_df):
 def test_append_duplicates_order_doesnt_matter(test_scm_df):
     other = copy.deepcopy(test_scm_df)
     other["time"] = [2020, 2030, 2040]
-    other.values[2, 2] = 5.0
+    other._ts[2][2] = 5.0
 
     res = other.append(test_scm_df)
 
@@ -1067,7 +1067,7 @@ def test_append_duplicate_times(test_append_scm_dfs, duplicate_msg):
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
     elif duplicate_msg == "return":
-        warn_msg = "returning a `pd.DataFrame`, not an `ScmDataFrame`"
+        warn_msg = "returning a `pd.DataFrame`, not an `ScmRun`"
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
     else:
@@ -1078,7 +1078,7 @@ def test_append_duplicate_times(test_append_scm_dfs, duplicate_msg):
         assert res.shape[0] == len(base) + len(other)
 
         # check advice given in message actually only finds duplicate rows
-        look_df = res[res.index.duplicated(keep=False)].sort_index()
+        look_df = res.meta[res.meta.duplicated(keep=False)]
         assert look_df.shape[0] == 2 * test_append_scm_dfs["duplicate_rows"]
     else:
         pd.testing.assert_frame_equal(
@@ -1118,7 +1118,8 @@ def test_append_duplicate_times_error_msg(test_scm_df):
 
 def test_append_inplace(test_scm_df):
     other = test_scm_df.copy()
-    other._data *= 2
+    for ts in other:
+        other[:] = other * 2
 
     obs = test_scm_df.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2, 7, 7]
@@ -1139,8 +1140,8 @@ def get_append_col_order_time_dfs(base):
     other = copy.deepcopy(base)
 
     tnew_var = "Primary Energy|Gas"
-    other._meta = other._meta[sorted(other._meta.columns.values)]
-    other._meta.loc[1, "variable"] = tnew_var
+    other._meta = other.meta[sorted(other.meta.columns.values)]
+    other.meta.loc[1, "variable"] = tnew_var
 
     tdata = other._data.copy().reset_index()
     tdata["time"] = [
@@ -1209,7 +1210,7 @@ def test_append_column_order_time_interpolation(test_scm_df):
 
 
 def test_df_append_inplace_wrong_base(test_scm_df):
-    error_msg = "Can only append inplace to an ScmDataFrame"
+    error_msg = "Can only append inplace to an ScmRun"
     with pytest.raises(TypeError, match=error_msg):
         with warnings.catch_warnings(record=True):  # ignore warnings in this test
             df_append([test_scm_df.timeseries(), test_scm_df], inplace=True)

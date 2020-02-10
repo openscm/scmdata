@@ -204,8 +204,8 @@ class TimeseriesConverter:
         extrapolation_type="linear",
     ):
 
-        self.source = np.array(source_time_points).astype(_TARGET_TYPE, copy=True)
-        self.target = np.array(target_time_points).astype(_TARGET_TYPE, copy=True)
+        self.source = np.array(source_time_points).astype("datetime64[s]").astype(_TARGET_TYPE, copy=True)
+        self.target = np.array(target_time_points).astype("datetime64[s]").astype(_TARGET_TYPE, copy=True)
         self.interpolation_type = interpolation_type
         self.extrapolation_type = extrapolation_type
 

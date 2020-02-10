@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from xarray.core import ops
 from xarray.core.common import ImplementsArrayReduce
@@ -115,7 +117,9 @@ class RunGroupBy(GroupBy):
         def reduce_array(ar):
             return ar.reduce(func, dim, axis, **kwargs)
 
-        return self.map(reduce_array)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            return self.map(reduce_array)
 
 
 ops.inject_reduce_methods(RunGroupBy)
