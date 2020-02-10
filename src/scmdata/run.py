@@ -13,7 +13,6 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 from dateutil import parser
 
 from .dataframe import ScmDataFrame
@@ -26,6 +25,8 @@ from .filters import (
     pattern_match,
     years_match,
 )
+from .groupby import RunGroupBy
+from .timeseries import TimeSeries
 from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints, TimeseriesConverter
@@ -341,14 +342,21 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         TypeError
             Timeseries cannot be read from :obj:`data`
         """
+        if isinstance(data, ScmRun):
+            self._ts = data._ts
+            self._time_points = TimePoints(data.time_points)
+        else:
+            self._init_timeseries(data, index, columns, **kwargs)
+
+    def _init_timeseries(self, data, index: Any = None, columns: Optional[Dict[str, list]] = None,**kwargs: Any):
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
         elif isinstance(data, ScmDataFrame):
             # turn off mypy type checking here as ScmDataFrame isn't defined
             # when mypy does type checking
             (_df, _meta) = (
-                data._data.copy(),  # pylint: disable=protected-access
-                data._meta.copy(),  # pylint: disable=protected-access
+                data._data,  # pylint: disable=protected-access
+                data._meta,  # pylint: disable=protected-access
             )
         elif isinstance(data, (pd.DataFrame, pd.Series)):
             (_df, _meta) = _format_data(data.copy())
@@ -367,20 +375,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             (_df, _meta) = _read_file(data, **kwargs)
 
         self._time_points = TimePoints(_df.index.values)
-        _df.index = self._time_points.to_index()
         _df = _df.astype(float)
 
-        variables = {}
-        for name, group in _meta.groupby(["variable"]):
-            assert len(group) == 1  # TODO: handle region disaggregation
-            variables[name] = xr.DataArray(
-                _df[group.index].values[:, 0],
-                dims=["time"],
-                attrs=group[_meta.columns].squeeze().to_dict()
-            )
-        self._ds = xr.Dataset(variables, coords={
-            "time": self._time_points.values
-        })
+        self._ts = []
+        for name, attrs in _meta.iterrows():
+            ts = TimeSeries(data=_df[name], coords=[('time', self._time_points.values)], attrs=attrs)
+            self._ts.append(ts)
 
     def copy(self):
         """
@@ -391,13 +391,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         :obj:`ScmDataFrame`
             :func:`copy.deepcopy` of ``self``
         """
-        return copy.deepcopy(self)
+        return copy.copy(self)
 
     def __len__(self) -> int:
         """
         Get the number of timeseries.
         """
-        return len(self._meta)
+        return len(self._ts)
 
     def __getitem__(self, key: Any) -> Any:
         """
@@ -413,8 +413,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             return pd.Series(self._time_points.to_index(), dtype="object")
         if key == "year":
             return pd.Series(self._time_points.years())
-        if set(_key_check).issubset(self.meta.columns):
-            return self.meta.__getitem__(key)
+        if set(_key_check).issubset(self.meta_attributes):
+            return self._meta_column(key)
 
         raise KeyError("I don't know what to do with key: {}".format(key))
 
@@ -428,9 +428,33 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         if key == "time":
             self._time_points = TimePoints(value)
-            self._ds["time"] = self._time_points.values
-            return value
+            for ts in self._ts:
+                if len(value) != len(ts):
+                    raise ValueError("New time series is the incorrect length (expected: {}, got: {})".format(len(value), len(ts)))
+                ts["time"] = self._time_points.values
+            return self._time_points.values
         return self.set_meta(value, name=key)
+
+    def __repr__(self):
+        def _indent(s):
+            lines = ["\t" + l for l in s.split("\n")]
+            return "\n".join(lines)
+
+        meta_str = _indent(self.meta.__repr__())
+        time_str = [
+            "Start: {}".format(self.time_points[0]),
+            "End: {}".format(self.time_points[-1])
+        ]
+        time_str = _indent("\n".join(time_str))
+        return '<scmdata.ScmRun (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}'\
+            .format(len(self), len(self.time_points), time_str, meta_str)
+
+    @property
+    def meta_attributes(self):
+        meta = []
+        for ts in self._ts:
+            meta.extend(ts.meta.keys())
+        return sorted(list(set(meta)))
 
     @property
     def time_points(self) -> np.ndarray:
@@ -439,7 +463,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         return self._time_points.values
 
-    def timeseries(self, meta: Optional[List[str]] = None) -> pd.DataFrame:
+    def timeseries(self, meta: Optional[List[str]] = None, check_duplicated: bool = True) -> pd.DataFrame:
         """
         Return the data in wide format (same as the timeseries method of
         :class:`pyam.IamDataFrame`).
@@ -449,6 +473,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         meta
             The list of meta columns that will be included in the output's MultiIndex.
             If None (default), then all metadata will be used.
+
+        check_duplicated
+            If True, an exception is raised if any of the timeseries have duplicated metadata
 
         Returns
         -------
@@ -461,18 +488,18 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ValueError
             If the metadata are not unique between timeseries
         """
-        _df = pd.DataFrame([self._ds[v].values for v in self._ds.data_vars])
-        _meta = pd.DataFrame([self._ds[v].attrs for v in self._ds.data_vars])
+        df = pd.DataFrame(np.asarray(self._ts))
+        _meta = pd.DataFrame([ts.meta for ts in self._ts])
         _meta = _meta if meta is None else _meta[meta]
-        if _meta.duplicated().any():
+        if check_duplicated and _meta.duplicated().any():
             raise ValueError("Duplicated meta values")
 
-        _df.columns = self._time_points.to_index()
-        _df.index = pd.MultiIndex.from_arrays(
+        df.columns = self._time_points.to_index()
+        df.index = pd.MultiIndex.from_arrays(
             _meta.values.T, names=_meta.columns
         )
 
-        return _df
+        return df
 
     @property
     def values(self) -> np.ndarray:
@@ -481,14 +508,17 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Calls :func:`timeseries`
         """
-        return self.timeseries().values
+        return np.asarray(self._ts)
 
     @property
     def meta(self) -> pd.DataFrame:
         """
         Metadata
         """
-        return self._meta.copy()
+        return pd.DataFrame([ts.meta for ts in self._ts])
+
+    def _meta_column(self, col) -> pd.Series:
+        return pd.Series([ts.meta[col] for ts in self._ts], name=col)
 
     def filter(
             self,
@@ -548,31 +578,27 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             Data and meta become unaligned
         """
         _keep_ts, _keep_cols = self._apply_filters(kwargs, has_nan)
-        idx = _keep_ts[:, np.newaxis] & _keep_cols
-        if not idx.shape == self._data.shape:
-            raise AssertionError(
-                "Index shape does not match data shape"
-            )  # pragma: no cover  # don't think it's possible to get here...
-        idx = idx if keep else ~idx
-
         ret = self.copy() if not inplace else self
-        d = ret._data.where(idx)  # pylint: disable=protected-access
-        ret._data = d.dropna(  # pylint: disable=protected-access
-            axis=1, how="all"
-        ).dropna(axis=0, how="all")
-        ret._meta = ret._meta[  # pylint: disable=protected-access
-            (~d.isna()).sum(axis=0) > 0
-            ]
-        ret["time"] = ret._data.index.values  # pylint: disable=protected-access
 
-        if not (
-                len(ret._data.columns) == len(ret._meta)  # pylint: disable=protected-access
-        ):
-            raise AssertionError(
-                "Data and meta have become unaligned"
-            )  # pragma: no cover  # don't think it's possible to get here...
+        if keep:
+            # Filter the timeseries first
+            # I wish lists had the same indexing interface as ndarrays
+            ret._ts = [ret._ts[i] for i, v in enumerate(_keep_cols) if v]
 
-        if not ret._meta.shape[0]:  # pylint: disable=protected-access
+            # Then filter the timeseries if needed
+            if (~_keep_ts).sum():
+                ret._ts = [ts[_keep_ts] for ts in ret._ts]
+                ret["time"] = self.time_points[_keep_ts]
+        else:
+            raise NotImplementedError
+            idx = _keep_ts[:, np.newaxis] & _keep_cols
+            if not idx.shape == self._data.shape:
+                raise AssertionError(
+                    "Index shape does not match data shape"
+                )  # pragma: no cover  # don't think it's possible to get here...
+            idx = idx if keep else ~idx
+
+        if len(ret) == 0:
             _logger.warning("Filtered ScmDataFrame is empty!")
 
         if not inplace:
@@ -613,24 +639,24 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             Filtering cannot be performed on requested column
         """
         regexp = filters.pop("regexp", False)
-        keep_ts = np.array([True] * len(self._data))
-        keep_meta = np.array([True] * len(self.meta))
+        keep_ts = np.array([True] * len(self.time_points))
+        keep_meta = np.array([True] * len(self))
 
         # filter by columns and list of values
         for col, values in filters.items():
             if col == "variable":
                 level = filters["level"] if "level" in filters else None
                 keep_meta &= pattern_match(
-                    self.meta[col],
+                    self._meta_column(col),
                     values,
                     level,
                     regexp,
                     has_nan=has_nan,
                     separator=self.data_hierarchy_separator,
                 ).values
-            elif col in self.meta.columns:
+            elif col in self.meta_attributes:
                 keep_meta &= pattern_match(
-                    self.meta[col],
+                    self._meta_column(col),
                     values,
                     regexp=regexp,
                     has_nan=has_nan,
@@ -654,7 +680,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             elif col == "level":
                 if "variable" not in filters.keys():
                     keep_meta &= pattern_match(
-                        self.meta["variable"],
+                        self._meta_column("variable"),
                         "*",
                         values,
                         regexp=regexp,
@@ -752,14 +778,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ValueError
             Column is not in meta or renaming will cause non-unique metadata
         """
-        ret = copy.deepcopy(self) if not inplace else self
+        ret = self.copy() if not inplace else self
         for col, _mapping in mapping.items():
-            if col not in self.meta.columns:
+            if col not in self.meta_attributes:
                 raise ValueError("Renaming by {} not supported!".format(col))
-            ret._meta[col] = ret._meta[col].replace(  # pylint: disable=protected-access
-                _mapping
-            )
-            if ret._meta.duplicated().any():  # pylint: disable=protected-access
+            for ts in self._ts:
+                orig = ts.meta[col]
+                if orig in _mapping:
+                    ts.meta[col] = _mapping[orig]
+
+            if ret.meta.duplicated().any():  # pylint: disable=protected-access
                 raise ValueError("Renaming to non-unique metadata for {}!".format(col))
 
         if not inplace:
@@ -810,14 +838,23 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if hasattr(meta, "index") and hasattr(meta.index, "names"):  # type: ignore
             index = meta.index  # type: ignore # mypy doesn't recognise if
         if index is None:
-            self._meta[name] = meta
+            meta = np.atleast_1d(meta)
+            if len(meta) == 1:
+                for ts in self._ts:
+                    ts.meta[name] = meta[0]
+            elif len(meta) == len(self):
+                for i, ts in enumerate(self._ts):
+                    ts.meta[name] = meta[i]
+            else:
+                raise ValueError("Invalid shape for metadata")
             return
 
         # turn dataframe to index if index arg is a DataFrame
         if isinstance(index, pd.DataFrame):
             index = index.set_index(
-                index.columns.intersection(self._meta.columns).to_list()
+                index.columns.intersection(self.meta_attributes).to_list()
             ).index
+
         if not isinstance(index, (pd.MultiIndex, pd.Index)):
             raise ValueError("index cannot be coerced to pd.MultiIndex")
 
@@ -1169,6 +1206,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         raise ValueError("operation must be one of ['median', 'mean', 'quantile']")
 
+    def groupby(self, *group):
+        return RunGroupBy(self, group)
+
     def convert_unit(
             self,
             unit: str,
@@ -1210,17 +1250,19 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         # pylint: disable=protected-access
         ret = self if inplace else self.copy()
 
-        if "unit_context" not in ret._meta:
-            ret._meta["unit_context"] = None
+        if "unit_context" not in ret.meta_attributes:
+            ret["unit_context"] = None
 
         to_convert = ret.filter(**kwargs)
-        for orig_unit, grp in to_convert._meta.groupby("unit"):  # type: ignore
+
+        def apply_units(group):
+            orig_unit = group["unit"][0]
             uc = UnitConverter(orig_unit, unit, context=context)
             ret._data[grp.index] = ret._data[grp.index].apply(uc.convert_from)
-            # TODO: check if unit_context has changed
-            ret._meta.loc[grp.index] = ret._meta.loc[grp.index].assign(
-                unit=unit, unit_context=context
-            )
+            group["unit"] = unit
+            group["unit_context"] = context
+
+        to_convert.groupby("unit").apply(apply_units)
 
         if not inplace:
             return ret
@@ -1306,7 +1348,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             If not :obj:`inplace`, return a new :class:`ScmDataFrame` instance
             containing the result of the append.
         """
-        if not isinstance(other, ScmDataFrame):
+        if not isinstance(other, ScmRun):
             other = self.__class__(other, **kwargs)
 
         return df_append([self, other], inplace=inplace, duplicate_msg=duplicate_msg)
@@ -1388,7 +1430,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
 
 def df_append(
-        dfs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
+        runs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
 ):
     """
     Append together many objects.
@@ -1401,12 +1443,12 @@ def df_append(
 
     Parameters
     ----------
-    dfs
+    runs:
         The dataframes to append. Values will be attempted to be cast to
         :class:`ScmDataFrame`.
 
     inplace
-        If ``True``, then the operation updates the first item in :obj:`dfs` and returns
+        If ``True``, then the operation updates the first item in :obj:`runs` and returns
         ``None``.
 
     duplicate_msg
@@ -1430,56 +1472,23 @@ def df_append(
     ValueError
         :obj:`duplicate_msg` option is not recognised.
     """
-    scm_dfs = [df if isinstance(df, ScmDataFrame) else ScmDataFrame(df) for df in dfs]
-    joint_dfs = [d.copy() for d in scm_dfs]
-    joint_meta = []  # type: List[str]
-    for df in joint_dfs:
-        joint_meta += df.meta.columns.tolist()
+    if inplace:
+        if not isinstance(runs[0], ScmRun):
+            raise TypeError("Can only append inplace to an ScmDataFrame")
+        ret = runs[0]
+    else:
+        ret = runs[0].copy()
 
-    joint_meta_set = set(joint_meta)
+    for run in runs[1:]:
+        ret._ts.extend(run._ts)
 
-    # should probably solve this https://github.com/pandas-dev/pandas/issues/3729
-    na_fill_value = -999
-    for i, _ in enumerate(joint_dfs):
-        for col in joint_meta_set:
-            if col not in joint_dfs[i].meta:
-                joint_dfs[i].set_meta(na_fill_value, name=col)
-
-    # we want to put data into timeseries format and pass into format_ts instead of
-    # _format_data
-    data = pd.concat(
-        [d.timeseries().reorder_levels(joint_meta_set) for d in joint_dfs], sort=False
-    )
-
-    data = data.reset_index()
-    data[list(joint_meta_set)] = data[joint_meta_set].replace(
-        to_replace=np.nan, value=na_fill_value
-    )
-    data = data.set_index(list(joint_meta_set))
-    if duplicate_msg and data.index.duplicated().any():
-        warn_handle_res = _handle_potential_duplicates_in_append(data, duplicate_msg)
+    if duplicate_msg and ret.meta.duplicated().any():
+        warn_handle_res = _handle_potential_duplicates_in_append(ret, duplicate_msg)
         if warn_handle_res is not None:
             return warn_handle_res  # type: ignore  # special case
 
-    data = data.groupby(data.index.names).mean()
-
-    if inplace:
-        if not isinstance(dfs[0], ScmDataFrame):
-            raise TypeError("Can only append inplace to an ScmDataFrame")
-        ret = dfs[0]
-    else:
-        ret = scm_dfs[0].copy()
-
-    ret._data = data.reset_index(drop=True).T  # pylint: disable=protected-access
-    ret._data = ret._data.sort_index()  # pylint: disable=protected-access
-    ret["time"] = ret._data.index.values  # pylint: disable=protected-access
-    ret._data = ret._data.astype(float)  # pylint: disable=protected-access
-
-    ret._meta = (  # pylint: disable=protected-access
-        data.index.to_frame()
-            .reset_index(drop=True)
-            .replace(to_replace=na_fill_value, value=np.nan)
-    )
+        # average identical metadata
+        ret = ret.groupby(ret.meta_attributes).mean()
 
     if not inplace:
         return ret
@@ -1490,7 +1499,8 @@ def df_append(
 def _handle_potential_duplicates_in_append(data, duplicate_msg):
     # If only one number contributes to each of the timeseries, we're not looking at
     # duplicates so can return.
-    contributing_values = (~data.isnull()).astype(int).groupby(data.index.names).sum()
+    ts = data.timeseries(check_duplicated=False)
+    contributing_values = (~ts.isnull()).astype(int).groupby(ts.index.names).sum()
     duplicates = (contributing_values > 1).any().any()
     if not duplicates:
         return None
