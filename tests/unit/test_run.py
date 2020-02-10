@@ -259,13 +259,6 @@ def test_init_with_years_as_str(test_pd_df, years):
     pd.testing.assert_index_equal(obs, exp)
 
 
-def test_col_order(test_scm_df):
-    pd.testing.assert_index_equal(
-        test_scm_df.meta.columns,
-        pd.Index(["model", "scenario", "region", "variable", "unit", "climate_model"]),
-    )
-
-
 def test_init_with_year_columns(test_pd_df):
     df = ScmDataFrame(test_pd_df)
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
@@ -295,11 +288,11 @@ def test_init_with_decimal_years():
     npt.assert_array_equal(res._data.loc[:, 0].values, inp_array)
 
 
-def test_init_df_from_timeseries(test_scm_df):
-    df = ScmDataFrame(test_scm_df.timeseries())
+def test_init_df_from_timeseries(test_scm_df_mulitple):
+    df = ScmDataFrame(test_scm_df_mulitple.timeseries())
     pd.testing.assert_frame_equal(
         df.timeseries().reset_index(),
-        test_scm_df.timeseries().reset_index(),
+        test_scm_df_mulitple.timeseries().reset_index(),
         check_like=True,
     )
 
@@ -373,7 +366,7 @@ def test_set_item_not_in_meta(test_scm_df):
 
 
 def test_len(test_scm_df):
-    assert len(test_scm_df) == len(test_scm_df._meta)
+    assert len(test_scm_df) == len(test_scm_df._ts)
 
 
 def test_head(test_scm_df):

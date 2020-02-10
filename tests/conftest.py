@@ -13,6 +13,7 @@ import pandas as pd
 import pytest
 
 from scmdata import ScmDataFrame
+from scmdata.run import ScmRun
 
 try:
     from pyam import IamDataFrame
@@ -206,7 +207,7 @@ def test_scm_datetime_df():
         inplace=True,
     )
 
-    yield ScmDataFrame(tdf)
+    yield ScmRun(tdf)
 
 
 @pytest.fixture(scope="function")
@@ -256,11 +257,15 @@ def test_iam_df():
         },
     ],
 )
-def test_scm_df(request):
+def test_scm_df_mulitple(request):
     if IamDataFrame is None:
         pytest.skip("pyam is not installed")
-    yield ScmDataFrame(**request.param)
+    yield ScmRun(**request.param)
 
+
+@pytest.fixture(scope="function")
+def test_scm_df(request):
+    yield ScmRun(TEST_DF.copy())
 
 _misru = [
     "a_model",
@@ -302,12 +307,12 @@ TEST_DF_MONTHLY = pd.DataFrame(
     ],
 )
 def test_scm_df_monthly(request):
-    yield ScmDataFrame(**request.param)
+    yield ScmRun(**request.param)
 
 
 @pytest.fixture(scope="function")
 def test_processing_scm_df():
-    yield ScmDataFrame(
+    yield ScmRun(
         data=np.array([[1, 6.0, 7], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
         columns={
             "model": ["a_iam"],
@@ -344,7 +349,7 @@ append_scm_df_pairs_times = [
     datetime(2010, 1, 1),
     datetime(2015, 6, 12),
 ]
-append_scm_df_base = ScmDataFrame(
+append_scm_df_base = ScmRun(
     data=np.array([[1, 6.0, 7], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
     index=append_scm_df_pairs_times,
     columns={
@@ -356,7 +361,7 @@ append_scm_df_base = ScmDataFrame(
 append_scm_df_pairs = [
     {
         "base": append_scm_df_base,
-        "other": ScmDataFrame(
+        "other": ScmRun(
             data=np.array([[-1, 0, 1]]).T,
             index=append_scm_df_pairs_times,
             columns={
@@ -366,7 +371,7 @@ append_scm_df_pairs = [
             },
         ),
         "duplicate_rows": 1,
-        "expected": ScmDataFrame(
+        "expected": ScmRun(
             data=np.array([[0, 3.0, 4], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
             index=append_scm_df_pairs_times,
             columns={
@@ -378,7 +383,7 @@ append_scm_df_pairs = [
     },
     {
         "base": append_scm_df_base,
-        "other": ScmDataFrame(
+        "other": ScmRun(
             data=np.array([[3, 3.5, 3.7], [1, 7, 11], [-2, 1, -1.4]]).T,
             index=append_scm_df_pairs_times,
             columns={
@@ -388,7 +393,7 @@ append_scm_df_pairs = [
             },
         ),
         "duplicate_rows": 1,
-        "expected": ScmDataFrame(
+        "expected": ScmRun(
             data=np.array(
                 [
                     [2, 4.75, 5.35],
@@ -410,7 +415,7 @@ append_scm_df_pairs = [
     },
     {
         "base": append_scm_df_base,
-        "other": ScmDataFrame(
+        "other": ScmRun(
             data=np.array([[3, 3.5, 3.7], [1, 7, 11], [-2, 1, -1.4], [-3, -4, -5]]).T,
             index=append_scm_df_pairs_times,
             columns={
@@ -425,7 +430,7 @@ append_scm_df_pairs = [
             },
         ),
         "duplicate_rows": 2,
-        "expected": ScmDataFrame(
+        "expected": ScmRun(
             data=np.array(
                 [
                     [2, 4.75, 5.35],
@@ -447,7 +452,7 @@ append_scm_df_pairs = [
     },
     {
         "base": append_scm_df_base,
-        "other": ScmDataFrame(
+        "other": ScmRun(
             data=np.array([[-1, 0, 1], [3, 4, 4.5], [0.1, 0.2, 0.3], [-4, -8, 10]]).T,
             index=append_scm_df_pairs_times,
             columns={
@@ -457,7 +462,7 @@ append_scm_df_pairs = [
             },
         ),
         "duplicate_rows": 4,
-        "expected": ScmDataFrame(
+        "expected": ScmRun(
             data=np.array(
                 [[0, 3, 4], [1.75, 3.5, 3.25], [1.05, 3.6, 0.15], [-2.5, -5, 6.5]]
             ).T,
@@ -485,7 +490,7 @@ def iamdf_type():
 @pytest.fixture(scope="module")
 def rcp26():
     fname = join(TEST_DATA, "rcp26_emissions.csv")
-    return ScmDataFrame(fname)
+    return ScmRun(fname)
 
 
 possible_source_values = [[1, 5, 3, 5, 7, 3, 2, 9]]
@@ -590,7 +595,7 @@ def combo_df(request):
     vals = combination._asdict()
     source = combination.source
 
-    df = ScmDataFrame(
+    df = ScmRun(
         combination.source_values,
         columns={
             "scenario": ["a_scenario"],
