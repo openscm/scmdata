@@ -382,7 +382,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ts = TimeSeries(data=_df[name], coords=[('time', self._time_points.values)], attrs=attrs)
             self._ts.append(ts)
 
-    def copy(self):
+    def copy(self, copy_ts=True):
         """
         Return a :func:`copy.deepcopy` of self.
 
@@ -394,7 +394,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             :func:`copy.deepcopy` of ``self``
         """
         ret = copy.copy(self)
-        ret._ts = [ts.copy() for ts in self._ts]
+        if copy_ts:
+            ret._ts = [ts.copy() for ts in self._ts]
         return ret
 
     def __len__(self) -> int:
@@ -955,37 +956,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         target_times = np.asarray(target_times, dtype="datetime64[s]")
 
-        # Need to keep an object index or pandas will not be able to handle a wide
-        # time range
-        timeseries_index = pd.Index(
-            target_times.astype(object), dtype="object", name="time"
-        )
+        res = self.copy(copy_ts=False)
 
-        res = self.copy()
+        res._ts = [
+            ts.interpolate(
+                target_times,
+                interpolation_type=interpolation_type,
+                extrapolation_type=extrapolation_type
+            ) for ts in res._ts]
+        res._time_points = TimePoints(target_times)
 
-        # Resize dataframe to new index length
-        old_data = res._data
-        res._data = pd.DataFrame(index=timeseries_index, columns=res._data.columns)
-
-        time_points = self.time_points
-
-        timeseries_converter = TimeseriesConverter(
-            time_points,
-            target_times,
-            interpolation_type=interpolation_type,
-            extrapolation_type=extrapolation_type,
-        )
-
-        res._data = old_data.apply(  # pylint: disable=protected-access
-            lambda col: pd.Series(
-                timeseries_converter.convert_from(  # pylint: disable=cell-var-from-loop
-                    col.values
-                ),
-                index=timeseries_index,
-            )
-        )
-
-        res["time"] = timeseries_index
         return res
 
     def resample(self, rule: str = "AS", **kwargs: Any):
@@ -1281,9 +1261,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         ret = to_convert.groupby("unit").map(apply_units)
 
-        if not inplace:
-            return df_append([ret, to_not_convert])
-        return None
+        return df_append([ret, to_not_convert])
 
     def relative_to_ref_period_mean(
             self, append_str: Optional[str] = None, **kwargs: Any
@@ -1527,7 +1505,7 @@ def df_append(
     """
     if inplace:
         if not isinstance(runs[0], ScmRun):
-            raise TypeError("Can only append inplace to an ScmDataFrame")
+            raise TypeError("Can only append inplace to an ScmRun")
         ret = runs[0]
     else:
         ret = runs[0].copy()
@@ -1536,7 +1514,7 @@ def df_append(
         ret._ts.extend(run._ts)
 
     # Determine the new common timebase
-    new_t = np.asarray([r.time_points for r in runs]).ravel()
+    new_t = np.concatenate([r.time_points for r in runs])
     new_t = np.unique(new_t)
     new_t.sort()
 
@@ -1545,10 +1523,11 @@ def df_append(
         ret._ts = [ts.reindex(new_t) for ts in ret._ts]
         ret._time_points = TimePoints(new_t)
 
-    if duplicate_msg and ret.meta.duplicated().any():
-        warn_handle_res = _handle_potential_duplicates_in_append(ret, duplicate_msg)
-        if warn_handle_res is not None:
-            return warn_handle_res  # type: ignore  # special case
+    if ret.meta.duplicated().any():
+        if duplicate_msg:
+            warn_handle_res = _handle_potential_duplicates_in_append(ret, duplicate_msg)
+            if warn_handle_res is not None:
+                return warn_handle_res  # type: ignore  # special case
 
         # average identical metadata
         ret = ret.groupby(ret.meta_attributes).mean(axis=0)
@@ -1582,7 +1561,7 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
         return None
 
     if duplicate_msg == "return":
-        warnings.warn("returning a `pd.DataFrame`, not an `ScmDataFrame`")
+        warnings.warn("returning a `pd.DataFrame`, not an `ScmRun`")
         return data
 
     raise ValueError("Unrecognised value for duplicate_msg")
