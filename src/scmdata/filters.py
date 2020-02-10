@@ -158,14 +158,11 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         else values
     )
 
-    # pyam issue (#40) with string-to-nan comparison, replace nan by empty string
-    # TODO: add docs and example of filtering/removing NaN given this internal
-    #       conversion
     _meta_col = meta_col.copy()
     if has_nan:
         _meta_col.loc[
             [np.isnan(i) if not isinstance(i, str) else False for i in _meta_col]
-        ] = ""
+        ] = "nan"
 
     for s in _values:
         if isinstance(s, str):
