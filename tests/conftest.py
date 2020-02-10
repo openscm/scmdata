@@ -11,9 +11,8 @@ from os.path import abspath, dirname, join
 import numpy as np
 import pandas as pd
 import pytest
-
-from scmdata import ScmDataFrame
 from scmdata.run import ScmRun
+from scmdata.timeseries import default_name
 
 try:
     from pyam import IamDataFrame
@@ -122,7 +121,6 @@ TEST_DF = pd.DataFrame(
 
 TEST_TS = np.array([[1, 6.0, 6], [0.5, 3, 3], [2, 7, 7]]).T
 
-
 TEST_RUN_DF = pd.DataFrame(
     [
         [
@@ -163,9 +161,15 @@ TEST_RUN_DF = pd.DataFrame(
 
 TEST_RUN_TS = np.array([[1, 6.0, 6], [0.5, 3, 3]]).T
 
+
 @pytest.fixture
 def test_data_path():
     return TEST_DATA
+
+
+@pytest.fixture(scope="function", autouse=True)
+def reset_default_name():
+    default_name.reset()
 
 
 @pytest.fixture
@@ -267,6 +271,7 @@ def test_scm_df_mulitple(request):
 def test_scm_df(request):
     yield ScmRun(TEST_DF.copy())
 
+
 _misru = [
     "a_model",
     "a_iam",
@@ -283,7 +288,7 @@ TEST_DF_MONTHLY = pd.DataFrame(
         + list(np.cos(np.arange(45)) + np.sin(np.arange(45))),
     ],
     columns=["climate_model", "model", "scenario", "region", "unit", "variable"]
-    + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
+            + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
 )
 
 
@@ -408,7 +413,7 @@ append_scm_df_pairs = [
             columns={
                 "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
                 "variable": append_scm_df_pairs_vars
-                + ["Primary Energy|Coal", "Primary Energy"],
+                            + ["Primary Energy|Coal", "Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
         ),
@@ -445,7 +450,7 @@ append_scm_df_pairs = [
             columns={
                 "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
                 "variable": append_scm_df_pairs_vars
-                + ["Primary Energy|Coal", "Primary Energy"],
+                            + ["Primary Energy|Coal", "Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
         ),
@@ -542,7 +547,7 @@ test_combinations = []
 
 
 def create_time_points(
-    start_time: np.datetime64, period_length: np.timedelta64, points_num: int
+        start_time: np.datetime64, period_length: np.timedelta64, points_num: int
 ):
     end_time_output = start_time + (points_num - 1) * period_length
     return np.linspace(
