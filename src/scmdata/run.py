@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops, inject_reduce_methods
+import xarray as xr
 
 from .dataframe import ScmDataFrame
 from .filters import (
@@ -381,8 +382,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         _df = _df.astype(float)
 
         self._ts = []
+        time_variable = xr.Variable("time", self._time_points.values)
         for name, attrs in _meta.iterrows():
-            ts = TimeSeries(data=_df[name], coords=[('time', self._time_points.values)], attrs=attrs)
+            ts = TimeSeries(data=_df[name], coords=[('time', time_variable)], attrs=attrs)
             self._ts.append(ts)
 
     def copy(self, copy_ts=True):
