@@ -288,10 +288,10 @@ def test_init_with_decimal_years():
     npt.assert_array_equal(res._data.loc[:, 0].values, inp_array)
 
 
-def test_init_df_from_timeseries(test_scm_run_mulitple):
-    df = ScmRun(test_scm_run_mulitple.timeseries())
+def test_init_df_from_timeseries(test_scm_df_mulitple):
+    df = ScmRun(test_scm_df_mulitple.timeseries())
 
-    assert_scmdf_almost_equal(df, test_scm_run_mulitple, check_ts_names=False)
+    assert_scmdf_almost_equal(df, test_scm_df_mulitple, check_ts_names=False)
 
 
 def test_init_df_with_extra_col(test_pd_df):
@@ -1108,8 +1108,7 @@ def test_append_doesnt_warn_if_different(test_append_scm_dfs):
 
 
 def test_append_duplicate_times_error_msg(test_scm_run):
-    other = copy.deepcopy(test_scm_run)
-    other._data *= 2
+    other = test_scm_run * 2
 
     error_msg = re.escape("Unrecognised value for duplicate_msg")
     with pytest.raises(ValueError, match=error_msg):
@@ -1234,9 +1233,8 @@ def test_append_inplace_column_order_time_interpolation(test_scm_run):
 
 
 def test_append_inplace_preexisinting_nan(test_scm_run):
-    other = copy.deepcopy(test_scm_run)
-    other._data *= 2
-    other._meta["climate_model"] = "a_model2"
+    other = test_scm_run * 2
+    other["climate_model"] = "a_model2"
     other.set_meta(np.nan, name="junk")
 
     original_ts = test_scm_run.timeseries().copy()
