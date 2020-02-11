@@ -9,11 +9,14 @@ import datetime as dt
 import os
 import warnings
 from logging import getLogger
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, Callable
+import functools
+import numbers
 
 import numpy as np
 import pandas as pd
 from dateutil import parser
+from xarray.core.ops import inject_binary_ops, inject_reduce_methods
 
 from .dataframe import ScmDataFrame
 from .filters import (
@@ -454,6 +457,30 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return '<scmdata.ScmRun (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}'\
             .format(len(self), len(self.time_points), time_str, meta_str)
 
+    @staticmethod
+    def _binary_op(
+            f: Callable[..., Any],
+            reflexive=False,
+            **kwargs,
+    ) -> Callable[..., "ScmRun"]:
+        @functools.wraps(f)
+        def func(self, other):
+            if isinstance(other, ScmRun):
+                return NotImplemented
+            if not isinstance(other, numbers.Number):
+                if len(other) != len(self):
+                    raise ValueError("Incorrect length")
+
+            ret = self.copy(copy_ts=False)
+            ret._ts = [(
+                f(ts, other)
+                if not reflexive
+                else f(other, ts)
+            ) for ts in self._ts]
+            return ret
+
+        return func
+
     @property
     def meta_attributes(self):
         meta = []
@@ -606,6 +633,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             _keep_times = ~_keep_times
             _keep_cols = ~_keep_cols
 
+            if not reduce_cols and not reduce_times:
+                # When nothing is filtered, drop everything
+                reduce_cols = True
+
         # Filter the timeseries first
         # I wish lists had the same indexing interface as ndarrays
         if reduce_cols:
@@ -671,7 +702,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     regexp,
                     has_nan=has_nan,
                     separator=self.data_hierarchy_separator,
-                ).values
+                )
             elif col in self.meta_attributes:
                 keep_meta &= pattern_match(
                     self._meta_column(col),
@@ -679,7 +710,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     regexp=regexp,
                     has_nan=has_nan,
                     separator=self.data_hierarchy_separator,
-                ).values
+                )
             elif col == "year":
                 keep_ts &= years_match(self._time_points.years(), values)
 
@@ -1530,7 +1561,7 @@ def df_append(
                 return warn_handle_res  # type: ignore  # special case
 
         # average identical metadata
-        ret = ret.groupby(ret.meta_attributes).mean(axis=0)
+        ret._ts = ret.groupby(ret.meta_attributes).mean(axis=0)._ts
 
     ret._ts.sort(key=lambda a: a.name)
 
@@ -1566,3 +1597,5 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
 
     raise ValueError("Unrecognised value for duplicate_msg")
 
+
+inject_binary_ops(ScmRun)

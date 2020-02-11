@@ -80,12 +80,19 @@ class TimeSeries:
     @staticmethod
     def _binary_op(
             f: Callable[..., Any],
-            **ignored_kwargs,
+            reflexive=False,
+            **kwargs,
     ) -> Callable[..., "TimeSeries"]:
         @functools.wraps(f)
         def func(self, other):
             other_data = getattr(other, "_data", other)
-            ts = f(self._data, other_data)
+
+            ts = (
+                f(self._data, other_data)
+                if not reflexive
+                else f(other_data, self._data)
+            )
+            ts.attrs = self._data.attrs
             return TimeSeries(ts)
 
         return func
