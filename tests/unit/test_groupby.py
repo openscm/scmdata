@@ -23,7 +23,7 @@ def test_groupby(test_scm_run, g):
 
 def test_groupby_return_none(test_scm_run):
     def func(df):
-        if df["variable"][0] == "Primary Energy":
+        if df.get_unique_meta("variable", no_duplicates=True) == "Primary Energy":
             return df
         else:
             return None
