@@ -1117,9 +1117,7 @@ def test_append_duplicate_times_error_msg(test_scm_run):
 
 
 def test_append_inplace(test_scm_run):
-    other = test_scm_run.copy()
-    for ts in other:
-        other[:] = other * 2
+    other = test_scm_run * 2
 
     obs = test_scm_run.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2, 7, 7]
@@ -1135,29 +1133,21 @@ def test_append_inplace(test_scm_run):
 
 
 def get_append_col_order_time_dfs(base):
-    other_2 = base.filter(variable="Primary Energy|Coal")
-    base.set_meta("co2_only", name="runmodus")
-    other = copy.deepcopy(base)
+    other_2 = base.filter(variable="Primary Energy|Coal").copy()
+    base["runmodus"] = "co2_only"
+    other = base.copy()
 
-    tnew_var = "Primary Energy|Gas"
-    other._meta = other.meta[sorted(other.meta.columns.values)]
-    other.meta.loc[1, "variable"] = tnew_var
-
-    tdata = other._data.copy().reset_index()
-    tdata["time"] = [
+    other._ts[1].meta["variable"] = "Primary Energy|Gas"
+    other["time"] = [
         dt.datetime(2002, 1, 1, 0, 0),
         dt.datetime(2008, 1, 1, 0, 0),
         dt.datetime(2009, 1, 1, 0, 0),
     ]
-    tdata = tdata.set_index("time")
-    tdata.index = tdata.index.astype("object")
 
-    other._data = tdata
+    other_2["ecs"] = 3.0
+    other_2["climate_model"] = "a_model2"
 
-    other_2._meta["ecs"] = 3.0
-    other_2._meta["climate_model"] = "a_model2"
-
-    exp = ScmDataFrame(
+    exp = ScmRun(
         pd.DataFrame(
             np.array(
                 [
@@ -1279,9 +1269,9 @@ def test_interpolate(combo_df):
     npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
 
 
-def test_time_mean_year_beginning_of_year(test_scm_run_monthly):
+def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
     # should be annual mean centred on January 1st of each year
-    res = test_scm_run_monthly.time_mean("AS")
+    res = test_scm_df_monthly.time_mean("AS")
 
     # test by hand
     npt.assert_allclose(
@@ -1300,7 +1290,7 @@ def test_time_mean_year_beginning_of_year(test_scm_run_monthly):
         return x.year + 1
 
     ts_resampled = (
-        test_scm_run_monthly.timeseries()
+        test_scm_df_monthly.timeseries()
         .T.groupby(group_annual_mean_beginning_of_year)
         .mean()
         .T
@@ -1310,9 +1300,9 @@ def test_time_mean_year_beginning_of_year(test_scm_run_monthly):
     pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, check_like=True)
 
 
-def test_time_mean_year(test_scm_run_monthly):
+def test_time_mean_year(test_scm_df_monthly):
     # should be annual mean (using all values in that year)
-    res = test_scm_run_monthly.time_mean("AC")
+    res = test_scm_df_monthly.time_mean("AC")
 
     # test by hand
     npt.assert_allclose(
@@ -1329,16 +1319,16 @@ def test_time_mean_year(test_scm_run_monthly):
         return x.year
 
     ts_resampled = (
-        test_scm_run_monthly.timeseries().T.groupby(group_annual_mean).mean().T
+        test_scm_df_monthly.timeseries().T.groupby(group_annual_mean).mean().T
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 7, 1))
 
     pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, check_like=True)
 
 
-def test_time_mean_year_end_of_year(test_scm_run_monthly):
+def test_time_mean_year_end_of_year(test_scm_df_monthly):
     # should be annual mean centred on December 31st of each year
-    res = test_scm_run_monthly.time_mean("A")
+    res = test_scm_df_monthly.time_mean("A")
 
     # test by hand
     npt.assert_allclose(
@@ -1357,7 +1347,7 @@ def test_time_mean_year_end_of_year(test_scm_run_monthly):
         return x.year - 1
 
     ts_resampled = (
-        test_scm_run_monthly.timeseries()
+        test_scm_df_monthly.timeseries()
         .T.groupby(group_annual_mean_end_of_year)
         .mean()
         .T
@@ -1367,10 +1357,10 @@ def test_time_mean_year_end_of_year(test_scm_run_monthly):
     pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, check_like=True)
 
 
-def test_time_mean_unsupported_style(test_scm_run_monthly):
+def test_time_mean_unsupported_style(test_scm_df_monthly):
     error_msg = re.escape("`rule` = `junk` is not supported")
     with pytest.raises(ValueError, match=error_msg):
-        test_scm_run_monthly.time_mean("junk")
+        test_scm_df_monthly.time_mean("junk")
 
 
 def test_set_meta_no_name(test_scm_run):

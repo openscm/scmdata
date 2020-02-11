@@ -19,13 +19,33 @@ def maybe_wrap_array(original, new_array):
 
 
 class GroupBy(ImplementsArrayReduce):
-    def __init__(self, meta, groups):
-        self._grouper = meta.groupby(list(groups), group_keys=True)
+    def __init__(self, meta, groups, na_fill_value=-10000):
+        m = meta.reset_index(drop=True)
+        self.na_fill_value = float(na_fill_value)
+
+        # Work around the bad handling of NaN values in groupbys
+        if any([np.issubdtype(m[c].dtype, np.number) for c in m]):
+            if (meta == na_fill_value).any(axis=None):
+                raise ValueError("na_fill_value conflicts with data value. Choose a na_fill_value not in meta")
+            else:
+                m = m.fillna(na_fill_value)
+
+        self._grouper = m.groupby(list(groups), group_keys=True)
 
     def _iter_grouped(self):
+        def _try_fill_value(v):
+            try:
+                if float(v) == float(self.na_fill_value):
+                    return np.nan
+            except ValueError:
+                pass
+            return v
         for indices in self._grouper.groups:
             indices = np.atleast_1d(indices)
-            yield self.run.filter(**{k: v for k, v in zip(self.group_keys, indices)})
+            indices = [_try_fill_value(v) for v in indices]
+            res = self.run.filter(**{k: v for k, v in zip(self.group_keys, indices)})
+            assert len(res), "Empty group for {}".format(list(zip(self.group_keys, indices)))
+            yield res
 
 
 class RunGroupBy(GroupBy):

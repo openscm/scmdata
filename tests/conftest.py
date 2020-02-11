@@ -20,6 +20,8 @@ try:
 except ImportError:
     IamDataFrame = None
 
+DATA_CLASSES = [ScmDataFrame, ScmRun]
+
 TEST_DATA = join(dirname(abspath(__file__)), "test_data")
 
 TEST_DF_LONG_TIMES = pd.DataFrame(
@@ -232,6 +234,11 @@ def test_iam_df():
     yield IamDataFrame(TEST_DF.copy())
 
 
+@pytest.fixture(params=DATA_CLASSES)
+def data_cls(request):
+    yield request.param
+
+
 @pytest.fixture(
     scope="function",
     params=[
@@ -316,8 +323,8 @@ TEST_DF_MONTHLY = pd.DataFrame(
         {"data": TEST_DF_MONTHLY.copy()},
     ],
 )
-def test_scm_df_monthly(request):
-    yield ScmRun(**request.param)
+def test_scm_df_monthly(request, data_cls):
+    yield data_cls(**request.param)
 
 
 @pytest.fixture(scope="function")

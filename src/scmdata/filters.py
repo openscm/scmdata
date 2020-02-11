@@ -164,8 +164,10 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
             [np.isnan(i) if not isinstance(i, str) else False for i in _meta_col]
         ] = "nan"
 
+    handle_as_number = np.issubdtype(meta_col.dtype, np.number)
+
     for s in _values:
-        if isinstance(s, str):
+        if not handle_as_number:
             _regexp = (
                 str(s)
                 .replace("|", "\\|")
@@ -198,7 +200,11 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
             )
             matches |= _meta_col.isin(subset) & depth
         else:
-            matches |= meta_col == s
+            s = float(s)
+            if np.isnan(s):
+                matches |= np.isnan(meta_col)
+            else:
+                matches |= np.isclose(s, meta_col)
 
     return matches
 
