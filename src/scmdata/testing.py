@@ -4,6 +4,21 @@ import pandas.testing as pdt
 
 
 def assert_scmdf_almost_equal(df1, df2, allow_unordered=False, check_ts_names=True):
+    """
+    Assert that two :obj:`ScmDataFrame`s are almost equal to each other.
+
+    Parameters
+    ----------
+    df1, df2 : :obj:`ScmDataFrame`
+        :obj:`ScmDataFrame` instances to compare
+
+    allow_unordered : bool
+        Can the data in ``df1`` and ``df2`` be in any order and still pass?
+
+    check_ts_names : bool
+        Do ``df1`` and ``df2``'s :attr:`meta` attributes have to be the same?
+        TODO: decide whether to rename `check_ts_names` to `check_meta` for clarity.
+    """
     # Check that the meta data is close
     if allow_unordered or not check_ts_names:
         df1_index = np.argsort(df1.meta.index)
