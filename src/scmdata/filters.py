@@ -1,7 +1,7 @@
 """
 Helpers for filtering DataFrames.
 
-Based upon :obj:`pyam.utils`.
+Originally based upon :obj:`pyam.utils`.
 """
 
 import datetime
@@ -44,7 +44,9 @@ def find_depth(
     separator: str = HIERARCHY_SEPARATOR,
 ) -> np.ndarray:
     """
-    Find all values which match given depth from a filter keyword.
+    Find all values which match given depth, relative to a filter search.
+
+    In other wrods, the depth is determined relative to ``s``.
 
     Parameters
     ----------
@@ -101,6 +103,7 @@ def find_depth(
     def apply_test(val):
         return test(len(pipe.findall(val.replace(regexp, ""))))
 
+    # TODO: change to `return np.array([apply_test(m) for m in meta_col])`, I think that's identical?
     return np.array([b for b in [apply_test(m) for m in meta_col]])
 
 
@@ -131,6 +134,8 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         <https://github.com/IAMconsortium/pyam>`_.
 
     has_nan
+        # TODO: check that the current description of this matches implementation
+
         If ``True``, convert all nan values in :obj:`meta_col` to empty string before
         applying filters. This means that "" and "*" will match rows with
         :class:`np.nan`. If ``False``, the conversion is not applied and so a search in
