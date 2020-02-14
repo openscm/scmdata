@@ -10,7 +10,20 @@ from xarray.core.ops import inject_binary_ops
 
 
 class Counter:
+    """
+    An auto-incrementing counter.
+
+    """
     def __init__(self):
+        """
+        Initialise.
+
+        Attributes
+        ----------
+        count : int
+            How many times has the counter been called? Set to zero upon
+            initialisation.
+        """
         self.count = 0
 
     def __call__(self):
@@ -23,27 +36,44 @@ class Counter:
         self.count = 0
 
 
-default_name = Counter()
+unique_name_generator = Counter()
+""":class:`Counter` instance, returns a unique name each time it's called"""
 
 
 class TimeSeries:
     """
     A 1D timeseries with metadata
 
-    Proxies a xarray.DataArray with a single time dimension
+    Proxies an :class:`xarray.DataArray` with a single time dimension
     """
 
     def __init__(self, data, **kwargs):
+        """
+        Initiliase.
+
+        Parameters
+        ----------
+        data : array_like
+            Timeseries data to wrap.
+
+        **kwargs
+            If ``data`` is not an :class:`xarray.DataArray` instance, passed when converting ``data`` to an :class:`xarray.DataArray` instance.
+
+        Attributes
+        ----------
+        _data : :class:`xr.DataArray`
+            Timeseries data.
+        """
         values = np.asarray(data)
 
         if values.ndim != 1:
             raise ValueError("TimeSeries must be 1d")
+
         if isinstance(data, xr.DataArray):
             self._data = data
         else:
-            # Auto incrementing name
-            if "name" not in kwargs:
-                kwargs["name"] = default_name()
+            if "name" not in kwargs: # use auto incrementing name
+                kwargs["name"] = unique_name_generator()
 
             self._data = xr.DataArray(values, **kwargs)
 
@@ -61,7 +91,7 @@ class TimeSeries:
         return copy.deepcopy(self)
 
     @property
-    def meta(self):
+    def meta(self):  # TODO: rename meta to distinguish from pyam.IamDataFrame's 'meta' table, which has a completely different meaning?
         return self._data.attrs
 
     @property
@@ -78,7 +108,7 @@ class TimeSeries:
         self._data.__setitem__(key, value)
 
     @staticmethod
-    def _binary_op(
+    def _binary_op(  # TODO: check why type hints are here
             f: Callable[..., Any],
             reflexive=False,
             **kwargs,
@@ -93,6 +123,7 @@ class TimeSeries:
                 else f(other_data, self._data)
             )
             ts.attrs = self._data.attrs
+            # TODO: check if we should be taking name here too?
             return TimeSeries(ts)
 
         return func
@@ -109,25 +140,30 @@ class TimeSeries:
 
     def reindex(self, time, **kwargs):
         """
-        Updates the time dimension, filling in the missing values with NaN's
+        Reindex the time dimension.
 
-        This is different to interpolating to fill in the missing values. Uses `xarray.DataArray.reindex` to perform the
-        reindexing
+        Uses :func:`xarray.DataArray.reindex` to perform the reindexing. Note that
+        unlike interpolation, reindexing does not fill in missing values. The fill
+        value can be controlled via the ``kwargs``.
 
         Parameters
         ----------
-        time : `obj`:np.ndarray
-        kwargs
+        time : array_like
+            Time points onto which to reindex.
+
+        **kwargs
             Additional arguments passed to xarray's DataArray.reindex function
 
         Returns
         -------
-        A new TimeSeries, with the new time dimension
+        :class:`Timeseries`
+            New TimeSeries with the reindexed time dimension
 
         References
         ----------
-        http://xarray.pydata.org/en/stable/generated/xarray.DataArray.reindex_like.html#xarray.DataArray.reindex_like
+        http://xarray.pydata.org/en/stable/generated/xarray.DataArray.reindex.html
         """
+        # TODO: check whether we need to copy attributes and name too?
         return TimeSeries(self._data.reindex({"time": time}, **kwargs))
 
     def interpolate(self,
