@@ -379,7 +379,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             (_df, _meta) = _read_file(data, **kwargs)
 
         self._time_points = TimePoints(_df.index.values)
-        _df = _df.astype(float)
+        _df = _df.astype(float)  # TODO: check why this is hard-coded, we might want int sometimes no?
 
         self._ts = []
         time_variable = xr.Variable("time", self._time_points.values)
@@ -583,7 +583,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         inplace
             If True, do operation inplace and return None
 
-        has_nan
+        has_nan  # TODO: check if this is still correct
             If ``True``, convert all nan values in :obj:`meta_col` to empty string
             before applying filters. This means that "" and "*" will match rows with
             :class:`np.nan`. If ``False``, the conversion is not applied and so a search
@@ -1193,6 +1193,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             self, cols: Union[str, List[str]], operation: str, **kwargs: Any
     ) -> pd.DataFrame:
         """
+        TODO: delete in favour of split combine apply methods?
+
         Process the data over the input columns.
 
         Parameters

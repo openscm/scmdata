@@ -6,12 +6,14 @@ from xarray.core.common import ImplementsArrayReduce
 
 
 def maybe_wrap_array(original, new_array):
-    """Wrap a transformed array with __array_wrap__ is it can be done safely.
-
-    This lets us treat arbitrary functions that take and return ndarray objects
-    like ufuncs, as long as they return an array with the same shape.
     """
-    # in case func lost array's metadata
+    Wrap a transformed array with __array_wrap__ if it can be done safely.
+
+    This ensures that an array's metadata is maintained if it makes sense to do so (
+    e.g. with masked arrays). It also lets us treat arbitrary functions that take and
+    return ndarray objects like ufuncs, as long as they return an array with the same
+    shape.
+    """
     if isinstance(new_array, np.ndarray) and new_array.shape == original.shape:
         return original.__array_wrap__(new_array)
     else:
@@ -26,9 +28,12 @@ class GroupBy(ImplementsArrayReduce):
         # Work around the bad handling of NaN values in groupbys
         if any([np.issubdtype(m[c].dtype, np.number) for c in m]):
             if (meta == na_fill_value).any(axis=None):
-                raise ValueError("na_fill_value conflicts with data value. Choose a na_fill_value not in meta")
-            else:
-                m = m.fillna(na_fill_value)
+                raise ValueError(
+                    "na_fill_value conflicts with data value. "
+                    "Choose an na_fill_value not in meta"
+                )
+
+            m = m.fillna(na_fill_value)
 
         self._grouper = m.groupby(list(groups), group_keys=True)
 
@@ -37,19 +42,28 @@ class GroupBy(ImplementsArrayReduce):
             try:
                 if float(v) == float(self.na_fill_value):
                     return np.nan
-            except ValueError:
+
+            except ValueError:  # not a number
                 pass
+
             return v
+
         for indices in self._grouper.groups:
             indices = np.atleast_1d(indices)
             indices = [_try_fill_value(v) for v in indices]
+            # TODO: check whether this method should be moved to ``RunGroupBy`` given
+            # that it relies on ``self.run`` and ``self.group_keys`` (which aren't set
+            # by ``__init__`` of ``GroupBy``)
             res = self.run.filter(**{k: v for k, v in zip(self.group_keys, indices)})
-            assert len(res), "Empty group for {}".format(list(zip(self.group_keys, indices)))
+            assert len(res), "Empty group for {}".format(
+                list(zip(self.group_keys, indices))
+            )
             yield res
 
 
 class RunGroupBy(GroupBy):
-    """GroupBy object specialized to grouping ScmRun objects
+    """
+    GroupBy object specialized to grouping ScmRun objects
     """
 
     def __init__(self, run, groups):
@@ -58,11 +72,14 @@ class RunGroupBy(GroupBy):
         super().__init__(run.meta, groups)
 
     def map(self, func, args=(), **kwargs):
-        """Apply a function to each time in the group and concatenate them
-        together into a new array.
+        """
+        Apply a function to each element in the group.
 
-        `func` is called like `func(ar, *args, **kwargs)` for each array `ar`
-        in this group.
+        ``func`` is called as ``func(ar, *args, **kwargs)`` for each array ``ar``
+        in the group.
+
+        # TODO: check whether the text below still applies given that
+        # `pandas.GroupBy.apply` is no longer applied
 
         Apply uses heuristics (like `pandas.GroupBy.apply`) to figure out how
         to stack together the array. The rule is:
@@ -76,16 +93,17 @@ class RunGroupBy(GroupBy):
         Parameters
         ----------
         func : function
-            Callable to apply to each timeseries.
-        
-        ``*args`` : tuple, optional
-            Positional arguments passed to `func`.
-        ``**kwargs``
-            Used to call `func(ar, **kwargs)` for each array `ar`.
+            Callable to apply to each element in the group.
+
+        args : tuple, optional
+            Positional arguments passed to ``func``.
+
+        **kwargs
+            Keyword arguments passed to ``func``.
 
         Returns
         -------
-        applied : DataArray or DataArray
+        applied : :obj:`ScmDataFrame` or None
             The result of splitting, applying and combining this array.
         """
         grouped = self._iter_grouped()
@@ -94,6 +112,7 @@ class RunGroupBy(GroupBy):
 
     def _combine(self, applied):
         """Recombine the applied objects like the original."""
+        # TODO: is this here to avoid a circular import?
         from scmdata.run import df_append
 
         # Remove all None values
@@ -105,31 +124,40 @@ class RunGroupBy(GroupBy):
             return df_append(applied)
 
     def reduce(
-            self, func, dim=None, axis=None, **kwargs
+        self, func, dim=None, axis=None, **kwargs
     ):
-        """Reduce the items in this group by applying `func` along some
+        """
+        Reduce the items in this group by applying ``func`` along some
         dimension(s).
 
         Parameters
         ----------
         func : function
             Function which can be called in the form
-            `func(x, axis=axis, **kwargs)` to return the result of collapsing
-            an np.ndarray over an integer valued axis.
+            ``func(x, axis=axis, **kwargs)`` to return the result of collapsing
+            an :obj:`np.ndarray` over an integer valued axis.
+
         dim : `...`, str or sequence of str, optional
             Not used in this implementation
+
         axis : int or sequence of int, optional
-            Axis(es) over which to apply `func`. Only one of the 'dimension'
+            Axis(axes) over which to apply ``func``. Only one of the 'dimension'
             and 'axis' arguments can be supplied. If neither are supplied, then
-            `func` is calculated over all dimension for each group item.
+            ``func`` is calculated over all dimension for each group item.
+
         **kwargs : dict
-            Additional keyword arguments passed on to `func`.
+            Additional keyword arguments passed on to ``func``.
 
         Returns
         -------
-        reduced : Array
-            Array with summarized data and the indicated dimension(s)
+        reduced : :obj:`ScmRun` or None
+            :obj:`ScmRun` with summarized data and the indicated dimension(s)
             removed.
+
+        Raises
+        ------
+        AssertionError
+            ``dim`` is not ``None`` or ``"time"``.
         """
         if dim is not None:
             assert dim is "time", "Only reduction along the time dimension is supported"
