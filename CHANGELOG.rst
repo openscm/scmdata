@@ -4,10 +4,14 @@ Changelog
 master
 ------
 
-v0.3.1
+v0.4.0
 ------
 
 - (`#28 <https://github.com/lewisjared/scmdata/pull/28>`_) Expose ``scmdata.units.unit_registry``
+
+v0.3.1
+------
+
 - (`#25 <https://github.com/lewisjared/scmdata/pull/25>`_) Make scipy an optional dependency
 - (`#24 <https://github.com/lewisjared/scmdata/pull/24>`_) Fix missing "N2O" unit (see `#14 <https://github.com/lewisjared/scmdata/pull/14>`_). Also updates test of year to day conversion, it is 365.25 to within 0.01% (but depends on the Pint release).
 
