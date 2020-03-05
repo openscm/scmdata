@@ -7,7 +7,7 @@ from pint.errors import (  # noqa: F401 # pylint: disable=unused-import
     UndefinedUnitError,
 )
 
-from scmdata.units import UnitConverter, _unit_registry
+from scmdata.units import UnitConverter, unit_registry
 
 
 def test_conversion_without_offset():
@@ -52,7 +52,7 @@ def test_metric_conversion_unit_converter_nan():
         "No conversion from {} to {} available, nan will be returned "
         "upon conversion".format(src_species, target_species)
     )
-    with _unit_registry.context("AR4GWP100"):
+    with unit_registry.context("AR4GWP100"):
         with warnings.catch_warnings(record=True) as recorded_warnings:
             UnitConverter(src_species, target_species)
 
