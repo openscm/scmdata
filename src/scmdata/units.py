@@ -10,11 +10,11 @@ units are used internally, we provide the following example:
 
 .. code:: python
 
-    >>> from scmdata.units import _unit_registry
-    >>> _unit_registry("CO2")
+    >>> from scmdata.units import unit_registry
+    >>> unit_registry("CO2")
     <Quantity(1, 'CO2')>
 
-    >>> emissions_aus = 0.34 * _unit_registry("Gt C / yr")
+    >>> emissions_aus = 0.34 * unit_registry("Gt C / yr")
     >>> emissions_aus
     <Quantity(0.34, 'C * gigametric_ton / a')>
 
@@ -422,13 +422,13 @@ class ScmUnitRegistry(pint.UnitRegistry):  # type: ignore
         return context
 
 
-_unit_registry = ScmUnitRegistry()
+unit_registry = ScmUnitRegistry()
 """
 SCMData standard unit registry
 
 The unit registry contains all of the recognised units.
 """
-_unit_registry.add_standards()
+unit_registry.add_standards()
 
 
 class UnitConverter:
@@ -461,17 +461,17 @@ class UnitConverter:
         self._source = source
         self._target = target
 
-        source_unit = _unit_registry.Unit(source)
-        target_unit = _unit_registry.Unit(target)
+        source_unit = unit_registry.Unit(source)
+        target_unit = unit_registry.Unit(target)
 
-        s1 = _unit_registry.Quantity(1, source_unit)
-        s2 = _unit_registry.Quantity(-1, source_unit)
+        s1 = unit_registry.Quantity(1, source_unit)
+        s2 = unit_registry.Quantity(-1, source_unit)
 
         if context is None:
             t1 = s1.to(target_unit)
             t2 = s2.to(target_unit)
         else:
-            with _unit_registry.context(context):
+            with unit_registry.context(context):
                 t1 = s1.to(target_unit)
                 t2 = s2.to(target_unit)
 
@@ -522,14 +522,14 @@ class UnitConverter:
         """
         Available contexts for unit conversions
         """
-        return list(_unit_registry._contexts.keys())  # pylint: disable=protected-access
+        return list(unit_registry._contexts.keys())  # pylint: disable=protected-access
 
     @property
     def unit_registry(self) -> ScmUnitRegistry:
         """
         Underlying unit registry
         """
-        return _unit_registry
+        return unit_registry
 
     @property
     def source(self) -> str:
