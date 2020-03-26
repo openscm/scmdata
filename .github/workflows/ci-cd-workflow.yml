@@ -24,6 +24,7 @@ jobs:
     - name: Formatting and linters
       run: |
         black --check src tests setup.py --exclude scmdata/_version.py
+        black-nb --check notebooks
         isort --check-only --quiet --recursive src tests setup.py
         pydocstyle src
         bandit -c .bandit.yml -r scmdata
@@ -102,7 +103,6 @@ jobs:
     - name: Test notebooks strictly
       if: matrix.python-version == 3.7
       run: |
-        black-nb --check notebooks
         pytest notebooks -r a --nbval --sanitize-with tests/notebook-tests.cfg --no-cov
 
 
