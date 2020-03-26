@@ -1,3 +1,6 @@
+"""
+scmdata, simple data handling for simple climate model data
+"""
 from scmdata.dataframe import ScmDataFrame, df_append  # noqa: F401
 
 from ._version import get_versions
