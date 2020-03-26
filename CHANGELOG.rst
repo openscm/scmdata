@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#31 <https://github.com/openscm/scmdata/pull/31>`_) Tidy up repository after changing location
+
 v0.4.0
 ------
 
