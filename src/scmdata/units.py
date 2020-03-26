@@ -2,11 +2,9 @@
 Unit handling
 """
 import warnings
-from typing import Dict, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 import numpy as np
-import pint
-
 from openscm_units.unit_registry import ScmUnitRegistry
 
 _unit_registry = ScmUnitRegistry()
