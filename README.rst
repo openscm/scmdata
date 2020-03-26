@@ -15,8 +15,8 @@ SCMData
 |   Other info    | |Contributors| | |Last Commit| | |License| |
 +-----------------+----------------+---------------+-----------+
 
-.. |CI CD| image:: https://github.com/openscm/scmdata/workflows/OpenSCM-Units%20CI-CD/badge.svg
-    :target: https://github.com/openscm/scmdata/actions?query=workflow%3A%22OpenSCM-Units+CI-CD%22
+.. |CI CD| image:: https://github.com/openscm/scmdata/workflows/scmdata%20CI-CD/badge.svg
+    :target: https://github.com/openscm/scmdata/actions?query=workflow%3A%22scmdata+CI-CD%22
 .. |Coverage| image:: https://img.shields.io/codecov/c/github/openscm/scmdata.svg
     :target: https://codecov.io/gh/openscm/scmdata
 .. |PyPI Install| image:: https://github.com/openscm/scmdata/workflows/Test%20PyPI%20install/badge.svg
