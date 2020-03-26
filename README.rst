@@ -15,18 +15,18 @@ SCMData
 | Latest activity | |Contributors| | |Last Commit| |
 +-----------------+----------------+---------------+
 
-.. |Build Status| image:: https://travis-ci.org/lewisjared/scmdata.svg?branch=master
-    :target: https://travis-ci.org/lewisjared/scmdata
-.. |Codecov| image:: https://img.shields.io/codecov/c/github/lewisjared/scmdata.svg
-    :target: https://codecov.io/gh/lewisjared/scmdata/branch/master/graph/badge.svg
-.. |License| image:: https://img.shields.io/github/license/lewisjared/scmdata.svg
-    :target: https://github.com/lewisjared/scmdata/blob/master/LICENSE
-.. |Latest Version| image:: https://img.shields.io/github/tag/lewisjared/scmdata.svg
-    :target: https://github.com/lewisjared/scmdata/releases
-.. |Last Commit| image:: https://img.shields.io/github/last-commit/lewisjared/scmdata.svg
-    :target: https://github.com/lewisjared/scmdata/commits/master
-.. |Contributors| image:: https://img.shields.io/github/contributors/lewisjared/scmdata.svg
-    :target: https://github.com/lewisjared/scmdata/graphs/contributors
+.. |Build Status| image:: https://travis-ci.org/openscm/scmdata.svg?branch=master
+    :target: https://travis-ci.org/openscm/scmdata
+.. |Codecov| image:: https://img.shields.io/codecov/c/github/openscm/scmdata.svg
+    :target: https://codecov.io/gh/openscm/scmdata/branch/master/graph/badge.svg
+.. |License| image:: https://img.shields.io/github/license/openscm/scmdata.svg
+    :target: https://github.com/openscm/scmdata/blob/master/LICENSE
+.. |Latest Version| image:: https://img.shields.io/github/tag/openscm/scmdata.svg
+    :target: https://github.com/openscm/scmdata/releases
+.. |Last Commit| image:: https://img.shields.io/github/last-commit/openscm/scmdata.svg
+    :target: https://github.com/openscm/scmdata/commits/master
+.. |Contributors| image:: https://img.shields.io/github/contributors/openscm/scmdata.svg
+    :target: https://github.com/openscm/scmdata/graphs/contributors
 
 .. sec-end-links
 

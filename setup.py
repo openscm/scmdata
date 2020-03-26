@@ -11,11 +11,11 @@ AUTHORS = [
     ("Zeb Nicholls", "zebedee.nicholls@climate-energy-college.org"),
 ]
 EMAIL = "jared.lewis@climate-energy-college.org"
-URL = "https://github.com/lewisjared/scmdata"
+URL = "https://github.com/openscm/scmdata"
 PROJECT_URLS = {
-    "Bug Reports": "https://github.com/lewisjared/scmdata/issues",
+    "Bug Reports": "https://github.com/openscm/scmdata/issues",
     "Documentation": "https://scmdata.readthedocs.io/en/latest",
-    "Source": "https://github.com/lewisjared/scmdata",
+    "Source": "https://github.com/openscm/scmdata",
 }
 LICENSE = "3-Clause BSD License"
 CLASSIFIERS = [

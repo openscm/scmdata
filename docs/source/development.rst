@@ -55,7 +55,7 @@ Getting help
 ~~~~~~~~~~~~
 
 Whilst developing, unexpected things can go wrong (that's why it's called 'developing', if we knew what we were doing, it would already be 'developed').
-Normally, the fastest way to solve an issue is to contact us via the `issue tracker <https://github.com/lewisjared/scmdata/issues>`_.
+Normally, the fastest way to solve an issue is to contact us via the `issue tracker <https://github.com/openscm/scmdata/issues>`_.
 The other option is to debug yourself.
 For this purpose, we provide a list of the tools we use during our development as starting points for your search to find what has gone wrong.
 
@@ -210,6 +210,6 @@ Whilst it may not be standard practice, a ``Makefile`` is a simple way to automa
 Hence we have one here which basically acts as a notes file for how to do all those little jobs which we often forget e.g. setting up environments, running tests (and making sure we're in the right environment), building docs, setting up auxillary bits and pieces.
 
 .. _Sphinx: http://www.sphinx-doc.org/en/master/
-.. _SCMData issue tracker: https://github.com/lewisjared/scmdata/issues
+.. _SCMData issue tracker: https://github.com/openscm/scmdata/issues
 .. _`SCMData's PyPI`: https://pypi.org/project/scmdata/
 .. _`SCMData conda feedstock`: https://github.com/conda-forge/scmdata-feedstock
