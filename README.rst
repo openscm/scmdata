@@ -3,30 +3,34 @@ SCMData
 
 .. sec-begin-links
 
-+-------------------+----------------+-----------+-----------+
-| Repository health | |Build Status| | |Codecov| | |License| |
-+-------------------+----------------+-----------+-----------+
++-------------------+----------------+--------------+
+| Repository health |    |CI CD|     |  |Coverage|  |
++-------------------+----------------+--------------+
 
-+-----------------+------------------+
-| Latest releases | |Latest Version| |
-+-----------------+------------------+
++-----------------+------------------+----------------+------------------+
+| Latest releases |  |PyPI Install|  |     |PyPI|     |  |PyPI Version|  |
++-----------------+------------------+----------------+------------------+
 
-+-----------------+----------------+---------------+
-| Latest activity | |Contributors| | |Last Commit| |
-+-----------------+----------------+---------------+
++-----------------+----------------+---------------+-----------+
+|   Other info    | |Contributors| | |Last Commit| | |License| |
++-----------------+----------------+---------------+-----------+
 
-.. |Build Status| image:: https://travis-ci.org/openscm/scmdata.svg?branch=master
-    :target: https://travis-ci.org/openscm/scmdata
-.. |Codecov| image:: https://img.shields.io/codecov/c/github/openscm/scmdata.svg
-    :target: https://codecov.io/gh/openscm/scmdata/branch/master/graph/badge.svg
-.. |License| image:: https://img.shields.io/github/license/openscm/scmdata.svg
-    :target: https://github.com/openscm/scmdata/blob/master/LICENSE
-.. |Latest Version| image:: https://img.shields.io/github/tag/openscm/scmdata.svg
-    :target: https://github.com/openscm/scmdata/releases
-.. |Last Commit| image:: https://img.shields.io/github/last-commit/openscm/scmdata.svg
-    :target: https://github.com/openscm/scmdata/commits/master
+.. |CI CD| image:: https://github.com/openscm/scmdata/workflows/OpenSCM-Units%20CI-CD/badge.svg
+    :target: https://github.com/openscm/scmdata/actions?query=workflow%3A%22OpenSCM-Units+CI-CD%22
+.. |Coverage| image:: https://img.shields.io/codecov/c/github/openscm/scmdata.svg
+    :target: https://codecov.io/gh/openscm/scmdata
+.. |PyPI Install| image:: https://github.com/openscm/scmdata/workflows/Test%20PyPI%20install/badge.svg
+    :target: https://github.com/openscm/scmdata/actions?query=workflow%3A%22Test+PyPI+install%22
+.. |PyPI| image:: https://img.shields.io/pypi/pyversions/openscm-units.svg
+    :target: https://pypi.org/project/openscm-units/
+.. |PyPI Version| image:: https://img.shields.io/pypi/v/openscm-units.svg
+    :target: https://pypi.org/project/openscm-units/
 .. |Contributors| image:: https://img.shields.io/github/contributors/openscm/scmdata.svg
     :target: https://github.com/openscm/scmdata/graphs/contributors
+.. |Last Commit| image:: https://img.shields.io/github/last-commit/openscm/scmdata.svg
+    :target: https://github.com/openscm/scmdata/commits/master
+.. |License| image:: https://img.shields.io/github/license/openscm/scmdata.svg
+    :target: https://github.com/openscm/scmdata/blob/master/LICENSE
 
 .. sec-end-links
 
