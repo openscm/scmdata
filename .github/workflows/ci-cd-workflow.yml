@@ -102,6 +102,7 @@ jobs:
     - name: Test notebooks strictly
       if: matrix.python-version == 3.7
       run: |
+        black-nb --check notebooks
         pytest notebooks -r a --nbval --sanitize-with tests/notebook-tests.cfg --no-cov
 
 
