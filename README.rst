@@ -54,7 +54,7 @@ The pull request templates should ensure that you provide all the necessary info
 License
 -------
 
-ScmData is free software under a BSD 3-Clause License, see `LICENSE <https://github.com/lewisjared/license/blob/master/LICENSE>`_.
+ScmData is free software under a BSD 3-Clause License, see `LICENSE <https://github.com/openscm/license/blob/master/LICENSE>`_.
 
 .. sec-end-license
 
