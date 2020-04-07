@@ -28,7 +28,7 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.7",
 ]
 
-REQUIREMENTS = ["numpy", "python-dateutil", "pint", "pandas"]
+REQUIREMENTS = ["numpy", "python-dateutil", "pint", "pandas", "xarray"]
 REQUIREMENTS_PYAM = ["pyam-iamc>=0.3.0"]
 REQUIREMENTS_TESTS = [
     "codecov",

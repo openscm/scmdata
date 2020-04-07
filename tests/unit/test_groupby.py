@@ -2,12 +2,9 @@ import pytest
 from scmdata.testing import assert_scmdf_almost_equal
 
 
-@pytest.mark.parametrize("g", (
-        ("variable",),
-        ("variable", "scenario"),
-        ("variable", "region"),
-        ("model",),
-))
+@pytest.mark.parametrize(
+    "g", (("variable",), ("variable", "scenario"), ("variable", "region"), ("model",),)
+)
 def test_groupby(test_scm_run, g):
     def func(df):
         sub_df = df.meta[list(g)]

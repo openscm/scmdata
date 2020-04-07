@@ -279,6 +279,7 @@ def test_scm_df_mulitple(request):
 def test_scm_run(request):
     yield ScmRun(TEST_DF.copy())
 
+
 @pytest.fixture(scope="function")
 def test_scm_df(request):
     yield ScmDataFrame(TEST_DF.copy())
@@ -300,7 +301,7 @@ TEST_DF_MONTHLY = pd.DataFrame(
         + list(np.cos(np.arange(45)) + np.sin(np.arange(45))),
     ],
     columns=["climate_model", "model", "scenario", "region", "unit", "variable"]
-            + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
+    + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
 )
 
 
@@ -425,7 +426,7 @@ append_scm_df_pairs = [
             columns={
                 "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
                 "variable": append_scm_df_pairs_vars
-                            + ["Primary Energy|Coal", "Primary Energy"],
+                + ["Primary Energy|Coal", "Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
         ),
@@ -462,7 +463,7 @@ append_scm_df_pairs = [
             columns={
                 "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
                 "variable": append_scm_df_pairs_vars
-                            + ["Primary Energy|Coal", "Primary Energy"],
+                + ["Primary Energy|Coal", "Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
         ),
@@ -559,7 +560,7 @@ test_combinations = []
 
 
 def create_time_points(
-        start_time: np.datetime64, period_length: np.timedelta64, points_num: int
+    start_time: np.datetime64, period_length: np.timedelta64, points_num: int
 ):
     end_time_output = start_time + (points_num - 1) * period_length
     return np.linspace(

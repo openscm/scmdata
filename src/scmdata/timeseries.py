@@ -79,9 +79,7 @@ class TimeSeries:
 
     @staticmethod
     def _binary_op(
-            f: Callable[..., Any],
-            reflexive=False,
-            **kwargs,
+        f: Callable[..., Any], reflexive=False, **kwargs,
     ) -> Callable[..., "TimeSeries"]:
         @functools.wraps(f)
         def func(self, other):
@@ -130,11 +128,12 @@ class TimeSeries:
         """
         return TimeSeries(self._data.reindex({"time": time}, **kwargs))
 
-    def interpolate(self,
-                    target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
-                    interpolation_type: str = "linear",
-                    extrapolation_type: str = "linear",
-                    ):
+    def interpolate(
+        self,
+        target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
+        interpolation_type: str = "linear",
+        extrapolation_type: str = "linear",
+    ):
         """
         Interpolate the timeseries onto a new timebase
 

@@ -365,11 +365,15 @@ def test_len(test_scm_run):
 
 
 def test_head(test_scm_run):
-    pd.testing.assert_frame_equal(test_scm_run.head(2), test_scm_run.timeseries().head(2))
+    pd.testing.assert_frame_equal(
+        test_scm_run.head(2), test_scm_run.timeseries().head(2)
+    )
 
 
 def test_tail(test_scm_run):
-    pd.testing.assert_frame_equal(test_scm_run.tail(1), test_scm_run.timeseries().tail(1))
+    pd.testing.assert_frame_equal(
+        test_scm_run.tail(1), test_scm_run.timeseries().tail(1)
+    )
 
 
 def test_values(test_scm_run):
@@ -408,6 +412,7 @@ def test_variable_depth_0_with_base():
     obs = list(tdf.filter(variable="Primary Energy|*", level=1)["variable"].unique())
     exp = ["Primary Energy|Coal|Electricity", "Primary Energy|Gas|Heating"]
     assert all([e in obs for e in exp]) and len(obs) == len(exp)
+
 
 @pytest.mark.xfail
 def test_variable_depth_0_keep_false(test_scm_run):
@@ -640,6 +645,7 @@ def test_filter_time_not_datetime_range_error(test_scm_datetime_df):
 def test_filter_as_kwarg(test_scm_run):
     obs = list(test_scm_run.filter(variable="Primary Energy|Coal")["scenario"].unique())
     assert obs == ["a_scenario"]
+
 
 @pytest.mark.xfail
 def test_filter_keep_false(test_scm_run):
@@ -965,8 +971,10 @@ def test_relative_to_ref_period_mean(
 
 def test_append(test_scm_run):
     test_scm_run.set_meta([5, 6, 7], name="col1")
-    other = test_scm_run.filter(scenario="a_scenario2").copy().rename(
-        {"variable": {"Primary Energy": "Primary Energy clone"}}
+    other = (
+        test_scm_run.filter(scenario="a_scenario2")
+        .copy()
+        .rename({"variable": {"Primary Energy": "Primary Energy clone"}})
     )
 
     other.set_meta(2, name="col1")
@@ -1026,9 +1034,7 @@ def test_append_duplicates(test_scm_run):
 
     obs = res.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2.0, 7.0, 7.0, 2.0, 7.0, 7.0]
-    npt.assert_array_equal(
-        res["year"], [2005, 2010, 2015, 2020, 2030, 2040]
-    )
+    npt.assert_array_equal(res["year"], [2005, 2010, 2015, 2020, 2030, 2040])
     npt.assert_almost_equal(obs, exp)
 
 
@@ -1512,7 +1518,9 @@ def test_set_meta_as_series(test_scm_run):
 def test_set_meta_as_float(test_scm_run):
     test_scm_run.set_meta(3.2, "meta_int")
 
-    exp = pd.Series(data=[3.2, 3.2, 3.2], index=test_scm_run.meta.index, name="meta_int")
+    exp = pd.Series(
+        data=[3.2, 3.2, 3.2], index=test_scm_run.meta.index, name="meta_int"
+    )
 
     obs = test_scm_run["meta_int"]
     pd.testing.assert_series_equal(obs, exp)
@@ -1908,7 +1916,6 @@ def test_get_meta_no_duplicates(test_scm_run, no_duplicates):
         assert test_scm_run.get_unique_meta(
             "climate_model", no_duplicates=no_duplicates
         ) == ["a_model"]
-        assert test_scm_run.get_unique_meta("variable", no_duplicates=no_duplicates) == [
-            "Primary Energy",
-            "Primary Energy|Coal",
-        ]
+        assert test_scm_run.get_unique_meta(
+            "variable", no_duplicates=no_duplicates
+        ) == ["Primary Energy", "Primary Energy|Coal",]

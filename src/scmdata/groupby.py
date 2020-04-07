@@ -26,7 +26,9 @@ class GroupBy(ImplementsArrayReduce):
         # Work around the bad handling of NaN values in groupbys
         if any([np.issubdtype(m[c].dtype, np.number) for c in m]):
             if (meta == na_fill_value).any(axis=None):
-                raise ValueError("na_fill_value conflicts with data value. Choose a na_fill_value not in meta")
+                raise ValueError(
+                    "na_fill_value conflicts with data value. Choose a na_fill_value not in meta"
+                )
             else:
                 m = m.fillna(na_fill_value)
 
@@ -40,11 +42,14 @@ class GroupBy(ImplementsArrayReduce):
             except ValueError:
                 pass
             return v
+
         for indices in self._grouper.groups:
             indices = np.atleast_1d(indices)
             indices = [_try_fill_value(v) for v in indices]
             res = self.run.filter(**{k: v for k, v in zip(self.group_keys, indices)})
-            assert len(res), "Empty group for {}".format(list(zip(self.group_keys, indices)))
+            assert len(res), "Empty group for {}".format(
+                list(zip(self.group_keys, indices))
+            )
             yield res
 
 
@@ -104,9 +109,7 @@ class RunGroupBy(GroupBy):
         else:
             return df_append(applied)
 
-    def reduce(
-            self, func, dim=None, axis=None, **kwargs
-    ):
+    def reduce(self, func, dim=None, axis=None, **kwargs):
         """Reduce the items in this group by applying `func` along some
         dimension(s).
 

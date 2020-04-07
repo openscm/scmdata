@@ -11,7 +11,10 @@ def assert_scmdf_almost_equal(df1, df2, allow_unordered=False, check_ts_names=Tr
         if check_ts_names:
             pdt.assert_frame_equal(df1.meta, df2.meta, check_like=True)
         else:
-            assert (df1.meta.values[df1_index] == df2.meta[df1.meta.columns].values[df2_index]).all()
+            assert (
+                df1.meta.values[df1_index]
+                == df2.meta[df1.meta.columns].values[df2_index]
+            ).all()
         npt.assert_allclose(df1.values[df1_index], df2.values[df2_index])
     else:
         pdt.assert_frame_equal(df1.meta, df2.meta)
