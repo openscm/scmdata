@@ -3,6 +3,7 @@ from datetime import datetime
 import numpy as np
 import numpy.testing as npt
 import pytest
+
 from scmdata.timeseries import TimeSeries
 
 

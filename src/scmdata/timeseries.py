@@ -1,12 +1,13 @@
 import copy
 import datetime as dt
 import functools
-from typing import List, Union, Callable, Any
+from typing import Any, Callable, List, Union
 
 import numpy as np
 import xarray as xr
-from scmdata.time import TimeseriesConverter
 from xarray.core.ops import inject_binary_ops
+
+from scmdata.time import TimeseriesConverter
 
 
 class Counter:

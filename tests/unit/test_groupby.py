@@ -1,4 +1,5 @@
 import pytest
+
 from scmdata.testing import assert_scmdf_almost_equal
 
 

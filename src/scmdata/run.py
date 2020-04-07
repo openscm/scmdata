@@ -6,18 +6,18 @@ ensembles of model runs.
 """
 import copy
 import datetime as dt
+import functools
+import numbers
 import os
 import warnings
 from logging import getLogger
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, Callable
-import functools
-import numbers
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops, inject_reduce_methods
-import xarray as xr
 
 from .dataframe import ScmDataFrame
 from .filters import (
@@ -30,10 +30,10 @@ from .filters import (
     years_match,
 )
 from .groupby import RunGroupBy
-from .timeseries import TimeSeries
 from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints, TimeseriesConverter
+from .timeseries import TimeSeries
 from .units import UnitConverter
 
 _logger = getLogger(__name__)

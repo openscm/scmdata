@@ -11,8 +11,9 @@ from os.path import abspath, dirname, join
 import numpy as np
 import pandas as pd
 import pytest
-from scmdata.run import ScmRun
+
 from scmdata.dataframe import ScmDataFrame
+from scmdata.run import ScmRun
 from scmdata.timeseries import default_name
 
 try:
