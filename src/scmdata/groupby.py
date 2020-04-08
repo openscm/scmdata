@@ -52,8 +52,8 @@ class _GroupBy(ImplementsArrayReduce):
             indices = [_try_fill_value(v) for v in indices]
             res = self.run.filter(**{k: v for k, v in zip(self.group_keys, indices)})
             if not len(res):
-                raise ValueError("Empty group for {}".format(
-                    list(zip(self.group_keys, indices)))
+                raise ValueError(
+                    "Empty group for {}".format(list(zip(self.group_keys, indices)))
                 )
             yield res
 

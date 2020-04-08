@@ -29,8 +29,8 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
             pdt.assert_frame_equal(left.meta, right.meta, check_like=True)
         else:
             assert (
-                    left.meta.values[df1_index]
-                    == right.meta[left.meta.columns].values[df2_index]
+                left.meta.values[df1_index]
+                == right.meta[left.meta.columns].values[df2_index]
             ).all()
         npt.assert_allclose(left.values[df1_index], right.values[df2_index])
     else:
