@@ -897,7 +897,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         name = name or meta.name  # type: ignore
 
         if index is not None:
-            raise NotImplementedError("Removed `index` functionality. Filter and then set meta instead")
+            raise NotImplementedError(
+                "Removed `index` functionality. Filter and then set meta instead"
+            )
 
         meta = np.atleast_1d(meta)
         if len(meta) == 1:
@@ -908,8 +910,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 ts.meta[name] = meta[i]
         else:
             raise ValueError("Invalid shape for metadata")
-
-
 
     def get_unique_meta(
         self, meta: str, no_duplicates: Optional[bool] = False,
