@@ -167,7 +167,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     handle_as_number = np.issubdtype(meta_col.dtype, np.number)
 
     for s in _values:
-        if not handle_as_number and isinstance(s, str):
+        if not handle_as_number and (isinstance(s, str) or np.isnan(s)):
             _regexp = (
                 str(s)
                 .replace("|", "\\|")

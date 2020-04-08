@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from dateutil import parser
-from xarray.core.ops import inject_binary_ops, inject_reduce_methods
+from xarray.core.ops import inject_binary_ops
 
 from .dataframe import ScmDataFrame
 from .filters import (
@@ -32,7 +32,7 @@ from .filters import (
 from .groupby import RunGroupBy
 from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
-from .time import TimePoints, TimeseriesConverter
+from .time import TimePoints
 from .timeseries import TimeSeries
 from .units import UnitConverter
 
@@ -896,44 +896,20 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         # mpy doesn't recognise if checks
         name = name or meta.name  # type: ignore
 
-        # check if meta has a valid index and use it for further workflow
-        # mypy doesn't recognise if
-        if hasattr(meta, "index") and hasattr(meta.index, "names"):  # type: ignore
-            index = meta.index  # type: ignore # mypy doesn't recognise if
-        if index is None:
-            meta = np.atleast_1d(meta)
-            if len(meta) == 1:
-                for ts in self._ts:
-                    ts.meta[name] = meta[0]
-            elif len(meta) == len(self):
-                for i, ts in enumerate(self._ts):
-                    ts.meta[name] = meta[i]
-            else:
-                raise ValueError("Invalid shape for metadata")
-            return
+        if index is not None:
+            raise NotImplementedError("Removed `index` functionality. Filter and then set meta instead")
 
-        # turn dataframe to index if index arg is a DataFrame
-        if isinstance(index, pd.DataFrame):
-            index = index.set_index(
-                index.columns.intersection(self.meta_attributes).to_list()
-            ).index
+        meta = np.atleast_1d(meta)
+        if len(meta) == 1:
+            for ts in self._ts:
+                ts.meta[name] = meta[0]
+        elif len(meta) == len(self):
+            for i, ts in enumerate(self._ts):
+                ts.meta[name] = meta[i]
+        else:
+            raise ValueError("Invalid shape for metadata")
 
-        if not isinstance(index, (pd.MultiIndex, pd.Index)):
-            raise ValueError("index cannot be coerced to pd.MultiIndex")
 
-        meta = pd.Series(meta, index=index, name=name)
-
-        df = self.meta.reset_index()
-        if all(index.names):
-            df = df.set_index(index.names)
-        self._meta = (
-            pd.merge(df, meta, left_index=True, right_index=True, how="outer")
-            .reset_index()
-            .set_index("index")
-        )
-        # Edge case of using a different index on meta
-        if "level_0" in self._meta:
-            self._meta.drop("level_0", axis=1, inplace=True)
 
     def get_unique_meta(
         self, meta: str, no_duplicates: Optional[bool] = False,
@@ -1563,8 +1539,12 @@ def df_append(
     new_t = np.unique(new_t)
     new_t.sort()
 
-    # reindex
-    if not np.array_equal(new_t, ret.time_points):
+    # reindex if the timebase isn't the same
+    all_valid_times = True
+    for r in runs:
+        if not np.array_equal(new_t, r.time_points):
+            all_valid_times = False
+    if not all_valid_times:
         ret._ts = [ts.reindex(new_t) for ts in ret._ts]
         ret._time_points = TimePoints(new_t)
 

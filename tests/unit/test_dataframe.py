@@ -631,7 +631,7 @@ def test_filter_time_range_hour(test_scm_datetime_df, hour_range):
 
 def test_filter_time_no_match(test_scm_datetime_df):
     obs = test_scm_datetime_df.filter(time=dt.datetime(2004, 6, 18))
-    assert obs._data.empty
+    assert obs.shape == (3, 0)
 
 
 def test_filter_time_not_datetime_error(test_scm_datetime_df):

@@ -82,7 +82,7 @@ class RunGroupBy(GroupBy):
         ----------
         func : function
             Callable to apply to each timeseries.
-        
+
         ``*args`` : tuple, optional
             Positional arguments passed to `func`.
         ``**kwargs``
@@ -135,7 +135,7 @@ class RunGroupBy(GroupBy):
             removed.
         """
         if dim is not None:
-            assert dim is "time", "Only reduction along the time dimension is supported"
+            assert dim == "time", "Only reduction along the time dimension is supported"
 
         def reduce_array(ar):
             return ar.reduce(func, dim, axis, **kwargs)

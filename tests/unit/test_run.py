@@ -20,8 +20,8 @@ def test_init_df_year_converted_to_datetime(test_pd_df):
     res = ScmRun(test_pd_df)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
-        res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
+            res["time"].unique()
+            == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
 
 
@@ -84,8 +84,8 @@ def test_init_df_formats(test_pd_run_df, in_format):
     res = ScmRun(test_init)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
-        res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
+            res["time"].unique()
+            == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
 
     res_df = res.timeseries()
@@ -278,12 +278,12 @@ def test_init_with_decimal_years():
 
     res = ScmDataFrame(d, columns=cols)
     assert (
-        res["time"].unique()
-        == [
-            dt.datetime(1765, 1, 1, 0, 0),
-            dt.datetime(1765, 1, 31, 7, 4, 48),
-            dt.datetime(1765, 3, 2, 22, 55, 11),
-        ]
+            res["time"].unique()
+            == [
+                dt.datetime(1765, 1, 1, 0, 0),
+                dt.datetime(1765, 1, 31, 7, 4, 48),
+                dt.datetime(1765, 3, 2, 22, 55, 11),
+            ]
     ).all()
     npt.assert_array_equal(res._data.loc[:, 0].values, inp_array)
 
@@ -892,16 +892,16 @@ def test_process_over_kwargs_error(test_scm_run):
     "tfilter,tappend_str,exp_append_str",
     [
         (
-            {"time": [dt.datetime(y, 1, 1, 0, 0, 0) for y in range(2005, 2011)]},
-            None,
-            "(ref. period time: 2005-01-01 00:00:00 - 2010-01-01 00:00:00)",
+                {"time": [dt.datetime(y, 1, 1, 0, 0, 0) for y in range(2005, 2011)]},
+                None,
+                "(ref. period time: 2005-01-01 00:00:00 - 2010-01-01 00:00:00)",
         ),
         ({"month": [1, 2, 3]}, "(Jan - Mar)", "(Jan - Mar)"),
         ({"day": [1, 2, 3]}, None, "(ref. period day: 1 - 3)"),
     ],
 )
 def test_relative_to_ref_period_mean(
-    test_processing_scm_df, tfilter, tappend_str, exp_append_str
+        test_processing_scm_df, tfilter, tappend_str, exp_append_str
 ):
     exp = pd.DataFrame(
         [
@@ -973,8 +973,8 @@ def test_append(test_scm_run):
     test_scm_run.set_meta([5, 6, 7], name="col1")
     other = (
         test_scm_run.filter(scenario="a_scenario2")
-        .copy()
-        .rename({"variable": {"Primary Energy": "Primary Energy clone"}})
+            .copy()
+            .rename({"variable": {"Primary Energy": "Primary Energy clone"}})
     )
 
     other.set_meta(2, name="col1")
@@ -1232,8 +1232,8 @@ def test_append_inplace_column_order_time_interpolation(test_scm_run):
     pd.testing.assert_frame_equal(
         test_scm_run.timeseries().sort_index(),
         exp.timeseries()
-        .reorder_levels(test_scm_run.timeseries().index.names)
-        .sort_index(),
+            .reorder_levels(test_scm_run.timeseries().index.names)
+            .sort_index(),
         check_like=True,
     )
 
@@ -1295,9 +1295,9 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
 
     ts_resampled = (
         test_scm_df_monthly.timeseries()
-        .T.groupby(group_annual_mean_beginning_of_year)
-        .mean()
-        .T
+            .T.groupby(group_annual_mean_beginning_of_year)
+            .mean()
+            .T
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 1, 1))
 
@@ -1352,9 +1352,9 @@ def test_time_mean_year_end_of_year(test_scm_df_monthly):
 
     ts_resampled = (
         test_scm_df_monthly.timeseries()
-        .T.groupby(group_annual_mean_end_of_year)
-        .mean()
-        .T
+            .T.groupby(group_annual_mean_end_of_year)
+            .mean()
+            .T
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 12, 31))
 
@@ -1367,134 +1367,11 @@ def test_time_mean_unsupported_style(test_scm_df_monthly):
         test_scm_df_monthly.time_mean("junk")
 
 
-def test_set_meta_no_name(test_scm_run):
-    idx = pd.MultiIndex(
-        levels=[["a_scenario"], ["a_iam"], ["World"]],
-        codes=[[0], [0], [0]],
-        names=["scenario", "model", "region"],
-    )
-    s = pd.Series(data=[0.3], index=idx)
-    pytest.raises(ValueError, test_scm_run.set_meta, s)
-
-
-def test_set_meta_as_named_series(test_scm_run):
-    idx = pd.MultiIndex(
-        levels=[["a_scenario"], ["a_iam"], ["World"]],
-        codes=[[0], [0], [0]],
-        names=["scenario", "model", "region"],
-    )
-
-    s = pd.Series(data=[0.3], index=idx)
-    s.name = "meta_values"
-    test_scm_run.set_meta(s)
-
-    exp = pd.Series(data=[0.3, 0.3, np.nan], index=test_scm_run.meta.index)
-    exp.name = "meta_values"
-
-    obs = test_scm_run["meta_values"]
-    pd.testing.assert_series_equal(obs, exp)
-    pd.testing.assert_index_equal(
-        test_scm_run.meta.columns,
-        pd.Index(
-            [
-                "model",
-                "scenario",
-                "region",
-                "variable",
-                "unit",
-                "climate_model",
-                "meta_values",
-            ]
-        ),
-    )
-
-
-def test_set_meta_as_unnamed_series(test_scm_run):
-    idx = pd.MultiIndex(
-        levels=[["a_scenario"], ["a_iam"], ["World"]],
-        codes=[[0], [0], [0]],
-        names=["scenario", "model", "region"],
-    )
-
-    s = pd.Series(data=[0.3], index=idx)
-    test_scm_run.set_meta(s, name="meta_values")
-
-    exp = pd.Series(data=[0.3, 0.3, np.nan], index=test_scm_run.meta.index)
-    exp.name = "meta_values"
-
-    obs = test_scm_run["meta_values"]
-    pd.testing.assert_series_equal(obs, exp)
-    pd.testing.assert_index_equal(
-        test_scm_run.meta.columns,
-        pd.Index(
-            [
-                "model",
-                "scenario",
-                "region",
-                "variable",
-                "unit",
-                "climate_model",
-                "meta_values",
-            ]
-        ),
-    )
-
-
-def test_set_meta_non_unique_index_fail(test_scm_run):
-    idx = pd.MultiIndex(
-        levels=[["a_iam"], ["a_scenario"], ["a", "b"]],
-        codes=[[0, 0], [0, 0], [0, 1]],
-        names=["model", "scenario", "region"],
-    )
-    s = pd.Series([0.4, 0.5], idx)
-    pytest.raises(ValueError, test_scm_run.set_meta, s)
-
-
-def test_set_meta_non_existing_index_fail(test_scm_run):
-    idx = pd.MultiIndex(
-        levels=[["a_iam", "fail_model"], ["a_scenario", "fail_scenario"]],
-        codes=[[0, 1], [0, 1]],
-        names=["model", "scenario"],
-    )
-    s = pd.Series([0.4, 0.5], idx)
-    pytest.raises(ValueError, test_scm_run.set_meta, s)
-
-
-def test_set_meta_by_df(test_scm_run):
-    df = pd.DataFrame(
-        [["a_iam", "a_scenario", "World", 1]],
-        columns=["model", "scenario", "region", "col"],
-    )
-
-    test_scm_run.set_meta(meta=0.3, name="meta_values", index=df)
-
-    exp = pd.Series(data=[0.3, 0.3, np.nan], index=test_scm_run.meta.index)
-    exp.name = "meta_values"
-
-    obs = test_scm_run["meta_values"]
-    pd.testing.assert_series_equal(obs, exp)
-    pd.testing.assert_index_equal(
-        test_scm_run.meta.columns,
-        pd.Index(
-            [
-                "model",
-                "scenario",
-                "region",
-                "variable",
-                "unit",
-                "climate_model",
-                "meta_values",
-            ]
-        ),
-    )
-
-
 def test_set_meta_as_series(test_scm_run):
-    # TODO: This is a bit yucky. You can pass in a series which isnt the same length as the meta table without warning
-    s = pd.Series([0.3, 0.4])
+    s = pd.Series([0.3, 0.4, 0.5])
     test_scm_run.set_meta(s, "meta_series")
 
-    exp = pd.Series(data=[0.3, 0.4, np.nan], index=test_scm_run.meta.index)
+    exp = pd.Series(data=s.values, index=test_scm_run.meta.index)
     exp.name = "meta_series"
 
     obs = test_scm_run["meta_series"]
@@ -1513,6 +1390,12 @@ def test_set_meta_as_series(test_scm_run):
             ]
         ),
     )
+
+
+def test_set_meta_as_series_wrong_length(test_scm_run):
+    s = pd.Series([0.3, 0.4])
+    with pytest.raises(ValueError, match="Invalid shape for metadata"):
+        test_scm_run.set_meta(s, "meta_series")
 
 
 def test_set_meta_as_float(test_scm_run):
@@ -1573,37 +1456,14 @@ def test_set_meta_as_str_list(test_scm_run):
     assert obs["scenario"].unique() == "a_scenario"
 
 
-def test_set_meta_as_str_by_index(test_scm_run):
-    idx = pd.MultiIndex(
-        levels=[["a_iam"], ["a_scenario"]],
-        codes=[[0], [0]],
-        names=["model", "scenario"],
+def test_set_meta_with_index(test_scm_run):
+    df = pd.DataFrame(
+        [["a_iam", "a_scenario", "World", 1]],
+        columns=["model", "scenario", "region", "col"],
     )
 
-    test_scm_run.set_meta("foo", "meta_str", idx)
-
-    obs = pd.Series(test_scm_run["meta_str"].values)
-    pd.testing.assert_series_equal(obs, pd.Series(["foo", "foo", None]))
-    pd.testing.assert_index_equal(
-        test_scm_run.meta.columns,
-        pd.Index(
-            [
-                "model",
-                "scenario",
-                "region",
-                "variable",
-                "unit",
-                "climate_model",
-                "meta_str",
-            ]
-        ),
-    )
-
-
-def test_set_meta_index_coerce_fail(test_scm_run):
-    error_msg = re.escape("index cannot be coerced to pd.MultiIndex")
-    with pytest.raises(ValueError, match=error_msg):
-        test_scm_run.set_meta("foo", "meta_str", np.array([1, 2]))
+    with pytest.raises(NotImplementedError):
+        test_scm_run.set_meta(meta=0.3, name="meta_values", index=df)
 
 
 def test_filter_by_bool(test_scm_run):
@@ -1672,23 +1532,23 @@ def test_rename_col_fail(test_scm_run):
         ("EJ/yr", "EJ/yr", {}, [1.0, 0.5, 2.0], ["EJ/yr", "EJ/yr", "EJ/yr"]),
         ("PJ/yr", "EJ/yr", {}, [1000.0, 500.0, 2000.0], ["PJ/yr", "PJ/yr", "PJ/yr"]),
         (
-            "PJ/yr",
-            "EJ/yr",
-            {"scenario": "a_scenario2"},
-            [1.0, 0.5, 2000.0],
-            ["EJ/yr", "EJ/yr", "PJ/yr"],
+                "PJ/yr",
+                "EJ/yr",
+                {"scenario": "a_scenario2"},
+                [1.0, 0.5, 2000.0],
+                ["EJ/yr", "EJ/yr", "PJ/yr"],
         ),
         (
-            "PJ/yr",
-            ["EJ/yr", "TJ/yr", "Gt C / yr"],
-            {"variable": "Primary Energy|Coal"},
-            [1.0, 0.5 * 1e-3, 2.0],
-            ["EJ/yr", "PJ/yr", "Gt C / yr"],
+                "PJ/yr",
+                ["EJ/yr", "TJ/yr", "Gt C / yr"],
+                {"variable": "Primary Energy|Coal"},
+                [1.0, 0.5 * 1e-3, 2.0],
+                ["EJ/yr", "PJ/yr", "Gt C / yr"],
         ),
     ],
 )
 def test_convert_unit(
-    test_scm_run, target_unit, input_units, filter_kwargs, expected, expected_units
+        test_scm_run, target_unit, input_units, filter_kwargs, expected, expected_units
 ):
     test_scm_run["unit"] = input_units
     obs = test_scm_run.convert_unit(target_unit, **filter_kwargs)
@@ -1824,48 +1684,48 @@ def test_init_no_file():
     ("test_file", "test_kwargs"),
     [
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions.csv",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions.csv",
+                ),
+                {},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions.xls",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions.xls",
+                ),
+                {},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions_multi_sheet.xlsx",
-            ),
-            {"sheet_name": "rcp26_emissions"},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions_multi_sheet.xlsx",
+                ),
+                {"sheet_name": "rcp26_emissions"},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions_multi_sheet_data.xlsx",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions_multi_sheet_data.xlsx",
+                ),
+                {},
         ),
     ],
 )
 def test_read_from_disk(test_file, test_kwargs):
     loaded = ScmDataFrame(test_file, **test_kwargs)
     assert (
-        loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
-        == 0.010116813
+            loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
+            == 0.010116813
     )
 
 
@@ -1901,8 +1761,8 @@ def test_get_meta(test_scm_run):
 def test_get_meta_no_duplicates(test_scm_run, no_duplicates):
     if no_duplicates:
         assert (
-            test_scm_run.get_unique_meta("climate_model", no_duplicates=no_duplicates)
-            == "a_model"
+                test_scm_run.get_unique_meta("climate_model", no_duplicates=no_duplicates)
+                == "a_model"
         )
 
         error_msg = re.escape(
@@ -1918,4 +1778,9 @@ def test_get_meta_no_duplicates(test_scm_run, no_duplicates):
         ) == ["a_model"]
         assert test_scm_run.get_unique_meta(
             "variable", no_duplicates=no_duplicates
-        ) == ["Primary Energy", "Primary Energy|Coal",]
+        ) == ["Primary Energy", "Primary Energy|Coal", ]
+
+
+def test_meta_filtered(test_scm_run):
+    test_scm_run.filter(scenario="a_scenario")["test"] = 1.0
+    pd.testing.assert_series_equal(pd.Series([1.0, 1.0, np.nan], name="test"), test_scm_run["test"])
