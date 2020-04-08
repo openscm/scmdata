@@ -302,7 +302,7 @@ TEST_DF_MONTHLY = pd.DataFrame(
         + list(np.cos(np.arange(45)) + np.sin(np.arange(45))),
     ],
     columns=["climate_model", "model", "scenario", "region", "unit", "variable"]
-    + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
+            + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
 )
 
 
@@ -368,52 +368,52 @@ append_scm_df_pairs_times = [
     datetime(2010, 1, 1),
     datetime(2015, 6, 12),
 ]
-append_scm_df_base = ScmRun(
-    data=np.array([[1, 6.0, 7], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
-    index=append_scm_df_pairs_times,
-    columns={
+append_scm_df_base = {
+    "data": np.array([[1, 6.0, 7], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
+    "index": append_scm_df_pairs_times,
+    "columns": {
         "scenario": append_scm_df_pairs_scens,
         "variable": append_scm_df_pairs_vars,
         **append_scm_df_pairs_cols,
     },
-)
+}
 append_scm_df_pairs = [
     {
         "base": append_scm_df_base,
-        "other": ScmRun(
-            data=np.array([[-1, 0, 1]]).T,
-            index=append_scm_df_pairs_times,
-            columns={
+        "other": {
+            "data": np.array([[-1, 0, 1]]).T,
+            "index": append_scm_df_pairs_times,
+            "columns": {
                 "scenario": ["a_scenario"],
                 "variable": ["Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
-        ),
+        },
         "duplicate_rows": 1,
-        "expected": ScmRun(
-            data=np.array([[0, 3.0, 4], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
-            index=append_scm_df_pairs_times,
-            columns={
+        "expected": {
+            "data": np.array([[0, 3.0, 4], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
+            "index": append_scm_df_pairs_times,
+            "columns": {
                 "scenario": append_scm_df_pairs_scens,
                 "variable": append_scm_df_pairs_vars,
                 **append_scm_df_pairs_cols,
             },
-        ),
+        },
     },
     {
         "base": append_scm_df_base,
-        "other": ScmRun(
-            data=np.array([[3, 3.5, 3.7], [1, 7, 11], [-2, 1, -1.4]]).T,
-            index=append_scm_df_pairs_times,
-            columns={
+        "other": {
+            "data": np.array([[3, 3.5, 3.7], [1, 7, 11], [-2, 1, -1.4]]).T,
+            "index": append_scm_df_pairs_times,
+            "columns": {
                 "scenario": ["a_scenario", "b_scenario", "b_scenario2"],
                 "variable": ["Primary Energy", "Primary Energy|Coal", "Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
-        ),
+        },
         "duplicate_rows": 1,
-        "expected": ScmRun(
-            data=np.array(
+        "expected": {
+            "data": np.array(
                 [
                     [2, 4.75, 5.35],
                     [0.5, 3, 2],
@@ -423,21 +423,21 @@ append_scm_df_pairs = [
                     [-2, 1, -1.4],
                 ]
             ).T,
-            index=append_scm_df_pairs_times,
-            columns={
+            "index": append_scm_df_pairs_times,
+            "columns": {
                 "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
                 "variable": append_scm_df_pairs_vars
-                + ["Primary Energy|Coal", "Primary Energy"],
+                            + ["Primary Energy|Coal", "Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
-        ),
+        },
     },
     {
         "base": append_scm_df_base,
-        "other": ScmRun(
-            data=np.array([[3, 3.5, 3.7], [1, 7, 11], [-2, 1, -1.4], [-3, -4, -5]]).T,
-            index=append_scm_df_pairs_times,
-            columns={
+        "other": {
+            "data": np.array([[3, 3.5, 3.7], [1, 7, 11], [-2, 1, -1.4], [-3, -4, -5]]).T,
+            "index": append_scm_df_pairs_times,
+            "columns": {
                 "scenario": ["a_scenario", "b_scenario", "b_scenario2", "a_scenario3"],
                 "variable": [
                     "Primary Energy",
@@ -447,10 +447,10 @@ append_scm_df_pairs = [
                 ],
                 **append_scm_df_pairs_cols,
             },
-        ),
+        },
         "duplicate_rows": 2,
-        "expected": ScmRun(
-            data=np.array(
+        "expected": {
+            "data": np.array(
                 [
                     [2, 4.75, 5.35],
                     [0.5, 3, 2],
@@ -460,45 +460,60 @@ append_scm_df_pairs = [
                     [-2, 1, -1.4],
                 ]
             ).T,
-            index=append_scm_df_pairs_times,
-            columns={
+            "index": append_scm_df_pairs_times,
+            "columns": {
                 "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
                 "variable": append_scm_df_pairs_vars
-                + ["Primary Energy|Coal", "Primary Energy"],
+                            + ["Primary Energy|Coal", "Primary Energy"],
                 **append_scm_df_pairs_cols,
             },
-        ),
+        },
     },
     {
         "base": append_scm_df_base,
-        "other": ScmRun(
-            data=np.array([[-1, 0, 1], [3, 4, 4.5], [0.1, 0.2, 0.3], [-4, -8, 10]]).T,
-            index=append_scm_df_pairs_times,
-            columns={
+        "other": {
+            "data": np.array([[-1, 0, 1], [3, 4, 4.5], [0.1, 0.2, 0.3], [-4, -8, 10]]).T,
+            "index": append_scm_df_pairs_times,
+            "columns": {
                 "scenario": append_scm_df_pairs_scens,
                 "variable": append_scm_df_pairs_vars,
                 **append_scm_df_pairs_cols,
             },
-        ),
+        },
         "duplicate_rows": 4,
-        "expected": ScmRun(
-            data=np.array(
+        "expected": {
+            "data": np.array(
                 [[0, 3, 4], [1.75, 3.5, 3.25], [1.05, 3.6, 0.15], [-2.5, -5, 6.5]]
             ).T,
-            index=append_scm_df_pairs_times,
-            columns={
+            "index": append_scm_df_pairs_times,
+            "columns": {
                 "scenario": append_scm_df_pairs_scens,
                 "variable": append_scm_df_pairs_vars,
                 **append_scm_df_pairs_cols,
             },
-        ),
+        },
     },
 ]
 
 
 @pytest.fixture(params=append_scm_df_pairs)
 def test_append_scm_dfs(request):
-    return request.param
+    return {
+        "base": ScmDataFrame(**request.param["base"]),
+        "other": ScmDataFrame(**request.param["other"]),
+        "expected": ScmDataFrame(**request.param["expected"]),
+        "duplicate_rows": request.param["duplicate_rows"]
+    }
+
+
+@pytest.fixture(params=append_scm_df_pairs)
+def test_append_scm_runs(request):
+    return {
+        "base": ScmRun(**request.param["base"]),
+        "other": ScmRun(**request.param["other"]),
+        "expected": ScmRun(**request.param["expected"]),
+        "duplicate_rows": request.param["duplicate_rows"]
+    }
 
 
 @pytest.fixture
@@ -561,7 +576,7 @@ test_combinations = []
 
 
 def create_time_points(
-    start_time: np.datetime64, period_length: np.timedelta64, points_num: int
+        start_time: np.datetime64, period_length: np.timedelta64, points_num: int
 ):
     end_time_output = start_time + (points_num - 1) * period_length
     return np.linspace(

@@ -716,7 +716,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     regexp,
                     has_nan=has_nan,
                     separator=self.data_hierarchy_separator,
-                )
+                ).values
             elif col in self.meta_attributes:
                 keep_meta &= pattern_match(
                     self._meta_column(col),
@@ -724,7 +724,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     regexp=regexp,
                     has_nan=has_nan,
                     separator=self.data_hierarchy_separator,
-                )
+                ).values
             elif col == "year":
                 keep_ts &= years_match(self._time_points.years(), values)
 
@@ -1561,8 +1561,6 @@ def df_append(
 
     if not inplace:
         return ret
-
-    return None
 
 
 def _handle_potential_duplicates_in_append(data, duplicate_msg):

@@ -1054,10 +1054,10 @@ def test_append_duplicates_order_doesnt_matter(test_scm_run):
 
 
 @pytest.mark.parametrize("duplicate_msg", ("warn", "return", False))
-def test_append_duplicate_times(test_append_scm_dfs, duplicate_msg):
-    base = test_append_scm_dfs["base"]
-    other = test_append_scm_dfs["other"]
-    expected = test_append_scm_dfs["expected"]
+def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
+    base = test_append_scm_runs["base"]
+    other = test_append_scm_runs["other"]
+    expected = test_append_scm_runs["expected"]
 
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
         res = base.append(other, duplicate_msg=duplicate_msg)
@@ -1085,7 +1085,7 @@ def test_append_duplicate_times(test_append_scm_dfs, duplicate_msg):
 
         # check advice given in message actually only finds duplicate rows
         look_df = res.meta[res.meta.duplicated(keep=False)]
-        assert look_df.shape[0] == 2 * test_append_scm_dfs["duplicate_rows"]
+        assert look_df.shape[0] == 2 * test_append_scm_runs["duplicate_rows"]
     else:
         pd.testing.assert_frame_equal(
             res.timeseries(), expected.timeseries(), check_like=True

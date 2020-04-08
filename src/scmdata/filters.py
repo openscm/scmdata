@@ -111,7 +111,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     regexp: bool = False,
     has_nan: bool = True,
     separator: str = HIERARCHY_SEPARATOR,
-) -> np.ndarray:
+) -> pd.Series:
     """
     Filter data by matching metadata columns to given patterns.
 
@@ -206,7 +206,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
             else:
                 matches |= np.isclose(s, meta_col)
 
-    return matches
+    return pd.Series(matches, index=_meta_col.index)
 
 
 def years_match(data: List, years: Union[List[int], int]) -> np.ndarray:
