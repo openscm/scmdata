@@ -495,6 +495,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     @property
     def meta_attributes(self):
+        """
+        Get a list of all meta keys
+
+        Returns
+        -------
+        list
+            Sorted list of meta keys
+        """
         meta = []
         for ts in self._ts:
             meta.extend(ts.meta.keys())
@@ -546,6 +554,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     @property
     def shape(self) -> tuple:
+        """
+        Get the shape of the data (number of timeseries, number of timesteps)
+
+        Returns
+        -------
+        tuple
+        """
         return (len(self._ts), len(self.time_points))
 
     @property
@@ -1268,6 +1283,42 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         raise ValueError("operation must be one of ['median', 'mean', 'quantile']")
 
     def groupby(self, *group):
+        """
+        Group the object by unique metadata
+
+        Enables iteration over groups of data. For example, to iterate over each scenario in the object
+
+        ```
+        >>> for group in df.groupby("scenario"):
+        >>>    print(group)
+        <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+        Time:
+            Start: 2005-01-01T00:00:00
+            End: 2015-01-01T00:00:00
+        Meta:
+               model    scenario region             variable   unit climate_model
+            0  a_iam  a_scenario  World       Primary Energy  EJ/yr       a_model
+            1  a_iam  a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+        <scmdata.ScmRun (timeseries: 1, timepoints: 3)>
+        Time:
+            Start: 2005-01-01T00:00:00
+            End: 2015-01-01T00:00:00
+        Meta:
+               model     scenario region        variable   unit climate_model
+            2  a_iam  a_scenario2  World  Primary Energy  EJ/yr       a_model
+        ```
+
+        Parameters
+        ----------
+        group: str
+            Columns to group by
+
+        Returns
+        -------
+        :obj`RunGroupBy`
+            See the documentation for :class`RunGroupBy` for more information
+
+        """
         if len(group) == 1 and not isinstance(group[0], str):
             group = tuple(group[0])
         return RunGroupBy(self, group)
@@ -1482,7 +1533,40 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             index, columns, **kwargs
         )  # pragma: no cover
 
-    def reduce(self, func, dim=None, axis=None, keep_attrs=None, **kwargs):
+    def reduce(self, func, dim=None, axis=None, **kwargs):
+        """
+        Apply a function along a given axis
+
+        This is to provide the GroupBy functionality in :func`ScmRun.groupby` and is not generally called directly.
+
+        This implementation is very bare-bones - no reduction along the time time dimension is allowed and only the `dim`
+        parameter is used.
+
+        Parameters
+        ----------
+        func: function
+        dim : str
+            Ignored
+        axis : int
+            The dimension along which the function is applied. The only valid value is 0 which corresponds to the along the
+            time-series dimension.
+        kwargs
+            Other parameters passed to `func`
+
+        Returns
+        -------
+        :obj:`ScmRun`
+
+        Raises
+        ------
+        ValueError
+            If a dimension other than None is provided
+
+        NotImplementedError
+            If `axis` is anything other than 0
+
+
+        """
         if dim is not None:
             raise ValueError("ScmRun.reduce does not handle dim. Use axis instead")
 
@@ -1510,8 +1594,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 # Reduced the timeseries
                 m = self.meta
                 n_unique = m.nunique(axis=0)
-                m = m.drop(n_unique[n_unique > 1]).drop_duplicates()
-                assert len(m) == 1
+                m = m.drop(columns=n_unique[n_unique > 1].index).drop_duplicates()
+                if len(m) != 1:
+                    raise ValueError("Could not determine unique metadata")
 
                 meta = m.to_dict("list")
 

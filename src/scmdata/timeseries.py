@@ -1,3 +1,9 @@
+"""
+TimeSeries handling
+
+Functionality for handling and storing individual time-series
+"""
+
 import copy
 import datetime as dt
 import functools
@@ -10,7 +16,7 @@ from xarray.core.ops import inject_binary_ops
 from scmdata.time import TimeseriesConverter
 
 
-class Counter:
+class _Counter:
     def __init__(self):
         self.count = 0
 
@@ -24,12 +30,12 @@ class Counter:
         self.count = 0
 
 
-default_name = Counter()
+default_name = _Counter()
 
 
 class TimeSeries:
     """
-    A 1D timeseries with metadata
+    A 1D time-series with metadata
 
     Proxies a xarray.DataArray with a single time dimension
     """
@@ -53,20 +59,55 @@ class TimeSeries:
 
     @property
     def name(self):
+        """
+        Timeseries name
+
+        If no name was provided this will be an automatically incrementing number
+        """
         return self._data.name
 
     def __len__(self):
+        """
+        Length of the time-series (number of time points)
+
+        Returns
+        -------
+        int
+        """
         return len(self._data["time"])
 
     def copy(self):
+        """
+        Create a deep copy of the timeseries.
+
+        Any further modifications to the :obj:`Timeseries` returned copy will not be reflecting
+        in the current :obj:`Timeseries`
+
+        Returns
+        -------
+        :obj:`Timeseries`
+        """
         return copy.deepcopy(self)
 
     @property
     def meta(self):
+        """
+        Metadata associated with the timeseries
+
+        Returns
+        -------
+        dict
+        """
         return self._data.attrs
 
     @property
     def values(self):
+        """
+
+        Returns
+        -------
+        :obj`np.ndarray`
+        """
         return self._data.values
 
     def __getitem__(self, item):
@@ -108,7 +149,7 @@ class TimeSeries:
 
     def reindex(self, time, **kwargs):
         """
-        Updates the time dimension, filling in the missing values with NaN's
+        Update the time dimension, filling in the missing values with NaN's
 
         This is different to interpolating to fill in the missing values. Uses `xarray.DataArray.reindex` to perform the
         reindexing

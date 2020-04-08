@@ -1,3 +1,6 @@
+"""
+Functionality for grouping and filtering ScmRun objects
+"""
 import warnings
 
 import numpy as np
@@ -6,7 +9,8 @@ from xarray.core.common import ImplementsArrayReduce
 
 
 def maybe_wrap_array(original, new_array):
-    """Wrap a transformed array with __array_wrap__ is it can be done safely.
+    """
+    Wrap a transformed array with __array_wrap__ is it can be done safely.
 
     This lets us treat arbitrary functions that take and return ndarray objects
     like ufuncs, as long as they return an array with the same shape.
@@ -18,7 +22,7 @@ def maybe_wrap_array(original, new_array):
         return new_array
 
 
-class GroupBy(ImplementsArrayReduce):
+class _GroupBy(ImplementsArrayReduce):
     def __init__(self, meta, groups, na_fill_value=-10000):
         m = meta.reset_index(drop=True)
         self.na_fill_value = float(na_fill_value)
@@ -47,14 +51,19 @@ class GroupBy(ImplementsArrayReduce):
             indices = np.atleast_1d(indices)
             indices = [_try_fill_value(v) for v in indices]
             res = self.run.filter(**{k: v for k, v in zip(self.group_keys, indices)})
-            assert len(res), "Empty group for {}".format(
-                list(zip(self.group_keys, indices))
-            )
+            if not len(res):
+                raise ValueError("Empty group for {}".format(
+                    list(zip(self.group_keys, indices)))
+                )
             yield res
 
+    def __iter__(self):
+        return self._iter_grouped()
 
-class RunGroupBy(GroupBy):
-    """GroupBy object specialized to grouping ScmRun objects
+
+class RunGroupBy(_GroupBy):
+    """
+    GroupBy object specialized to grouping ScmRun objects
     """
 
     def __init__(self, run, groups):
@@ -63,7 +72,8 @@ class RunGroupBy(GroupBy):
         super().__init__(run.meta, groups)
 
     def map(self, func, args=(), **kwargs):
-        """Apply a function to each time in the group and concatenate them
+        """
+        Apply a function to each time in the group and concatenate them
         together into a new array.
 
         `func` is called like `func(ar, *args, **kwargs)` for each array `ar`
@@ -110,7 +120,8 @@ class RunGroupBy(GroupBy):
             return df_append(applied)
 
     def reduce(self, func, dim=None, axis=None, **kwargs):
-        """Reduce the items in this group by applying `func` along some
+        """
+        Reduce the items in this group by applying `func` along some
         dimension(s).
 
         Parameters
@@ -134,8 +145,8 @@ class RunGroupBy(GroupBy):
             Array with summarized data and the indicated dimension(s)
             removed.
         """
-        if dim is not None:
-            assert dim == "time", "Only reduction along the time dimension is supported"
+        if dim is not None and dim != "time":
+            raise ValueError("Only reduction along the time dimension is supported")
 
         def reduce_array(ar):
             return ar.reduce(func, dim, axis, **kwargs)
