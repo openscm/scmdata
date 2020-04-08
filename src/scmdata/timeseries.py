@@ -103,6 +103,7 @@ class TimeSeries:
     @property
     def values(self):
         """
+        Get the data as a numpy array
 
         Returns
         -------
