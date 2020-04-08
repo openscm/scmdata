@@ -623,8 +623,8 @@ def test_filter_time_range_hour(test_scm_datetime_df, hour_range):
     assert unique_time[0] == expected[0]
 
 
-def test_filter_time_no_match(test_scm_datetime_df):
-    obs = test_scm_datetime_df.filter(time=dt.datetime(2004, 6, 18))
+def test_filter_time_no_match(test_scm_datetime_run):
+    obs = test_scm_datetime_run.filter(time=dt.datetime(2004, 6, 18))
     assert len(obs.time_points) == 0
     assert obs.shape[1] == 0
     assert obs.values.shape[1] == 0

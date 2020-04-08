@@ -215,6 +215,22 @@ def test_scm_datetime_df():
         inplace=True,
     )
 
+    yield ScmDataFrame(tdf)
+
+
+@pytest.fixture(scope="function")
+def test_scm_datetime_run():
+    tdf = TEST_DF.copy()
+    tdf.rename(
+        {
+            2005: datetime(2005, 6, 17, 12),
+            2010: datetime(2010, 1, 3, 0),
+            2015: datetime(2015, 1, 4, 0),
+        },
+        axis="columns",
+        inplace=True,
+    )
+
     yield ScmRun(tdf)
 
 

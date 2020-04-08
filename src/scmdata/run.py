@@ -1,7 +1,7 @@
 """
-ScmDataFrame provides a high level analysis tool for simple climate model relevant
+ScmRun provides a high level analysis tool for simple climate model relevant
 data. It provides a simple interface for reading/writing, subsetting and visualising
-model data. ScmDataFrames are able to hold multiple model runs which aids in analysis of
+model data. ScmRuns are able to hold multiple model runs which aids in analysis of
 ensembles of model runs.
 """
 import copy
@@ -39,14 +39,14 @@ from .units import UnitConverter
 _logger = getLogger(__name__)
 
 REQUIRED_COLS = ["model", "scenario", "region", "variable", "unit"]
-"""Minimum metadata columns required by an ScmDataFrame"""
+"""Minimum metadata columns required by an ScmRun"""
 
 
 def _read_file(  # pylint: disable=missing-return-doc
     fnames: str, *args: Any, **kwargs: Any
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmDataFrame` from a file.
+    Prepare data to initialize :class:`ScmRun` from a file.
 
     Parameters
     ----------
@@ -108,10 +108,10 @@ def _format_data(  # pylint: disable=missing-return-doc
     df: Union[pd.DataFrame, pd.Series]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmDataFrame` from :class:`pd.DataFrame` or
+    Prepare data to initialize :class:`ScmRun` from :class:`pd.DataFrame` or
     :class:`pd.Series`.
 
-    See docstring of :func:`ScmDataFrame.__init__` for details.
+    See docstring of :func:`ScmRun.__init__` for details.
 
     Parameters
     ----------
@@ -216,9 +216,9 @@ def _from_ts(
     df: Any, index: Any = None, **columns: Union[str, bool, float, int, List]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmDataFrame` from wide timeseries.
+    Prepare data to initialize :class:`ScmRun` from wide timeseries.
 
-    See docstring of :func:`ScmDataFrame.__init__` for details.
+    See docstring of :func:`ScmRun.__init__` for details.
 
     Returns
     -------
@@ -268,7 +268,9 @@ def _from_ts(
 
 class ScmRun:  # pylint: disable=too-many-public-methods
     """
-    SCMData's data container for a single run of a SCM.
+    Data container for holding one or many time-series of SCM data.
+
+    ``ScmRun`` holds a list of
 
     """
 
@@ -292,7 +294,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Parameters
         ----------
-        data: Union[ScmDataFrame, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str]
+        data: Union[ScmDataFrame, ScmRun, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str]
             A pd.DataFrame or data file with IAMC-format data columns, or a numpy array
             of timeseries data if :obj:`columns` is specified. If a string is passed,
             data will be attempted to be read from file.
@@ -300,11 +302,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         index
             Only used if :obj:`columns` is not ``None``. If :obj:`index` is not
             ``None``, too, then this value sets the time index of the
-            :class:`ScmDataFrame` instance. If :obj:`index` is ``None`` and
+            :class:`ScmRun` instance. If :obj:`index` is ``None`` and
             :obj:`columns` is not ``None``, the index is taken from :obj:`data`.
 
         columns
-            If None, ScmDataFrame will attempt to infer the values from the source.
+            If None, ScmRun will attempt to infer the values from the source.
             Otherwise, use this dict to write the metadata for each timeseries in data.
             For each metadata key (e.g. "model", "scenario"), an array of values (one
             per time series) is expected. Alternatively, providing a list of length 1
@@ -329,8 +331,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     "unit": ["unspecified"]
                 }
                 >>> assert pd.testing.assert_frame_equal(
-                    ScmDataFrame(d, columns=col_1).meta,
-                    ScmDataFrame(d, columns=col_2).meta
+                    ScmRun(d, columns=col_1).meta,
+                    ScmRun(d, columns=col_2).meta
                 )
 
         **kwargs:
@@ -377,7 +379,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 if isinstance(data, list) and isinstance(data[0], str):
                     raise ValueError(
                         "Initialising from multiple files not supported, "
-                        "use `scmdata.dataframe.ScmDataFrame.append()`"
+                        "use `scmdata.dataframe.ScmRun.append()`"
                     )
                 error_msg = "Cannot load {} from {}".format(type(self), type(data))
                 raise TypeError(error_msg)
@@ -403,7 +405,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrame`
+        :obj:`ScmRun`
             :func:`copy.deepcopy` of ``self``
         """
         ret = copy.copy(self)
@@ -582,7 +584,39 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         **kwargs: Any,
     ):
         """
-        Return a filtered ScmDataFrame (i.e., a subset of the data).
+        Return a filtered ScmRun (i.e., a subset of the data).
+
+        Note that this this does not copy the underlying time-series data so any modifications will be reflected in the caller
+        ``ScmRun``. This allows for the updating a subset of the timeseries directly.
+
+        ```
+        >>> df
+        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+        Time:
+            Start: 2005-01-01T00:00:00
+            End: 2015-01-01T00:00:00
+        Meta:
+               model     scenario region             variable   unit climate_model
+            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+        >>> df.filter(scenario="a_scenario")["extra_meta"] = "test"
+        >>> df
+        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+        Time:
+            Start: 2005-01-01T00:00:00
+            End: 2015-01-01T00:00:00
+        Meta:
+               model     scenario region  ...   unit climate_model extra_meta
+            0  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
+            1  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
+            2  a_iam  a_scenario2  World  ...  EJ/yr       a_model        NaN
+
+            [3 rows x 7 columns]
+        ```
+
+        This functionality is different to how `scmdata.ScmDataFrame` works which always returns a copy. If you do not want to
+        change the parent `ScmRun` create a copy `ScmRun.copy`. Any changes to this copy will not be reflected in the parent.
 
         Parameters
         ----------
@@ -623,7 +657,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrame`
+        :obj:`ScmRun`
             If not :obj:`inplace`, return a new instance with the filtered data.
 
         Raises
@@ -662,7 +696,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ret["time"] = self.time_points[_keep_times]
 
         if len(ret) == 0:
-            _logger.warning("Filtered ScmDataFrame is empty!")
+            _logger.warning("Filtered ScmRun is empty!")
 
         if not inplace:
             return ret
@@ -832,8 +866,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrame`
-            If :obj:`inplace` is ``True``, return a new :class:`ScmDataFrame`
+        :obj:`ScmRun`
+            If :obj:`inplace` is ``True``, return a new :class:`ScmRun`
             instance
 
         Raises
@@ -878,13 +912,19 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             Meta column name (defaults to :obj:`meta.name`)
 
         index
-            The index to which the metadata is to be applied
+            *DEPRECATED* The index to which the metadata is to be applied.
+
+            This argument has been deprecated, but kept for compatibility with :class:`ScmDataFrame`
+
 
         Raises
         ------
         ValueError
             No name can be determined from inputs or index cannot be coerced to
             :class:`pd.MultiIndex`
+
+        NotImplementedError
+            Any non-None value for `index` is provided
         """
         # check that name is valid and doesn't conflict with data columns
         # mypy doesn't recognise if
@@ -969,8 +1009,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrame`
-            A new :class:`ScmDataFrame` containing the data interpolated onto the
+        :obj:`ScmRun`
+            A new :class:`ScmRun` containing the data interpolated onto the
             :obj:`target_times` grid
         """
         # pylint: disable=protected-access
@@ -1012,14 +1052,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrame`
-            New :class:`ScmDataFrame` instance on a new time index
+        :obj:`ScmRun`
+            New :class:`ScmRun` instance on a new time index
 
         Examples
         --------
         Resample a dataframe to annual values
 
-        >>> scm_df = ScmDataFrame(
+        >>> scm_df = ScmRun(
         ...     pd.Series([1, 2, 10], index=(2000, 2001, 2009)),
         ...     columns={
         ...         "model": ["a_iam"],
@@ -1131,7 +1171,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrame`
+        :obj:`ScmRun`
             The time mean of ``self``.
         """
         if rule == "AS":
@@ -1150,7 +1190,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 1, 1)
             )
-            return ScmDataFrame(ts_resampled)
+            return ScmRun(ts_resampled)
 
         if rule == "AC":
 
@@ -1161,7 +1201,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 7, 1)
             )
-            return ScmDataFrame(ts_resampled)
+            return ScmRun(ts_resampled)
 
         if rule == "A":
 
@@ -1176,7 +1216,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 12, 31)
             )
-            return ScmDataFrame(ts_resampled)
+            return ScmRun(ts_resampled)
 
         raise ValueError("`rule` = `{}` is not supported".format(rule))
 
@@ -1250,14 +1290,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             CO2-equivalent calculations will raise :class:`DimensionalityError`.
 
         **kwargs
-            Extra arguments which are passed to :func:`~ScmDataFrame.filter` to
+            Extra arguments which are passed to :func:`~ScmRun.filter` to
             limit the timeseries which are attempted to be converted. Defaults to
-            selecting the entire ScmDataFrame, which will likely fail.
+            selecting the entire ScmRun, which will likely fail.
 
         Returns
         -------
-        :obj:`ScmDataFrame`
-            If :obj:`inplace` is not ``False``, a new :class:`ScmDataFrame` instance
+        :obj:`ScmRun`
+            If :obj:`inplace` is not ``False``, a new :class:`ScmRun` instance
             with the converted units.
         """
         # pylint: disable=protected-access
@@ -1341,11 +1381,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Parameters
         ----------
         other
-            Data (in format which can be cast to :class:`ScmDataFrame`) to append
+            Data (in format which can be cast to :class:`ScmRun`) to append
 
         inplace
             If ``True``, append data in place and return ``None``. Otherwise, return a
-            new :class:`ScmDataFrame` instance with the appended data.
+            new :class:`ScmRun` instance with the appended data.
 
         duplicate_msg
             If "warn", raise a warning if duplicate data is detected. If "return",
@@ -1353,13 +1393,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             inspect further. If ``False``, take the average and do not raise a warning.
 
         **kwargs
-            Keywords to pass to :func:`ScmDataFrame.__init__` when reading
+            Keywords to pass to :func:`ScmRun.__init__` when reading
             :obj:`other`
 
         Returns
         -------
-        :obj:`ScmDataFrame`
-            If not :obj:`inplace`, return a new :class:`ScmDataFrame` instance
+        :obj:`ScmRun`
+            If not :obj:`inplace`, return a new :class:`ScmRun` instance
             containing the result of the append.
         """
         if not isinstance(other, ScmRun):
@@ -1488,7 +1528,7 @@ def df_append(
     Append together many objects.
 
     When appending many objects, it may be more efficient to call this routine once with
-    a list of ScmDataFrames, than using :func:`ScmDataFrame.append` multiple times. If
+    a list of :class:`ScmRun`'s, than using :func:`ScmRun.append` multiple times. If
     timeseries with duplicate metadata are found, the timeseries are appended and values
     falling on the same timestep are averaged (this behaviour can be adjusted with the
     :obj:`duplicate_msg` arguments).
@@ -1497,7 +1537,7 @@ def df_append(
     ----------
     runs:
         The dataframes to append. Values will be attempted to be cast to
-        :class:`ScmDataFrame`.
+        :class:`ScmRun`.
 
     inplace
         If ``True``, then the operation updates the first item in :obj:`runs` and returns
@@ -1510,7 +1550,7 @@ def df_append(
 
     Returns
     -------
-    :obj:`ScmDataFrame`
+    :obj:`ScmRun`
         If not :obj:`inplace`, the return value is the object containing the merged
         data. The resultant class will be determined by the type of the first object. If
         ``duplicate_msg == "return"``, a `pd.DataFrame` will be returned instead.
@@ -1519,7 +1559,7 @@ def df_append(
     ------
     TypeError
         If :obj:`inplace` is ``True`` but the first element in :obj:`dfs` is not an
-        instance of :class:`ScmDataFrame`
+        instance of :class:`ScmRun`
 
     ValueError
         :obj:`duplicate_msg` option is not recognised.
