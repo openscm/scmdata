@@ -1386,6 +1386,42 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             index, columns, **kwargs
         )  # pragma: no cover
 
+    def groupby(self, *group):
+        """
+        Group the object by unique metadata
+
+        Enables iteration over groups of data. For example, to iterate over each scenario in the object.
+
+        This implementation is much simpler compared to :class`ScmRun` and only allows for iteration over groups.
+
+        Parameters
+        ----------
+        group: str
+            Columns to group by
+            This implementation only handles a single group at a time
+
+        Returns
+        -------
+        :obj`RunGroupBy`
+            See the documentation for :class`RunGroupBy` for more information
+
+        Raises
+        ------
+        NotImplementedError
+            If more than one group is passed
+
+        """
+        res = []
+        if len(group) != 1:
+            raise NotImplementedError("ScmDataFrame.groupby only handles a single group")
+        group = group[0]
+        for v in self.meta[group].unique():
+            res.append(self.filter(**{
+                group: v
+            }))
+
+        return res
+
 
 def df_append(
     dfs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",

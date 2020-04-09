@@ -293,13 +293,18 @@ def test_scm_df_mulitple(request):
 
 
 @pytest.fixture(scope="function")
-def test_scm_run(request):
+def test_scm_run():
     yield ScmRun(TEST_DF.copy())
 
 
 @pytest.fixture(scope="function")
-def test_scm_df(request):
+def test_scm_df():
     yield ScmDataFrame(TEST_DF.copy())
+
+
+@pytest.fixture(scope="function")
+def scm_data(data_cls):
+    yield data_cls(TEST_DF.copy())
 
 
 _misru = [
