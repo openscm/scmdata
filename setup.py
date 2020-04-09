@@ -36,7 +36,7 @@ REQUIREMENTS = [
     "python-dateutil",
     "xarray",
 ]
-REQUIREMENTS_OPTIONAL = ["netCDF4"]
+REQUIREMENTS_OPTIONAL = ["netCDF4", "xlrd"]
 REQUIREMENTS_PLOTTING = ["seaborn"]
 REQUIREMENTS_TESTS = (
     ["codecov", "nbval", "pytest-cov", "pytest>=5.0.0",]
