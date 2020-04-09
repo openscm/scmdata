@@ -58,7 +58,7 @@ REQUIREMENTS_DEV = [
         "pydocstyle",
         "pylint",
         "scipy",
-        "netCDF4"
+        "netCDF4",
     ],
     *REQUIREMENTS_PYAM,
     *REQUIREMENTS_TESTS,

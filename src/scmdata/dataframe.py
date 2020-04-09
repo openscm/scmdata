@@ -1414,12 +1414,12 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         """
         res = []
         if len(group) != 1:
-            raise NotImplementedError("ScmDataFrame.groupby only handles a single group")
+            raise NotImplementedError(
+                "ScmDataFrame.groupby only handles a single group"
+            )
         group = group[0]
         for v in self.meta[group].unique():
-            res.append(self.filter(**{
-                group: v
-            }))
+            res.append(self.filter(**{group: v}))
 
         return res
 
