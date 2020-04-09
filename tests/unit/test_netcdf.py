@@ -3,9 +3,9 @@ from os.path import exists, join
 
 import netCDF4 as nc
 import numpy.testing as npt
-import pandas.testing as pdt
-from scmdata.testing import assert_scmdf_almost_equal
+
 from scmdata.netcdf import nc_to_run, run_to_nc
+from scmdata.testing import assert_scmdf_almost_equal
 
 
 def test_run_to_nc(scm_data):
