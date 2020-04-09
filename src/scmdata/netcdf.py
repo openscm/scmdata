@@ -37,19 +37,11 @@ dimensions: iterable of str
 
 
 def _var_to_nc(var):
-    return (
-        var.replace("|", "__")
-            .replace(" ", "_")
-            .lower()
-    )
+    return var.replace("|", "__").replace(" ", "_").lower()
 
 
 def _nc_to_var(var):
-    return (
-        var.replace("__", "|")
-            .replace("_", " ")
-            .title()
-    )
+    return var.replace("__", "|").replace("_", " ").title()
 
 
 def _get_idx(vals, v):
@@ -72,7 +64,9 @@ def _write_nc(ds, df, dimensions):
 
     # Create the dimensions
     ds.createDimension("time", len(df.time_points))
-    ds.createVariable("time", "f8", "time", )
+    ds.createVariable(
+        "time", "f8", "time",
+    )
     ds.variables["time"][:] = df.time_points
 
     dims = {}
@@ -95,13 +89,17 @@ def _write_nc(ds, df, dimensions):
         # This doesn't work for more than 1 dimension
         for d in dimensions:
             if meta[d].duplicated().any():
-                raise ValueError("{} dimension is not unique for variable {}".format(d, v))
+                raise ValueError(
+                    "{} dimension is not unique for variable {}".format(d, v)
+                )
 
         # Check that the other meta are consistent
         var_attrs = {}
         for d in set(meta.columns) - set(dimensions):
             if len(meta[d].unique()) != 1:
-                raise ValueError("metadata for {} is not unique for variable {}".format(d, v))
+                raise ValueError(
+                    "metadata for {} is not unique for variable {}".format(d, v)
+                )
             var_attrs[d] = meta[d].unique()[0]
 
         var_name = _var_to_nc(v)
@@ -136,15 +134,15 @@ def _read_nc(ds):
         var_data = var[:]
         valid_mask = ~np.isnan(var_data).all(axis=-1)
 
-        var_meta = {
-            "variable": name
-        }
+        var_meta = {"variable": name}
         for v in var.ncattrs():
-            if not v.startswith('_'):
+            if not v.startswith("_"):
                 var_meta[v] = var.getncattr(v)
 
         # Iterate over all combinations of dimensions
-        meta_at_coord = np.asarray(np.meshgrid(*[dims[d] for d in var.dimensions[:-1]], indexing='ij'))
+        meta_at_coord = np.asarray(
+            np.meshgrid(*[dims[d] for d in var.dimensions[:-1]], indexing="ij")
+        )
         meta_at_coord = meta_at_coord.squeeze()
 
         with np.nditer(meta_at_coord, ["refs_ok", "multi_index"], order="F") as it:
@@ -160,6 +158,7 @@ def _read_nc(ds):
 
     # Circular dependency
     from scmdata.dataframe import ScmDataFrame
+
     return ScmDataFrame(np.asarray(data).T, columns=columns, index=dims["time"])
 
 
