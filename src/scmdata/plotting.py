@@ -4,8 +4,9 @@ Plotting helpers for DataFrames
 See the example notebook 'plotting-with-seaborn.ipynb' for examples on how to use
 """
 
-import seaborn as sns
 import warnings
+
+import seaborn as sns
 
 CMIP6_SCENARIO_COLOURS = {
     "historical": "black",
