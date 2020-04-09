@@ -50,4 +50,3 @@ except ImportError:
     # mypy can't work out try-except block sets typing
     IamDataFrame = None
     LongDatetimeIamDataFrame = None  # type: ignore
-
