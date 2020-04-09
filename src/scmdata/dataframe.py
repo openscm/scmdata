@@ -1349,30 +1349,6 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         """
         self.to_iamdataframe().to_csv(path, **kwargs)
 
-    def line_plot(self, x: str = "time", y: str = "value", **kwargs: Any) -> Axes:
-        """
-        Plot a line chart.
-
-        See :func:`pyam.IamDataFrame.line_plot` for more information.
-        """
-        return self.to_iamdataframe().line_plot(x, y, **kwargs)  # pragma: no cover
-
-    def scatter(self, x: str, y: str, **kwargs: Any) -> Axes:
-        """
-        Plot a scatter chart using metadata columns.
-
-        See :func:`pyam.plotting.scatter` for details.
-        """
-        self.to_iamdataframe().scatter(x, y, **kwargs)  # pragma: no cover
-
-    def region_plot(self, **kwargs: Any) -> Axes:
-        """
-        Plot regional data for a single model, scenario, variable, and year.
-
-        See :class:`pyam.plotting.region_plot` for details.
-        """
-        return self.to_iamdataframe().region_plot(**kwargs)  # pragma: no cover
-
     def pivot_table(
         self,
         index: Union[str, List[str]],
