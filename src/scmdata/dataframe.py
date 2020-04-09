@@ -27,7 +27,7 @@ from .filters import (
 from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .plotting import inject_plotting_methods
-from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
+from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints, TimeseriesConverter
 from .units import UnitConverter
 
