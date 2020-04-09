@@ -2,7 +2,7 @@
 scmdata, simple data handling for simple climate model data
 """
 
-from ._version import get_versions
+from ._version import get_versions  # isort:skip
 
 __version__ = get_versions()["version"]
 del get_versions

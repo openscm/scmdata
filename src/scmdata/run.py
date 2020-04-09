@@ -30,12 +30,12 @@ from .filters import (
     years_match,
 )
 from .groupby import RunGroupBy
+from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints
 from .timeseries import TimeSeries
 from .units import UnitConverter
-from .netcdf import inject_nc_methods
 
 _logger = getLogger(__name__)
 
