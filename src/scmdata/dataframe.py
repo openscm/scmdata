@@ -28,6 +28,7 @@ from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints, TimeseriesConverter
 from .units import UnitConverter
+from .netcdf import inject_nc_methods
 
 _logger = getLogger(__name__)
 
@@ -1548,3 +1549,6 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
         return data
 
     raise ValueError("Unrecognised value for duplicate_msg")
+
+
+inject_nc_methods(ScmDataFrame)
