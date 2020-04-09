@@ -21,6 +21,21 @@ from scmdata import __version__
 logger = getLogger(__name__)
 
 
+_TO_NC_DOCSTRING = """\
+Write data to disk as a netCDF4 file
+
+Parameters
+----------
+path: str
+    Path to write the file into
+
+dimensions: iterable of str
+    Dimensions to include in the netCDF file. The order of the dimensions in the netCDF file will be the same
+    as the order provided.
+    The time dimension is always included as the last dimension, even if not provided.
+"""
+
+
 def _var_to_nc(var):
     return (
         var.replace("|", "__")
@@ -174,7 +189,7 @@ def run_to_nc(df, fname, dimensions=("region",)):
         _write_nc(ds, df, dimensions)
 
 
-def run_to_df(fname):
+def nc_to_run(fname):
     """
     Reads a ScmDataFrame which has been serialized using ``df_to_nc``
     Parameters
@@ -190,3 +205,25 @@ def run_to_df(fname):
             return _read_nc(ds)
         except:
             logger.exception("Failed reading netdf file: {}".format(fname))
+
+
+def inject_nc_methods(cls):
+    """
+    Add the to/from nc methods to a class
+
+    Parameters
+    ----------
+    cls
+        Class to add methods to
+    """
+    name = "to_nc"
+    func = run_to_nc
+    func.__name__ = name
+    func.__doc__ = _TO_NC_DOCSTRING
+    setattr(cls, name, func)
+
+    name = "from_nc"
+    func = staticmethod(nc_to_run)
+    func.__name__ = name
+    func.__doc__ = _TO_NC_DOCSTRING
+    setattr(cls, name, func)

@@ -3,7 +3,7 @@ from os.path import join, exists
 
 import netCDF4 as nc
 import numpy.testing as npt
-from scmdata.netcdf import run_to_nc, run_to_df
+from scmdata.netcdf import run_to_nc, nc_to_run
 import pandas.testing as pdt
 
 
@@ -37,5 +37,18 @@ def test_nc_to_run(scm_data):
 
         assert exists(out_fname)
 
-        df = run_to_df(out_fname)
+        df = nc_to_run(out_fname)
+        pdt.assert_frame_equal(scm_data.timeseries(), df.timeseries(), check_like=True)
+
+
+def test_nc_methods(scm_data):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        scm_data.to_nc(out_fname, dimensions=("scenario",))
+
+        assert exists(out_fname)
+
+        # Same as ScmRun.from_nc(out_fname)
+        df = scm_data.__class__.from_nc(out_fname)
+
         pdt.assert_frame_equal(scm_data.timeseries(), df.timeseries(), check_like=True)
