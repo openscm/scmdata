@@ -29,6 +29,7 @@ from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints, TimeseriesConverter
 from .units import UnitConverter
+from .plotting import inject_plotting_methods
 
 _logger = getLogger(__name__)
 
@@ -1552,3 +1553,4 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
 
 
 inject_nc_methods(ScmDataFrame)
+inject_plotting_methods(ScmDataFrame)
