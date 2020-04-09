@@ -1,10 +1,11 @@
 import tempfile
-from os.path import join, exists
+from os.path import exists, join
 
 import netCDF4 as nc
 import numpy.testing as npt
-from scmdata.netcdf import run_to_nc, nc_to_run
 import pandas.testing as pdt
+
+from scmdata.netcdf import nc_to_run, run_to_nc
 
 
 def test_run_to_nc(scm_data):

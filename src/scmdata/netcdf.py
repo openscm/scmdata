@@ -16,10 +16,10 @@ from datetime import datetime
 from logging import getLogger
 
 import numpy as np
+
 from scmdata import __version__
 
 logger = getLogger(__name__)
-
 
 _TO_NC_DOCSTRING = """\
 Write data to disk as a netCDF4 file
@@ -59,7 +59,6 @@ def _write_nc(ds, df, dimensions):
     dimensions : list of str
         Excluding time diment
     """
-
     all_dims = list(dimensions) + ["time"]
 
     # Create the dimensions
@@ -164,8 +163,10 @@ def _read_nc(ds):
 
 def run_to_nc(df, fname, dimensions=("region",)):
     """
-    Writes a ScmDataFrame to disk as a netCDF4 file
+    Write a ScmDataFrame to disk as a netCDF4 file
+
     Each unique variable will be written as a netCDF file.
+
     Parameters
     ----------
     fname: str
@@ -190,7 +191,8 @@ def run_to_nc(df, fname, dimensions=("region",)):
 
 def nc_to_run(fname):
     """
-    Reads a ScmDataFrame which has been serialized using ``df_to_nc``
+    Read a ScmDataFrame which has been serialized using ``run_to_nc``
+
     Parameters
     ----------
     fname: str
@@ -202,7 +204,7 @@ def nc_to_run(fname):
     with nc.Dataset(fname) as ds:
         try:
             return _read_nc(ds)
-        except:
+        except Exception:
             logger.exception("Failed reading netdf file: {}".format(fname))
 
 

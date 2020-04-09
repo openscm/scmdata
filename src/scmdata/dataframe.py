@@ -24,11 +24,11 @@ from .filters import (
     pattern_match,
     years_match,
 )
+from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints, TimeseriesConverter
 from .units import UnitConverter
-from .netcdf import inject_nc_methods
 
 _logger = getLogger(__name__)
 
