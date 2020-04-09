@@ -37,10 +37,10 @@ REQUIREMENTS = [
     "xarray",
 ]
 REQUIREMENTS_OPTIONAL = ["netCDF4"]
-REQUIREMENTS_PYAM = ["pyam-iamc>=0.3.0"]
+REQUIREMENTS_PLOTTING = ["seaborn"]
 REQUIREMENTS_TESTS = (
     ["codecov", "nbval", "pytest-cov", "pytest>=5.0.0",]
-    + REQUIREMENTS_PYAM
+    + REQUIREMENTS_PLOTTING
     + REQUIREMENTS_OPTIONAL
 )
 REQUIREMENTS_DOCS = ["sphinx>=1.4,<2.1", "sphinx_rtd_theme"]
@@ -60,7 +60,7 @@ REQUIREMENTS_DEV = [
         "scipy",
     ],
     *REQUIREMENTS_OPTIONAL,
-    *REQUIREMENTS_PYAM,
+    *REQUIREMENTS_PLOTTING,
     *REQUIREMENTS_TESTS,
     *REQUIREMENTS_DOCS,
     *REQUIREMENTS_DEPLOY,
@@ -68,7 +68,7 @@ REQUIREMENTS_DEV = [
 
 REQUIREMENTS_EXTRAS = {
     "optional": REQUIREMENTS_OPTIONAL,
-    "pyam": REQUIREMENTS_PYAM,
+    "plotting": REQUIREMENTS_PLOTTING,
     "docs": REQUIREMENTS_DOCS,
     "tests": REQUIREMENTS_TESTS,
     "deploy": REQUIREMENTS_DEPLOY,
