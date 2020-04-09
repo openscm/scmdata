@@ -119,7 +119,7 @@ def _write_nc(ds, df, dimensions):
         ds.variables[var_name].setncatts(var_attrs)
 
 
-def _read_nc(ds):
+def _read_nc(cls, ds):
     dims = {d: ds.variables[d][:] for d in ds.dimensions}
     dims["time"] = dims["time"].astype("datetime64[s]")
 
@@ -155,10 +155,7 @@ def _read_nc(ds):
                 for v in var_meta:
                     columns[v].append(var_meta[v])
 
-    # Circular dependency
-    from scmdata.dataframe import ScmDataFrame
-
-    return ScmDataFrame(np.asarray(data).T, columns=columns, index=dims["time"])
+    return cls(np.asarray(data).T, columns=columns, index=dims["time"])
 
 
 def run_to_nc(df, fname, dimensions=("region",)):
@@ -189,7 +186,7 @@ def run_to_nc(df, fname, dimensions=("region",)):
         _write_nc(ds, df, dimensions)
 
 
-def nc_to_run(fname):
+def nc_to_run(cls, fname):
     """
     Read a ScmDataFrame which has been serialized using ``run_to_nc``
 
@@ -203,7 +200,7 @@ def nc_to_run(fname):
 
     with nc.Dataset(fname) as ds:
         try:
-            return _read_nc(ds)
+            return _read_nc(cls, ds)
         except Exception:
             logger.exception("Failed reading netdf file: {}".format(fname))
 
@@ -224,7 +221,7 @@ def inject_nc_methods(cls):
     setattr(cls, name, func)
 
     name = "from_nc"
-    func = staticmethod(nc_to_run)
+    func = classmethod(nc_to_run)
     func.__name__ = name
     func.__doc__ = _TO_NC_DOCSTRING
     setattr(cls, name, func)

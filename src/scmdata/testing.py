@@ -27,12 +27,12 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
         df2_index = np.argsort(right.meta.index)
         if check_ts_names:
             pdt.assert_frame_equal(left.meta, right.meta, check_like=True)
+            npt.assert_allclose(left.values[df1_index], right.values[df2_index])
         else:
-            assert (
-                left.meta.values[df1_index]
-                == right.meta[left.meta.columns].values[df2_index]
-            ).all()
-        npt.assert_allclose(left.values[df1_index], right.values[df2_index])
+            # Sort the
+            left_sorted = left.timeseries().sort_index()
+            right_sorted = right.timeseries(left.meta.columns).sort_index()
+            pdt.assert_frame_equal(left_sorted, right_sorted)
     else:
         pdt.assert_frame_equal(left.meta, right.meta)
         npt.assert_allclose(left.values, right.values)

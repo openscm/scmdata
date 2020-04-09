@@ -4,7 +4,7 @@ from os.path import exists, join
 import netCDF4 as nc
 import numpy.testing as npt
 import pandas.testing as pdt
-
+from scmdata.testing import assert_scmdf_almost_equal
 from scmdata.netcdf import nc_to_run, run_to_nc
 
 
@@ -48,8 +48,10 @@ def test_nc_to_run(scm_data):
 
         assert exists(out_fname)
 
-        df = nc_to_run(out_fname)
-        pdt.assert_frame_equal(scm_data.timeseries(), df.timeseries(), check_like=True)
+        df = nc_to_run(scm_data.__class__, out_fname)
+        assert isinstance(df, scm_data.__class__)
+
+        assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
 
 
 def test_nc_methods(scm_data):
@@ -62,4 +64,5 @@ def test_nc_methods(scm_data):
         # Same as ScmRun.from_nc(out_fname)
         df = scm_data.__class__.from_nc(out_fname)
 
-        pdt.assert_frame_equal(scm_data.timeseries(), df.timeseries(), check_like=True)
+        assert isinstance(df, scm_data.__class__)
+        assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
