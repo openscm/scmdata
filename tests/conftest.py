@@ -16,10 +16,6 @@ from scmdata.dataframe import ScmDataFrame
 from scmdata.run import ScmRun
 from scmdata.timeseries import get_default_name
 
-try:
-    from pyam import IamDataFrame
-except ImportError:
-    IamDataFrame = None
 
 DATA_CLASSES = [ScmDataFrame, ScmRun]
 
@@ -246,8 +242,8 @@ def test_run_ts():
 
 @pytest.fixture(scope="function")
 def test_iam_df():
-    if IamDataFrame is None:
-        pytest.skip("pyam is not installed")
+    if not IamDataFrame:
+        pytest.skip("pyam not installed")
     yield IamDataFrame(TEST_DF.copy())
 
 
@@ -260,18 +256,7 @@ def data_cls(request):
     scope="function",
     params=[
         {"data": TEST_DF.copy()},
-        pytest.param(
-            {"data": IamDataFrame(TEST_DF.copy()).data},
-            marks=pytest.mark.skipif(
-                IamDataFrame is None, reason="pyam is not available"
-            ),
-        ),
-        pytest.param(
-            {"data": IamDataFrame(TEST_DF.copy()).timeseries()},
-            marks=pytest.mark.skipif(
-                IamDataFrame is None, reason="pyam is not available"
-            ),
-        ),
+        {"data": ScmDataFrame(TEST_DF).timeseries()},
         {
             "data": TEST_TS.copy(),
             "columns": {
@@ -287,8 +272,6 @@ def data_cls(request):
     ],
 )
 def test_scm_df_mulitple(request):
-    if IamDataFrame is None:
-        pytest.skip("pyam is not installed")
     yield ScmRun(**request.param)
 
 
@@ -327,27 +310,9 @@ TEST_DF_MONTHLY = pd.DataFrame(
 )
 
 
-@pytest.fixture(
-    scope="function",
-    params=[
-        {"data": TEST_DF_MONTHLY.copy()},
-        pytest.param(
-            {"data": IamDataFrame(TEST_DF_MONTHLY.copy()).data},
-            marks=pytest.mark.skipif(
-                IamDataFrame is None, reason="pyam is not available"
-            ),
-        ),
-        pytest.param(
-            {"data": IamDataFrame(TEST_DF_MONTHLY.copy()).timeseries()},
-            marks=pytest.mark.skipif(
-                IamDataFrame is None, reason="pyam is not available"
-            ),
-        ),
-        {"data": TEST_DF_MONTHLY.copy()},
-    ],
-)
-def test_scm_df_monthly(request, data_cls):
-    yield data_cls(**request.param)
+@pytest.fixture(scope="function")
+def test_scm_df_monthly(data_cls):
+    yield data_cls(TEST_DF_MONTHLY)
 
 
 @pytest.fixture(scope="function")
@@ -543,6 +508,8 @@ def test_append_scm_runs(request):
 
 @pytest.fixture
 def iamdf_type():
+    if not IamDataFrame:
+        pytest.skip("pyam not installed")
     return IamDataFrame
 
 

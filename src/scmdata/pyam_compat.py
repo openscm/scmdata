@@ -51,7 +51,3 @@ except ImportError:
     IamDataFrame = None
     LongDatetimeIamDataFrame = None  # type: ignore
 
-try:
-    from matplotlib.axes import Axes  # pylint: disable=unused-import
-except ImportError:
-    Axes = None
