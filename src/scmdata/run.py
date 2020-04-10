@@ -683,7 +683,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         if not keep and sum(~_keep_cols) and sum(~_keep_times):
             raise ValueError(
-                "If keep=False, filtering cannot be performed on temporally and with "
+                "If keep=False, filtering cannot be performed on the temporal axis and with "
                 "metadata at the same time"
             )
 
@@ -857,54 +857,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         return self.timeseries().tail(*args, **kwargs)
 
-    def rename(self, mapping: Dict[str, Dict[str, str]], inplace: bool = False):
-        """
-        Rename and aggregate column entries using :func:`groupby.sum()` on values. When
-        renaming models or scenarios, the uniqueness of the index must be maintained,
-        and the function will raise an error otherwise.
-
-        Parameters
-        ----------
-        mapping
-            For each column where entries should be renamed, provide current
-            name and target name
-
-            .. code:: python
-
-                {<column name>: {<current_name_1>: <target_name_1>,
-                                 <current_name_2>: <target_name_2>}}
-
-        inplace
-            If ``True``, do operation inplace and return ``None``
-
-        Returns
-        -------
-        :obj:`ScmRun`
-            If :obj:`inplace` is ``True``, return a new :class:`ScmRun`
-            instance
-
-        Raises
-        ------
-        ValueError
-            Column is not in meta or renaming will cause non-unique metadata
-        """
-        ret = self.copy() if not inplace else self
-        for col, _mapping in mapping.items():
-            if col not in ret.meta_attributes:
-                raise ValueError("Renaming by {} not supported!".format(col))
-            for ts in ret._ts:
-                orig = ts.metadata[col]
-                if orig in _mapping:
-                    ts.metadata[col] = _mapping[orig]
-
-            if ret.meta.duplicated().any():  # pylint: disable=protected-access
-                raise ValueError("Renaming to non-unique metadata for {}!".format(col))
-
-        if not inplace:
-            return ret
-
-        return None
-
     def set_meta(
         self,
         meta: Union[pd.Series, list, int, float, str],
@@ -914,7 +866,43 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Set metadata information.
 
-        TODO: re-write this to make it more sane and add type annotations
+        This function has been deprecated and may be removed in future. Use the `[]` accessor
+        to update metadata instead.
+
+        ```
+        >>> df
+        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+        Time:
+            Start: 2005-01-01T00:00:00
+            End: 2015-01-01T00:00:00
+        Meta:
+               model     scenario region             variable   unit climate_model
+            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+        >>> df["climate_model"] = ["a_model", "a_model", "b_model"]
+        >>> df
+        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+        Time:
+            Start: 2005-01-01T00:00:00
+            End: 2015-01-01T00:00:00
+        Meta:
+               model     scenario region             variable   unit climate_model
+            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model
+        >>> df.filter(variable="Primary Energy")["pe_only"] = True
+        >>> df
+        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+        Time:
+            Start: 2005-01-01T00:00:00
+            End: 2015-01-01T00:00:00
+        Meta:
+               model     scenario region             variable   unit climate_model pe_only
+            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
+            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model     NaN
+            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
+        ```
 
         Parameters
         ----------

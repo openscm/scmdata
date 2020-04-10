@@ -973,14 +973,10 @@ def test_relative_to_ref_period_mean(
 
 def test_append(test_scm_run):
     test_scm_run.set_meta([5, 6, 7], name="col1")
-    other = (
-        test_scm_run.filter(scenario="a_scenario2")
-        .copy()
-        .rename({"variable": {"Primary Energy": "Primary Energy clone"}})
-    )
-
-    other.set_meta(2, name="col1")
-    other.set_meta("b", name="col2")
+    other = test_scm_run.filter(scenario="a_scenario2").copy()
+    other["variable"] = "Primary Energy clone"
+    other["col1"] = 2
+    other["col2"] = "b"
 
     df = test_scm_run.append(other)
     assert isinstance(df, ScmRun)
@@ -1478,54 +1474,6 @@ def test_filter_by_int(test_scm_run):
     test_scm_run.set_meta([1, 2, 3], name="test")
     obs = test_scm_run.filter(test=1)
     assert obs["scenario"].unique() == "a_scenario"
-
-
-def test_rename_variable(test_scm_run):
-    mapping = {
-        "variable": {
-            "Primary Energy": "Primary Energy|Total",
-            "Primary Energy|Coal": "Primary Energy|Fossil",
-        }
-    }
-
-    obs = test_scm_run.rename(mapping)
-
-    exp = pd.Series(
-        ["Primary Energy|Total", "Primary Energy|Fossil", "Primary Energy|Total"]
-    )
-    pd.testing.assert_series_equal(
-        obs["variable"], exp, check_index_type=False, check_names=False
-    )
-
-
-def test_rename_variable_inplace(test_scm_run):
-    mapping = {
-        "variable": {
-            "Primary Energy": "Primary Energy|Total",
-            "Primary Energy|Coal": "Primary Energy|Fossil",
-        }
-    }
-
-    test_scm_run.rename(mapping, inplace=True)
-
-    exp = pd.Series(
-        ["Primary Energy|Total", "Primary Energy|Fossil", "Primary Energy|Total"]
-    )
-    pd.testing.assert_series_equal(
-        test_scm_run["variable"], exp, check_index_type=False, check_names=False
-    )
-
-
-def test_rename_index_fail(test_scm_run):
-    mapping = {"scenario": {"a_scenario": "a_scenario2"}}
-    pytest.raises(ValueError, test_scm_run.rename, mapping)
-
-
-def test_rename_col_fail(test_scm_run):
-    fail_col = "junk"
-    error_msg = re.escape("Renaming by {} not supported!".format(fail_col))
-    with pytest.raises(ValueError, match=error_msg):
-        test_scm_run.rename({fail_col: {"hi": "bye"}})
 
 
 @pytest.mark.parametrize(
