@@ -10,7 +10,7 @@ from xarray.core.common import ImplementsArrayReduce
 
 def maybe_wrap_array(original, new_array):
     """
-    Wrap a transformed array with __array_wrap__ is it can be done safely.
+    Wrap a transformed array with __array_wrap__ if it can be done safely.
 
     This lets us treat arbitrary functions that take and return ndarray objects
     like ufuncs, as long as they return an array with the same shape.
@@ -71,36 +71,41 @@ class RunGroupBy(_GroupBy):
         self.group_keys = groups
         super().__init__(run.meta, groups)
 
-    def map(self, func, args=(), **kwargs):
+    def map(self, func, *args, **kwargs):
         """
-        Apply a function to each time in the group and concatenate them
-        together into a new array.
+        Apply a function to each group and append the results
 
-        `func` is called like `func(ar, *args, **kwargs)` for each array `ar`
-        in this group.
+        `func` is called like `func(ar, *args, **kwargs)` for each ScmRun `ar`
+        in this group. If the result of this function call is None, than it is
+        excluded from the results.
 
-        Apply uses heuristics (like `pandas.GroupBy.apply`) to figure out how
-        to stack together the array. The rule is:
+        The results are appended together using :func`df_append`. The function
+        can change the size of the input :obj`ScmRun` as long as `df_append`
+        can be applied to all results.
 
-        1. If the dimension along which the group coordinate is defined is
-           still in the first grouped array after applying `func`, then stack
-           over this dimension.
-        2. Otherwise, stack over the new dimension given by name of this
-           grouping (the argument to the `groupby` function).
+        Examples
+        --------
+
+        ```
+        >>> def write_csv(arr):
+                variable = arr.get_unique_meta("variable")
+                arr.to_csv("out-{}.csv".format(variable)
+        >>> df.groupby("variable").map(write_csv)
 
         Parameters
         ----------
         func : function
             Callable to apply to each timeseries.
 
-        ``*args`` : tuple, optional
+        ``*args``
             Positional arguments passed to `func`.
+
         ``**kwargs``
             Used to call `func(ar, **kwargs)` for each array `ar`.
 
         Returns
         -------
-        applied : DataArray or DataArray
+        applied : :obj`ScmRun`
             The result of splitting, applying and combining this array.
         """
         grouped = self._iter_grouped()
@@ -108,7 +113,9 @@ class RunGroupBy(_GroupBy):
         return self._combine(applied)
 
     def _combine(self, applied):
-        """Recombine the applied objects like the original."""
+        """
+        Recombine the applied objects like the original.
+        """
         from scmdata.run import df_append
 
         # Remove all None values

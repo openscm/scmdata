@@ -30,7 +30,7 @@ class _Counter:
         self.count = 0
 
 
-default_name = _Counter()
+get_default_name = _Counter()
 
 
 class TimeSeries:
@@ -50,7 +50,7 @@ class TimeSeries:
         else:
             # Auto incrementing name
             if "name" not in kwargs:
-                kwargs["name"] = default_name()
+                kwargs["name"] = get_default_name()
 
             self._data = xr.DataArray(values, **kwargs)
 
