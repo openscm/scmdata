@@ -505,7 +505,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         meta = []
         for ts in self._ts:
-            meta.extend(ts.meta.keys())
+            meta.extend(ts.metadata.keys())
         return sorted(list(set(meta)))
 
     @property
@@ -578,14 +578,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Metadata
         """
         return pd.DataFrame(
-            [ts.meta for ts in self._ts], index=[ts.name for ts in self._ts]
+            [ts.metadata for ts in self._ts], index=[ts.name for ts in self._ts]
         )
 
     def _meta_column(self, col) -> pd.Series:
         vals = []
         for ts in self._ts:
             try:
-                vals.append(ts.meta[col])
+                vals.append(ts.metadata[col])
             except KeyError:
                 vals.append(np.nan)
 
@@ -895,9 +895,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             if col not in ret.meta_attributes:
                 raise ValueError("Renaming by {} not supported!".format(col))
             for ts in ret._ts:
-                orig = ts.meta[col]
+                orig = ts.metadata[col]
                 if orig in _mapping:
-                    ts.meta[col] = _mapping[orig]
+                    ts.metadata[col] = _mapping[orig]
 
             if ret.meta.duplicated().any():  # pylint: disable=protected-access
                 raise ValueError("Renaming to non-unique metadata for {}!".format(col))
@@ -959,10 +959,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         meta = np.atleast_1d(meta)
         if len(meta) == 1:
             for ts in self._ts:
-                ts.meta[name] = meta[0]
+                ts.metadata[name] = meta[0]
         elif len(meta) == len(self):
             for i, ts in enumerate(self._ts):
-                ts.meta[name] = meta[i]
+                ts.metadata[name] = meta[i]
         else:
             raise ValueError("Invalid shape for metadata")
 

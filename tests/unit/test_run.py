@@ -1142,7 +1142,7 @@ def get_append_col_order_time_dfs(base):
     base["runmodus"] = "co2_only"
     other = base.copy()
 
-    other._ts[1].meta["variable"] = "Primary Energy|Gas"
+    other._ts[1].metadata["variable"] = "Primary Energy|Gas"
     other["time"] = [
         dt.datetime(2002, 1, 1, 0, 0),
         dt.datetime(2008, 1, 1, 0, 0),

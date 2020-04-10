@@ -14,7 +14,7 @@ import pytest
 
 from scmdata.dataframe import ScmDataFrame
 from scmdata.run import ScmRun
-from scmdata.timeseries import default_name
+from scmdata.timeseries import get_default_name
 
 try:
     from pyam import IamDataFrame
@@ -173,7 +173,7 @@ def test_data_path():
 
 @pytest.fixture(scope="function", autouse=True)
 def reset_default_name():
-    default_name.reset()
+    get_default_name.reset()
 
 
 @pytest.fixture
