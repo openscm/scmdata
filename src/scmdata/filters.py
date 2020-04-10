@@ -166,8 +166,8 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
 
     handle_as_number = np.issubdtype(meta_col.dtype, np.number)
 
-    if not handle_as_number and '' in _values:
-        _values.append('nan')
+    if not handle_as_number and "" in _values:
+        _values.append("nan")
 
     for s in _values:
         if not handle_as_number and (isinstance(s, str) or np.isnan(s)):

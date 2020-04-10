@@ -85,7 +85,6 @@ class RunGroupBy(_GroupBy):
 
         Examples
         --------
-
         ```
         >>> def write_csv(arr):
                 variable = arr.get_unique_meta("variable")

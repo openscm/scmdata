@@ -153,10 +153,7 @@ def test_init_multiple_file_error():
 def test_init_unrecognised_type_error(data_cls):
     fail_type = {"dict": "key"}
     error_msg = re.escape(
-        "Cannot load {} from {}".format(
-            str(data_cls),
-            type(fail_type)
-        )
+        "Cannot load {} from {}".format(str(data_cls), type(fail_type))
     )
     with pytest.raises(TypeError, match=error_msg):
         data_cls(fail_type)

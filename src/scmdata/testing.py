@@ -7,6 +7,7 @@ import numpy.testing as npt
 import pandas.testing as pdt
 
 
+# nosec
 def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names=True):
     """
     Check that left and right :obj:`ScmDataFrame` or :obj:`ScmRun` are equal.
@@ -28,7 +29,7 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
         if check_ts_names:
             pdt.assert_frame_equal(left.meta, right.meta, check_like=True)
         else:
-            assert (
+            assert (  # nosec
                 left.meta.values[df1_index]
                 == right.meta[left.meta.columns].values[df2_index]
             ).all()

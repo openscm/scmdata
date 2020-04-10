@@ -121,12 +121,15 @@ class TimePoints:
 
     def as_cftime(self) -> list:
         """
+        Get as cftime datetimes
 
         Returns
         -------
         list of cftime.datetime
         """
-        return [cftime.datetime(*dt.timetuple()[:6]) for dt in self._values.astype(object)]
+        return [
+            cftime.datetime(*dt.timetuple()[:6]) for dt in self._values.astype(object)
+        ]
 
     def years(self) -> np.ndarray:
         """
