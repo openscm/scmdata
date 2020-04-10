@@ -13,7 +13,7 @@ import numpy as np
 import xarray as xr
 from xarray.core.ops import inject_binary_ops
 
-from scmdata.time import TimeseriesConverter, TimePoints
+from scmdata.time import TimeseriesConverter
 
 
 class _Counter:
