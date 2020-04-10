@@ -364,8 +364,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
         elif isinstance(data, ScmDataFrame):
-            # turn off mypy type checking here as ScmDataFrame isn't defined
-            # when mypy does type checking
             (_df, _meta) = (
                 data._data,  # pylint: disable=protected-access
                 data._meta,  # pylint: disable=protected-access
@@ -390,7 +388,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         _df = _df.astype(float)
 
         self._ts = []
-        time_variable = xr.Variable("time", self._time_points.values)
+        time_variable = xr.Variable("time", self._time_points.as_cftime())
         for name, attrs in _meta.iterrows():
             ts = TimeSeries(
                 data=_df[name], coords=[("time", time_variable)], attrs=attrs
@@ -630,8 +628,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             [3 rows x 7 columns]
         ```
 
-        This functionality is different to how `scmdata.ScmDataFrame` works which always returns a copy. If you do not want to
-        change the parent `ScmRun` create a copy `ScmRun.copy`. Any changes to this copy will not be reflected in the parent.
+        This functionality is different to how :class`scmdata.ScmDataFrame` works which always returns a copy. If you do not want to
+        change the parent `ScmRun` create a copy :func`ScmRun.copy()`. Any changes to this copy will not be reflected in the parent.
 
         Parameters
         ----------

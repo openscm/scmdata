@@ -13,7 +13,7 @@ import numpy as np
 import xarray as xr
 from xarray.core.ops import inject_binary_ops
 
-from scmdata.time import TimeseriesConverter
+from scmdata.time import TimeseriesConverter, TimePoints
 
 
 class _Counter:
@@ -158,7 +158,8 @@ class TimeSeries:
         Parameters
         ----------
         time : `obj`:np.ndarray
-        kwargs
+            Time values to reindex the data to. Should be np 'datetime64` values
+        **kwargs
             Additional arguments passed to xarray's DataArray.reindex function
 
         Returns
@@ -199,8 +200,9 @@ class TimeSeries:
             interpolation_type=interpolation_type,
             extrapolation_type=extrapolation_type,
         )
-
-        d = self._data.reindex({"time": target_times})
+        import cftime
+        cftime_dts = [cftime.datetime(*dt.timetuple()[:6]) for dt in target_times.astype(object)]
+        d = self._data.reindex({"time": cftime_dts})
         d[:] = timeseries_converter.convert_from(self._data.values)
 
         return TimeSeries(d)

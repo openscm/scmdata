@@ -9,6 +9,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from dateutil import parser
+import cftime
 
 _TARGET_TYPE = np.int64
 _TARGET_DTYPE = "datetime64[s]"
@@ -117,6 +118,15 @@ class TimePoints:
             made from the time points represented as :class:`datetime.datetime`.
         """
         return pd.Index(self._values.astype(object), dtype=object, name="time")
+
+    def as_cftime(self) -> list:
+        """
+
+        Returns
+        -------
+        list of cftime.datetime
+        """
+        return [cftime.datetime(*dt.timetuple()[:6]) for dt in self._values.astype(object)]
 
     def years(self) -> np.ndarray:
         """
