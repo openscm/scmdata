@@ -38,7 +38,7 @@ dimensions: iterable of str
 """
 Default to writing float data as 8 byte floats
 """
-DEFAULT_FLOAT = 'f8'
+DEFAULT_FLOAT = "f8"
 
 
 def _var_to_nc(var):
@@ -54,20 +54,14 @@ def _get_idx(vals, v):
     return np.where(vals == v)[0][0]
 
 
-def get_nc_type(np_type):
+def _get_nc_type(np_type):
     if np_type == int:
         return {
             "datatype": "i8",
         }
     elif np_type == float:
-        return {
-            "datatype": DEFAULT_FLOAT,
-            "fill_value": np.nan
-        }
-    return {
-        "datatype": str,
-        "fill_value": None
-    }
+        return {"datatype": DEFAULT_FLOAT, "fill_value": np.nan}
+    return {"datatype": str, "fill_value": None}
 
 
 def _write_nc(ds, df, dimensions, extras):
@@ -105,13 +99,17 @@ def _write_nc(ds, df, dimensions, extras):
     for e in extras:
         metadata = df.meta[[e, *dimensions]]
         if metadata.duplicated().any():
-            raise ValueError("metadata for {} is not unique for requested dimensions".format(e))
+            raise ValueError(
+                "metadata for {} is not unique for requested dimensions".format(e)
+            )
 
-        type_info = get_nc_type(metadata[e].dtype)
+        type_info = _get_nc_type(metadata[e].dtype)
         ds.createVariable(e, dimensions=dimensions, zlib=True, **type_info)
         ds.variables[e]._is_metadata = 1
 
-        data_to_write = np.zeros([len(dims[d]) for d in dimensions], dtype=metadata[e].dtype)
+        data_to_write = np.zeros(
+            [len(dims[d]) for d in dimensions], dtype=metadata[e].dtype
+        )
         if "fill_value" in type_info:
             data_to_write.fill(type_info["fill_value"])
         df_values = metadata[e].values
@@ -133,9 +131,7 @@ def _write_nc(ds, df, dimensions, extras):
                 )
 
         # Check that the other meta are consistent
-        var_attrs = {
-            "_is_metadata": 0
-        }
+        var_attrs = {"_is_metadata": 0}
         for d in set(meta.columns) - set(dimensions) - set(extras):
             if len(meta[d].unique()) != 1:
                 raise ValueError(
@@ -144,7 +140,9 @@ def _write_nc(ds, df, dimensions, extras):
             var_attrs[d] = meta[d].unique()[0]
 
         var_name = _var_to_nc(v)
-        ds.createVariable(var_name, DEFAULT_FLOAT, all_dims, zlib=True, fill_value=np.nan)
+        ds.createVariable(
+            var_name, DEFAULT_FLOAT, all_dims, zlib=True, fill_value=np.nan
+        )
 
         # We need to write in dimension at a time
         data_to_write = np.zeros(var_shape)
@@ -202,7 +200,7 @@ def _read_nc(cls, ds):
 
         # Check if metadata column
         try:
-            if var.getncattr('_is_metadata'):
+            if var.getncattr("_is_metadata"):
                 extra_cols.append(var_name)
                 continue
         except AttributeError:
@@ -224,12 +222,10 @@ def _read_nc(cls, ds):
         )
         with np.nditer(meta_at_coord[0], ["refs_ok", "multi_index"], order="F") as it:
             for _ in it:
-                if not values.mask[it.multi_index]:
-                    continue
                 meta_vals = {
-                    k: v for k, v in zip(
-                        var.dimensions,
-                        meta_at_coord[(slice(None),) + it.multi_index]
+                    k: v
+                    for k, v in zip(
+                        var.dimensions, meta_at_coord[(slice(None),) + it.multi_index]
                     )
                 }
                 df.filter(**meta_vals)[col] = values[it.multi_index]
