@@ -4,7 +4,7 @@ Changelog
 master
 ------
 
-- (`#30 <https://github.com/lewisjared/scmdata/pull/30>`_) Swap to using openscm-units
+- (`#30 <https://github.com/lewisjared/scmdata/pull/30>`_) Swap to using `openscm-units <https://github.com/openscm/openscm-units>`_ for unit handling (hence remove much of the ``scmdata.units`` module)
 - (`#21 <https://github.com/openscm/scmdata/pull/21>`_) Added ``scmdata.run.ScmRun`` as a proposed replacement for ``scmdata.dataframe.ScmDataFrame``.
     This new class provides an identical interface as a ``ScmDataFrame``, but uses a different underlying data structure to the ``ScmDataFrame``.
     The purpose of ``ScmRun`` is to provide performance improvements when handling large sets of time-series data.
