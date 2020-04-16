@@ -21,10 +21,10 @@ SCMData
     :target: https://codecov.io/gh/openscm/scmdata
 .. |PyPI Install| image:: https://github.com/openscm/scmdata/workflows/Test%20PyPI%20install/badge.svg
     :target: https://github.com/openscm/scmdata/actions?query=workflow%3A%22Test+PyPI+install%22
-.. |PyPI| image:: https://img.shields.io/pypi/pyversions/openscm-units.svg
-    :target: https://pypi.org/project/openscm-units/
-.. |PyPI Version| image:: https://img.shields.io/pypi/v/openscm-units.svg
-    :target: https://pypi.org/project/openscm-units/
+.. |PyPI| image:: https://img.shields.io/pypi/pyversions/scmdata.svg
+    :target: https://pypi.org/project/scmdata/
+.. |PyPI Version| image:: https://img.shields.io/pypi/v/scmdata.svg
+    :target: https://pypi.org/project/scmdata/
 .. |Contributors| image:: https://img.shields.io/github/contributors/openscm/scmdata.svg
     :target: https://github.com/openscm/scmdata/graphs/contributors
 .. |Last Commit| image:: https://img.shields.io/github/last-commit/openscm/scmdata.svg
