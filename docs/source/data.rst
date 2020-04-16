@@ -38,7 +38,7 @@ Metadata handling
 ~~~~~~~~~~~~~~~~~
 
 The key feature of **scmdata** is that its smallest discrete unit is a timeseries.
-Via the [TODO update to meta rather than metadata] :attr:`meta <scmdata.timeseries.TimeSeries.meta>` attribute, **scmdata** can store any kind of metadata about the timeseries, without restriction.
+**scmdata** can store any kind of metadata about the timeseries, without restriction, in the :attr:`meta <scmdata.timeseries.TimeSeries.meta>` attribute.
 This combination allows it to be a high performing, yet flexible library for timeseries data.
 However, to do this it must make assumptions about the type of data it holds and these assumptions come with tradeoffs.
 In particular, **scmdata** cannot hold metadata at a level finer than a complete timeseries.
