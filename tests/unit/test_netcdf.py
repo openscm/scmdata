@@ -54,6 +54,75 @@ def test_nc_to_run(scm_data):
         assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
 
 
+def test_run_to_nc_with_extras(scm_data):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+
+        scm_data.set_meta([1, 1, 2], "run_id")
+        run_to_nc(scm_data, out_fname, dimensions=("scenario",), extras=("run_id",))
+
+        assert exists(out_fname)
+
+        ds = nc.Dataset(out_fname)
+
+        assert ds.dimensions["time"].size == len(scm_data.time_points)
+        assert ds.dimensions["scendario"].size == 2
+
+        assert ds.variables["scenario"][0] == "a_scenario"
+        assert ds.variables["scenario"][1] == "a_scenario2"
+
+        assert ds.variables["run_id"][0] == 2
+        assert ds.variables["run_id"][1] == 1
+        assert ds.variables["run_id"]._is_metadata
+
+        npt.assert_allclose(
+            ds.variables["primary_energy"][0, :],
+            scm_data.filter(variable="Primary Energy", scenario="a_scenario").values[0],
+        )
+        assert not ds.variables["primary_energy"]._is_metadata
+        npt.assert_allclose(
+            ds.variables["primary_energy"][1, :],
+            scm_data.filter(variable="Primary Energy", scenario="a_scenario2").values[
+                0
+            ],
+        )
+        npt.assert_allclose(
+            ds.variables["primary_energy__coal"][0, :],
+            scm_data.filter(
+                variable="Primary Energy|Coal", scenario="a_scenario"
+            ).values[0],
+        )
+        assert not ds.variables["primary_energy__coal"]._is_metadata
+
+
+def test_nc_to_run_with_extras(scm_data):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        scm_data.set_meta([1, 1, 2], "run_id")
+        run_to_nc(scm_data, out_fname, dimensions=("scenario",), extras=("run_id",))
+
+        assert exists(out_fname)
+
+        df = nc_to_run(scm_data.__class__, out_fname)
+        assert isinstance(df, scm_data.__class__)
+
+        assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
+
+
+def test_nc_to_run_with_extras_non_unique_dimension(scm_data):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        scm_data.set_meta([1, 2, 1], "run_id")
+        run_to_nc(scm_data, out_fname, dimensions=("scenario",), extras=("run_id",))
+
+        assert exists(out_fname)
+
+        df = nc_to_run(scm_data.__class__, out_fname)
+        assert isinstance(df, scm_data.__class__)
+
+        assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
+
+
 def test_nc_methods(scm_data):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
