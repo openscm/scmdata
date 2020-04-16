@@ -39,7 +39,7 @@ def long_data(self):
     return out
 
 
-def lineplot(self, **kwargs):
+def lineplot(self, **kwargs):  # pragma: no cover
     """
     Make a line plot via `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
 
@@ -54,6 +54,7 @@ def lineplot(self, **kwargs):
     :obj:`matplotlib.axes._subplots.AxesSubplot`
         Output of call to ``seaborn.lineplot``
     """
+
     plt_df = self.long_data()
     kwargs.setdefault("x", "time")
     kwargs.setdefault("y", "value")
@@ -66,7 +67,7 @@ def lineplot(self, **kwargs):
     return ax
 
 
-def _deprecated_line_plot(self, **kwargs):
+def _deprecated_line_plot(self, **kwargs):  # pragma: no cover
     """
     Make a line plot via `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
 
