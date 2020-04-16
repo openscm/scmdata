@@ -159,6 +159,7 @@ class TimeSeries:
         ----------
         time : `obj`:np.ndarray
             Time values to reindex the data to. Should be np 'datetime64` values
+
         **kwargs
             Additional arguments passed to xarray's DataArray.reindex function
 

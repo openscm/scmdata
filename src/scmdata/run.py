@@ -269,9 +269,6 @@ def _from_ts(
 class ScmRun:  # pylint: disable=too-many-public-methods
     """
     Data container for holding one or many time-series of SCM data.
-
-    ``ScmRun`` holds a list of
-
     """
 
     data_hierarchy_separator = HIERARCHY_SEPARATOR
@@ -290,20 +287,39 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         **kwargs: Any,
     ):
         """
-        Initialize.
+        Initialize the container with timeseries data.
 
         Parameters
         ----------
-        data: Union[ScmDataFrame, ScmRun, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str]
-            A pd.DataFrame or data file with IAMC-format data columns, or a numpy array
-            of timeseries data if :obj:`columns` is specified. If a string is passed,
-            data will be attempted to be read from file.
+        data: Union[ScmDataFrame, ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str]
+            If a :class`ScmDataFrame` or :class`ScmRun` object is provided, then a new
+            :obj`ScmRun` is created with a copy of the values and metadata from :obj`data`.
 
-        index
-            Only used if :obj:`columns` is not ``None``. If :obj:`index` is not
-            ``None``, too, then this value sets the time index of the
-            :class:`ScmRun` instance. If :obj:`index` is ``None`` and
-            :obj:`columns` is not ``None``, the index is taken from :obj:`data`.
+            A :class`pd.DataFrame with IAMC-format data columns (the result
+            from :func`ScmRun.timeseries()` can be provided without any additional
+            :obj:`columns` and :obj:`index` information.
+
+            If a numpy array of timeseries data is provided, :obj:`columns` and :obj:`index`
+            must also be specified.
+            The shape of the numpy array should be ```(n_times, n_series)``` where `n_times`
+             is the number of timesteps and `n_series` is the number of time series.
+
+            If a string is passed, data will be attempted to be read from file. Currently,
+            reading from CSV or Excel formatted files is supported.
+
+        index: np.ndarray
+            If :obj:`index` is not ``None``, then the :obj`index` is used as the timesteps
+            for run. All timeseries in the run are using the same set of timesteps.
+
+            The values will be attempted to be converted to :class`np.datetime[s]` values.
+            Possible input formats include :
+            * :obj`datetime.datetime`
+            * :obj`int` Start of year
+            * :obj`float` Decimal year
+            * :obj`str` Uses :func`dateutil.parser`. Slow and should be avoided if possible
+
+            If :obj:`index` is ``None``, than the time index will be obtained from the
+            :obj`data` if possible.
 
         columns
             If None, ScmRun will attempt to infer the values from the source.
@@ -336,7 +352,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 )
 
         **kwargs:
-            Additional parameters passed to :func:`pyam.core._read_file` to read files
+            Additional parameters passed to :func:`_read_file` to read files
 
         Raises
         ------

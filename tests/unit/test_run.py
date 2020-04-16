@@ -1572,8 +1572,6 @@ def test_convert_existing_unit_context(test_scm_run):
     npt.assert_array_almost_equal(obs.filter(year=2005).values.squeeze(), expected)
     assert all(obs["unit_context"] == "AR4GWP100")
 
-    # TODO: warning if unit_context is different
-
 
 def test_resample(data_cls):
     df_dts = [
