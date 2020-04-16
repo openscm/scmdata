@@ -714,8 +714,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         if not keep and sum(~_keep_cols) and sum(~_keep_times):
             raise ValueError(
-                "If keep=False, filtering cannot be performed on the temporal axis and with "
-                "metadata at the same time"
+                "If keep==False, filtering cannot be performed on the temporal axis "
+                "and with metadata at the same time"
             )
 
         reduce_times = (~_keep_times).sum() > 0

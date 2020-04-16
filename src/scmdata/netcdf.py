@@ -86,7 +86,7 @@ def _write_nc(ds, df, dimensions, extras):
     ds.createVariable(
         "time", "f8", "time",
     )
-    ds.variables["time"][:] = df.time_points
+    ds.variables["time"][:] = df.time_points.values
 
     dims = {}
     for d in dimensions:
