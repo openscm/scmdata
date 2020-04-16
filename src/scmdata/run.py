@@ -521,7 +521,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         meta = []
         for ts in self._ts:
-            meta.extend(ts.metadata.keys())
+            meta.extend(ts.meta.keys())
         return sorted(list(set(meta)))
 
     @property
@@ -600,14 +600,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Metadata
         """
         return pd.DataFrame(
-            [ts.metadata for ts in self._ts], index=[ts.name for ts in self._ts]
+            [ts.meta for ts in self._ts], index=[ts.name for ts in self._ts]
         )
 
     def _meta_column(self, col) -> pd.Series:
         vals = []
         for ts in self._ts:
             try:
-                vals.append(ts.metadata[col])
+                vals.append(ts.meta[col])
             except KeyError:
                 vals.append(np.nan)
 
@@ -970,10 +970,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         meta = np.atleast_1d(meta)
         if len(meta) == 1:
             for ts in self._ts:
-                ts.metadata[name] = meta[0]
+                ts.meta[name] = meta[0]
         elif len(meta) == len(self):
             for i, ts in enumerate(self._ts):
-                ts.metadata[name] = meta[i]
+                ts.meta[name] = meta[i]
         else:
             raise ValueError("Invalid shape for metadata")
 

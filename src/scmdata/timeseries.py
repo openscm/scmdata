@@ -156,7 +156,7 @@ class TimeSeries:
         return copy.deepcopy(self)
 
     @property
-    def metadata(self):
+    def meta(self):
         """
         Metadata associated with the timeseries
 
