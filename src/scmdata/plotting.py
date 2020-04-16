@@ -55,7 +55,6 @@ def lineplot(self, **kwargs):  # pragma: no cover
     :obj:`matplotlib.axes._subplots.AxesSubplot`
         Output of call to ``seaborn.lineplot``
     """
-
     plt_df = self.long_data()
     kwargs.setdefault("x", "time")
     kwargs.setdefault("y", "value")

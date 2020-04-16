@@ -11,6 +11,8 @@ def test_plotting_long_data(test_scm_run):
     assert len(long_data) == test_scm_run.shape[0] * test_scm_run.shape[1]
 
     exp = test_scm_run.filter(year=2005, scenario="a_scenario2").values.squeeze()
-    obs = long_data[(long_data.scenario == "a_scenario2") & (long_data.time.dt.year == 2005)].value.squeeze()
+    obs = long_data[
+        (long_data.scenario == "a_scenario2") & (long_data.time.dt.year == 2005)
+    ].value.squeeze()
 
     assert exp == obs

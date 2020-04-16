@@ -45,7 +45,7 @@ REQUIRED_COLS = ["model", "scenario", "region", "variable", "unit"]
 
 
 def _read_file(  # pylint: disable=missing-return-doc
-        fnames: str, *args: Any, **kwargs: Any
+    fnames: str, *args: Any, **kwargs: Any
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from a file.
@@ -107,7 +107,7 @@ def _read_pandas(fname: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
 
 # pylint doesn't recognise return statements if they include ','
 def _format_data(  # pylint: disable=missing-return-doc
-        df: Union[pd.DataFrame, pd.Series]
+    df: Union[pd.DataFrame, pd.Series]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from :class:`pd.DataFrame` or
@@ -215,7 +215,7 @@ def _format_wide_data(df):
 
 
 def _from_ts(
-        df: Any, index: Any = None, **columns: Union[str, bool, float, int, List]
+    df: Any, index: Any = None, **columns: Union[str, bool, float, int, List]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from wide timeseries.
@@ -282,11 +282,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     """
 
     def __init__(
-            self,
-            data,
-            index: Any = None,
-            columns: Optional[Dict[str, list]] = None,
-            **kwargs: Any,
+        self,
+        data,
+        index: Any = None,
+        columns: Optional[Dict[str, list]] = None,
+        **kwargs: Any,
     ):
         """
         Initialize the container with timeseries data.
@@ -373,11 +373,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             self._init_timeseries(data, index, columns, **kwargs)
 
     def _init_timeseries(
-            self,
-            data,
-            index: Any = None,
-            columns: Optional[Dict[str, list]] = None,
-            **kwargs: Any,
+        self,
+        data,
+        index: Any = None,
+        columns: Optional[Dict[str, list]] = None,
+        **kwargs: Any,
     ):
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
@@ -455,7 +455,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         raise KeyError("[{}] is not in metadata".format(key))
 
     def __setitem__(  # pylint: disable=inconsistent-return-statements
-            self, key: Any, value: Any
+        self, key: Any, value: Any
     ) -> Any:
         """
         Set item of self with helpful direct access.
@@ -492,7 +492,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def _binary_op(
-            f: Callable[..., Any], reflexive=False, **kwargs,
+        f: Callable[..., Any], reflexive=False, **kwargs,
     ) -> Callable[..., "ScmRun"]:
         @functools.wraps(f)
         def func(self, other):
@@ -532,7 +532,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return self._time_points.values
 
     def timeseries(
-            self, meta: Optional[List[str]] = None, check_duplicated: bool = True
+        self, meta: Optional[List[str]] = None, check_duplicated: bool = True
     ) -> pd.DataFrame:
         """
         Return the data in wide format (same as the timeseries method of
@@ -608,11 +608,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return pd.Series(vals, name=col, index=[ts.name for ts in self._ts])
 
     def filter(
-            self,
-            keep: bool = True,
-            inplace: bool = False,
-            has_nan: bool = True,
-            **kwargs: Any,
+        self,
+        keep: bool = True,
+        inplace: bool = False,
+        has_nan: bool = True,
+        **kwargs: Any,
     ):
         """
         Return a filtered ScmRun (i.e., a subset of the data).
@@ -736,7 +736,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     # pylint doesn't recognise ',' in returns type definition
     def _apply_filters(  # pylint: disable=missing-return-doc
-            self, filters: Dict, has_nan: bool = True
+        self, filters: Dict, has_nan: bool = True
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Determine rows to keep in data for given set of filters.
@@ -876,10 +876,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return self.timeseries().tail(*args, **kwargs)
 
     def set_meta(
-            self,
-            meta: Union[pd.Series, list, int, float, str],
-            name: Optional[str] = None,
-            index: Optional[Union[pd.DataFrame, pd.Series, pd.Index, pd.MultiIndex]] = None,
+        self,
+        meta: Union[pd.Series, list, int, float, str],
+        name: Optional[str] = None,
+        index: Optional[Union[pd.DataFrame, pd.Series, pd.Index, pd.MultiIndex]] = None,
     ) -> None:
         """
         Set metadata information.
@@ -971,7 +971,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             raise ValueError("Invalid shape for metadata")
 
     def get_unique_meta(
-            self, meta: str, no_duplicates: Optional[bool] = False,
+        self, meta: str, no_duplicates: Optional[bool] = False,
     ) -> Union[List[Any], Any]:
         """
         Get unique values in a metadata column.
@@ -1009,10 +1009,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return vals
 
     def interpolate(
-            self,
-            target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
-            interpolation_type: str = "linear",
-            extrapolation_type: str = "linear",
+        self,
+        target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
+        interpolation_type: str = "linear",
+        extrapolation_type: str = "linear",
     ):
         """
         Interpolate the dataframe onto a new time frame.
@@ -1202,9 +1202,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
             ts_resampled = (
                 self.timeseries()
-                    .T.groupby(group_annual_mean_beginning_of_year)
-                    .mean()
-                    .T
+                .T.groupby(group_annual_mean_beginning_of_year)
+                .mean()
+                .T
             )
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 1, 1)
@@ -1212,6 +1212,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             return ScmRun(ts_resampled)
 
         if rule == "AC":
+
             def group_annual_mean(x):
                 return x.year
 
@@ -1239,7 +1240,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         raise ValueError("`rule` = `{}` is not supported".format(rule))
 
     def process_over(
-            self, cols: Union[str, List[str]], operation: str, **kwargs: Any
+        self, cols: Union[str, List[str]], operation: str, **kwargs: Any
     ) -> pd.DataFrame:
         """
         Process the data over the input columns.
@@ -1327,11 +1328,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return RunGroupBy(self, group)
 
     def convert_unit(
-            self,
-            unit: str,
-            context: Optional[str] = None,
-            inplace: bool = False,
-            **kwargs: Any,
+        self,
+        unit: str,
+        context: Optional[str] = None,
+        inplace: bool = False,
+        **kwargs: Any,
     ):
         """
         Convert the units of a selection of timeseries.
@@ -1391,7 +1392,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             return ret
 
     def relative_to_ref_period_mean(
-            self, append_str: Optional[str] = None, **kwargs: Any
+        self, append_str: Optional[str] = None, **kwargs: Any
     ) -> pd.DataFrame:
         """
         Return the timeseries relative to a given reference period mean.
@@ -1435,11 +1436,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return res.set_index(ts.index.names)
 
     def append(
-            self,
-            other,
-            inplace: bool = False,
-            duplicate_msg: Union[str, bool] = "warn",
-            **kwargs: Any,
+        self,
+        other,
+        inplace: bool = False,
+        duplicate_msg: Union[str, bool] = "warn",
+        **kwargs: Any,
     ):
         """
         Append additional data to the current dataframe.
@@ -1585,7 +1586,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
 
 def df_append(
-        runs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
+    runs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
 ):
     """
     Append together many objects.
