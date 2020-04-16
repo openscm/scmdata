@@ -410,9 +410,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         self._ts = []
         time_variable = xr.Variable("time", self._time_points.as_cftime())
         for name, attrs in _meta.iterrows():
-            ts = TimeSeries(
-                data=_df[name], time=time_variable, attrs=attrs
-            )
+            ts = TimeSeries(data=_df[name], time=time_variable, attrs=attrs)
             self._ts.append(ts)
 
     def copy(self, copy_ts=True):

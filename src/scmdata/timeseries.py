@@ -13,7 +13,7 @@ import numpy as np
 import xarray as xr
 from xarray.core.ops import inject_binary_ops
 
-from .time import TimeseriesConverter, TimePoints
+from .time import TimePoints, TimeseriesConverter
 
 
 class _Counter:
@@ -87,8 +87,7 @@ class TimeSeries:
         if isinstance(data, xr.DataArray):
             if time is not None:
                 raise TypeError(
-                    "If data is an :obj:`xr.DataArray` instance, time must be "
-                    "`None`"
+                    "If data is an :obj:`xr.DataArray` instance, time must be " "`None`"
                 )
 
             if data.dims != ("time",):
@@ -119,9 +118,7 @@ class TimeSeries:
             if isinstance(time, tuple):
                 time = list(time)
 
-            self._data = xr.DataArray(
-                values, coords=[("time", time)], **kwargs
-            )
+            self._data = xr.DataArray(values, coords=[("time", time)], **kwargs)
 
     def __repr__(self):
         return self._data.__repr__()
