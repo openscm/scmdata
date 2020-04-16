@@ -296,7 +296,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             :obj`ScmRun` is created with a copy of the values and metadata from :obj`data`.
 
             A :class`pd.DataFrame with IAMC-format data columns (the result
-            from :func`ScmRun.timeseries()` can be provided without any additional
+            from :func`ScmRun.timeseries()`) can be provided without any additional
             :obj:`columns` and :obj:`index` information.
 
             If a numpy array of timeseries data is provided, :obj:`columns` and :obj:`index`
@@ -309,7 +309,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         index: np.ndarray
             If :obj:`index` is not ``None``, then the :obj`index` is used as the timesteps
-            for run. All timeseries in the run are using the same set of timesteps.
+            for run. All timeseries in the run use the same set of timesteps.
 
             The values will be attempted to be converted to :class`np.datetime[s]` values.
             Possible input formats include :
