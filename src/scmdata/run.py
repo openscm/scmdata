@@ -558,7 +558,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ValueError
             If the metadata are not unique between timeseries
         """
-        df = pd.DataFrame(np.asarray(self._ts))
+        df = pd.DataFrame(self.values)
         _meta = self.meta if meta is None else self.meta[meta]
         if check_duplicated and _meta.duplicated().any():
             raise ValueError("Duplicated meta values")
@@ -586,7 +586,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Calls :func:`timeseries`
         """
-        return np.asarray(self._ts)
+        return np.asarray([ts._data.values for ts in self._ts])
 
     @property
     def meta(self) -> pd.DataFrame:
