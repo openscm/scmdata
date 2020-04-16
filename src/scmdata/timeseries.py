@@ -179,7 +179,7 @@ class TimeSeries:
         extrapolation_type: str = "linear",
     ):
         """
-        Interpolate the timeseries onto a new timebase
+        Interpolate the timeseries onto a new time axis
 
         Parameters
         ----------
