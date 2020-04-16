@@ -13,10 +13,9 @@ import pandas as pd
 import pytest
 
 from scmdata.dataframe import ScmDataFrame
+from scmdata.pyam_compat import IamDataFrame
 from scmdata.run import ScmRun
 from scmdata.timeseries import get_default_name
-from scmdata.pyam_compat import IamDataFrame
-
 
 DATA_CLASSES = [ScmDataFrame, ScmRun]
 
