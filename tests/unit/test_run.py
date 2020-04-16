@@ -247,7 +247,8 @@ def test_init_with_years_as_str(test_pd_df, years, data_cls):
 
     df = data_cls(df)
 
-    obs = df.time_points
+    obs = df.time_points.values
+
     exp = np.array(
         [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)],
         dtype="datetime64[s]",

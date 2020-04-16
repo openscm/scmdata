@@ -237,6 +237,8 @@ def _from_ts(
     if index is not None:
         if isinstance(index, np.ndarray):
             df.index = TimePoints(index).to_index()
+        elif isinstance(index, TimePoints):
+            df.index = index.to_index()
         else:
             df.index = index
 
@@ -368,7 +370,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         if isinstance(data, ScmRun):
             self._ts = data._ts
-            self._time_points = TimePoints(data.time_points)
+            self._time_points = TimePoints(data.time_points.values)
         else:
             self._init_timeseries(data, index, columns, **kwargs)
 
@@ -409,7 +411,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         time_variable = xr.Variable("time", self._time_points.as_cftime())
         for name, attrs in _meta.iterrows():
             ts = TimeSeries(
-                data=_df[name], coords=[("time", time_variable)], attrs=attrs
+                data=_df[name], time=time_variable, attrs=attrs
             )
             self._ts.append(ts)
 
@@ -482,8 +484,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         meta_str = _indent(self.meta.__repr__())
         time_str = [
-            "Start: {}".format(self.time_points[0]),
-            "End: {}".format(self.time_points[-1]),
+            "Start: {}".format(self.time_points.values[0]),
+            "End: {}".format(self.time_points.values[-1]),
         ]
         time_str = _indent("\n".join(time_str))
         return "<scmdata.ScmRun (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}".format(
@@ -531,9 +533,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`np.ndarray`
+        :obj:`scmdata.time.TimePoints`
         """
-        return self._time_points.values
+        return self._time_points
 
     def timeseries(
         self, meta: Optional[List[str]] = None, check_duplicated: bool = True
@@ -731,7 +733,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         # Then filter the timeseries if needed
         if reduce_times:
             ret._ts = [ts[_keep_times] for ts in ret._ts]
-            ret["time"] = self.time_points[_keep_times]
+            ret["time"] = self.time_points.values[_keep_times]
 
         if len(ret) == 0:
             _logger.warning("Filtered ScmRun is empty!")
@@ -1646,7 +1648,7 @@ def df_append(
         ret._ts.extend(run._ts)
 
     # Determine the new common timebase
-    new_t = np.concatenate([r.time_points for r in runs])
+    new_t = np.concatenate([r.time_points.values for r in runs])
     new_t = np.unique(new_t)
     new_t.sort()
 

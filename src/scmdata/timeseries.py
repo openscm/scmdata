@@ -116,8 +116,11 @@ class TimeSeries:
             if "name" not in kwargs:
                 kwargs["name"] = get_default_name()
 
+            if isinstance(time, tuple):
+                time = list(time)
+
             self._data = xr.DataArray(
-                values, coords=[("time", list(time))], **kwargs
+                values, coords=[("time", time)], **kwargs
             )
 
     def __repr__(self):
@@ -275,7 +278,7 @@ class TimeSeries:
         """
         target_times = np.asarray(target_times, dtype="datetime64[s]")
         timeseries_converter = TimeseriesConverter(
-            self._data["time"].values,
+            self.time_points.values,
             target_times,
             interpolation_type=interpolation_type,
             extrapolation_type=extrapolation_type,

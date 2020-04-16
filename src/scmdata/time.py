@@ -100,6 +100,12 @@ class TimePoints:
         """
         self._values = _format_datetime(np.asarray(values))
 
+    def __len__(self) -> int:
+        """
+        Get the number of time points.
+        """
+        return len(self._values)
+
     @property
     def values(self) -> np.ndarray:
         """

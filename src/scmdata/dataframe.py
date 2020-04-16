@@ -435,11 +435,15 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         return self.set_meta(value, name=key)
 
     @property
-    def time_points(self) -> np.ndarray:
+    def time_points(self):
         """
         Time points of the data
+
+        Returns
+        -------
+        :obj:`scmdata.time.TimePoints`
         """
-        return self._time_points.values
+        return self._time_points
 
     def timeseries(self, meta: Optional[List[str]] = None) -> pd.DataFrame:
         """
@@ -914,7 +918,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         old_data = res._data
         res._data = pd.DataFrame(index=timeseries_index, columns=res._data.columns)
 
-        time_points = self.time_points
+        time_points = self.time_points.values
 
         timeseries_converter = TimeseriesConverter(
             time_points,
