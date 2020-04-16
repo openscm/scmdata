@@ -1325,7 +1325,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             group = tuple(group[0])
         return RunGroupBy(self, group)
 
-    def convert_unit(self, unit: str, context: Optional[str] = None, inplace: bool = False, **kwargs: Any):
+    def convert_unit(
+        self,
+        unit: str,
+        context: Optional[str] = None,
+        inplace: bool = False,
+        **kwargs: Any,
+    ):
         """
         Convert the units of a selection of timeseries.
 
