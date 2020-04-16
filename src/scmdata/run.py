@@ -277,8 +277,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     """
     str: String used to define different levels in our data hierarchies.
 
-    By default we follow pyam and use "|". In such a case, emissions of CO2 for energy
-    from coal would be "Emissions|CO2|Energy|Coal".
+    By default we follow pyam and use "|". In such a case, emissions of |CO2| for
+    energy from coal would be "Emissions|CO2|Energy|Coal".
     """
 
     def __init__(
@@ -535,8 +535,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         self, meta: Optional[List[str]] = None, check_duplicated: bool = True
     ) -> pd.DataFrame:
         """
-        Return the data in wide format (same as the timeseries method of
-        :class:`pyam.IamDataFrame`).
+        Return the data with metadata as a :obj:`pd.DataFrame`.
 
         Parameters
         ----------
@@ -583,8 +582,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     def values(self) -> np.ndarray:
         """
         Timeseries values without metadata
-
-        Calls :func:`timeseries`
         """
         return np.asarray([ts._data.values for ts in self._ts])
 
@@ -620,31 +617,32 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Note that this this does not copy the underlying time-series data so any modifications will be reflected in the caller
         ``ScmRun``. This allows for the updating a subset of the timeseries directly.
 
-        ```
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region             variable   unit climate_model
-            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-        >>> df.filter(scenario="a_scenario")["extra_meta"] = "test"
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region  ...   unit climate_model extra_meta
-            0  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
-            1  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
-            2  a_iam  a_scenario2  World  ...  EJ/yr       a_model        NaN
+        .. code:: python
 
-            [3 rows x 7 columns]
-        ```
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+
+            >>> df.filter(scenario="a_scenario")["extra_meta"] = "test"
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region  ...   unit climate_model extra_meta
+                0  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
+                1  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
+                2  a_iam  a_scenario2  World  ...  EJ/yr       a_model        NaN
+
+                [3 rows x 7 columns]
 
         This functionality is different to how :class`scmdata.ScmDataFrame` works which always returns a copy. If you do not want to
         change the parent `ScmRun` create a copy :func`ScmRun.copy()`. Any changes to this copy will not be reflected in the parent.
@@ -887,40 +885,40 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         This function has been deprecated and may be removed in future. Use the `[]` accessor
         to update metadata instead.
 
-        ```
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region             variable   unit climate_model
-            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-        >>> df["climate_model"] = ["a_model", "a_model", "b_model"]
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region             variable   unit climate_model
-            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model
-        >>> df.filter(variable="Primary Energy")["pe_only"] = True
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region             variable   unit climate_model pe_only
-            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
-            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model     NaN
-            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
-        ```
+        .. code:: python
+
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+            >>> df["climate_model"] = ["a_model", "a_model", "b_model"]
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model
+            >>> df.filter(variable="Primary Energy")["pe_only"] = True
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model pe_only
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model     NaN
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
 
         Parameters
         ----------
@@ -1292,25 +1290,25 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Enables iteration over groups of data. For example, to iterate over each scenario in the object
 
-        ```
-        >>> for group in df.groupby("scenario"):
-        >>>    print(group)
-        <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model    scenario region             variable   unit climate_model
-            0  a_iam  a_scenario  World       Primary Energy  EJ/yr       a_model
-            1  a_iam  a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-        <scmdata.ScmRun (timeseries: 1, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region        variable   unit climate_model
-            2  a_iam  a_scenario2  World  Primary Energy  EJ/yr       a_model
-        ```
+        .. code:: python
+
+            >>> for group in df.groupby("scenario"):
+            >>>    print(group)
+            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model    scenario region             variable   unit climate_model
+                0  a_iam  a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam  a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+            <scmdata.ScmRun (timeseries: 1, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region        variable   unit climate_model
+                2  a_iam  a_scenario2  World  Primary Energy  EJ/yr       a_model
 
         Parameters
         ----------
