@@ -7,6 +7,7 @@ master
 - (`#21 <https://github.com/openscm/scmdata/pull/21>`_) Added ``scmdata.run.ScmRun`` as a proposed replacement for ``scmdata.dataframe.ScmDataFrame``.
     This new class provides an identical interface as a ``ScmDataFrame``, but uses a different underlying data structure to the ``ScmDataFrame``.
     The purpose of which is to provide performance improvements when handling large sets of time-series data.
+    Removed support for Python 3.5 until `pyam` dependency is optional
 - (`#31 <https://github.com/openscm/scmdata/pull/31>`_) Tidy up repository after changing location
 
 v0.4.0
