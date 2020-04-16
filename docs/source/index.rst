@@ -27,6 +27,7 @@ SCMData
 
    scmdata.dataframe
    scmdata.offsets
+   scmdata.plotting
    scmdata.time
    scmdata.units
 
