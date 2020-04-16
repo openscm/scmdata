@@ -673,7 +673,9 @@ def test_filter_keep_false_time_and_metadata(test_scm_run):
 
 
 def test_filter_keep_false_successive(test_scm_run):
-    df = test_scm_run.filter(variable="Primary Energy|Coal", keep=False).filter(year=2005, keep=False)
+    df = test_scm_run.filter(variable="Primary Energy|Coal", keep=False).filter(
+        year=2005, keep=False
+    )
     obs = df.filter(scenario="a_scenario").timeseries().values.ravel()
     npt.assert_array_equal(obs, [6, 6])
 
