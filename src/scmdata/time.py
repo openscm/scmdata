@@ -191,8 +191,9 @@ class TimeseriesConverter:
     """
     Interpolator used to convert data between different time bases
 
-    This is a modified version originally in :mod:`openscm.time.TimeseriesConverter`. The integral preserving interpolation was
-    removed as it is outside the scope of this package.
+    This is a modified version originally in :mod:`openscm.time.TimeseriesConverter`.
+    The integral preserving interpolation was removed as it is outside the scope of
+    this package.
 
     Parameters
     ----------

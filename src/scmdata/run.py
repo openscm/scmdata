@@ -525,9 +525,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return sorted(list(set(meta)))
 
     @property
-    def time_points(self) -> np.ndarray:
+    def time_points(self):
         """
         Time points of the data
+
+        Returns
+        -------
+        :obj:`np.ndarray`
         """
         return self._time_points.values
 

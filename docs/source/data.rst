@@ -15,7 +15,7 @@ The first property, :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>`, r
 The second property, :attr:`scmdata.ScmRun.meta <scmdata.run.ScmRun.meta>`, returns all of the timeseries' metadata as a single :obj:`pandas.DataFrame`.
 This allows users to quickly have an overview of the timeseries held by :class:`scmdata.ScmRun` without having to also view the data itself at the same time.
 The key method is :meth:`scmdata.ScmRun.timeseries() <scmdata.run.ScmRun.timeseries>`.
-This method combines the two key properties to return a :obj:`pandas.DataFrame` whose index is equal to :attr:`scmdata.ScmRun.meta <scmdata.run.ScmRun.meta>` and whose values are equal to :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>` [TODO check if this is true or if its the transpose].
+This method combines the two key properties to return a :obj:`pandas.DataFrame` whose index is equal to :attr:`scmdata.ScmRun.meta <scmdata.run.ScmRun.meta>` and whose values are equal to :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>`.
 The columns of the output of :meth:`scmdata.ScmRun.timeseries() <scmdata.run.ScmRun.timeseries>` are the time axis of the data.
 As all the underlying :class:`scmdata.TimeSeries` might not have the same time axis, it is quite common for :obj:`numpy.nan` to appear in the output of :meth:`scmdata.ScmRun.timeseries() <scmdata.run.ScmRun.timeseries>`.
 
@@ -27,9 +27,9 @@ The **TimeSeries** class
 Each :class:`scmdata.TimeSeries` instance has three key properties.
 The first is :attr:`values <scmdata.timeseries.TimeSeries.values>`.
 This property contains the values of the timeseries as a :obj:`numpy.ndarray`.
-The second is [TODO expose time as an attribute, also to check: what happens if you instantiate :class:`scmdata.TimeSeries` without time?] :attr:`time <scmdata.timeseries.TimeSeries.time>`.
-This property contains the time axis, which defines the point in time to which each data point applies.
-The third is [TODO update to meta rather than metadata] :attr:`meta <scmdata.timeseries.TimeSeries.meta>`.
+The second is :attr:`time_points <scmdata.timeseries.TimeSeries.time_points>`.
+This property returns the data's time axis as a :class:`scmdata.time.TimePoints <scmdata.time.TimePoints>` instance (which provides simplified handling of time points).
+The third is :attr:`meta <scmdata.timeseries.TimeSeries.meta>`.
 This property contains all of the metadata about the timeseries, as a dictionary.
 The combination of these three properties provides complete information about the timeseries.
 

@@ -13,7 +13,7 @@ import numpy as np
 import xarray as xr
 from xarray.core.ops import inject_binary_ops
 
-from scmdata.time import TimeseriesConverter
+from .time import TimeseriesConverter, TimePoints
 
 
 class _Counter:
@@ -37,16 +37,46 @@ class TimeSeries:
     """
     A 1D time-series with metadata
 
-    Proxies a xarray.DataArray with a single time dimension
+    Proxies an xarray.DataArray with a single time dimension
     """
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data, time=None, **kwargs):
+        """
+        Initialise a :obj:`TimeSeries` instance
+
+        Parameters
+        ----------
+        data : array_like
+            Data to be held by the :obj:`TimeSeries` instance. ``data`` must be one-dimensional. If ``data`` is an :obj:`xr.DataArray` instance, its single co-ordinate must be ``"time"``. If ``data`` is not an :obj:`xr.DataArray`, then ``time`` must also be supplied.
+
+        time : array_like or None
+            Only used if ``data`` is not an :obj:`xr.DataArray`. These become the time axis of ``self._data``.
+
+        **kwargs
+            Only used if `data`` is not an :obj:`xr.DataArray`. Passed to the :obj:`xr.DataArray` constructor.
+
+        Raises
+        ------
+        ValueError
+            ``data`` is not one-dimensional
+
+        TypeError
+            ``data`` is an :obj:`xr.DataArray` and ``time is not None``
+
+        ValueError
+            ``data`` is an :obj:`xr.DataArray` and its co-ordinate is not named ``"time"``.
+
+        TypeError
+            ``data`` is not an :obj:`xr.DataArray` and ``time is None``
+        """
         values = np.asarray(data)
 
         if values.ndim != 1:
             raise ValueError("TimeSeries must be 1d")
+
         if isinstance(data, xr.DataArray):
             self._data = data
+
         else:
             # Auto incrementing name
             if "name" not in kwargs:
@@ -101,6 +131,17 @@ class TimeSeries:
         return self._data.attrs
 
     @property
+    def time_points(self):
+        """
+        Time points of the data
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+        """
+        return TimePoints(self._data.coords["time"].values)
+
+    @property
     def values(self):
         """
         Get the data as a numpy array
@@ -152,20 +193,22 @@ class TimeSeries:
         """
         Update the time dimension, filling in the missing values with NaN's
 
-        This is different to interpolating to fill in the missing values. Uses `xarray.DataArray.reindex` to perform the
-        reindexing
+        This is different to interpolating to fill in the missing values. Uses
+        `xarray.DataArray.reindex` to perform the reindexing
 
         Parameters
         ----------
         time : `obj`:np.ndarray
-            Time values to reindex the data to. Should be np 'datetime64` values
+            Time values to reindex the data to. Should be ``np.datetime64``
+            values
 
         **kwargs
             Additional arguments passed to xarray's DataArray.reindex function
 
         Returns
         -------
-        A new TimeSeries, with the new time dimension
+        :obj:`TimeSeries`
+            A new TimeSeries with the new time dimension
 
         References
         ----------
