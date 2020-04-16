@@ -35,6 +35,17 @@ dimensions: iterable of str
     The time dimension is always included as the last dimension, even if not provided.
 """
 
+
+_FROM_NC_DOCSTRING = """\
+Read netCDF4 file from disk
+
+Parameters
+----------
+path: str
+    Path to write the file into
+
+"""
+
 """
 Default to writing float data as 8 byte floats
 """
@@ -67,12 +78,6 @@ def _get_nc_type(np_type):
 def _write_nc(ds, df, dimensions, extras):
     """
     Low level function to write the dimensions, variables and metadata to disk
-    Parameters
-    ----------
-    ds : `nc.Dataset`
-    df:  Dataframe
-    dimensions : list of str
-        Excluding time diment
     """
     all_dims = list(dimensions) + ["time"]
 
@@ -144,7 +149,7 @@ def _write_nc(ds, df, dimensions, extras):
             var_name, DEFAULT_FLOAT, all_dims, zlib=True, fill_value=np.nan
         )
 
-        # We need to write in dimension at a time
+        # We need to write in one dimension at a time
         data_to_write = np.zeros(var_shape)
         data_to_write.fill(np.nan)
         df_values = var_df.values
@@ -235,7 +240,7 @@ def _read_nc(cls, ds):
 
 def run_to_nc(df, fname, dimensions=("region",), extras=()):
     """
-    Write a ScmDataFrame to disk as a netCDF4 file
+    Write timeseries to disk as a netCDF4 file
 
     Each unique variable will be written as a netCDF file.
 
@@ -265,7 +270,7 @@ def run_to_nc(df, fname, dimensions=("region",), extras=()):
 
 def nc_to_run(cls, fname):
     """
-    Read a ScmDataFrame which has been serialized using ``run_to_nc``
+    Read a netCDF4 file from disk
 
     Parameters
     ----------
@@ -279,7 +284,7 @@ def nc_to_run(cls, fname):
         try:
             return _read_nc(cls, ds)
         except Exception:
-            logger.exception("Failed reading netdf file: {}".format(fname))
+            logger.exception("Failed reading netcdf file: {}".format(fname))
 
 
 def inject_nc_methods(cls):
@@ -294,11 +299,11 @@ def inject_nc_methods(cls):
     name = "to_nc"
     func = run_to_nc
     func.__name__ = name
-    func.__doc__ = _TO_NC_DOCSTRING
+    func.__doc__ = func.__doc__
     setattr(cls, name, func)
 
     name = "from_nc"
     func = classmethod(nc_to_run)
     func.__name__ = name
-    func.__doc__ = _TO_NC_DOCSTRING
+    func.__doc__ = func.__doc__
     setattr(cls, name, func)

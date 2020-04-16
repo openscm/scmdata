@@ -31,7 +31,8 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
             pdt.assert_frame_equal(left.meta, right.meta, check_like=True)
             npt.assert_allclose(left.values[df1_index], right.values[df2_index])
         else:
-            # names maybe different, but assume order is the same
+            # index names may be different
+            # assume order of columns is the same (so sorting will make the dataframes equal
             left_sorted = left.timeseries().sort_index()
             right_sorted = right.timeseries(left.meta.columns).sort_index()
             pdt.assert_frame_equal(left_sorted, right_sorted)
