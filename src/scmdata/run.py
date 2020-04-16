@@ -574,13 +574,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     @property
     def shape(self) -> tuple:
         """
-        Get the shape of the data (number of timeseries, number of timesteps)
+        Get the shape of the underlying data as ``(num_timeseries, num_timesteps)``
 
         Returns
         -------
-        tuple
+        tuple of int
         """
-        return (len(self._ts), len(self.time_points))
+        return len(self._ts), len(self.time_points)
 
     @property
     def values(self) -> np.ndarray:
@@ -591,6 +591,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         timeseries being a row and each column is a different time (although
         no time information is included as a plain :obj:`np.ndarray` is
         returned).
+
+        The array in the same shape as :py:obj:`ScmRun.shape`, that is ``(num_timeseries, num_timesteps)``
+
+        Returns
+        -------
+        np.ndarray
         """
         return np.asarray([ts._data.values for ts in self._ts])
 

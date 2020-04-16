@@ -1,45 +1,54 @@
 Data Model
 ==========
 
+Running and analysing the results from a simple climate models, involves a lot of timeseries handling, including:
+
+* filtering
+* plotting
+* resampling
+* serialization/deserialisation
+* computation
+
+**scmdata**'s approach to data handling focusses on the efficient handling of timeseries.
+
+
 The **ScmRun** class
 --------------------
 
-The :class:`scmdata.ScmRun` class holds a collection of timeseries along with their metadata.
-:class:`scmdata.ScmRun` holds a collection (in the form of a list) of :class:`scmdata.TimeSeries` and enables simplified manipulation of that collection.
-For example, the :class:`scmdata.TimeSeries`'s can be filtered to only find the :class:`scmdata.TimeSeries` which have a ``"scenario"`` metadata label equal to ``"green"`` (see :meth:`scmdata.ScmRun.filter <scmdata.run.ScmRun.filter>` for full details).
+The :class:`scmdata.ScmRun` class represents a collection of timeseries data and provides methods for manipulating the data. This class is
+the primary method for representing timeseries data.
+
+For example, the :class:`scmdata.timeseries.TimeSeries`'s can be filtered to only find the :class:`TimeSeries <scmdata.timeseries.TimeSeries>`  which have a ``"scenario"`` metadata label equal to ``"green"`` (see :meth:`scmdata.ScmRun.filter <scmdata.run.ScmRun.filter>` for full details).
 Other operations include grouping, setting and (basic) plotting.
-The complete set of manipulation features can be found in the documentation pages of :class:`scmdata.ScmRun <scmdata.run.ScmRun>`.
 
-:class:`scmdata.ScmRun` has two key properties and one key method, which allow the user to quickly access their data in more standard formats.
-The first property, :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>`, returns all of the timeseries as a single :obj:`numpy.ndarray` without any metadata or indication of the time axis.
-The second property, :attr:`scmdata.ScmRun.meta <scmdata.run.ScmRun.meta>`, returns all of the timeseries' metadata as a single :obj:`pandas.DataFrame`.
-This allows users to quickly have an overview of the timeseries held by :class:`scmdata.ScmRun` without having to also view the data itself at the same time.
-The key method is :meth:`scmdata.ScmRun.timeseries() <scmdata.run.ScmRun.timeseries>`.
-This method combines the two key properties to return a :obj:`pandas.DataFrame` whose index is equal to :attr:`scmdata.ScmRun.meta <scmdata.run.ScmRun.meta>` and whose values are equal to :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>`.
-The columns of the output of :meth:`scmdata.ScmRun.timeseries() <scmdata.run.ScmRun.timeseries>` are the time axis of the data.
-As all the underlying :class:`scmdata.TimeSeries` might not have the same time axis, it is quite common for :obj:`numpy.nan` to appear in the output of :meth:`scmdata.ScmRun.timeseries() <scmdata.run.ScmRun.timeseries>`.
+Internally, :class:`ScmRun <scmdata.run.ScmRun>` has a list of :class:`TimeSeries <scmdata.timeseries.TimeSeries>` objects and enables simplified
+manipulation of that collection. The complete set of manipulation features can be found in the documentation pages of :class:`ScmRun <scmdata.run.ScmRun>`.
 
+:class:`ScmRun <scmdata.run.ScmRun>` has two key properties and one key method, which allow the user to quickly access their data in more standard formats:
+
+* :attr:`values <scmdata.run.ScmRun.values>` returns all of the timeseries as a single :obj:`numpy.ndarray` without any metadata or indication of the time axis.
+* :attr:`meta <scmdata.run.ScmRun.meta>` returns all of the timeseries' metadata as a single :obj:`pandas.DataFrame`. This allows users to quickly have an overview of the timeseries held by :class:`scmdata.ScmRun` without having to also view the data itself at the same time.
+* :meth:`timeseries() <scmdata.run.ScmRun.timeseries>` combines the two key properties to return a :obj:`pandas.DataFrame` whose index is equal to :attr:`scmdata.ScmRun.meta <scmdata.run.ScmRun.meta>` and whose values are equal to :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>`.
+  The columns of the output of :meth:`timeseries() <scmdata.run.ScmRun.timeseries>` are the time axis of the data.
 
 The **TimeSeries** class
 ------------------------
 
-**scmdata**'s approach to data handling focusses on timeseries.
-Each :class:`scmdata.TimeSeries` instance has three key properties.
-The first is :attr:`values <scmdata.timeseries.TimeSeries.values>`.
-This property contains the values of the timeseries as a :obj:`numpy.ndarray`.
-The second is :attr:`time_points <scmdata.timeseries.TimeSeries.time_points>`.
-This property returns the data's time axis as a :class:`scmdata.time.TimePoints <scmdata.time.TimePoints>` instance (which provides simplified handling of time points).
-The third is :attr:`meta <scmdata.timeseries.TimeSeries.meta>`.
-This property contains all of the metadata about the timeseries, as a dictionary.
-The combination of these three properties provides complete information about the timeseries.
+:class:`TimeSeries <scmdata.timeseries.TimeSeries>` is an container for a single timeseries of float data and it's associated metadata. In practice, this is a simple
+wrapper around :class:`xarray.DataArray` instance which is used to store the data and metadata.
 
+The data values can be accesses via the :attr:`values <scmdata.timeseries.TimeSeries.values>` attribute as a 1 dimensional :obj:`numpy.ndarray`.
+The time values for each value can be accessed by :attr:`time_points <scmdata.timeseries.TimeSeries.time_points>`.
+The metadata for a :class:`TimeSeries <scmdata.timeseries.TimeSeries>` object can be retrieved from :attr:`meta <scmdata.timeseries.TimeSeries.meta>` as a dictionary.
+
+Together, the values, datetimes and metadata represent a timeseries.
 
 Metadata handling
 ~~~~~~~~~~~~~~~~~
 
-The key feature of **scmdata** is that its smallest discrete unit is a timeseries.
-**scmdata** can store any kind of metadata about the timeseries, without restriction, in the :attr:`meta <scmdata.timeseries.TimeSeries.meta>` attribute.
+Via the :attr:`meta <scmdata.timeseries.TimeSeries.meta>` attribute, **scmdata** can store any kind of metadata about the timeseries, without restriction.
 This combination allows it to be a high performing, yet flexible library for timeseries data.
+
 However, to do this it must make assumptions about the type of data it holds and these assumptions come with tradeoffs.
 In particular, **scmdata** cannot hold metadata at a level finer than a complete timeseries.
 For example, it couldn't handle a case where one point in a timeseries needed to be labelled with an 'erroneous' label.
