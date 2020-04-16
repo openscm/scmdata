@@ -1,5 +1,4 @@
 import re
-import sys
 from unittest import mock
 
 import pytest
@@ -25,28 +24,3 @@ def test_to_int_value_error(test_iam_df):
 def test_pyam_missing(test_scm_df):
     with pytest.raises(ImportError):
         test_scm_df.to_iamdataframe()
-
-
-def test_pyam_missing_loading():
-    with mock.patch.dict(sys.modules, {"pyam": None}):
-        # not sure whether deleting like this is fine because of the context manager
-        # or a terrible idea...
-        del sys.modules["scmdata.pyam_compat"]
-        from scmdata.pyam_compat import IamDataFrame as res
-        from scmdata.pyam_compat import LongDatetimeIamDataFrame as res_3
-
-        assert all([r is None for r in [res, res_3]])
-
-    with mock.patch.dict(sys.modules, {"matplotlib.axes": None}):
-        # not sure whether deleting like this is fine because of the context manager
-        # or a terrible idea...
-        del sys.modules["scmdata.pyam_compat"]
-        from scmdata.pyam_compat import Axes as res_2
-
-        assert all([r is None for r in [res_2]])
-
-    from scmdata.pyam_compat import IamDataFrame as res
-    from scmdata.pyam_compat import Axes as res_2
-    from scmdata.pyam_compat import LongDatetimeIamDataFrame as res_3
-
-    assert all([r is not None for r in [res, res_2, res_3]])

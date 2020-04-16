@@ -26,7 +26,8 @@ from .filters import (
 )
 from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
-from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
+from .plotting import inject_plotting_methods
+from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints, TimeseriesConverter
 from .units import UnitConverter
 
@@ -202,6 +203,7 @@ def _format_wide_data(df):
     df = df.drop(REQUIRED_COLS + extra_cols, axis="columns").T
     df.index.name = "time"
     meta = orig[REQUIRED_COLS + extra_cols].set_index(df.columns)
+    meta.columns.name = None
 
     return df, meta
 
@@ -1337,55 +1339,16 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         return LongDatetimeIamDataFrame(self.timeseries())
 
-    def to_csv(self, path: str, **kwargs: Any) -> None:
+    def to_csv(self, fname: str, **kwargs: Any) -> None:
         """
         Write timeseries data to a csv file
 
         Parameters
         ----------
-        path
+        fname
             Path to write the file into
         """
-        self.to_iamdataframe().to_csv(path, **kwargs)
-
-    def line_plot(self, x: str = "time", y: str = "value", **kwargs: Any) -> Axes:
-        """
-        Plot a line chart.
-
-        See :func:`pyam.IamDataFrame.line_plot` for more information.
-        """
-        return self.to_iamdataframe().line_plot(x, y, **kwargs)  # pragma: no cover
-
-    def scatter(self, x: str, y: str, **kwargs: Any) -> Axes:
-        """
-        Plot a scatter chart using metadata columns.
-
-        See :func:`pyam.plotting.scatter` for details.
-        """
-        self.to_iamdataframe().scatter(x, y, **kwargs)  # pragma: no cover
-
-    def region_plot(self, **kwargs: Any) -> Axes:
-        """
-        Plot regional data for a single model, scenario, variable, and year.
-
-        See :class:`pyam.plotting.region_plot` for details.
-        """
-        return self.to_iamdataframe().region_plot(**kwargs)  # pragma: no cover
-
-    def pivot_table(
-        self,
-        index: Union[str, List[str]],
-        columns: Union[str, List[str]],
-        **kwargs: Any
-    ) -> pd.DataFrame:
-        """
-        Pivot the underlying data series.
-
-        See :func:`pyam.core.IamDataFrame.pivot_table` for details.
-        """
-        return self.to_iamdataframe().pivot_table(
-            index, columns, **kwargs
-        )  # pragma: no cover
+        self.timeseries().reset_index().to_csv(fname, **kwargs)
 
     def groupby(self, *group):
         """
@@ -1552,3 +1515,4 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
 
 
 inject_nc_methods(ScmDataFrame)
+inject_plotting_methods(ScmDataFrame)

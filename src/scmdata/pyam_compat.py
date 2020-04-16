@@ -50,8 +50,3 @@ except ImportError:
     # mypy can't work out try-except block sets typing
     IamDataFrame = None
     LongDatetimeIamDataFrame = None  # type: ignore
-
-try:
-    from matplotlib.axes import Axes  # pylint: disable=unused-import
-except ImportError:
-    Axes = None

@@ -40,7 +40,7 @@ format:  ## re-format files
 
 black: $(VENV_DIR)  ## apply black formatter to source and tests
 	@status=$$(git status --porcelain src tests docs scripts); \
-	if test "x$${status}" = x; then \
+	if test ${FORCE} || test "x$${status}" = x; then \
 		$(VENV_DIR)/bin/black --exclude _version.py setup.py src tests docs/source/conf.py scripts/*.py; \
 	else \
 		echo Not trying any formatting. Working directory is dirty ... >&2; \
@@ -48,7 +48,7 @@ black: $(VENV_DIR)  ## apply black formatter to source and tests
 
 isort: $(VENV_DIR)  ## format the code
 	@status=$$(git status --porcelain src tests); \
-	if test "x$${status}" = x; then \
+	if test ${FORCE} || test "x$${status}" = x; then \
 		$(VENV_DIR)/bin/isort --recursive src tests setup.py; \
 	else \
 		echo Not trying any formatting. Working directory is dirty ... >&2; \
@@ -69,7 +69,7 @@ test-notebooks: $(VENV_DIR)  ## test the notebooks
 .PHONY: format-notebooks
 format-notebooks: $(VENV_DIR)  ## format the notebooks
 	@status=$$(git status --porcelain $(NOTEBOOKS_DIR)); \
-	if test "x$${status}" = x; then \
+	if test ${FORCE} || "x$${status}" = x; then \
 		$(VENV_DIR)/bin/black-nb $(NOTEBOOKS_DIR); \
 	else \
 		echo Not trying any formatting. Working directory is dirty ... >&2; \
