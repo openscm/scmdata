@@ -111,7 +111,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     regexp: bool = False,
     has_nan: bool = True,
     separator: str = HIERARCHY_SEPARATOR,
-) -> np.ndarray:
+) -> pd.Series:
     """
     Filter data by matching metadata columns to given patterns.
 
@@ -158,17 +158,19 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         else values
     )
 
-    # pyam issue (#40) with string-to-nan comparison, replace nan by empty string
-    # TODO: add docs and example of filtering/removing NaN given this internal
-    #       conversion
     _meta_col = meta_col.copy()
     if has_nan:
         _meta_col.loc[
             [np.isnan(i) if not isinstance(i, str) else False for i in _meta_col]
-        ] = ""
+        ] = "nan"
+
+    handle_as_number = np.issubdtype(meta_col.dtype, np.number)
+
+    if not handle_as_number and "" in _values:
+        _values.append("nan")
 
     for s in _values:
-        if isinstance(s, str):
+        if not handle_as_number and (isinstance(s, str) or np.isnan(s)):
             _regexp = (
                 str(s)
                 .replace("|", "\\|")
@@ -201,9 +203,13 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
             )
             matches |= _meta_col.isin(subset) & depth
         else:
-            matches |= meta_col == s
+            s = float(s)
+            if np.isnan(s):
+                matches |= np.isnan(meta_col)
+            else:
+                matches |= np.isclose(s, meta_col)
 
-    return matches
+    return pd.Series(matches, index=_meta_col.index)
 
 
 def years_match(data: List, years: Union[List[int], int]) -> np.ndarray:

@@ -23,12 +23,12 @@ CLASSIFIERS = [
     "License :: OSI Approved :: BSD License",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.5",
     "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
 ]
 
-REQUIREMENTS = ["numpy", "python-dateutil", "pint", "pandas"]
+REQUIREMENTS = ["numpy", "python-dateutil", "pint", "pandas", "xarray", "cftime"]
 REQUIREMENTS_PYAM = ["pyam-iamc>=0.3.0"]
 REQUIREMENTS_TESTS = [
     "codecov",

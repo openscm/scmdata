@@ -6,11 +6,13 @@ A large portion of this module was originally from openscm. Thanks to the origin
 
 from datetime import datetime
 
+import cftime
 import numpy as np
 import pandas as pd
 from dateutil import parser
 
 _TARGET_TYPE = np.int64
+_TARGET_DTYPE = "datetime64[s]"
 
 
 class InsufficientDataError(Exception):
@@ -66,20 +68,20 @@ def _format_datetime(dts: np.ndarray) -> np.ndarray:
         If one of the values in :obj:`dts` cannot be converted to :class:`np.datetime64`
     """
     if len(dts) <= 0:  # pylint: disable=len-as-condition
-        return np.array([], dtype="datetime64[s]")
+        return np.array([], dtype=_TARGET_DTYPE)
 
     dtype = dts.dtype.type
     if dts.dtype.kind == "O":
         dtype = np.dtype(type(dts[0])).type
     if issubclass(dtype, np.datetime64):
-        return np.asarray(dts, dtype="datetime64[s]")
+        return np.asarray(dts, dtype=_TARGET_DTYPE)
     if issubclass(dtype, np.floating):
-        return _ufunc_float_year_to_datetime(dts).astype("datetime64[s]")
+        return _ufunc_float_year_to_datetime(dts).astype(_TARGET_DTYPE)
     if issubclass(dtype, np.integer):
-        return (np.asarray(dts) - 1970).astype("datetime64[Y]").astype("datetime64[s]")
+        return (np.asarray(dts) - 1970).astype("datetime64[Y]").astype(_TARGET_DTYPE)
     if issubclass(dtype, str):
-        return _parse_datetime(dts).astype("datetime64[s]")
-    return np.asarray(dts, dtype="datetime64[s]")
+        return _parse_datetime(dts).astype(_TARGET_DTYPE)
+    return np.asarray(dts, dtype=_TARGET_DTYPE)
 
 
 class TimePoints:
@@ -116,6 +118,18 @@ class TimePoints:
             made from the time points represented as :class:`datetime.datetime`.
         """
         return pd.Index(self._values.astype(object), dtype=object, name="time")
+
+    def as_cftime(self) -> list:
+        """
+        Get as cftime datetimes
+
+        Returns
+        -------
+        list of cftime.datetime
+        """
+        return [
+            cftime.datetime(*dt.timetuple()[:6]) for dt in self._values.astype(object)
+        ]
 
     def years(self) -> np.ndarray:
         """
@@ -205,8 +219,16 @@ class TimeseriesConverter:
         extrapolation_type="linear",
     ):
 
-        self.source = np.array(source_time_points).astype(_TARGET_TYPE, copy=True)
-        self.target = np.array(target_time_points).astype(_TARGET_TYPE, copy=True)
+        self.source = (
+            np.array(source_time_points)
+            .astype(_TARGET_DTYPE)
+            .astype(_TARGET_TYPE, copy=True)
+        )
+        self.target = (
+            np.array(target_time_points)
+            .astype(_TARGET_DTYPE)
+            .astype(_TARGET_TYPE, copy=True)
+        )
         self.interpolation_type = interpolation_type
         self.extrapolation_type = extrapolation_type
 
@@ -233,9 +255,10 @@ class TimeseriesConverter:
         bool
             Can I convert between the time points?
         """
-        if self.extrapolation_type is None:
-            if source[0] > target[0] or source[-1] < target[-1]:
-                return False
+        if self.extrapolation_type is None and (
+            source[0] > target[0] or source[-1] < target[-1]
+        ):
+            return False
 
         return True
 
