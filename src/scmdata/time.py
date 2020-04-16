@@ -100,6 +100,12 @@ class TimePoints:
         """
         self._values = _format_datetime(np.asarray(values))
 
+    def __len__(self) -> int:
+        """
+        Get the number of time points.
+        """
+        return len(self._values)
+
     @property
     def values(self) -> np.ndarray:
         """
@@ -191,8 +197,9 @@ class TimeseriesConverter:
     """
     Interpolator used to convert data between different time bases
 
-    This is a modified version originally in :mod:`openscm.time.TimeseriesConverter`. The integral preserving interpolation was
-    removed as it is outside the scope of this package.
+    This is a modified version originally in :mod:`openscm.time.TimeseriesConverter`.
+    The integral preserving interpolation was removed as it is outside the scope of
+    this package.
 
     Parameters
     ----------

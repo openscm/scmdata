@@ -87,9 +87,10 @@ class RunGroupBy(_GroupBy):
         --------
         ```
         >>> def write_csv(arr):
-                variable = arr.get_unique_meta("variable")
-                arr.to_csv("out-{}.csv".format(variable)
+        ... variable = arr.get_unique_meta("variable")
+        ... arr.to_csv("out-{}.csv".format(variable)
         >>> df.groupby("variable").map(write_csv)
+        ```
 
         Parameters
         ----------

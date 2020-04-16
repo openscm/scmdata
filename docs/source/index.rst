@@ -19,6 +19,7 @@ SCMData
    :caption: Documentation:
 
    installation
+   data
    development
 
 .. toctree::
@@ -26,9 +27,14 @@ SCMData
    :caption: API reference
 
    scmdata.dataframe
+   scmdata.filters
+   scmdata.groupby
    scmdata.offsets
    scmdata.plotting
+   scmdata.run
+   scmdata.testing
    scmdata.time
+   scmdata.timeseries
    scmdata.units
 
 .. toctree::

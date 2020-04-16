@@ -52,21 +52,12 @@ extensions = [
     # "sphinx_click.ext",
 ]
 
-autodoc_default_flags = [
-    "members",
-    # "undoc-members",
-    # "private-members",
-    "inherited-members",
-    "show-inheritance",
-]
-# change to below when upgrading to Sphinx >= 2.1
-# autodoc_default_options = {
-#     "undoc-members": False,
-#     "private-members": False,
-#     "special-members": False,
-#     "inherited-members": False,
-#     "show-inheritance": False,
-# }
+autodoc_default_options = {
+    "inherited-members": None,
+    "members": None,
+    "show-inheritance": None,
+    "undoc-members": None,
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -130,7 +121,7 @@ html_context = {
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "scmdataedoc"
+htmlhelp_basename = "scmdatadoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -177,7 +168,7 @@ texinfo_documents = [
         "SCMData Documentation",
         author,
         "scmdata",
-        "Automated filling of detail in reported emission scenarios",
+        "Data handling for simple climate model data",
         "Miscellaneous",
     )
 ]
@@ -208,7 +199,17 @@ coverage_write_headline = False  # do not write headlines.
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {
+    "numpy": ("https://docs.scipy.org/doc/numpy", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
+    "python": ("https://docs.python.org/3", None),
+    "pyam": ("https://pyam-iamc.readthedocs.io/en/latest", None),
+    "scmdata": ("https://scmdata.readthedocs.io/en/latest", None),
+    # "pint": ("https://pint.readthedocs.io/en/latest", None), # no full API doc here, unfortunately
+}
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
+set_type_checking_flag = False
 
 # -- Options for todo extension ----------------------------------------------
 
@@ -219,3 +220,9 @@ todo_include_todos = True
 
 # html_logo = "_static/logo_200px_wide.png"
 # latex_logo = "_static/logo.png"
+
+# -- Misc configuration -------------------------------------------------
+
+rst_epilog = """
+.. |CO2| replace:: CO\ :sub:`2`\
+"""

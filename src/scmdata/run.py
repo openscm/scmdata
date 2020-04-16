@@ -237,6 +237,8 @@ def _from_ts(
     if index is not None:
         if isinstance(index, np.ndarray):
             df.index = TimePoints(index).to_index()
+        elif isinstance(index, TimePoints):
+            df.index = index.to_index()
         else:
             df.index = index
 
@@ -277,8 +279,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     """
     str: String used to define different levels in our data hierarchies.
 
-    By default we follow pyam and use "|". In such a case, emissions of CO2 for energy
-    from coal would be "Emissions|CO2|Energy|Coal".
+    By default we follow pyam and use "|". In such a case, emissions of |CO2| for
+    energy from coal would be "Emissions|CO2|Energy|Coal".
     """
 
     def __init__(
@@ -368,7 +370,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         if isinstance(data, ScmRun):
             self._ts = data._ts
-            self._time_points = TimePoints(data.time_points)
+            self._time_points = TimePoints(data.time_points.values)
         else:
             self._init_timeseries(data, index, columns, **kwargs)
 
@@ -408,9 +410,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         self._ts = []
         time_variable = xr.Variable("time", self._time_points.as_cftime())
         for name, attrs in _meta.iterrows():
-            ts = TimeSeries(
-                data=_df[name], coords=[("time", time_variable)], attrs=attrs
-            )
+            ts = TimeSeries(data=_df[name], time=time_variable, attrs=attrs)
             self._ts.append(ts)
 
     def copy(self, copy_ts=True):
@@ -482,8 +482,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         meta_str = _indent(self.meta.__repr__())
         time_str = [
-            "Start: {}".format(self.time_points[0]),
-            "End: {}".format(self.time_points[-1]),
+            "Start: {}".format(self.time_points.values[0]),
+            "End: {}".format(self.time_points.values[-1]),
         ]
         time_str = _indent("\n".join(time_str))
         return "<scmdata.ScmRun (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}".format(
@@ -521,22 +521,25 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         meta = []
         for ts in self._ts:
-            meta.extend(ts.metadata.keys())
+            meta.extend(ts.meta.keys())
         return sorted(list(set(meta)))
 
     @property
-    def time_points(self) -> np.ndarray:
+    def time_points(self):
         """
         Time points of the data
+
+        Returns
+        -------
+        :obj:`scmdata.time.TimePoints`
         """
-        return self._time_points.values
+        return self._time_points
 
     def timeseries(
         self, meta: Optional[List[str]] = None, check_duplicated: bool = True
     ) -> pd.DataFrame:
         """
-        Return the data in wide format (same as the timeseries method of
-        :class:`pyam.IamDataFrame`).
+        Return the data with metadata as a :obj:`pd.DataFrame`.
 
         Parameters
         ----------
@@ -571,20 +574,29 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     @property
     def shape(self) -> tuple:
         """
-        Get the shape of the data (number of timeseries, number of timesteps)
+        Get the shape of the underlying data as ``(num_timeseries, num_timesteps)``
 
         Returns
         -------
-        tuple
+        tuple of int
         """
-        return (len(self._ts), len(self.time_points))
+        return len(self._ts), len(self.time_points)
 
     @property
     def values(self) -> np.ndarray:
         """
         Timeseries values without metadata
 
-        Calls :func:`timeseries`
+        The values are returned such that each row is a different
+        timeseries being a row and each column is a different time (although
+        no time information is included as a plain :obj:`np.ndarray` is
+        returned).
+
+        Returns
+        -------
+        np.ndarray
+            The array in the same shape as :py:obj:`ScmRun.shape`, that is
+            ``(num_timeseries, num_timesteps)``.
         """
         return np.asarray([ts._data.values for ts in self._ts])
 
@@ -594,14 +606,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Metadata
         """
         return pd.DataFrame(
-            [ts.metadata for ts in self._ts], index=[ts.name for ts in self._ts]
+            [ts.meta for ts in self._ts], index=[ts.name for ts in self._ts]
         )
 
     def _meta_column(self, col) -> pd.Series:
         vals = []
         for ts in self._ts:
             try:
-                vals.append(ts.metadata[col])
+                vals.append(ts.meta[col])
             except KeyError:
                 vals.append(np.nan)
 
@@ -620,31 +632,32 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Note that this this does not copy the underlying time-series data so any modifications will be reflected in the caller
         ``ScmRun``. This allows for the updating a subset of the timeseries directly.
 
-        ```
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region             variable   unit climate_model
-            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-        >>> df.filter(scenario="a_scenario")["extra_meta"] = "test"
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region  ...   unit climate_model extra_meta
-            0  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
-            1  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
-            2  a_iam  a_scenario2  World  ...  EJ/yr       a_model        NaN
+        .. code:: python
 
-            [3 rows x 7 columns]
-        ```
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+
+            >>> df.filter(scenario="a_scenario")["extra_meta"] = "test"
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region  ...   unit climate_model extra_meta
+                0  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
+                1  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
+                2  a_iam  a_scenario2  World  ...  EJ/yr       a_model        NaN
+
+                [3 rows x 7 columns]
 
         This functionality is different to how :class`scmdata.ScmDataFrame` works which always returns a copy. If you do not want to
         change the parent `ScmRun` create a copy :func`ScmRun.copy()`. Any changes to this copy will not be reflected in the parent.
@@ -701,8 +714,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         if not keep and sum(~_keep_cols) and sum(~_keep_times):
             raise ValueError(
-                "If keep=False, filtering cannot be performed on the temporal axis and with "
-                "metadata at the same time"
+                "If keep==False, filtering cannot be performed on the temporal axis "
+                "and with metadata at the same time"
             )
 
         reduce_times = (~_keep_times).sum() > 0
@@ -724,7 +737,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         # Then filter the timeseries if needed
         if reduce_times:
             ret._ts = [ts[_keep_times] for ts in ret._ts]
-            ret["time"] = self.time_points[_keep_times]
+            ret["time"] = self.time_points.values[_keep_times]
 
         if len(ret) == 0:
             _logger.warning("Filtered ScmRun is empty!")
@@ -887,40 +900,40 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         This function has been deprecated and may be removed in future. Use the `[]` accessor
         to update metadata instead.
 
-        ```
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region             variable   unit climate_model
-            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-        >>> df["climate_model"] = ["a_model", "a_model", "b_model"]
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region             variable   unit climate_model
-            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model
-        >>> df.filter(variable="Primary Energy")["pe_only"] = True
-        >>> df
-        <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region             variable   unit climate_model pe_only
-            0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
-            1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model     NaN
-            2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
-        ```
+        .. code:: python
+
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+            >>> df["climate_model"] = ["a_model", "a_model", "b_model"]
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model
+            >>> df.filter(variable="Primary Energy")["pe_only"] = True
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model pe_only
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model     NaN
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
 
         Parameters
         ----------
@@ -963,10 +976,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         meta = np.atleast_1d(meta)
         if len(meta) == 1:
             for ts in self._ts:
-                ts.metadata[name] = meta[0]
+                ts.meta[name] = meta[0]
         elif len(meta) == len(self):
             for i, ts in enumerate(self._ts):
-                ts.metadata[name] = meta[i]
+                ts.meta[name] = meta[i]
         else:
             raise ValueError("Invalid shape for metadata")
 
@@ -1292,25 +1305,25 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Enables iteration over groups of data. For example, to iterate over each scenario in the object
 
-        ```
-        >>> for group in df.groupby("scenario"):
-        >>>    print(group)
-        <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model    scenario region             variable   unit climate_model
-            0  a_iam  a_scenario  World       Primary Energy  EJ/yr       a_model
-            1  a_iam  a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-        <scmdata.ScmRun (timeseries: 1, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-01-01T00:00:00
-        Meta:
-               model     scenario region        variable   unit climate_model
-            2  a_iam  a_scenario2  World  Primary Energy  EJ/yr       a_model
-        ```
+        .. code:: python
+
+            >>> for group in df.groupby("scenario"):
+            >>>    print(group)
+            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model    scenario region             variable   unit climate_model
+                0  a_iam  a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam  a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+            <scmdata.ScmRun (timeseries: 1, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region        variable   unit climate_model
+                2  a_iam  a_scenario2  World  Primary Energy  EJ/yr       a_model
 
         Parameters
         ----------
@@ -1639,7 +1652,7 @@ def df_append(
         ret._ts.extend(run._ts)
 
     # Determine the new common timebase
-    new_t = np.concatenate([r.time_points for r in runs])
+    new_t = np.concatenate([r.time_points.values for r in runs])
     new_t = np.unique(new_t)
     new_t.sort()
 

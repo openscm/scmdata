@@ -247,7 +247,8 @@ def test_init_with_years_as_str(test_pd_df, years, data_cls):
 
     df = data_cls(df)
 
-    obs = df.time_points
+    obs = df.time_points.values
+
     exp = np.array(
         [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)],
         dtype="datetime64[s]",
@@ -373,6 +374,8 @@ def test_tail(test_scm_run):
 
 
 def test_values(test_scm_run):
+    # implicitly checks that `.values` returns the data with each row being a
+    # timeseries and each column being a timepoint
     npt.assert_array_equal(test_scm_run.values, test_scm_run.timeseries().values)
 
 
@@ -410,7 +413,6 @@ def test_variable_depth_0_with_base(data_cls):
     assert all([e in obs for e in exp]) and len(obs) == len(exp)
 
 
-@pytest.mark.xfail
 def test_variable_depth_0_keep_false(test_scm_run):
     obs = list(test_scm_run.filter(level=0, keep=False)["variable"].unique())
     exp = ["Primary Energy|Coal"]
@@ -643,11 +645,39 @@ def test_filter_as_kwarg(test_scm_run):
     assert obs == ["a_scenario"]
 
 
-@pytest.mark.xfail
-def test_filter_keep_false(test_scm_run):
-    df = test_scm_run.filter(variable="Primary Energy|Coal", year=2005, keep=False)
+def test_filter_keep_false_time(test_scm_run):
+    df = test_scm_run.filter(year=2005, keep=False)
+    assert 2005 not in df.time_points.years()
+    assert 2010 in df.time_points.years()
+
     obs = df.filter(scenario="a_scenario").timeseries().values.ravel()
-    npt.assert_array_equal(obs, [1, 6, 6, np.nan, 3, 3])
+    npt.assert_array_equal(obs, [6, 6, 3, 3])
+
+
+def test_filter_keep_false_metadata(test_scm_run):
+    df = test_scm_run.filter(variable="Primary Energy|Coal", keep=False)
+    assert "Primary Energy|Coal" not in df["variable"].tolist()
+    assert "Primary Energy" in df["variable"].tolist()
+
+    obs = df.filter(scenario="a_scenario").timeseries().values.ravel()
+    npt.assert_array_equal(obs, [1, 6, 6])
+
+
+def test_filter_keep_false_time_and_metadata(test_scm_run):
+    error_msg = (
+        "If keep==False, filtering cannot be performed on the temporal axis "
+        "and with metadata at the same time"
+    )
+    with pytest.raises(ValueError, match=re.escape(error_msg)):
+        test_scm_run.filter(variable="Primary Energy|Coal", year=2005, keep=False)
+
+
+def test_filter_keep_false_successive(test_scm_run):
+    df = test_scm_run.filter(variable="Primary Energy|Coal", keep=False).filter(
+        year=2005, keep=False
+    )
+    obs = df.filter(scenario="a_scenario").timeseries().values.ravel()
+    npt.assert_array_equal(obs, [6, 6])
 
 
 def test_filter_by_regexp(test_scm_run):
@@ -1140,7 +1170,7 @@ def get_append_col_order_time_dfs(base):
     base["runmodus"] = "co2_only"
     other = base.copy()
 
-    other._ts[1].metadata["variable"] = "Primary Energy|Gas"
+    other._ts[1].meta["variable"] = "Primary Energy|Gas"
     other["time"] = [
         dt.datetime(2002, 1, 1, 0, 0),
         dt.datetime(2008, 1, 1, 0, 0),
