@@ -7,7 +7,6 @@ import numpy.testing as npt
 import pandas.testing as pdt
 
 
-# nosec
 def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names=True):
     """
     Check that left and right :obj:`ScmDataFrame` or :obj:`ScmRun` are equal.
@@ -26,14 +25,16 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
     if allow_unordered or not check_ts_names:
         df1_index = np.argsort(left.meta.index)
         df2_index = np.argsort(right.meta.index)
+
+        # Checks that all the timeseries are named the same
         if check_ts_names:
             pdt.assert_frame_equal(left.meta, right.meta, check_like=True)
+            npt.assert_allclose(left.values[df1_index], right.values[df2_index])
         else:
-            assert (  # nosec
-                left.meta.values[df1_index]
-                == right.meta[left.meta.columns].values[df2_index]
-            ).all()
-        npt.assert_allclose(left.values[df1_index], right.values[df2_index])
+            # names maybe different, but assume order is the same
+            left_sorted = left.timeseries().sort_index()
+            right_sorted = right.timeseries(left.meta.columns).sort_index()
+            pdt.assert_frame_equal(left_sorted, right_sorted)
     else:
         pdt.assert_frame_equal(left.meta, right.meta)
         npt.assert_allclose(left.values, right.values)
