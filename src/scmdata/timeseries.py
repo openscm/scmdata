@@ -47,13 +47,18 @@ class TimeSeries:
         Parameters
         ----------
         data : array_like
-            Data to be held by the :obj:`TimeSeries` instance. ``data`` must be one-dimensional. If ``data`` is an :obj:`xr.DataArray` instance, its single co-ordinate must be ``"time"``. If ``data`` is not an :obj:`xr.DataArray`, then ``time`` must also be supplied.
+            Data to be held by the :obj:`TimeSeries` instance. ``data`` must
+            be one-dimensional. If ``data`` is an :obj:`xr.DataArray`
+            instance, its single dimension must be ``"time"``. If ``data``
+            is not an :obj:`xr.DataArray`, then ``time`` must also be supplied.
 
         time : array_like or None
-            Only used if ``data`` is not an :obj:`xr.DataArray`. These become the time axis of ``self._data``.
+            Only used if ``data`` is not an :obj:`xr.DataArray`. These become
+            the time axis of ``self._data``.
 
         **kwargs
-            Only used if `data`` is not an :obj:`xr.DataArray`. Passed to the :obj:`xr.DataArray` constructor.
+            Only used if `data`` is not an :obj:`xr.DataArray`. Passed to the
+            :obj:`xr.DataArray` constructor.
 
         Raises
         ------
@@ -64,25 +69,56 @@ class TimeSeries:
             ``data`` is an :obj:`xr.DataArray` and ``time is not None``
 
         ValueError
-            ``data`` is an :obj:`xr.DataArray` and its co-ordinate is not named ``"time"``.
+            ``data`` is an :obj:`xr.DataArray` and its dimension is not named
+            ``"time"``.
 
         TypeError
             ``data`` is not an :obj:`xr.DataArray` and ``time is None``
+
+        ValueError
+            ``data`` is not an :obj:`xr.DataArray` and ``coords`` is supplied
+            via ``**kwargs``
         """
         values = np.asarray(data)
 
         if values.ndim != 1:
-            raise ValueError("TimeSeries must be 1d")
+            raise ValueError("data must be 1d")
 
         if isinstance(data, xr.DataArray):
+            if time is not None:
+                raise TypeError(
+                    "If data is an :obj:`xr.DataArray` instance, time must be "
+                    "`None`"
+                )
+
+            if data.dims != ("time",):
+                raise ValueError(
+                    "If data is an :obj:`xr.DataArray` instance, its only "
+                    "dimension must be named `'time'`"
+                )
             self._data = data
 
         else:
+            if time is None:
+                raise TypeError(
+                    "If data is not an :obj:`xr.DataArray` instance, `time` "
+                    "must not be `None`"
+                )
+
+            if "coords" in kwargs:
+                raise ValueError(
+                    "If ``data`` is not an :obj:`xr.DataArray`, `coords` must "
+                    "not be supplied via `kwargs` because it will be "
+                    "automatically filled with the value of `time`."
+                )
+
             # Auto incrementing name
             if "name" not in kwargs:
                 kwargs["name"] = get_default_name()
 
-            self._data = xr.DataArray(values, **kwargs)
+            self._data = xr.DataArray(
+                values, coords=[("time", list(time))], **kwargs
+            )
 
     def __repr__(self):
         return self._data.__repr__()
