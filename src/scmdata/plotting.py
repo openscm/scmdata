@@ -1,14 +1,14 @@
 """
 Plotting helpers for DataFrames
 
-See the example notebook 'plotting-with-seaborn.ipynb' for examples on how to use
+See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 """
 
 import warnings
 
 import seaborn as sns
 
-CMIP6_SCENARIO_COLOURS = {
+RCMIP_SCENARIO_COLOURS = {
     "historical": "black",
     "ssp119": "#1e9583",
     "ssp126": "#1d3354",
@@ -30,8 +30,7 @@ def long_data(self):
     Returns
     -------
     :obj:`pd.DataFrame`
-            :obj:`pd.DataFrame` containing the data in 'long form' (i.e.
-            on observation per row).
+        :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation per row).
     """
     out = self.timeseries().stack()
     out.name = "value"
