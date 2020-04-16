@@ -6,6 +6,7 @@ See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 
 import warnings
 
+import numpy as np
 import seaborn as sns
 
 RCMIP_SCENARIO_COLOURS = {
@@ -59,8 +60,8 @@ def lineplot(self, **kwargs):  # pragma: no cover
     kwargs.setdefault("x", "time")
     kwargs.setdefault("y", "value")
     kwargs.setdefault("hue", "scenario")
-    kwargs.setdefault("ci", "std")
-    kwargs.setdefault("estimator", "median")
+    kwargs.setdefault("ci", "sd")
+    kwargs.setdefault("estimator", np.median)
 
     ax = sns.lineplot(data=plt_df, **kwargs)
 
