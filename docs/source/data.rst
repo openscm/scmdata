@@ -11,7 +11,7 @@ Other operations include grouping, setting and (basic) plotting.
 The complete set of manipulation features can be found in the documentation pages of :class:`scmdata.ScmRun <scmdata.run.ScmRun>`.
 
 :class:`scmdata.ScmRun` has two key properties and one key method, which allow the user to quickly access their data in more standard formats.
-The first property, :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>`, returns all of the timeseries as a single :obj:`numpy.ndarray` without any metadata or indication of the time axis [TODO check if this needs to be tested, add docs about which axis is the time axis in the returned numpy array].
+The first property, :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>`, returns all of the timeseries as a single :obj:`numpy.ndarray` without any metadata or indication of the time axis.
 The second property, :attr:`scmdata.ScmRun.meta <scmdata.run.ScmRun.meta>`, returns all of the timeseries' metadata as a single :obj:`pandas.DataFrame`.
 This allows users to quickly have an overview of the timeseries held by :class:`scmdata.ScmRun` without having to also view the data itself at the same time.
 The key method is :meth:`scmdata.ScmRun.timeseries() <scmdata.run.ScmRun.timeseries>`.

@@ -373,6 +373,8 @@ def test_tail(test_scm_run):
 
 
 def test_values(test_scm_run):
+    # implicitly checks that `.values` returns the data with each row being a
+    # timeseries and each column being a timepoint
     npt.assert_array_equal(test_scm_run.values, test_scm_run.timeseries().values)
 
 

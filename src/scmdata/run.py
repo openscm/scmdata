@@ -582,6 +582,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     def values(self) -> np.ndarray:
         """
         Timeseries values without metadata
+
+        The timeseries are returned such that each row is a different
+        timeseries being a row and each column is a different time (although
+        no time information is included as a plain :obj:`np.ndarray` is
+        returned).
         """
         return np.asarray([ts._data.values for ts in self._ts])
 
