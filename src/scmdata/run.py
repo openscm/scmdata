@@ -30,6 +30,7 @@ from .filters import (
     years_match,
 )
 from .groupby import RunGroupBy
+from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .pyam_compat import Axes, IamDataFrame, LongDatetimeIamDataFrame
 from .time import TimePoints
@@ -1499,16 +1500,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         return LongDatetimeIamDataFrame(self.timeseries())
 
-    def to_csv(self, path: str, **kwargs: Any) -> None:
+    def to_csv(self, fname: str, **kwargs: Any) -> None:
         """
         Write timeseries data to a csv file
 
         Parameters
         ----------
-        path
+        fname
             Path to write the file into
         """
-        self.to_iamdataframe().to_csv(path, **kwargs)
+        self.to_iamdataframe().to_csv(fname, **kwargs)
 
     def line_plot(self, x: str = "time", y: str = "value", **kwargs: Any) -> Axes:
         """
@@ -1732,3 +1733,4 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
 
 
 inject_binary_ops(ScmRun)
+inject_nc_methods(ScmRun)
