@@ -28,7 +28,14 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.8",
 ]
 
-REQUIREMENTS = ["cftime", "numpy", "openscm-units", "pandas", "python-dateutil", "xarray"]
+REQUIREMENTS = [
+    "cftime",
+    "numpy",
+    "openscm-units",
+    "pandas",
+    "python-dateutil",
+    "xarray",
+]
 REQUIREMENTS_PYAM = ["pyam-iamc>=0.3.0"]
 REQUIREMENTS_TESTS = [
     "codecov",
