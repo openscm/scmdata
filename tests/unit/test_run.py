@@ -338,7 +338,7 @@ def test_get_item(test_scm_run):
 
 def test_get_item_not_in_meta(test_scm_run):
     dud_key = 0
-    error_msg = re.escape("I don't know what to do with key: {}".format(dud_key))
+    error_msg = re.escape("[{}] is not in metadata".format(dud_key))
     with pytest.raises(KeyError, match=error_msg):
         test_scm_run[dud_key]
 
@@ -1527,7 +1527,6 @@ def test_convert_unit_dimensionality(test_scm_run):
         test_scm_run.convert_unit("kelvin")
 
 
-@pytest.mark.xfail
 def test_convert_unit_inplace(test_scm_run):
     units = test_scm_run["unit"].copy()
 

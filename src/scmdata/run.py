@@ -450,7 +450,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if set(_key_check).issubset(self.meta_attributes):
             return self._meta_column(key)
 
-        raise KeyError("I don't know what to do with key: {}".format(key))
+        raise KeyError("[{}] is not in metadata".format(key))
 
     def __setitem__(  # pylint: disable=inconsistent-return-statements
         self, key: Any, value: Any
@@ -1325,7 +1325,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             group = tuple(group[0])
         return RunGroupBy(self, group)
 
-    def convert_unit(self, unit: str, context: Optional[str] = None, **kwargs: Any):
+    def convert_unit(self, unit: str, context: Optional[str] = None, inplace: bool = False, **kwargs: Any):
         """
         Convert the units of a selection of timeseries.
 
@@ -1342,6 +1342,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             CO2-equivalent calculations. If ``None``, no metric will be applied and
             CO2-equivalent calculations will raise :class:`DimensionalityError`.
 
+        inplace
+            If True, apply the conversion inplace and return None
+
         **kwargs
             Extra arguments which are passed to :func:`~ScmRun.filter` to
             limit the timeseries which are attempted to be converted. Defaults to
@@ -1354,7 +1357,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             with the converted units.
         """
         # pylint: disable=protected-access
-        ret = self.copy()
+        if inplace:
+            ret = self
+        else:
+            ret = self.copy()
 
         if "unit_context" not in ret.meta_attributes:
             ret["unit_context"] = None
@@ -1373,7 +1379,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         ret = to_convert.groupby("unit").map(apply_units)
 
-        return df_append([ret, to_not_convert])
+        ret = df_append([ret, to_not_convert], inplace=inplace)
+        if not inplace:
+            return ret
 
     def relative_to_ref_period_mean(
         self, append_str: Optional[str] = None, **kwargs: Any
