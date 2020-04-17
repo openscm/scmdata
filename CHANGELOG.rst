@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#43 <https://github.com/openscm/scmdata/pull/43>`_) Fix minor bugs in netCDF handling and address minor code coverage issues
 - (`#41 <https://github.com/openscm/scmdata/pull/41>`_) Update documentation of the data model. Additionally:
 
     - makes ``.time_points`` atttributes consistently return ``scmdata.time.TimePoints`` instances
