@@ -7,7 +7,7 @@ try:
     import netCDF4 as nc
 
     has_netcdf = True
-except ImportError:
+except ImportError:  # pragma: no cover
     nc = None
     has_netcdf = False
 
@@ -74,6 +74,7 @@ def _get_nc_type(np_type):
         }
     elif np_type == float:
         return {"datatype": DEFAULT_FLOAT, "fill_value": np.nan}
+
     return {"datatype": str, "fill_value": None}
 
 
@@ -105,7 +106,8 @@ def _write_nc(ds, df, dimensions, extras):
     # Write any extra variables
     for e in extras:
         metadata = df.meta[[e, *dimensions]].drop_duplicates()
-        if metadata[e].duplicated().any():
+
+        if metadata[dimensions].duplicated().any():
             raise ValueError(
                 "metadata for {} is not unique for requested dimensions".format(e)
             )
@@ -119,6 +121,7 @@ def _write_nc(ds, df, dimensions, extras):
         )
         if "fill_value" in type_info:
             data_to_write.fill(type_info["fill_value"])
+
         df_values = metadata[e].values
         for i, (_, m) in enumerate(metadata.iterrows()):
             idx = [_get_idx(dims[d], m[d]) for d in dimensions]
@@ -206,12 +209,9 @@ def _read_nc(cls, ds):
             continue
 
         # Check if metadata column
-        try:
-            if var.getncattr("_is_metadata"):
-                extra_cols.append(var_name)
-                continue
-        except AttributeError:
-            pass
+        if var.getncattr("_is_metadata"):
+            extra_cols.append(var_name)
+            continue
 
         name = _nc_to_var(var_name)
         _read_var(name, var)
@@ -269,10 +269,12 @@ def run_to_nc(df, fname, dimensions=("region",), extras=()):
     ----------
     fname: str
         Path to write the file into
+
     dimensions: iterable of str
         Dimensions to include in the netCDF file. The order of the dimensions in the netCDF file will be the same
         as the order provided.
         The time dimension is always included as the last dimension, even if not provided.
+
     extras : iterable of tuples or str
         Metadata attributes to write as variables in the netCDF file
     """
@@ -306,6 +308,7 @@ def nc_to_run(cls, fname):
             return _read_nc(cls, ds)
         except Exception:
             logger.exception("Failed reading netcdf file: {}".format(fname))
+            raise
 
 
 def inject_nc_methods(cls):

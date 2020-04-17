@@ -1,5 +1,7 @@
+import logging
 import tempfile
 from os.path import exists, join
+from unittest.mock import patch
 
 import netCDF4 as nc
 import numpy.testing as npt
@@ -42,10 +44,11 @@ def test_run_to_nc(scm_data):
         )
 
 
-def test_nc_to_run(scm_data):
+@pytest.mark.parametrize("dimensions", (("scenario",), ("scenario", "time")))
+def test_nc_to_run(scm_data, dimensions):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        run_to_nc(scm_data, out_fname, dimensions=("scenario",))
+        run_to_nc(scm_data, out_fname, dimensions=dimensions)
 
         assert exists(out_fname)
 
@@ -55,13 +58,40 @@ def test_nc_to_run(scm_data):
         assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
 
 
-def test_run_to_nc_with_extras(scm_data):
+def test_nc_to_run_non_unique_for_dimension(scm_data):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+
+        error_msg = "region dimension is not unique for variable Primary Energy"
+        with pytest.raises(ValueError, match=error_msg):
+            run_to_nc(scm_data, out_fname, dimensions=("region",))
+
+
+def test_nc_to_run_non_unique_meta(scm_data):
+    scm_data.set_meta(["b_model", "a_model", "a_model"], "climate_model")
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+
+        error_msg = (
+            "metadata for climate_model is not unique for variable Primary Energy"
+        )
+        with pytest.raises(ValueError, match=error_msg):
+            run_to_nc(scm_data, out_fname, dimensions=("scenario",))
+
+
+@pytest.mark.parametrize("dtype", (int, float, str))
+def test_run_to_nc_with_extras(scm_data, dtype):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
         # make an extra column which maps 1:1 with scenario
         unique_scenarios = scm_data["scenario"].unique().tolist()
-        run_id = scm_data["scenario"].apply(lambda x: unique_scenarios.index(x))
+        run_id = (
+            scm_data["scenario"]
+            .apply(lambda x: unique_scenarios.index(x))
+            .astype(dtype)
+        )
 
         scm_data.set_meta(run_id, "run_id")
         run_to_nc(scm_data, out_fname, dimensions=("scenario",), extras=("run_id",))
@@ -78,7 +108,8 @@ def test_run_to_nc_with_extras(scm_data):
 
         assert ds.variables["run_id"]._is_metadata
         for i, run_id in enumerate(ds.variables["run_id"]):
-            assert run_id == unique_scenarios.index(ds.variables["scenario"][i])
+            exp_val = dtype(unique_scenarios.index(ds.variables["scenario"][i]))
+            assert run_id == exp_val
 
         npt.assert_allclose(
             ds.variables["primary_energy"][0, :],
@@ -136,3 +167,31 @@ def test_nc_methods(scm_data):
 
         assert isinstance(df, scm_data.__class__)
         assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
+
+
+@patch("scmdata.netcdf.has_netcdf", False)
+def test_no_netcdf(scm_data):
+    with pytest.raises(
+        ImportError, match="netcdf4 is not installed. Run 'pip install netcdf4'"
+    ):
+        run_to_nc(scm_data.__class__, "ignored")
+
+    with pytest.raises(
+        ImportError, match="netcdf4 is not installed. Run 'pip install netcdf4'"
+    ):
+        nc_to_run(scm_data, "ignored")
+
+
+def test_nc_read_failure(scm_data, test_data_path, caplog):
+    test_fname = join(
+        test_data_path, "netcdf-scm_tas_Amon_bcc-csm1-1_rcp26_r1i1p1_209001-211012.nc"
+    )
+
+    with pytest.raises(Exception):
+        nc_to_run(scm_data.__class__, test_fname)
+
+    assert caplog.record_tuples[0][0] == "scmdata.netcdf"
+    assert caplog.record_tuples[0][1] == logging.ERROR
+    assert caplog.record_tuples[0][2] == "Failed reading netcdf file: {}".format(
+        test_fname
+    )
