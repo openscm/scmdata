@@ -94,6 +94,9 @@ def _write_nc(ds, df, dimensions, extras):
     dims = {}
     for d in dimensions:
         vals = sorted(df.meta[d].unique())
+        if not all([isinstance(v, str) for v in vals]) and np.isnan(vals).any():
+            raise AssertionError("nan in dimension: `{}`".format(d))
+
         ds.createDimension(d, len(vals))
         dtype = type(vals[0])
         ds.createVariable(d, dtype, d)
@@ -126,6 +129,7 @@ def _write_nc(ds, df, dimensions, extras):
         for i, (_, m) in enumerate(metadata.iterrows()):
             idx = [_get_idx(dims[d], m[d]) for d in dimensions]
             data_to_write[tuple(idx)] = df_values[i]
+
         ds.variables[e][:] = data_to_write
 
     for var_df in df.groupby("variable"):
@@ -133,12 +137,10 @@ def _write_nc(ds, df, dimensions, extras):
         meta = var_df.meta.copy().drop("variable", axis=1)
 
         # Check that the varying dimensions are all unique
-        # This doesn't work for more than 1 dimension
-        for d in dimensions:
-            if meta[d].duplicated().any():
-                raise ValueError(
-                    "{} dimension is not unique for variable {}".format(d, v)
-                )
+        if meta[dimensions].duplicated().any():
+            raise ValueError(
+                "{} dimensions are not unique for variable {}".format(dimensions, v)
+            )
 
         # Check that the other meta are consistent
         var_attrs = {"_is_metadata": 0}
