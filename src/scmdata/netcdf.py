@@ -17,7 +17,8 @@ from logging import getLogger
 
 import numpy as np
 
-from scmdata import __version__
+from . import __version__
+
 
 logger = getLogger(__name__)
 
@@ -102,8 +103,8 @@ def _write_nc(ds, df, dimensions, extras):
 
     # Write any extra variables
     for e in extras:
-        metadata = df.meta[[e, *dimensions]]
-        if metadata.duplicated().any():
+        metadata = df.meta[[e, *dimensions]].drop_duplicates()
+        if metadata[e].duplicated().any():
             raise ValueError(
                 "metadata for {} is not unique for requested dimensions".format(e)
             )
@@ -218,6 +219,14 @@ def _read_nc(cls, ds):
 
     # Parse any extra metadata columns
     # Requires 1 filter per item
+
+    # stupid dataframes and their returning of copies
+    from .dataframe import ScmDataFrame
+
+    is_scmdf = isinstance(df, ScmDataFrame)
+    if is_scmdf:
+        df = df.timeseries().reset_index()
+
     for col in extra_cols:
         var = ds.variables[col]
 
@@ -233,7 +242,18 @@ def _read_nc(cls, ds):
                         var.dimensions, meta_at_coord[(slice(None),) + it.multi_index]
                     )
                 }
-                df.filter(**meta_vals)[col] = values[it.multi_index]
+                if is_scmdf:
+                    for c, v in meta_vals.items():
+                        df.loc[df[c] == v, col] = values[it.multi_index]
+
+                else:
+                    df.filter(**meta_vals)[col] = values[it.multi_index]
+
+        if is_scmdf:
+            df.loc[:, col] = df.loc[:, col].astype(values[0].dtype)
+
+    if is_scmdf:
+        df = ScmDataFrame(df)
 
     return df
 
