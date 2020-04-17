@@ -44,7 +44,13 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
             left_sorted = left.timeseries().sort_index()
             right_ts = right.timeseries()
             # check metadata columns are same set
-            assert set(left_sorted.index.names) == set(right_ts.index.names)
+            if set(left_sorted.index.names) != set(right_ts.index.names):
+                raise AssertionError(
+                    "{} != {}".format(
+                        set(left_sorted.index.names), set(right_ts.index.names)
+                    )
+                )
+
             right_sorted = right.timeseries(left_sorted.index.names).sort_index()
             # this checks both the index (i.e. sorted meta) and values are the same
             pdt.assert_frame_equal(left_sorted, right_sorted)

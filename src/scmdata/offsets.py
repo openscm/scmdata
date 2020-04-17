@@ -62,7 +62,12 @@ def apply_dt(func):
 
 def _long_class_factory(OffsetClass):
     class LongOffsetClass(OffsetClass):
-        def _rollforward(self, dt: datetime.datetime) -> datetime.datetime:
+
+        # these two methods are tested in tests/unit/test_offsets.py but code coverage
+        # gets confused by the factory class hence the `pragm: no cover`
+        def _rollforward(  # pragma: no cover
+            self, dt: datetime.datetime
+        ) -> datetime.datetime:
             """
             Roll provided date forward to next offset, only if not on offset.
             """
@@ -71,7 +76,9 @@ def _long_class_factory(OffsetClass):
                 dt = dt + type(self)(1, normalize=self.normalize, **self.kwds)
             return as_datetime(dt)  # type: ignore # pandas doesn't have type annotations
 
-        def _rollback(self, dt: datetime.datetime) -> datetime.datetime:
+        def _rollback(  # pragma: no cover
+            self, dt: datetime.datetime
+        ) -> datetime.datetime:
             """
             Roll provided date backward to previous offset, only if not on offset.
             """

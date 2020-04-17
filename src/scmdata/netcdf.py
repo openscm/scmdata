@@ -19,7 +19,6 @@ import numpy as np
 
 from . import __version__
 
-
 logger = getLogger(__name__)
 
 _TO_NC_DOCSTRING = """\
@@ -62,7 +61,9 @@ def _nc_to_var(var):
 
 
 def _get_idx(vals, v):
-    assert v in vals
+    if v not in vals:
+        raise AssertionError("{} is not in {}".format(v, vals))
+
     return np.where(vals == v)[0][0]
 
 

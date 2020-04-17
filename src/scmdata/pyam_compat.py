@@ -46,7 +46,7 @@ try:
                 raise ValueError(error_msg)
 
 
-except ImportError:
+except ImportError:  # pragma: no cover
     # mypy can't work out try-except block sets typing
     IamDataFrame = None
     LongDatetimeIamDataFrame = None  # type: ignore
