@@ -132,7 +132,9 @@ def test_nc_to_run_4d(scm_data):
 
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        run_to_nc(scm_data, out_fname, dimensions=("scenario", "climate_model", "run_id"))
+        run_to_nc(
+            scm_data, out_fname, dimensions=("scenario", "climate_model", "run_id")
+        )
 
         assert exists(out_fname)
 
