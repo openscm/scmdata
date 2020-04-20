@@ -273,12 +273,12 @@ def run_to_nc(df, fname, dimensions=("region",), extras=()):
         Path to write the file into
 
     dimensions: iterable of str
-        Dimensions to include in the netCDF file. The order of the dimensions in the netCDF file will be the same
-        as the order provided.
-        The time dimension is always included as the last dimension, even if not provided.
+        Dimensions to include in the netCDF file. The order of the dimensions
+        in the netCDF file will be the same as the order provided. The time
+        dimension is always included as the last dimension, even if not provided.
 
     extras : iterable of tuples or str
-        Metadata attributes to write as variables in the netCDF file
+        Metadata attributes to write as variables in the netCDF file.
     """
     if not has_netcdf:
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
