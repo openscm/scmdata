@@ -7,6 +7,7 @@ See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 import warnings
 
 import numpy as np
+
 try:
     import seaborn as sns
 
