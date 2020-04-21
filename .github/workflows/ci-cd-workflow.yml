@@ -151,7 +151,7 @@ jobs:
     - name: Install package from test PyPI
       run: |
         pip install --upgrade pip
-        pip install pandas pint
+        pip install cftime pandas pint
         pip install -i https://testpypi.python.org/pypi scmdata --no-dependencies --pre
     - name: Test installation
       run: |

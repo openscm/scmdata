@@ -81,7 +81,7 @@ test-testpypi-install: $(VENV_DIR)  ## test whether installing from test PyPI wo
 	python3 -m venv $(TEMPVENV)
 	$(TEMPVENV)/bin/pip install pip --upgrade
 	# Install dependencies not on testpypi registry
-	$(TEMPVENV)/bin/pip install pandas
+	$(TEMPVENV)/bin/pip install cftime pandas pint
 	# Install pymagicc without dependencies.
 	$(TEMPVENV)/bin/pip install \
 		-i https://testpypi.python.org/pypi scmdata \

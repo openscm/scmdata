@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.4.2
+------
+
 - (`#45 <https://github.com/openscm/scmdata/pull/45>`_) Make installing seaborn optional
 
 v0.4.1
@@ -15,6 +18,7 @@ v0.4.1
 
     - makes ``.time_points`` atttributes consistently return ``scmdata.time.TimePoints`` instances
     - ensures ``.meta`` is used consistently throughout the code base (removing ``.metadata``)
+
 - (`#33 <https://github.com/openscm/scmdata/pull/33>`_) Remove dependency on `pyam <https://github.com/IAMconsortium/pyam>`_. Plotting is done with `seaborn <https://github.com/mwaskom/seaborn>`_ instead.
 - (`#34 <https://github.com/openscm/scmdata/pull/34>`_) Allow the serialization/deserialization of ``scmdata.run.ScmRun`` and ``scmdata.ScmDataFrame`` as netCDF4 files.
 - (`#30 <https://github.com/lewisjared/scmdata/pull/30>`_) Swap to using `openscm-units <https://github.com/openscm/openscm-units>`_ for unit handling (hence remove much of the ``scmdata.units`` module)
