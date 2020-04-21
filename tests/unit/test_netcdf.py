@@ -1,10 +1,13 @@
 import logging
+import re
 import tempfile
 from os.path import exists, join
 from unittest.mock import patch
 
 import netCDF4 as nc
+import numpy as np
 import numpy.testing as npt
+import pandas as pd
 import pytest
 
 from scmdata.netcdf import nc_to_run, run_to_nc
@@ -44,6 +47,54 @@ def test_run_to_nc(scm_data):
         )
 
 
+def test_run_to_nc_4d(scm_data, tmpdir):
+    df = scm_data.timeseries().reset_index()
+    df["climate_model"] = "base_m"
+    df["run_id"] = 1
+
+    big_df = [df]
+    for climate_model in ["abc_m", "def_m", "ghi_m"]:
+        for run_id in range(10):
+            new_df = df.copy()
+            new_df["run_id"] = run_id
+            new_df["climate_model"] = climate_model
+
+            big_df.append(new_df)
+
+    scm_data = scm_data.__class__(pd.concat(big_df).reset_index(drop=True))
+
+    out_fname = join(tmpdir, "out.nc")
+    run_to_nc(scm_data, out_fname, dimensions=("scenario", "climate_model", "run_id"))
+
+    assert exists(out_fname)
+
+    ds = nc.Dataset(out_fname)
+
+    assert ds.dimensions["time"].size == len(scm_data.time_points)
+    assert ds.dimensions["scenario"].size == 2
+    assert ds.dimensions["climate_model"].size == 4
+    assert ds.dimensions["run_id"].size == 10
+
+    assert ds.variables["scenario"][0] == "a_scenario"
+    assert ds.variables["scenario"][1] == "a_scenario2"
+    assert ds.variables["climate_model"][0] == "abc_m"
+    assert ds.variables["climate_model"][1] == "base_m"
+    assert ds.variables["climate_model"][2] == "def_m"
+    assert ds.variables["climate_model"][3] == "ghi_m"
+    npt.assert_array_equal(ds.variables["run_id"][:], range(10))
+
+    assert ds.variables["primary_energy"].shape == (2, 4, 10, 3)
+    assert ds.variables["primary_energy__coal"].shape == (2, 4, 10, 3)
+
+
+def test_run_to_nc_nan_dimension_error(scm_data, tmpdir):
+    scm_data.set_meta(np.nan, "run_id")
+
+    out_fname = join(tmpdir, "out.nc")
+    with pytest.raises(AssertionError, match="nan in dimension: `run_id`"):
+        run_to_nc(scm_data, out_fname, dimensions=("scenario", "run_id"))
+
+
 @pytest.mark.parametrize("dimensions", (("scenario",), ("scenario", "time")))
 def test_nc_to_run(scm_data, dimensions):
     with tempfile.TemporaryDirectory() as tempdir:
@@ -58,12 +109,47 @@ def test_nc_to_run(scm_data, dimensions):
         assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
 
 
+def test_nc_to_run_4d(scm_data):
+    df = scm_data.timeseries()
+    val_cols = df.columns.tolist()
+    df = df.reset_index()
+
+    df["climate_model"] = "base_m"
+    df["run_id"] = 1
+    df.loc[:, val_cols] = np.random.rand(df.shape[0], len(val_cols))
+
+    big_df = [df]
+    for climate_model in ["abc_m", "def_m", "ghi_m"]:
+        for run_id in range(10):
+            new_df = df.copy()
+            new_df["run_id"] = run_id
+            new_df["climate_model"] = climate_model
+            new_df.loc[:, val_cols] = np.random.rand(df.shape[0], len(val_cols))
+
+            big_df.append(new_df)
+
+    scm_data = scm_data.__class__(pd.concat(big_df).reset_index(drop=True))
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        run_to_nc(
+            scm_data, out_fname, dimensions=("scenario", "climate_model", "run_id")
+        )
+
+        assert exists(out_fname)
+
+        df = nc_to_run(scm_data.__class__, out_fname)
+        assert isinstance(df, scm_data.__class__)
+
+        assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
+
+
 def test_nc_to_run_non_unique_for_dimension(scm_data):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
-        error_msg = "region dimension is not unique for variable Primary Energy"
-        with pytest.raises(ValueError, match=error_msg):
+        error_msg = "['region'] dimensions are not unique for variable Primary Energy"
+        with pytest.raises(ValueError, match=re.escape(error_msg)):
             run_to_nc(scm_data, out_fname, dimensions=("region",))
 
 

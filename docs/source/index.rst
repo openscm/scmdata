@@ -29,6 +29,7 @@ SCMData
    scmdata.dataframe
    scmdata.filters
    scmdata.groupby
+   scmdata.netcdf
    scmdata.offsets
    scmdata.plotting
    scmdata.run
