@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#45 <https://github.com/openscm/scmdata/pull/45>`_) Make installing seaborn optional
+
 v0.4.1
 ------
 
