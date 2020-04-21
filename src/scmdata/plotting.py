@@ -7,7 +7,14 @@ See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 import warnings
 
 import numpy as np
-import seaborn as sns
+try:
+    import seaborn as sns
+
+    has_seaborn = True
+except ImportError:  # pragma: no cover
+    sns = None
+    has_seaborn = False
+
 
 RCMIP_SCENARIO_COLOURS = {
     "historical": "black",
@@ -55,6 +62,9 @@ def lineplot(self, **kwargs):  # pragma: no cover
     :obj:`matplotlib.axes._subplots.AxesSubplot`
         Output of call to ``seaborn.lineplot``
     """
+    if not has_seaborn:
+        raise ImportError("seaborn is not installed. Run 'pip install seaborn'")
+
     plt_df = self.long_data()
     kwargs.setdefault("x", "time")
     kwargs.setdefault("y", "value")

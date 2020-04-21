@@ -1,3 +1,8 @@
+from unittest.mock import patch
+
+import pytest
+
+
 def test_plotting_injected_methods(test_scm_df, test_scm_run):
     for obj in [test_scm_run, test_scm_df]:
         assert hasattr(obj, "line_plot")
@@ -16,3 +21,11 @@ def test_plotting_long_data(test_scm_run):
     ].value.squeeze()
 
     assert exp == obs
+
+
+@patch("scmdata.plotting.has_seaborn", False)
+def test_no_seaborn(test_scm_run):
+    with pytest.raises(
+        ImportError, match="seaborn is not installed. Run 'pip install seaborn'"
+    ):
+        test_scm_run.lineplot()
