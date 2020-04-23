@@ -4,6 +4,11 @@ Changelog
 master
 ------
 
+v0.4.3
+------
+
+- (`#46 <https://github.com/openscm/scmdata/pull/46>`_) Add test of conda installation
+
 v0.4.2
 ------
 

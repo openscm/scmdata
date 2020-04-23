@@ -7,9 +7,13 @@ SCMData
 | Repository health |    |CI CD|     |  |Coverage|  |
 +-------------------+----------------+--------------+
 
-+-----------------+------------------+----------------+------------------+
-| Latest releases |  |PyPI Install|  |     |PyPI|     |  |PyPI Version|  |
-+-----------------+------------------+----------------+------------------+
++------+------------------+----------------+------------------+
+| Pypi |  |PyPI Install|  |     |PyPI|     |  |PyPI Version|  |
++------+------------------+----------------+------------------+
+
++-------+-----------------+-------------------+-----------------+
+| Conda | |conda install| | |conda platforms| | |conda version| |
++-------+-----------------+-------------------+-----------------+
 
 +-----------------+----------------+---------------+-----------+
 |   Other info    | |Contributors| | |Last Commit| | |License| |
@@ -25,6 +29,11 @@ SCMData
     :target: https://pypi.org/project/scmdata/
 .. |PyPI Version| image:: https://img.shields.io/pypi/v/scmdata.svg
     :target: https://pypi.org/project/scmdata/
+.. |conda install| image:: https://github.com/openscm/scmdata/workflows/Test%20conda%20install/badge.svg
+    :target: https://github.com/openscm/scmdata/actions?query=workflow%3A%22Test+conda+install%22
+.. |conda platforms| image:: https://img.shields.io/conda/pn/conda-forge/scmdata.svg
+    :target: https://anaconda.org/conda-forge/scmdata
+.. |conda version| image:: https://img.shields.io/conda/vn/conda-forge/scmdata.svg
 .. |Contributors| image:: https://img.shields.io/github/contributors/openscm/scmdata.svg
     :target: https://github.com/openscm/scmdata/graphs/contributors
 .. |Last Commit| image:: https://img.shields.io/github/last-commit/openscm/scmdata.svg
