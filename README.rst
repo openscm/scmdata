@@ -1,11 +1,11 @@
-SCMData
+scmdata
 =======
 
 .. sec-begin-links
 
-+-------------------+----------------+--------------+
-| Repository health |    |CI CD|     |  |Coverage|  |
-+-------------------+----------------+--------------+
++-------------------+----------------+--------------+--------+
+| Repository health |    |CI CD|     |  |Coverage|  | |Docs| |
++-------------------+----------------+--------------+--------+
 
 +------+------------------+----------------+------------------+
 | Pypi |  |PyPI Install|  |     |PyPI|     |  |PyPI Version|  |
@@ -23,6 +23,8 @@ SCMData
     :target: https://github.com/openscm/scmdata/actions?query=workflow%3A%22scmdata+CI-CD%22
 .. |Coverage| image:: https://codecov.io/gh/openscm/scmdata/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/openscm/scmdata
+.. |Docs| image:: https://readthedocs.org/projects/scmdata/badge/?version=latest
+    :target: https://scmdata.readthedocs.io/en/latest/?badge=latest
 .. |PyPI Install| image:: https://github.com/openscm/scmdata/workflows/Test%20PyPI%20install/badge.svg
     :target: https://github.com/openscm/scmdata/actions?query=workflow%3A%22Test+PyPI+install%22
 .. |PyPI| image:: https://img.shields.io/pypi/pyversions/scmdata.svg
@@ -43,27 +45,62 @@ SCMData
 
 .. sec-end-links
 
+Brief summary
++++++++++++++
+
+.. sec-begin-long-description
 .. sec-begin-index
 
-SCMData provides some useful data handling routines for dealing with data pertaining to Simple Climate Models (SCMs).
-
-An ``ScmDataFrame`` provides a subset of the functionality provided by `pyam <https://github.com/IAMconsortium/pyam>`_'s IamDataFrame,
-but is adapted to provide better performance for timeseries data. This package was originally part of `openscm <https://github.com/openclimatedata/openscm>`_.
+**scmdata** provides some useful data handling routines for dealing with data related to simple climate models (SCMs aka reduced complexity climate models, RCMs).
+In particular, it provides a high-performance way of handling and serialising (including to netCDF) timeseries data along with attached metadata.
 
 .. sec-end-index
-
-Contributing
-------------
-
-If you'd like to contribute, please make a pull request!
-The pull request templates should ensure that you provide all the necessary information.
 
 .. sec-begin-license
 
 License
 -------
 
-ScmData is free software under a BSD 3-Clause License, see `LICENSE <https://github.com/openscm/license/blob/master/LICENSE>`_.
+**scmdata** is free software under a BSD 3-Clause License, see `LICENSE <https://github.com/openscm/license/blob/master/LICENSE>`_.
 
 .. sec-end-license
+.. sec-end-long-description
+
+.. sec-begin-installation
+
+Installation
+------------
+
+**scmdata** can be installed with pip
+
+.. code:: bash
+
+    pip install scmdata
+
+If you also want to run the example notebooks install additional
+dependencies using
+
+.. code:: bash
+
+    pip install scmdata[notebooks]
+
+OpenSCM-Units can also be installed with conda
+
+.. code:: bash
+
+    conda install -c conda-forge scmdata
+
+.. sec-end-installation
+
+Documentation
+-------------
+
+Documentation can be found at our `documentation pages <https://scmdata.readthedocs.io/en/latest/>`_
+(we are thankful to `Read the Docs <https://readthedocs.org/>`_ for hosting us).
+
+Contributing
+------------
+
+If you'd like to contribute, please make a pull request!
+The pull request templates should ensure that you provide all the necessary information.
 
