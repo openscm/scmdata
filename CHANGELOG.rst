@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#47 <https://github.com/openscm/scmdata/pull/47>`_) Update README and ``setup.py`` to make it easier for new users
+
 v0.4.3
 ------
 
