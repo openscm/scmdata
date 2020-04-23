@@ -53,6 +53,7 @@ Brief summary
 
 **scmdata** provides some useful data handling routines for dealing with data related to simple climate models (SCMs aka reduced complexity climate models, RCMs).
 In particular, it provides a high-performance way of handling and serialising (including to netCDF) timeseries data along with attached metadata.
+**scmdata** was inspired by `pyam <https://github.com/IAMconsortium/pyam>`_ and was originally part of was originally part of the `openscm <https://github.com/openscm/openscm>`_ package.
 
 .. sec-end-index
 
