@@ -38,6 +38,7 @@ REQUIREMENTS = [
 ]
 REQUIREMENTS_OPTIONAL = ["netCDF4", "xlrd"]
 REQUIREMENTS_PLOTTING = ["seaborn"]
+REQUIREMENTS_NOTEBOOKS = ["notebook",] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
 REQUIREMENTS_TESTS = (
     ["codecov", "nbval", "pytest-cov", "pytest>=5.0.0",]
     + REQUIREMENTS_PLOTTING
@@ -67,6 +68,7 @@ REQUIREMENTS_DEV = [
 ]
 
 REQUIREMENTS_EXTRAS = {
+    "notebooks": REQUIREMENTS_NOTEBOOKS,
     "optional": REQUIREMENTS_OPTIONAL,
     "plotting": REQUIREMENTS_PLOTTING,
     "docs": REQUIREMENTS_DOCS,
@@ -85,8 +87,20 @@ PACKAGE_DATA = {"scmdata": ["data/*.csv"]}
 
 README = "README.rst"
 
-with open(README, "r") as readme_file:
-    README_TEXT = readme_file.read()
+# Get the long description from the README file
+with open(README, "r") as f:
+    README_LINES = ["scmdata", "=======", ""]
+    add_line = False
+    for line in f:
+        if line.strip() == ".. sec-begin-long-description":
+            add_line = True
+        elif line.strip() == ".. sec-end-long-description":
+            break
+        elif add_line:
+            README_LINES.append(line.strip())
+
+if len(README_LINES) < 3:
+    raise RuntimeError("Insufficient description given")
 
 
 class ScmData(TestCommand):
@@ -108,7 +122,7 @@ setup(
     name=PACKAGE_NAME,
     version=versioneer.get_version(),
     description=DESCRIPTION,
-    long_description=README_TEXT,
+    long_description="\n".join(README_LINES),
     long_description_content_type="text/x-rst",
     author=", ".join([author[0] for author in AUTHORS]),
     author_email=", ".join([author[1] for author in AUTHORS]),
