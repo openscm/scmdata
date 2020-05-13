@@ -53,11 +53,11 @@ DEFAULT_FLOAT = "f8"
 
 
 def _var_to_nc(var):
-    return var.replace("|", "__").replace(" ", "_").lower()
+    return var.replace("|", "__").replace(" ", "_")
 
 
 def _nc_to_var(var):
-    return var.replace("__", "|").replace("_", " ").title()
+    return var.replace("__", "|").replace("_", " ")
 
 
 def _get_idx(vals, v):
