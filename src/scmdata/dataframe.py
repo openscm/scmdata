@@ -1234,8 +1234,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         return None
 
     def relative_to_ref_period_mean(
-        self, append_str: Optional[str] = None, **kwargs: Any
-    ) -> pd.DataFrame:
+        self, append_str = None, **kwargs
+    ):
         """
         Return the timeseries relative to a given reference period mean.
 
@@ -1243,39 +1243,33 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         Parameters
         ----------
-        append_str
-            String to append to the name of all the variables in the resulting DataFrame
-            to indicate that they are relevant to a given reference period. E.g. `'rel.
-            to 1961-1990'`. If None, this will be autofilled with the keys and ranges of
-            :obj:`kwargs`.
-
         **kwargs
             Arguments to pass to :func:`filter` to determine the data to be included in
             the reference time period. See the docs of :func:`filter` for valid options.
 
         Returns
         -------
-        :obj:`pd.DataFrame`
-            DataFrame containing the timeseries, adjusted to the reference period mean
+        :obj:`ScmDataFrame`
+            New object containing the timeseries, adjusted to the reference period mean.
+            The reference period year bounds are stored in the meta columns
+            ``"reference_period_start_year"`` and ``"reference_period_end_year"``. (If
+            you would like more detailed reference period data to be stored, please raise
+            an issue on our issue tracker (`<github.com/openscm/scmdata/issues>`_)).
         """
         ts = self.timeseries()
         # mypy confused by `inplace` default
+        ref_data = self.filter(**kwargs)
         ref_period_mean = (
-            self.filter(**kwargs).timeseries().mean(axis="columns")  # type: ignore
+            ref_data.timeseries().mean(axis="columns")  # type: ignore
         )
 
         res = ts.sub(ref_period_mean, axis="rows")
         res.reset_index(inplace=True)
 
-        if append_str is None:
-            append_str = ";".join(
-                ["{}: {} - {}".format(k, v[0], v[-1]) for k, v in kwargs.items()]
-            )
-            append_str = "(ref. period {})".format(append_str)
+        res["reference_period_start_year"] = ref_data["year"].min()
+        res["reference_period_end_year"] = ref_data["year"].max()
 
-        res["variable"] = res["variable"].apply(lambda x: "{} {}".format(x, append_str))
-
-        return res.set_index(ts.index.names)
+        return type(self)(res)
 
     def append(
         self,

@@ -316,8 +316,8 @@ def test_scm_df_monthly(data_cls):
 
 
 @pytest.fixture(scope="function")
-def test_processing_scm_df():
-    yield ScmRun(
+def test_processing_scm_df(data_cls):
+    yield data_cls(
         data=np.array([[1, 6.0, 7], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
         columns={
             "model": ["a_iam"],
