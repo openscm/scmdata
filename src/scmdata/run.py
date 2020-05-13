@@ -1404,9 +1404,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if not inplace:
             return ret
 
-    def relative_to_ref_period_mean(
-        self, append_str = None, **kwargs
-    ):
+    def relative_to_ref_period_mean(self, append_str=None, **kwargs):
         """
         Return the timeseries relative to a given reference period mean.
 
@@ -1430,9 +1428,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ts = self.timeseries()
         # mypy confused by `inplace` default
         ref_data = self.filter(**kwargs)
-        ref_period_mean = (
-            ref_data.timeseries().mean(axis="columns")  # type: ignore
-        )
+        ref_period_mean = ref_data.timeseries().mean(axis="columns")  # type: ignore
 
         res = ts.sub(ref_period_mean, axis="rows")
         res.reset_index(inplace=True)
