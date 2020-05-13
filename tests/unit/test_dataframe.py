@@ -892,84 +892,107 @@ def test_process_over_kwargs_error(test_scm_df):
 
 
 @pytest.mark.parametrize(
-    "tfilter,tappend_str,exp_append_str",
+    "tfilter",
     [
-        (
-            {"time": [dt.datetime(y, 1, 1, 0, 0, 0) for y in range(2005, 2011)]},
-            None,
-            "(ref. period time: 2005-01-01 00:00:00 - 2010-01-01 00:00:00)",
-        ),
-        ({"month": [1, 2, 3]}, "(Jan - Mar)", "(Jan - Mar)"),
-        ({"day": [1, 2, 3]}, None, "(ref. period day: 1 - 3)"),
+        ({"time": [dt.datetime(y, 1, 1, 0, 0, 0) for y in range(2005, 2011)]}),
+        ({"year": range(2005, 2011)}),
+        # # dropped month and day support for now...
+        # ({"month": [1, 2, 3]}),
+        # ({"day": [1, 2, 3]}),
     ],
 )
-def test_relative_to_ref_period_mean(
-    test_processing_scm_df, tfilter, tappend_str, exp_append_str
-):
-    exp = pd.DataFrame(
-        [
+def test_relative_to_ref_period_mean(test_processing_scm_df, tfilter):
+    if "year" in tfilter:
+        start_year = tfilter["year"][0]
+        end_year = tfilter["year"][-1]
+
+    elif "time" in tfilter:
+        start_year = tfilter["time"][0].year
+        end_year = tfilter["time"][-1].year
+
+    else:
+        raise NotImplementedError(tfilter)
+
+    exp = type(test_processing_scm_df)(
+        pd.DataFrame(
             [
-                "a_model",
-                "a_iam",
-                "a_scenario",
-                "World",
-                "Primary Energy {}".format(exp_append_str),
-                "EJ/yr",
-                -2.5,
-                2.5,
-                3.5,
+                [
+                    "a_model",
+                    "a_iam",
+                    "a_scenario",
+                    "World",
+                    "Primary Energy",
+                    "EJ/yr",
+                    start_year,
+                    end_year,
+                    -2.5,
+                    2.5,
+                    3.5,
+                ],
+                [
+                    "a_model",
+                    "a_iam",
+                    "a_scenario",
+                    "World",
+                    "Primary Energy|Coal",
+                    "EJ/yr",
+                    start_year,
+                    end_year,
+                    -1.25,
+                    1.25,
+                    0.25,
+                ],
+                [
+                    "a_model",
+                    "a_iam",
+                    "a_scenario2",
+                    "World",
+                    "Primary Energy",
+                    "EJ/yr",
+                    start_year,
+                    end_year,
+                    -2.5,
+                    2.5,
+                    -4.5,
+                ],
+                [
+                    "a_model",
+                    "a_iam",
+                    "a_scenario3",
+                    "World",
+                    "Primary Energy",
+                    "EJ/yr",
+                    start_year,
+                    end_year,
+                    0.5,
+                    -0.5,
+                    4.5,
+                ],
             ],
-            [
-                "a_model",
-                "a_iam",
-                "a_scenario",
-                "World",
-                "Primary Energy|Coal {}".format(exp_append_str),
-                "EJ/yr",
-                -1.25,
-                1.25,
-                0.25,
+            columns=[
+                "climate_model",
+                "model",
+                "scenario",
+                "region",
+                "variable",
+                "unit",
+                "reference_period_start_year",
+                "reference_period_end_year",
+                dt.datetime(2005, 1, 1),
+                dt.datetime(2010, 1, 1),
+                dt.datetime(2015, 6, 12),
             ],
-            [
-                "a_model",
-                "a_iam",
-                "a_scenario2",
-                "World",
-                "Primary Energy {}".format(exp_append_str),
-                "EJ/yr",
-                -2.5,
-                2.5,
-                -4.5,
-            ],
-            [
-                "a_model",
-                "a_iam",
-                "a_scenario3",
-                "World",
-                "Primary Energy {}".format(exp_append_str),
-                "EJ/yr",
-                0.5,
-                -0.5,
-                4.5,
-            ],
-        ],
-        columns=[
-            "climate_model",
-            "model",
-            "scenario",
-            "region",
-            "variable",
-            "unit",
-            dt.datetime(2005, 1, 1),
-            dt.datetime(2010, 1, 1),
-            dt.datetime(2015, 6, 12),
-        ],
+        )
     )
 
-    obs = test_processing_scm_df.relative_to_ref_period_mean(
-        append_str=tappend_str, **tfilter
+    obs = test_processing_scm_df.relative_to_ref_period_mean(**tfilter)
+
+    obs_ts = obs.timeseries()
+    exp_ts = exp.timeseries()
+
+    pd.testing.assert_frame_equal(
+        exp_ts.reorder_levels(obs_ts.index.names), obs_ts, check_like=True
     )
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
 
 
 def test_append(test_scm_df):
