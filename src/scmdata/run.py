@@ -477,7 +477,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     def __repr__(self):
         def _indent(s):
-            lines = ["\t" + l for l in s.split("\n")]
+            lines = ["\t" + line for line in s.split("\n")]
             return "\n".join(lines)
 
         meta_str = _indent(self.meta.__repr__())
