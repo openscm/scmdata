@@ -1412,6 +1412,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Parameters
         ----------
+        append_str
+            Deprecated
+
         **kwargs
             Arguments to pass to :func:`filter` to determine the data to be included in
             the reference time period. See the docs of :func:`filter` for valid options.
@@ -1421,10 +1424,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         :obj:`ScmDataFrame`
             New object containing the timeseries, adjusted to the reference period mean.
             The reference period year bounds are stored in the meta columns
-            ``"reference_period_start_year"`` and ``"reference_period_end_year"``. (If
-            you would like more detailed reference period data to be stored, please raise
-            an issue on our issue tracker (`<github.com/openscm/scmdata/issues>`_)).
+            ``"reference_period_start_year"`` and ``"reference_period_end_year"``.
+
+        Raises
+        ------
+        NotImplementedError
+            ``append_str`` is not ``None``
         """
+        if append_str is not None:
+            raise NotImplementedError("`append_str` is deprecated")
+
         ts = self.timeseries()
         # mypy confused by `inplace` default
         ref_data = self.filter(**kwargs)
