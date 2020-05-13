@@ -47,11 +47,9 @@ def test_run_to_nc(scm_data):
         )
 
 
-@pytest.mark.parametrize("v", [
-    "primary energy",
-    "Primary Energy",
-    "Primary Energy|Coal|Test",
-])
+@pytest.mark.parametrize(
+    "v", ["primary energy", "Primary Energy", "Primary Energy|Coal|Test",]
+)
 def test_run_to_nc_case(scm_data, v):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
@@ -62,6 +60,7 @@ def test_run_to_nc_case(scm_data, v):
         res = nc_to_run(scm_data.__class__, out_fname)
 
         assert res.get_unique_meta("variable", True) == v
+
 
 def test_run_to_nc_4d(scm_data, tmpdir):
     df = scm_data.timeseries().reset_index()
