@@ -30,22 +30,38 @@ def test_run_to_nc(scm_data):
         assert ds.variables["scenario"][1] == "a_scenario2"
 
         npt.assert_allclose(
-            ds.variables["primary_energy"][0, :],
+            ds.variables["Primary_Energy"][0, :],
             scm_data.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
-            ds.variables["primary_energy"][1, :],
+            ds.variables["Primary_Energy"][1, :],
             scm_data.filter(variable="Primary Energy", scenario="a_scenario2").values[
                 0
             ],
         )
         npt.assert_allclose(
-            ds.variables["primary_energy__coal"][0, :],
+            ds.variables["Primary_Energy__Coal"][0, :],
             scm_data.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
         )
 
+
+@pytest.mark.parametrize("v", [
+    "primary energy",
+    "Primary Energy",
+    "Primary Energy|Coal|Test",
+])
+def test_run_to_nc_case(scm_data, v):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        scm_data = scm_data.filter(variable="Primary Energy")
+        scm_data["variable"] = v
+
+        run_to_nc(scm_data, out_fname, dimensions=("scenario",))
+        res = nc_to_run(scm_data.__class__, out_fname)
+
+        assert res.get_unique_meta("variable", True) == v
 
 def test_run_to_nc_4d(scm_data, tmpdir):
     df = scm_data.timeseries().reset_index()
@@ -83,8 +99,8 @@ def test_run_to_nc_4d(scm_data, tmpdir):
     assert ds.variables["climate_model"][3] == "ghi_m"
     npt.assert_array_equal(ds.variables["run_id"][:], range(10))
 
-    assert ds.variables["primary_energy"].shape == (2, 4, 10, 3)
-    assert ds.variables["primary_energy__coal"].shape == (2, 4, 10, 3)
+    assert ds.variables["Primary_Energy"].shape == (2, 4, 10, 3)
+    assert ds.variables["Primary_Energy__Coal"].shape == (2, 4, 10, 3)
 
 
 def test_run_to_nc_nan_dimension_error(scm_data, tmpdir):
@@ -198,23 +214,23 @@ def test_run_to_nc_with_extras(scm_data, dtype):
             assert run_id == exp_val
 
         npt.assert_allclose(
-            ds.variables["primary_energy"][0, :],
+            ds.variables["Primary_Energy"][0, :],
             scm_data.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
-        assert not ds.variables["primary_energy"]._is_metadata
+        assert not ds.variables["Primary_Energy"]._is_metadata
         npt.assert_allclose(
-            ds.variables["primary_energy"][1, :],
+            ds.variables["Primary_Energy"][1, :],
             scm_data.filter(variable="Primary Energy", scenario="a_scenario2").values[
                 0
             ],
         )
         npt.assert_allclose(
-            ds.variables["primary_energy__coal"][0, :],
+            ds.variables["Primary_Energy__Coal"][0, :],
             scm_data.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
         )
-        assert not ds.variables["primary_energy__coal"]._is_metadata
+        assert not ds.variables["Primary_Energy__Coal"]._is_metadata
 
 
 def test_nc_to_run_with_extras(scm_data):
