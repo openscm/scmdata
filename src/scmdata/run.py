@@ -1248,6 +1248,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             return ScmRun(ts_resampled)
 
         if rule == "AC":
+
             def group_annual_mean(x):
                 return x.year
 
