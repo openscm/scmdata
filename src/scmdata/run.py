@@ -510,7 +510,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Notes
         -----
-        If this operation is not performed inplace, the current object is deep copied. Any changes to the :obj:`Timeseries`s of
+        If this operation is not performed inplace, the current object is deep copied. Any changes to the :obj:`Timeseries` of
         the returned object will not be reflected in the previous object
 
         Parameters
