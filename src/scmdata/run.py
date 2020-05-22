@@ -504,6 +504,34 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         return func
 
+    def drop_meta(self, columns: Union[list, str]):
+        """
+        Drops columns out of the Run
+
+        This operates in-place, rather than returning a copy of the :obj:`ScmRun`
+
+        Parameters
+        ----------
+        columns
+            The column or columns to drop
+
+        Raises
+        ------
+        KeyError
+            If any of the columns do not exist in the meta :class:`DataFrame`
+        """
+        if isinstance(columns, str):
+            columns = [columns]
+
+        existing_cols = self.meta_attributes
+        for c in columns:
+            if c not in existing_cols:
+                raise KeyError(c)
+
+        for ts in self._ts:
+            for c in columns:
+                del ts._data.attrs[c]  # pylint: disable=protected-access
+
     @property
     def meta_attributes(self):
         """
@@ -1220,7 +1248,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             return ScmRun(ts_resampled)
 
         if rule == "AC":
-
             def group_annual_mean(x):
                 return x.year
 

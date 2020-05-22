@@ -1805,9 +1805,11 @@ def test_drop_meta(test_scm_run, label):
 
     if type(label) == str:
         assert label not in test_scm_run.meta.columns
+        assert label not in test_scm_run.meta_attributes
     else:
         for l in label:
             assert l not in test_scm_run.meta.columns
+            assert l not in test_scm_run.meta_attributes
 
     assert "variable" in test_scm_run.meta.columns
 
@@ -1817,7 +1819,7 @@ def test_drop_meta(test_scm_run, label):
     ["extra", "other"]
 ])
 def test_drop_meta_missing(test_scm_run, label):
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         test_scm_run.drop_meta(label)
 
     assert "variable" in test_scm_run.meta.columns
@@ -1825,7 +1827,7 @@ def test_drop_meta_missing(test_scm_run, label):
 
 def test_drop_meta_missing_one(test_scm_run):
     label = ["variable", "other"]
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         test_scm_run.drop_meta(label)
 
     assert "variable" in test_scm_run.meta.columns
