@@ -504,7 +504,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         return func
 
-    def drop_meta(self, columns: Union[list, str], inplace : bool = True):
+    def drop_meta(self, columns: Union[list, str], inplace: bool = True):
         """
         Drops columns out of the Run
 
