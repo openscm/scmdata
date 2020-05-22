@@ -1825,3 +1825,14 @@ def test_drop_meta_missing_one(test_scm_run):
         test_scm_run.drop_meta(label)
 
     assert "variable" in test_scm_run.meta.columns
+
+
+def test_drop_meta_not_inplace(test_scm_run):
+    label = "extra"
+
+    test_scm_run[label] = "test"
+
+    res = test_scm_run.drop_meta(label, inplace=False)
+
+    assert label in test_scm_run.meta_attributes
+    assert label not in res.meta_attributes
