@@ -1794,9 +1794,9 @@ def test_drop_meta(test_scm_run, label):
         test_scm_run[label] = 1.0
         assert label in test_scm_run.meta.columns
     else:
-        for l in label:
-            test_scm_run[l] = 1.0
-            assert l in test_scm_run.meta.columns
+        for lbl in label:
+            test_scm_run[lbl] = 1.0
+            assert lbl in test_scm_run.meta.columns
 
     test_scm_run.drop_meta(label)
 
@@ -1804,9 +1804,9 @@ def test_drop_meta(test_scm_run, label):
         assert label not in test_scm_run.meta.columns
         assert label not in test_scm_run.meta_attributes
     else:
-        for l in label:
-            assert l not in test_scm_run.meta.columns
-            assert l not in test_scm_run.meta_attributes
+        for lbl in label:
+            assert lbl not in test_scm_run.meta.columns
+            assert lbl not in test_scm_run.meta_attributes
 
     assert "variable" in test_scm_run.meta.columns
 
