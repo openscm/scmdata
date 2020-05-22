@@ -1836,3 +1836,6 @@ def test_drop_meta_not_inplace(test_scm_run):
 
     assert label in test_scm_run.meta_attributes
     assert label not in res.meta_attributes
+
+    res = res * 2
+    np.testing.assert_almost_equal(res.values, test_scm_run.values * 2)
