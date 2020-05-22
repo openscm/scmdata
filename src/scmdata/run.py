@@ -506,11 +506,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     def drop_meta(self, columns: Union[list, str], inplace: bool = True):
         """
-        Drops columns out of the Run
+        Drop columns out of the Run
 
         Notes
         -----
-
         If this operation is not performed inplace, the current object is deep copied. Any changes to the :obj:`Timeseries`s of
         the returned object will not be reflected in the previous object
 
