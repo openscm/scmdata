@@ -19,8 +19,8 @@ def test_init_df_year_converted_to_datetime(test_pd_df, data_cls):
     res = data_cls(test_pd_df)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
-        res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
+            res["time"].unique()
+            == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
 
 
@@ -83,8 +83,8 @@ def test_init_df_formats(test_pd_run_df, in_format, data_cls):
     res = data_cls(test_init)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
-        res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
+            res["time"].unique()
+            == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
 
     res_df = res.timeseries()
@@ -275,12 +275,12 @@ def test_init_with_decimal_years(data_cls):
 
     res = data_cls(d, columns=cols)
     assert (
-        res["time"].unique()
-        == [
-            dt.datetime(1765, 1, 1, 0, 0),
-            dt.datetime(1765, 1, 31, 7, 4, 48),
-            dt.datetime(1765, 3, 2, 22, 55, 11),
-        ]
+            res["time"].unique()
+            == [
+                dt.datetime(1765, 1, 1, 0, 0),
+                dt.datetime(1765, 1, 31, 7, 4, 48),
+                dt.datetime(1765, 3, 2, 22, 55, 11),
+            ]
     ).all()
     npt.assert_array_equal(res.values[0], inp_array)
 
@@ -1283,8 +1283,8 @@ def test_append_inplace_column_order_time_interpolation(test_scm_run):
     pd.testing.assert_frame_equal(
         test_scm_run.timeseries().sort_index(),
         exp.timeseries()
-        .reorder_levels(test_scm_run.timeseries().index.names)
-        .sort_index(),
+            .reorder_levels(test_scm_run.timeseries().index.names)
+            .sort_index(),
         check_like=True,
     )
 
@@ -1346,9 +1346,9 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
 
     ts_resampled = (
         test_scm_df_monthly.timeseries()
-        .T.groupby(group_annual_mean_beginning_of_year)
-        .mean()
-        .T
+            .T.groupby(group_annual_mean_beginning_of_year)
+            .mean()
+            .T
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 1, 1))
 
@@ -1403,9 +1403,9 @@ def test_time_mean_year_end_of_year(test_scm_df_monthly):
 
     ts_resampled = (
         test_scm_df_monthly.timeseries()
-        .T.groupby(group_annual_mean_end_of_year)
-        .mean()
-        .T
+            .T.groupby(group_annual_mean_end_of_year)
+            .mean()
+            .T
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 12, 31))
 
@@ -1535,23 +1535,23 @@ def test_filter_by_int(test_scm_run):
         ("EJ/yr", "EJ/yr", {}, [1.0, 0.5, 2.0], ["EJ/yr", "EJ/yr", "EJ/yr"]),
         ("PJ/yr", "EJ/yr", {}, [1000.0, 500.0, 2000.0], ["PJ/yr", "PJ/yr", "PJ/yr"]),
         (
-            "PJ/yr",
-            "EJ/yr",
-            {"scenario": "a_scenario2"},
-            [1.0, 0.5, 2000.0],
-            ["EJ/yr", "EJ/yr", "PJ/yr"],
+                "PJ/yr",
+                "EJ/yr",
+                {"scenario": "a_scenario2"},
+                [1.0, 0.5, 2000.0],
+                ["EJ/yr", "EJ/yr", "PJ/yr"],
         ),
         (
-            "PJ/yr",
-            ["EJ/yr", "TJ/yr", "Gt C / yr"],
-            {"variable": "Primary Energy|Coal"},
-            [1.0, 0.5 * 1e-3, 2.0],
-            ["EJ/yr", "PJ/yr", "Gt C / yr"],
+                "PJ/yr",
+                ["EJ/yr", "TJ/yr", "Gt C / yr"],
+                {"variable": "Primary Energy|Coal"},
+                [1.0, 0.5 * 1e-3, 2.0],
+                ["EJ/yr", "PJ/yr", "Gt C / yr"],
         ),
     ],
 )
 def test_convert_unit(
-    test_scm_run, target_unit, input_units, filter_kwargs, expected, expected_units
+        test_scm_run, target_unit, input_units, filter_kwargs, expected, expected_units
 ):
     test_scm_run["unit"] = input_units
     obs = test_scm_run.convert_unit(target_unit, **filter_kwargs)
@@ -1684,48 +1684,48 @@ def test_init_no_file(data_cls):
     ("test_file", "test_kwargs"),
     [
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions.csv",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions.csv",
+                ),
+                {},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions.xls",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions.xls",
+                ),
+                {},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions_multi_sheet.xlsx",
-            ),
-            {"sheet_name": "rcp26_emissions"},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions_multi_sheet.xlsx",
+                ),
+                {"sheet_name": "rcp26_emissions"},
         ),
         (
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..",
-                "test_data",
-                "rcp26_emissions_multi_sheet_data.xlsx",
-            ),
-            {},
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                    "test_data",
+                    "rcp26_emissions_multi_sheet_data.xlsx",
+                ),
+                {},
         ),
     ],
 )
 def test_read_from_disk(test_file, test_kwargs, data_cls):
     loaded = data_cls(test_file, **test_kwargs)
     assert (
-        loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
-        == 0.010116813
+            loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
+            == 0.010116813
     )
 
 
@@ -1761,8 +1761,8 @@ def test_get_meta(test_scm_run):
 def test_get_meta_no_duplicates(test_scm_run, no_duplicates):
     if no_duplicates:
         assert (
-            test_scm_run.get_unique_meta("climate_model", no_duplicates=no_duplicates)
-            == "a_model"
+                test_scm_run.get_unique_meta("climate_model", no_duplicates=no_duplicates)
+                == "a_model"
         )
 
         error_msg = re.escape(
@@ -1778,7 +1778,7 @@ def test_get_meta_no_duplicates(test_scm_run, no_duplicates):
         ) == ["a_model"]
         assert test_scm_run.get_unique_meta(
             "variable", no_duplicates=no_duplicates
-        ) == ["Primary Energy", "Primary Energy|Coal",]
+        ) == ["Primary Energy", "Primary Energy|Coal", ]
 
 
 def test_meta_filtered(test_scm_run):
@@ -1808,5 +1808,24 @@ def test_drop_meta(test_scm_run, label):
     else:
         for l in label:
             assert l not in test_scm_run.meta.columns
+
+    assert "variable" in test_scm_run.meta.columns
+
+
+@pytest.mark.parametrize("label", [
+    "extra_meta",
+    ["extra", "other"]
+])
+def test_drop_meta_missing(test_scm_run, label):
+    with pytest.raises(ValueError):
+        test_scm_run.drop_meta(label)
+
+    assert "variable" in test_scm_run.meta.columns
+
+
+def test_drop_meta_missing_one(test_scm_run):
+    label = ["variable", "other"]
+    with pytest.raises(ValueError):
+        test_scm_run.drop_meta(label)
 
     assert "variable" in test_scm_run.meta.columns
