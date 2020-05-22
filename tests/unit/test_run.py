@@ -1786,3 +1786,27 @@ def test_meta_filtered(test_scm_run):
     pd.testing.assert_series_equal(
         pd.Series([1.0, 1.0, np.nan], name="test"), test_scm_run["test"]
     )
+
+
+@pytest.mark.parametrize("label", [
+    "extra_meta",
+    ["extra", "other"]
+])
+def test_drop_meta(test_scm_run, label):
+    if type(label) == str:
+        test_scm_run[label] = 1.0
+        assert label in test_scm_run.meta.columns
+    else:
+        for l in label:
+            test_scm_run[l] = 1.0
+            assert l in test_scm_run.meta.columns
+
+    test_scm_run.drop_meta(label)
+
+    if type(label) == str:
+        assert label not in test_scm_run.meta.columns
+    else:
+        for l in label:
+            assert l not in test_scm_run.meta.columns
+
+    assert "variable" in test_scm_run.meta.columns
