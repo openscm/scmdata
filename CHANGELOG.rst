@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#54 <https://github.com/openscm/scmdata/pull/54>`_) Add :func:`drop_meta` to :class:`ScmRun` for dropping metadata columns
 - (`#53 <https://github.com/openscm/scmdata/pull/53>`_) Don't convert case of variable names written to file. No longer convert case of serialized dataframes
 - (`#51 <https://github.com/openscm/scmdata/pull/51>`_) Refactor :meth:`relative_to_ref_period_mean` so that it returns an instance of the input data type (rather than a :obj:`pd.DataFrame`) and puts the reference period in separate meta columns rather than mangling the variable name.
 - (`#47 <https://github.com/openscm/scmdata/pull/47>`_) Update README and ``setup.py`` to make it easier for new users
