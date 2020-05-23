@@ -504,6 +504,48 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         return func
 
+    def drop_meta(self, columns: Union[list, str], inplace: bool = True):
+        """
+        Drop metadata columns out of the Run
+
+        Notes
+        -----
+        If this operation is not performed inplace, the current object is deep copied. Any changes to the :obj:`Timeseries` of
+        the returned object will not be reflected in the original object
+
+        Parameters
+        ----------
+        columns
+            The column or columns to drop
+        inplace
+            If True, do operation inplace and return None
+
+        Raises
+        ------
+        KeyError
+            If any of the columns do not exist in the meta :class:`DataFrame`
+        """
+        if inplace:
+            df = self
+        else:
+            df = self.copy(copy_ts=True)
+
+        if isinstance(columns, str):
+            columns = [columns]
+
+        existing_cols = df.meta_attributes
+        for c in columns:
+            if c not in existing_cols:
+                raise KeyError(c)
+
+        # pylint: disable=protected-access
+        for ts in df._ts:
+            for c in columns:
+                del ts._data.attrs[c]
+
+        if not inplace:
+            return df
+
     @property
     def meta_attributes(self):
         """

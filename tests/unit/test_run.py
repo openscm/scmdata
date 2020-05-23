@@ -1786,3 +1786,56 @@ def test_meta_filtered(test_scm_run):
     pd.testing.assert_series_equal(
         pd.Series([1.0, 1.0, np.nan], name="test"), test_scm_run["test"]
     )
+
+
+@pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
+def test_drop_meta(test_scm_run, label):
+    if type(label) == str:
+        test_scm_run[label] = 1.0
+        assert label in test_scm_run.meta.columns
+    else:
+        for lbl in label:
+            test_scm_run[lbl] = 1.0
+            assert lbl in test_scm_run.meta.columns
+
+    test_scm_run.drop_meta(label)
+
+    if type(label) == str:
+        assert label not in test_scm_run.meta.columns
+        assert label not in test_scm_run.meta_attributes
+    else:
+        for lbl in label:
+            assert lbl not in test_scm_run.meta.columns
+            assert lbl not in test_scm_run.meta_attributes
+
+    assert "variable" in test_scm_run.meta.columns
+
+
+@pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
+def test_drop_meta_missing(test_scm_run, label):
+    with pytest.raises(KeyError):
+        test_scm_run.drop_meta(label)
+
+    assert "variable" in test_scm_run.meta.columns
+
+
+def test_drop_meta_missing_one(test_scm_run):
+    label = ["variable", "other"]
+    with pytest.raises(KeyError):
+        test_scm_run.drop_meta(label)
+
+    assert "variable" in test_scm_run.meta.columns
+
+
+def test_drop_meta_not_inplace(test_scm_run):
+    label = "extra"
+
+    test_scm_run[label] = "test"
+
+    res = test_scm_run.drop_meta(label, inplace=False)
+
+    assert label in test_scm_run.meta_attributes
+    assert label not in res.meta_attributes
+
+    res = res * 2
+    np.testing.assert_almost_equal(res.values, test_scm_run.values * 2)
