@@ -478,6 +478,21 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         return d.T
 
+    def long_data(self):
+        """
+        Return data in long form, particularly useful for plotting with seaborn
+
+        Returns
+        -------
+        :obj:`pd.DataFrame`
+            :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation per row).
+        """
+        out = self.timeseries().stack()
+        out.name = "value"
+        out = out.to_frame().reset_index()
+
+        return out
+
     @property
     def values(self) -> np.ndarray:
         """

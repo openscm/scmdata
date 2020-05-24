@@ -32,28 +32,19 @@ RCMIP_SCENARIO_COLOURS = {
 }
 
 
-def long_data(self):
-    """
-    Return data in long form, particularly useful for plotting with seaborn
-
-    Returns
-    -------
-    :obj:`pd.DataFrame`
-        :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation per row).
-    """
-    out = self.timeseries().stack()
-    out.name = "value"
-    out = out.to_frame().reset_index()
-
-    return out
-
-
-def lineplot(self, **kwargs):  # pragma: no cover
+def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     """
     Make a line plot via `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
 
     Parameters
     ----------
+    time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
+        Time axis to use for the plot. If `None`, :class:`datetime.datetime` objects will be used.
+        If `"year"`, the year of each time point  will be used. If `"year-month", the year plus
+        (month - 0.5) / 12  will be used. If `"days since 1970-01-01"`, the number of days  since 1st
+        Jan 1970 will be used (calculated using the ``datetime``  module). If `"seconds since 1970-01-01"`,
+        the number of seconds  since 1st Jan 1970 will be used (calculated using the ``datetime`` module).
+
     **kwargs
         Keyword arguments to be passed to ``seaborn.lineplot``. If none are passed,
         sensible defaults will be used.
@@ -66,7 +57,7 @@ def lineplot(self, **kwargs):  # pragma: no cover
     if not has_seaborn:
         raise ImportError("seaborn is not installed. Run 'pip install seaborn'")
 
-    plt_df = self.long_data()
+    plt_df = self.long_data(time_axis=time_axis)
     kwargs.setdefault("x", "time")
     kwargs.setdefault("y", "value")
     kwargs.setdefault("hue", "scenario")
@@ -109,7 +100,6 @@ def inject_plotting_methods(cls):
         Target class
     """
     methods = [
-        ("long_data", long_data),
         ("lineplot", lineplot),
         ("line_plot", _deprecated_line_plot),  # for compatibility
     ]
