@@ -1839,3 +1839,12 @@ def test_drop_meta_not_inplace(test_scm_run):
 
     res = res * 2
     np.testing.assert_almost_equal(res.values, test_scm_run.values * 2)
+
+
+# tests to write:
+# - for each of timeseries, long_data and lineplot, it is possible to specify the time axis,
+#   the time axis can be one of `None` (in which case datetimes are used), `"year"` (in which
+#   case years are used and error is raised if years are not unique), `"year-month"` (in which
+#   case decimal years are used i.e. each point is year + (month - 0.5) / 12), `"days since 1970-01-01"`
+#   (in which case you get days since 1970) and `"seconds since 1970-01-01"` (in which case you
+#   get seconds since 1970).
