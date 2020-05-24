@@ -34,7 +34,7 @@ from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .plotting import inject_plotting_methods
 from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
-from .time import TimePoints, _TARGET_DTYPE
+from .time import _TARGET_DTYPE, TimePoints
 from .timeseries import TimeSeries
 from .units import UnitConverter
 
@@ -572,19 +572,17 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         return self._time_points
 
-    def timeseries(
-        self, meta=None, check_duplicated=True, time_axis=None
-    ):
+    def timeseries(self, meta=None, check_duplicated=True, time_axis=None):
         """
         Return the data with metadata as a :obj:`pd.DataFrame`.
 
         Parameters
         ----------
-        meta
+        meta : list[str]
             The list of meta columns that will be included in the output's
             MultiIndex. If None (default), then all metadata will be used.
 
-        check_duplicated
+        check_duplicated : bool
             If True, an exception is raised if any of the timeseries have
             duplicated metadata
 
@@ -626,8 +624,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         elif time_axis == "year":
             columns = self._time_points.years()
         elif time_axis == "year-month":
-            columns = self._time_points.years() + (self._time_points.months() - 0.5) / 12
+            columns = (
+                self._time_points.years() + (self._time_points.months() - 0.5) / 12
+            )
         elif time_axis == "days since 1970-01-01":
+
             def calc_days(x):
                 ref = np.array(["1970-01-01"], dtype=_TARGET_DTYPE)[0]
 
@@ -636,6 +637,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             columns = calc_days(self._time_points.values).astype(int)
 
         elif time_axis == "seconds since 1970-01-01":
+
             def calc_seconds(x):
                 ref = np.array(["1970-01-01"], dtype=_TARGET_DTYPE)[0]
 
@@ -647,7 +649,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             raise NotImplementedError("time_axis = '{}'".format(time_axis))
 
         if len(np.unique(columns)) != len(columns):
-            raise ValueError("Ambiguous time values with time_axis = '{}'".format(time_axis))
+            raise ValueError(
+                "Ambiguous time values with time_axis = '{}'".format(time_axis)
+            )
 
         df.columns = columns
         df.columns.name = "time"
