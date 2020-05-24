@@ -1,8 +1,6 @@
 scmdata
 =======
 
-.. sec-begin-links
-
 +-------------------+----------------+--------------+--------+
 | Repository health |    |CI CD|     |  |Coverage|  | |Docs| |
 +-------------------+----------------+--------------+--------+
@@ -18,6 +16,8 @@ scmdata
 +-----------------+----------------+---------------+-----------+
 |   Other info    | |Contributors| | |Last Commit| | |License| |
 +-----------------+----------------+---------------+-----------+
+
+.. sec-begin-links
 
 .. |CI CD| image:: https://github.com/openscm/scmdata/workflows/scmdata%20CI-CD/badge.svg
     :target: https://github.com/openscm/scmdata/actions?query=workflow%3A%22scmdata+CI-CD%22
