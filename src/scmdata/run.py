@@ -718,7 +718,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     @property
     def empty(self) -> bool:
         """
-        Indicator whether :obj:`ScmRun` is empty i.e. contains no data
+        Indicate whether :obj:`ScmRun` is empty i.e. contains no data
 
         Returns
         -------
