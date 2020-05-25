@@ -180,6 +180,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
                 .replace("(", r"\(")
                 .replace(")", r"\)")
                 .replace("$", "\\$")
+                .replace("^", "\\^")
             ) + "$"
             pattern = re.compile(_regexp if not regexp else str(s))
             try:
