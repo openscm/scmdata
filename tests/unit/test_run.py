@@ -1996,6 +1996,7 @@ def test_lineplot_time_axis_junk_error(mock_sns_lineplot, test_scm_run):
 
 @pytest.mark.parametrize("tax1,tax2", (
         ([dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)], [dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)]),
+        ([dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)], [dt.datetime(y, 1, 1) for y in range(2020, 2040, 10)]),
         ([dt.datetime(y, 1, 1) for y in range(1000, 1020, 10)], [dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)]),
         ([dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)], [dt.datetime(y, 1, 1) for y in range(3000, 3020, 10)]),
         ([dt.datetime(y, 1, 1) for y in range(1000, 2020, 100)], [dt.datetime(y, 1, 1) for y in range(2000, 2500, 10)]),
@@ -2026,6 +2027,9 @@ def test_append_long_run(tax1, tax2):
 
     res = df_append([run1, run2])
 
-    # should test for expected time axis here, something like
-    assert res["time"] == tax1 + tax2
+    expected = sorted(set(tax1 + tax2))
+    assert len(res["time"]) == len(expected)
+    for i in range(len(expected)):
+        assert res["time"][i] == expected[i]
+
     assert res.get_unique_meta("scenario") == ["run1", "run2"]

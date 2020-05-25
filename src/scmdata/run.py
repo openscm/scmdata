@@ -282,7 +282,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         self,
         data,
         index: Any = None,
-        columns: Optional[Dict[str, list]] = None,
+        columns: Optional[Union[Dict[str, list], Dict[str, str]]] = None,
         **kwargs: Any,
     ):
         """
@@ -1776,8 +1776,9 @@ def df_append(
         if not np.array_equal(new_t, r.time_points):
             all_valid_times = False
     if not all_valid_times:
-        ret._ts = [ts.reindex(new_t) for ts in ret._ts]
         ret._time_points = TimePoints(new_t)
+        new_t_cftime = ret._time_points.as_cftime()
+        ret._ts = [ts.reindex(new_t_cftime) for ts in ret._ts]
 
     if ret.meta.duplicated().any():
         if duplicate_msg:
