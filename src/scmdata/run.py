@@ -457,7 +457,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Notes
         -----
-
         The meta values changes to a filtered subset and the change will be reflected in the original :obj:`ScmRun` object.
 
         .. code:: python
