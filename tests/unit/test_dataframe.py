@@ -1297,12 +1297,20 @@ def test_append_inplace_preexisinting_nan(test_scm_df):
     )
 
 
-def test_interpolate(combo_df):
-    combo, df = combo_df
-    target_time_points = combo.target
-
+def test_interpolate(combo):
+    df = ScmDataFrame(
+        combo.source_values,
+        columns={
+            "scenario": ["a_scenario"],
+            "model": ["a_model"],
+            "region": ["World"],
+            "variable": ["Emissions|BC"],
+            "unit": ["Mg /yr"],
+        },
+        index=combo.source,
+    )
     res = df.interpolate(
-        target_time_points,
+        combo.target,
         interpolation_type=combo.interpolation_type,
         extrapolation_type=combo.extrapolation_type,
     )

@@ -143,3 +143,15 @@ def test_timeseries_mul(ts, inplace):
         ts2 = ts * 2
 
     npt.assert_allclose(ts2.values, [2, 4, 6])
+
+
+def test_interpolate(combo):
+    ts = TimeSeries(combo.source_values, time=combo.source)
+
+    res = ts.interpolate(
+        combo.target,
+        interpolation_type=combo.interpolation_type,
+        extrapolation_type=combo.extrapolation_type,
+    )
+
+    npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
