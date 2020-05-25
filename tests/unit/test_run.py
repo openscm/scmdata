@@ -1992,3 +1992,40 @@ def test_lineplot_time_axis_junk_error(mock_sns_lineplot, test_scm_run):
         test_scm_run.lineplot(time_axis="junk")
 
     assert not mock_sns_lineplot.called  # doesn't get to trying to plot
+
+
+@pytest.mark.parametrize("tax1,tax2", (
+        ([dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)], [dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)]),
+        ([dt.datetime(y, 1, 1) for y in range(1000, 1020, 10)], [dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)]),
+        ([dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)], [dt.datetime(y, 1, 1) for y in range(3000, 3020, 10)]),
+        ([dt.datetime(y, 1, 1) for y in range(1000, 2020, 100)], [dt.datetime(y, 1, 1) for y in range(2000, 2500, 10)]),
+))
+def test_append_long_run(tax1, tax2):
+    mdata = {
+        "model": "junk",
+        "variable": "Emissions|CO2",
+        "unit": "GtC",
+        "region": "World",
+    }
+    run1 = ScmRun(
+        data=np.arange(len(tax1)),
+        index=tax1,
+        columns={
+            "scenario": "run1",
+            **mdata
+        }
+    )
+    run2 = ScmRun(
+        data=np.arange(len(tax2)),
+        index=tax2,
+        columns={
+            "scenario": "run2",
+            **mdata
+        }
+    )
+
+    res = df_append([run1, run2])
+
+    # should test for expected time axis here, something like
+    assert res["time"] == tax1 + tax2
+    assert res.get_unique_meta("scenario") == ["run1", "run2"]
