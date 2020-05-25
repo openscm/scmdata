@@ -716,13 +716,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return np.asarray([ts._data.values for ts in self._ts])
 
     @property
-    def is_empty(self) -> bool:
+    def empty(self) -> bool:
         """
-        Is this :obj:`ScmRun` empty?
+        Indicator whether :obj:`ScmRun` is empty i.e. contains no data
 
         Returns
         -------
         bool
+            If :obj:`ScmRun` is empty, return ``True``, if not return ``False``
         """
         return np.equal(len(self._ts), 0)
 
