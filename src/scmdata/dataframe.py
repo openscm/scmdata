@@ -10,11 +10,11 @@ import os
 import warnings
 from logging import getLogger
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from warnings import warn
 
 import numpy as np
 import pandas as pd
 from dateutil import parser
-from warnings import warn
 
 from .filters import (
     HIERARCHY_SEPARATOR,
