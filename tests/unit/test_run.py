@@ -1567,7 +1567,7 @@ def test_filter_by_int(test_scm_run):
             ["EJ/yr", "PJ/yr", "Gt C / yr"],
         ),
         ("W/m^2", "W/m^2", {}, [1.0, 0.5, 2.0], ["W/m^2", "W/m^2", "W/m^2"]),
-        ("W/m^2", "W/km^2", {}, [1.0*1e3, 0.5*1e3, 2.0*1e3], ["W/km^2", "W/km^2", "W/km^2"]),
+        ("W/km^2", "W/m^2", {}, [1.0*1e6, 0.5*1e6, 2.0*1e6], ["W/km^2", "W/km^2", "W/km^2"]),
     ],
 )
 def test_convert_unit(
