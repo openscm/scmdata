@@ -1040,7 +1040,7 @@ def test_relative_to_ref_period_mean(test_processing_scm_df, tfilter):
 
 
 def test_append(test_scm_run):
-    test_scm_run.set_meta([5, 6, 7], name="col1")
+    test_scm_run["col1"] = [5, 6, 7]
     other = test_scm_run.filter(scenario="a_scenario2").copy()
     other["variable"] = "Primary Energy clone"
     other["col1"] = 2
@@ -1307,7 +1307,7 @@ def test_append_inplace_column_order_time_interpolation(test_scm_run):
 def test_append_inplace_preexisinting_nan(test_scm_run):
     other = test_scm_run * 2
     other["climate_model"] = "a_model2"
-    other.set_meta(np.nan, name="junk")
+    other["junk"] = np.nan
 
     original_ts = test_scm_run.timeseries().copy()
     res = test_scm_run.append(other)
@@ -1485,7 +1485,7 @@ def test_time_mean_unsupported_style(test_scm_df_monthly):
 
 def test_set_meta_as_series(test_scm_run):
     s = pd.Series([0.3, 0.4, 0.5])
-    test_scm_run.set_meta(s, "meta_series")
+    test_scm_run["meta_series"] = s
 
     exp = pd.Series(data=s.values, index=test_scm_run.meta.index)
     exp.name = "meta_series"
@@ -1511,11 +1511,11 @@ def test_set_meta_as_series(test_scm_run):
 def test_set_meta_as_series_wrong_length(test_scm_run):
     s = pd.Series([0.3, 0.4])
     with pytest.raises(ValueError, match="Invalid shape for metadata"):
-        test_scm_run.set_meta(s, "meta_series")
+        test_scm_run["meta_series"] = s
 
 
 def test_set_meta_as_float(test_scm_run):
-    test_scm_run.set_meta(3.2, "meta_int")
+    test_scm_run["meta_int"] = 3.2
 
     exp = pd.Series(
         data=[3.2, 3.2, 3.2], index=test_scm_run.meta.index, name="meta_int"
@@ -1540,7 +1540,7 @@ def test_set_meta_as_float(test_scm_run):
 
 
 def test_set_meta_as_str(test_scm_run):
-    test_scm_run.set_meta("testing", name="meta_str")
+    test_scm_run["meta_str"] = "testing"
 
     exp = pd.Series(
         data=["testing", "testing", "testing"],
@@ -1567,29 +1567,19 @@ def test_set_meta_as_str(test_scm_run):
 
 
 def test_set_meta_as_str_list(test_scm_run):
-    test_scm_run.set_meta(["testing", "testing2", "testing2"], name="category")
+    test_scm_run["category"] = ["testing", "testing2", "testing2"]
     obs = test_scm_run.filter(category="testing")
     assert obs["scenario"].unique() == "a_scenario"
 
 
-def test_set_meta_with_index(test_scm_run):
-    df = pd.DataFrame(
-        [["a_iam", "a_scenario", "World", 1]],
-        columns=["model", "scenario", "region", "col"],
-    )
-
-    with pytest.raises(NotImplementedError):
-        test_scm_run.set_meta(meta=0.3, name="meta_values", index=df)
-
-
 def test_filter_by_bool(test_scm_run):
-    test_scm_run.set_meta([True, False, False], name="exclude")
+    test_scm_run["exclude"] = [True, False, False]
     obs = test_scm_run.filter(exclude=True)
     assert obs["scenario"].unique() == "a_scenario"
 
 
 def test_filter_by_int(test_scm_run):
-    test_scm_run.set_meta([1, 2, 3], name="test")
+    test_scm_run["test"] = [1, 2, 3]
     obs = test_scm_run.filter(test=1)
     assert obs["scenario"].unique() == "a_scenario"
 
@@ -1696,7 +1686,7 @@ def test_convert_existing_unit_context(test_scm_run):
     )  # Duplicated meta if set all 3 ts to the same variable name
     test_scm_run["unit"] = "kg SF5CF3 / yr"
     test_scm_run["variable"] = "SF5CF3"
-    test_scm_run.set_meta("AR4GWP100", "unit_context")
+    test_scm_run["unit_context"] = "AR4GWP100"
 
     obs = test_scm_run.convert_unit("kg CO2 / yr", context="AR4GWP100")
     factor = 17700
