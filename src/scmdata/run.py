@@ -716,6 +716,18 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return np.asarray([ts._data.values for ts in self._ts])
 
     @property
+    def empty(self) -> bool:
+        """
+        Indicate whether :obj:`ScmRun` is empty i.e. contains no data
+
+        Returns
+        -------
+        bool
+            If :obj:`ScmRun` is empty, return ``True``, if not return ``False``
+        """
+        return np.equal(len(self._ts), 0)
+
+    @property
     def meta(self) -> pd.DataFrame:
         """
         Metadata
@@ -812,44 +824,44 @@ class ScmRun:  # pylint: disable=too-many-public-methods
               :class:`str`)
 
             If ``regexp=True`` is included in :obj:`kwargs` then the pseudo-regexp
-            syntax in :obj:`pattern_match` is disabled.
+            syntax in :func:`pattern_match` is disabled.
 
         Returns
         -------
         :obj:`ScmRun`
-            If not :obj:`inplace`, return a new instance with the filtered data.
+            If not ``inplace``, return a new instance with the filtered data.
 
         Raises
         ------
         AssertionError
             Data and meta become unaligned
         """
-        _keep_times, _keep_cols = self._apply_filters(kwargs, has_nan)
+        _keep_times, _keep_rows = self._apply_filters(kwargs, has_nan)
         ret = copy.copy(self) if not inplace else self
 
-        if not keep and sum(~_keep_cols) and sum(~_keep_times):
+        if not keep and sum(~_keep_rows) and sum(~_keep_times):
             raise ValueError(
                 "If keep==False, filtering cannot be performed on the temporal axis "
                 "and with metadata at the same time"
             )
 
         reduce_times = (~_keep_times).sum() > 0
-        reduce_cols = (~_keep_cols).sum() > 0
+        reduce_rows = (~_keep_rows).sum() > 0
 
         if not keep:
             _keep_times = ~_keep_times
-            _keep_cols = ~_keep_cols
+            _keep_rows = ~_keep_rows
 
-            if not reduce_cols and not reduce_times:
+            if not reduce_rows and not reduce_times:
                 # When nothing is filtered, drop everything
-                reduce_cols = True
+                reduce_rows = True
 
         # Filter the timeseries first
         # I wish lists had the same indexing interface as ndarrays
-        if reduce_cols:
-            ret._ts = [ret._ts[i] for i, v in enumerate(_keep_cols) if v]
+        if reduce_rows:
+            ret._ts = [ret._ts[i] for i, v in enumerate(_keep_rows) if v]
 
-        # Then filter the timeseries if needed
+        # Then filter the times if needed
         if reduce_times:
             ret._ts = [ts[_keep_times] for ts in ret._ts]
             ret["time"] = self.time_points.values[_keep_times]
@@ -1507,8 +1519,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         def apply_units(group):
             orig_unit = group.get_unique_meta("unit", no_duplicates=True)
             uc = UnitConverter(orig_unit, unit, context=context)
+
             for ts in group._ts:  # todo: fix when we have an apply function
                 ts._data[:] = uc.convert_from(ts._data.values)
+
             group["unit"] = unit
             group["unit_context"] = context
             return group

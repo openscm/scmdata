@@ -127,8 +127,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         Passed to :func:`find_depth`. For usage, see docstring of :func:`find_depth`.
 
     regexp
-        If ``True``, match using regexp rather than pseudo regexp syntax of `pyam
-        <https://github.com/IAMconsortium/pyam>`_.
+        If ``True``, match using regexp rather than our pseudo regexp syntax.
 
     has_nan
         If ``True``, convert all nan values in :obj:`meta_col` to empty string before
@@ -180,6 +179,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
                 .replace("(", r"\(")
                 .replace(")", r"\)")
                 .replace("$", "\\$")
+                .replace("^", "\\^")
             ) + "$"
             pattern = re.compile(_regexp if not regexp else str(s))
             try:

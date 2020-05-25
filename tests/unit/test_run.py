@@ -686,6 +686,19 @@ def test_filter_by_regexp(test_scm_run):
     assert obs["scenario"].unique() == "a_scenario"
 
 
+@pytest.mark.parametrize("regexp,exp_units", ((True, []), (False, ["W/m^2"]),))
+def test_filter_by_regexp_caret(test_scm_run, regexp, exp_units):
+    tunits = ["W/m2"] * test_scm_run.shape[1]
+    tunits[-1] = "W/m^2"
+    test_scm_run["unit"] = tunits
+    obs = test_scm_run.filter(unit="W/m^2", regexp=regexp)
+
+    if not exp_units:
+        assert obs.empty
+    else:
+        assert obs.get_unique_meta("unit") == exp_units
+
+
 def test_filter_timeseries_different_length():
     # This is different to how `ScmDataFrame` deals with nans
     # Nan and empty timeseries remain in the Run
@@ -1534,6 +1547,13 @@ def test_filter_by_int(test_scm_run):
     ("target_unit", "input_units", "filter_kwargs", "expected", "expected_units"),
     [
         ("EJ/yr", "EJ/yr", {}, [1.0, 0.5, 2.0], ["EJ/yr", "EJ/yr", "EJ/yr"]),
+        (
+            "EJ/yr",
+            "EJ/yr",
+            {"variable": "Primary Energy"},
+            [1.0, 0.5, 2.0],
+            ["EJ/yr", "EJ/yr", "EJ/yr"],
+        ),
         ("PJ/yr", "EJ/yr", {}, [1000.0, 500.0, 2000.0], ["PJ/yr", "PJ/yr", "PJ/yr"]),
         (
             "PJ/yr",
@@ -1548,6 +1568,14 @@ def test_filter_by_int(test_scm_run):
             {"variable": "Primary Energy|Coal"},
             [1.0, 0.5 * 1e-3, 2.0],
             ["EJ/yr", "PJ/yr", "Gt C / yr"],
+        ),
+        ("W/m^2", "W/m^2", {}, [1.0, 0.5, 2.0], ["W/m^2", "W/m^2", "W/m^2"]),
+        (
+            "W/km^2",
+            "W/m^2",
+            {},
+            [1.0 * 1e6, 0.5 * 1e6, 2.0 * 1e6],
+            ["W/km^2", "W/km^2", "W/km^2"],
         ),
     ],
 )
@@ -2041,3 +2069,8 @@ def test_append_long_run(tax1, tax2):
         assert res["time"][i] == expected[i]
 
     assert res.get_unique_meta("scenario") == ["run1", "run2"]
+
+
+def test_empty(test_scm_run):
+    assert not test_scm_run.empty
+    assert test_scm_run.filter(variable="junk nonsense").empty
