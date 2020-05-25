@@ -716,7 +716,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return np.asarray([ts._data.values for ts in self._ts])
 
     @property
-    def empty(self) -> bool:
+    def is_empty(self) -> bool:
         """
         Is this :obj:`ScmRun` empty?
 
