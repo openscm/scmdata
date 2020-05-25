@@ -1339,7 +1339,10 @@ def test_interpolate(combo_df):
     npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
 
 
-@pytest.mark.parametrize("source", [[1.0, 2.0, 3.0, np.nan], [1.0, 2.0, np.nan, 4.0], [np.nan, 2.0, 3.0, 4.0]])
+@pytest.mark.parametrize(
+    "source",
+    [[1.0, 2.0, 3.0, np.nan], [1.0, 2.0, np.nan, 4.0], [np.nan, 2.0, 3.0, 4.0]],
+)
 def test_interpolate_nan(source):
     df = ScmRun(
         source,
@@ -1358,7 +1361,9 @@ def test_interpolate_nan(source):
         extrapolation_type="linear",
     )
 
-    npt.assert_array_almost_equal(res.values.squeeze(), [1.0, 2.0, 3.0, 4.0, 5.0], decimal=4)
+    npt.assert_array_almost_equal(
+        res.values.squeeze(), [1.0, 2.0, 3.0, 4.0, 5.0], decimal=4
+    )
 
 
 def test_interpolate_nan_constant():
@@ -1379,7 +1384,9 @@ def test_interpolate_nan_constant():
         extrapolation_type="constant",
     )
 
-    npt.assert_array_almost_equal(res.values.squeeze(), [1.0, 2.0, 3.0, 3.0, 3.0], decimal=4)
+    npt.assert_array_almost_equal(
+        res.values.squeeze(), [1.0, 2.0, 3.0, 3.0, 3.0], decimal=4
+    )
 
 
 def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
