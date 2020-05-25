@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#61 <https://github.com/openscm/scmdata/pull/61>`_) Hotfix filters to also include caret ("^") in pseudo-regexp syntax. Also adds :meth:`is_empty` property to :obj:`ScmRun`
 - (`#59 <https://github.com/openscm/scmdata/pull/59>`_) Deprecate :class:`ScmDataFrame`. To be removed in v0.6.0
 - (`#58 <https://github.com/openscm/scmdata/pull/58>`_) Use ``cftime`` datetimes when appending :class:`ScmRun` objects to avoid OutOfBounds errors when datetimes span many centuries
 - (`#55 <https://github.com/openscm/scmdata/pull/55>`_) Add ``time_axis`` keyword argument to ``ScmRun.timeseries``, ``ScmRun.long_data`` and ``ScmRun.lineplot`` to give greater control of the time axis when retrieving data

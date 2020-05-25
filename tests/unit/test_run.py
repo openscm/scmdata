@@ -2069,3 +2069,8 @@ def test_append_long_run(tax1, tax2):
         assert res["time"][i] == expected[i]
 
     assert res.get_unique_meta("scenario") == ["run1", "run2"]
+
+
+def test_is_empty(test_scm_run):
+    assert not test_scm_run.is_empty
+    assert test_scm_run.filter(variable="junk nonsense").is_empty
