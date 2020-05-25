@@ -492,9 +492,9 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         :obj:`pd.DataFrame`
             :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation per row).
         """
-
         if time_axis is not None:
             warnings.warn("Ignoring time_axis value. Use the ScmRun class instead")
+
         out = self.timeseries().stack()
         out.name = "value"
         out = out.to_frame().reset_index()
