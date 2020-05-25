@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#58 <https://github.com/openscm/scmdata/pull/58>`_) Use ``cftime`` datetimes when appending :class:`ScmRun` objects to avoid OutOfBounds errors when datetimes span many centuries
 - (`#55 <https://github.com/openscm/scmdata/pull/55>`_) Add ``time_axis`` keyword argument to ``ScmRun.timeseries``, ``ScmRun.long_data`` and ``ScmRun.lineplot`` to give greater control of the time axis when retrieving data
 - (`#54 <https://github.com/openscm/scmdata/pull/54>`_) Add :meth:`drop_meta` to :class:`ScmRun` for dropping metadata columns
 - (`#53 <https://github.com/openscm/scmdata/pull/53>`_) Don't convert case of variable names written to file. No longer convert case of serialized dataframes
