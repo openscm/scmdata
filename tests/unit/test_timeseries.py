@@ -5,6 +5,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 import xarray as xr
+import cftime
 
 from scmdata.time import TimePoints
 from scmdata.timeseries import TimeSeries
@@ -155,3 +156,38 @@ def test_interpolate(combo):
     )
 
     npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
+
+
+@pytest.mark.parametrize("dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day])
+def test_extrapolation_long(dt):
+    source = np.arange(800, 1000)
+    source_times = [dt(y, 1, 1) for y in source]
+
+    ts = TimeSeries(source, time=source_times)
+
+    target = np.arange(800, 1100)
+    res = ts.interpolate(
+        [dt(y, 1, 1) for y in target],
+        extrapolation_type="linear",
+    )
+
+    # Interpolating annually using seconds is not perfect
+    npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=0)
+
+
+@pytest.mark.parametrize("dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day])
+def test_extrapolation_nan(dt):
+    source = np.arange(800, 1000)
+    source_times = [dt(y, 1, 1) for y in source]
+    source[-5:] = np.nan
+
+    ts = TimeSeries(source, time=source_times)
+
+    target = np.arange(800, 1100)
+    res = ts.interpolate(
+        [dt(y, 1, 1) for y in target],
+        extrapolation_type="linear",
+    )
+
+    # Interpolating annually using seconds is not perfect
+    npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=0)
