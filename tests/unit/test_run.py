@@ -694,7 +694,7 @@ def test_filter_by_regexp_caret(test_scm_run, regexp, exp_units):
     obs = test_scm_run.filter(unit="W/m^2", regexp=regexp)
 
     if not exp_units:
-        assert obs.is_empty
+        assert obs.empty
     else:
         assert obs.get_unique_meta("unit") == exp_units
 
@@ -2071,6 +2071,6 @@ def test_append_long_run(tax1, tax2):
     assert res.get_unique_meta("scenario") == ["run1", "run2"]
 
 
-def test_is_empty(test_scm_run):
-    assert not test_scm_run.is_empty
-    assert test_scm_run.filter(variable="junk nonsense").is_empty
+def test_empty(test_scm_run):
+    assert not test_scm_run.empty
+    assert test_scm_run.filter(variable="junk nonsense").empty
