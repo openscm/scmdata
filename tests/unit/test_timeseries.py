@@ -170,7 +170,7 @@ def test_extrapolation_long(dt):
     target = np.arange(800, 1100)
     res = ts.interpolate([dt(y, 1, 1) for y in target], extrapolation_type="linear",)
 
-    # Interpolating annually using seconds is not perfect
+    # Interpolating annually using seconds is not identical to just assuming everything is years
     npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=0)
 
 

@@ -292,6 +292,8 @@ class TimeseriesConverter:
         """
         Wrap :func:`_convert_unsafe` to provide proper error handling.
 
+        Any nan values are removed from :obj:`source` before interpolation
+
         Parameters
         ----------
         values
