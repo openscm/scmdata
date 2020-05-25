@@ -69,7 +69,7 @@ test-notebooks: $(VENV_DIR)  ## test the notebooks
 .PHONY: format-notebooks
 format-notebooks: $(VENV_DIR)  ## format the notebooks
 	@status=$$(git status --porcelain $(NOTEBOOKS_DIR)); \
-	if test ${FORCE} || "x$${status}" = x; then \
+	if test ${FORCE} || test "x$${status}" = x; then \
 		$(VENV_DIR)/bin/black-nb $(NOTEBOOKS_DIR); \
 	else \
 		echo Not trying any formatting. Working directory is dirty ... >&2; \

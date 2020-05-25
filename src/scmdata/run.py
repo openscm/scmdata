@@ -34,7 +34,7 @@ from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .plotting import inject_plotting_methods
 from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
-from .time import TimePoints
+from .time import _TARGET_DTYPE, TimePoints
 from .timeseries import TimeSeries
 from .units import UnitConverter
 
@@ -572,41 +572,119 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         return self._time_points
 
-    def timeseries(
-        self, meta: Optional[List[str]] = None, check_duplicated: bool = True
-    ) -> pd.DataFrame:
+    def timeseries(self, meta=None, check_duplicated=True, time_axis=None):
         """
         Return the data with metadata as a :obj:`pd.DataFrame`.
 
         Parameters
         ----------
-        meta
-            The list of meta columns that will be included in the output's MultiIndex.
-            If None (default), then all metadata will be used.
+        meta : list[str]
+            The list of meta columns that will be included in the output's
+            MultiIndex. If None (default), then all metadata will be used.
 
-        check_duplicated
-            If True, an exception is raised if any of the timeseries have duplicated metadata
+        check_duplicated : bool
+            If True, an exception is raised if any of the timeseries have
+            duplicated metadata
+
+        time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
+            Time axis to use for the output's columns. If `None`,
+            :class:`datetime.datetime` objects will be used. If `"year"`, the
+            year of each time point  will be used. If `"year-month", the year
+            plus (month - 0.5) / 12  will be used. If
+            `"days since 1970-01-01"`, the number of days  since 1st Jan 1970
+            will be used (calculated using the ``datetime``  module). If
+            `"seconds since 1970-01-01"`, the number of seconds  since 1st Jan
+            1970 will be used (calculated using the ``datetime`` module).
 
         Returns
         -------
         :obj:`pd.DataFrame`
-            DataFrame with datetimes as columns and timeseries as rows. Metadata is in
-            the index.
+            DataFrame with datetimes as columns and timeseries as rows.
+            Metadata is in the index.
 
         Raises
         ------
         ValueError
-            If the metadata are not unique between timeseries
+            If the metadata are not unique between timeseries and
+            ``check_duplicated`` is ``True``
+
+        NotImplementedError
+            The value of `time_axis` is not recognised
+
+        ValueError
+            The value of `time_axis` would result in columns which aren't unique
         """
         df = pd.DataFrame(self.values)
         _meta = self.meta if meta is None else self.meta[meta]
         if check_duplicated and _meta.duplicated().any():
             raise ValueError("Duplicated meta values")
 
-        df.columns = self._time_points.to_index()
+        if time_axis is None:
+            columns = self._time_points.to_index()
+        elif time_axis == "year":
+            columns = self._time_points.years()
+        elif time_axis == "year-month":
+            columns = (
+                self._time_points.years() + (self._time_points.months() - 0.5) / 12
+            )
+        elif time_axis == "days since 1970-01-01":
+
+            def calc_days(x):
+                ref = np.array(["1970-01-01"], dtype=_TARGET_DTYPE)[0]
+
+                return (x - ref).astype("timedelta64[D]")
+
+            columns = calc_days(self._time_points.values).astype(int)
+
+        elif time_axis == "seconds since 1970-01-01":
+
+            def calc_seconds(x):
+                ref = np.array(["1970-01-01"], dtype=_TARGET_DTYPE)[0]
+
+                return x - ref
+
+            columns = calc_seconds(self._time_points.values).astype(int)
+
+        else:
+            raise NotImplementedError("time_axis = '{}'".format(time_axis))
+
+        if len(np.unique(columns)) != len(columns):
+            raise ValueError(
+                "Ambiguous time values with time_axis = '{}'".format(time_axis)
+            )
+
+        df.columns = columns
+        df.columns.name = "time"
         df.index = pd.MultiIndex.from_arrays(_meta.values.T, names=_meta.columns)
 
         return df
+
+    def long_data(self, time_axis=None):
+        """
+        Return data in long form, particularly useful for plotting with seaborn
+
+        Parameters
+        ----------
+        time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
+            Time axis to use for the output's columns. If `None`,
+            :class:`datetime.datetime` objects will be used. If `"year"`, the
+            year of each time point  will be used. If `"year-month", the year
+            plus (month - 0.5) / 12  will be used. If
+            `"days since 1970-01-01"`, the number of days  since 1st Jan 1970
+            will be used (calculated using the ``datetime``  module). If
+            `"seconds since 1970-01-01"`, the number of seconds  since 1st Jan
+            1970 will be used (calculated using the ``datetime`` module).
+
+        Returns
+        -------
+        :obj:`pd.DataFrame`
+            :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation per row).
+        """
+        out = self.timeseries(time_axis=time_axis).stack()
+        out.name = "value"
+        out = out.to_frame().reset_index()
+
+        return out
 
     @property
     def shape(self) -> tuple:

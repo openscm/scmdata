@@ -3,6 +3,7 @@ import datetime as dt
 import os
 import re
 import warnings
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -1839,3 +1840,155 @@ def test_drop_meta_not_inplace(test_scm_run):
 
     res = res * 2
     np.testing.assert_almost_equal(res.values, test_scm_run.values * 2)
+
+
+time_axis_checks = pytest.mark.parametrize(
+    "time_axis,mod_func",
+    (
+        (None, lambda x: x),
+        ("year", lambda x: x.year),
+        ("year-month", lambda x: x.year + (x.month - 0.5) / 12),
+        ("days since 1970-01-01", lambda x: (x - dt.datetime(1970, 1, 1)).days),
+        (
+            "seconds since 1970-01-01",
+            lambda x: (x - dt.datetime(1970, 1, 1)).total_seconds(),
+        ),
+    ),
+)
+
+
+@time_axis_checks
+def test_timeseries_time_axis(test_scm_run, time_axis, mod_func):
+    res = test_scm_run.timeseries(time_axis=time_axis)
+    assert (res.columns == (test_scm_run["time"].apply(mod_func))).all()
+
+
+@time_axis_checks
+def test_long_data_time_axis(test_scm_run, time_axis, mod_func):
+    res = test_scm_run.long_data(time_axis=time_axis)
+
+    assert (res["time"] == (test_scm_run.long_data()["time"].apply(mod_func))).all()
+
+
+@time_axis_checks
+@patch("scmdata.plotting.sns.lineplot")
+@patch.object(ScmRun, "long_data")
+def test_lineplot_time_axis(
+    mock_long_data, mock_sns_lineplot, test_scm_run, time_axis, mod_func
+):
+    mock_return = 4
+    mock_long_data.return_value = mock_return
+
+    test_scm_run.lineplot(time_axis=time_axis, other_kwarg="value")
+
+    mock_long_data.assert_called_once()
+    mock_long_data.assert_called_with(time_axis=time_axis)
+
+    mock_sns_lineplot.assert_called_once()
+    mock_sns_lineplot.assert_called_with(
+        x="time",
+        y="value",
+        estimator=np.median,
+        ci="sd",
+        hue="scenario",
+        other_kwarg="value",
+        data=mock_return,
+    )
+
+
+@pytest.mark.parametrize("method_to_call", ("timeseries", "long_data"))
+@pytest.mark.parametrize(
+    "time_axis,non_unique_vals,exp_raise",
+    (
+        (
+            "year",
+            [dt.datetime(2015, 1, 1), dt.datetime(2015, 2, 1), dt.datetime(2016, 1, 1)],
+            True,
+        ),
+        (
+            "year",
+            [dt.datetime(2015, 1, 1), dt.datetime(2016, 2, 1), dt.datetime(2017, 1, 1)],
+            False,
+        ),
+        (
+            "year-month",
+            [
+                dt.datetime(2015, 1, 1),
+                dt.datetime(2015, 1, 10),
+                dt.datetime(2015, 2, 1),
+            ],
+            True,
+        ),
+        (
+            "year-month",
+            [
+                dt.datetime(2015, 1, 1),
+                dt.datetime(2015, 2, 10),
+                dt.datetime(2015, 3, 1),
+            ],
+            False,
+        ),
+        (
+            "days since 1970-01-01",
+            [
+                dt.datetime(2015, 1, 1, 1),
+                dt.datetime(2015, 1, 1, 12),
+                dt.datetime(2015, 1, 2, 1),
+            ],
+            True,
+        ),
+        (
+            "days since 1970-01-01",
+            [
+                dt.datetime(2015, 1, 1, 1),
+                dt.datetime(2015, 1, 2, 1),
+                dt.datetime(2015, 1, 3, 1),
+            ],
+            False,
+        ),
+    ),
+)
+def test_timeseries_time_axis_non_unique_raises(
+    method_to_call, time_axis, non_unique_vals, exp_raise
+):
+    start = ScmRun(
+        data=np.arange(len(non_unique_vals)),
+        index=non_unique_vals,
+        columns={
+            "scenario": "junk",
+            "model": "junk",
+            "variable": "Emissions|CO2",
+            "unit": "GtC/yr",
+            "region": "World",
+        },
+    )
+    error_msg = re.escape(
+        "Ambiguous time values with time_axis = '{}'".format(time_axis)
+    )
+
+    if exp_raise:
+        with pytest.raises(ValueError, match=error_msg):
+            getattr(start, method_to_call)(time_axis=time_axis)
+    else:
+        getattr(start, method_to_call)(time_axis=time_axis)
+
+
+def test_timeseries_time_axis_junk_error(test_scm_run):
+    error_msg = re.escape("time_axis = 'junk")
+    with pytest.raises(NotImplementedError, match=error_msg):
+        test_scm_run.timeseries(time_axis="junk")
+
+
+def test_long_data_time_axis_junk_error(test_scm_run):
+    error_msg = re.escape("time_axis = 'junk")
+    with pytest.raises(NotImplementedError, match=error_msg):
+        test_scm_run.long_data(time_axis="junk")
+
+
+@patch("scmdata.plotting.sns.lineplot")
+def test_lineplot_time_axis_junk_error(mock_sns_lineplot, test_scm_run):
+    error_msg = re.escape("time_axis = 'junk")
+    with pytest.raises(NotImplementedError, match=error_msg):
+        test_scm_run.lineplot(time_axis="junk")
+
+    assert not mock_sns_lineplot.called  # doesn't get to trying to plot
