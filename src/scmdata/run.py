@@ -520,14 +520,25 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             If the length of :obj:`meta` is inconsistent with the number of timeseries
         """
         meta = np.atleast_1d(value)
-        if len(meta) == 1:
+        if key == "time":
+            self._time_points = TimePoints(meta)
             for ts in self._ts:
-                ts.meta[key] = meta[0]
-        elif len(meta) == len(self):
-            for i, ts in enumerate(self._ts):
-                ts.meta[key] = meta[i]
+                if len(meta) != len(ts):
+                    raise ValueError(
+                        "New time series is the incorrect length (expected: {}, got: {})".format(
+                            len(meta), len(ts)
+                        )
+                    )
+                ts["time"] = self._time_points.values
         else:
-            raise ValueError("Invalid shape for metadata")
+            if len(meta) == 1:
+                for ts in self._ts:
+                    ts.meta[key] = meta[0]
+            elif len(meta) == len(self):
+                for i, ts in enumerate(self._ts):
+                    ts.meta[key] = meta[i]
+            else:
+                raise ValueError("Invalid shape for metadata")
 
     def __repr__(self):
         def _indent(s):
