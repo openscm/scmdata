@@ -291,6 +291,9 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         """
         Initialize.
 
+        .. deprecated:: 0.5.0
+          :class:`ScmDataFrame` will be removed in scmdata 0.6.0, it is replaced by :class:`scmdata.run.ScmRun`.
+
         Parameters
         ----------
         data: Union[ScmDataFrame, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str]
@@ -336,6 +339,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         **kwargs:
             Additional parameters passed to :func:`pyam.core._read_file` to read files
+
+
 
         Raises
         ------
