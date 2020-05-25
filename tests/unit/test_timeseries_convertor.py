@@ -82,3 +82,28 @@ def test_extrapolation_with_nans():
     c = TimeseriesConverter(source, target,)
 
     np.testing.assert_allclose(c.convert_from(source_vals), target_vals, rtol=1e-3)
+
+
+def test_not_enough():
+    source = np.asarray(
+        [
+            np.datetime64("1000-01-01"),
+            np.datetime64("2000-01-01"),
+            np.datetime64("3500-01-01"),
+            np.datetime64("4000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+    source_vals = [1.0, 2.0, np.nan, np.nan]
+    target = np.asarray(
+        [
+            np.datetime64("1000-01-01"),
+            np.datetime64("2000-01-01"),
+            np.datetime64("3000-01-01"),
+            np.datetime64("4000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+    c = TimeseriesConverter(source, target,)
+    with pytest.raises(InsufficientDataError):
+        c.convert_from(source_vals)
