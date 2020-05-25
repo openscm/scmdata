@@ -3,6 +3,7 @@ import datetime as dt
 import os
 import re
 import warnings
+from datetime import datetime
 from unittest.mock import patch
 
 import numpy as np
@@ -1336,6 +1337,56 @@ def test_interpolate(combo_df):
     )
 
     npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [[1.0, 2.0, 3.0, np.nan], [1.0, 2.0, np.nan, 4.0], [np.nan, 2.0, 3.0, 4.0]],
+)
+def test_interpolate_nan(source):
+    df = ScmRun(
+        source,
+        columns={
+            "scenario": ["a_scenario"],
+            "model": ["a_model"],
+            "region": ["World"],
+            "variable": ["Emissions|BC"],
+            "unit": ["Mg /yr"],
+        },
+        index=[2000, 2100, 2200, 2300],
+    )
+    res = df.interpolate(
+        [datetime(y, 1, 1) for y in [2000, 2100, 2200, 2300, 2400]],
+        interpolation_type="linear",
+        extrapolation_type="linear",
+    )
+
+    npt.assert_array_almost_equal(
+        res.values.squeeze(), [1.0, 2.0, 3.0, 4.0, 5.0], decimal=4
+    )
+
+
+def test_interpolate_nan_constant():
+    df = ScmRun(
+        [1.0, 2.0, 3.0, np.nan],
+        columns={
+            "scenario": ["a_scenario"],
+            "model": ["a_model"],
+            "region": ["World"],
+            "variable": ["Emissions|BC"],
+            "unit": ["Mg /yr"],
+        },
+        index=[2000, 2100, 2200, 2300],
+    )
+    res = df.interpolate(
+        [datetime(y, 1, 1) for y in [2000, 2100, 2200, 2300, 2400]],
+        interpolation_type="linear",
+        extrapolation_type="constant",
+    )
+
+    npt.assert_array_almost_equal(
+        res.values.squeeze(), [1.0, 2.0, 3.0, 3.0, 3.0], decimal=4
+    )
 
 
 def test_time_mean_year_beginning_of_year(test_scm_df_monthly):

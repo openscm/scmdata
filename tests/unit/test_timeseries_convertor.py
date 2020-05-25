@@ -56,3 +56,54 @@ def test_really_long_timespan():
 
     np.testing.assert_allclose(c.convert_to(target_vals), source_vals, rtol=1e-3)
     np.testing.assert_allclose(c.convert_from(source_vals), target_vals, rtol=1e-3)
+
+
+def test_extrapolation_with_nans():
+    source = np.asarray(
+        [
+            np.datetime64("1000-01-01"),
+            np.datetime64("2000-01-01"),
+            np.datetime64("3500-01-01"),
+            np.datetime64("4000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+    source_vals = [1.0, 2.0, 3.5, np.nan]
+    target = np.asarray(
+        [
+            np.datetime64("1000-01-01"),
+            np.datetime64("2000-01-01"),
+            np.datetime64("3000-01-01"),
+            np.datetime64("4000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+    target_vals = [1.0, 2.0, 3.0, 4.0]
+    c = TimeseriesConverter(source, target,)
+
+    np.testing.assert_allclose(c.convert_from(source_vals), target_vals, rtol=1e-3)
+
+
+def test_not_enough():
+    source = np.asarray(
+        [
+            np.datetime64("1000-01-01"),
+            np.datetime64("2000-01-01"),
+            np.datetime64("3500-01-01"),
+            np.datetime64("4000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+    source_vals = [1.0, 2.0, np.nan, np.nan]
+    target = np.asarray(
+        [
+            np.datetime64("1000-01-01"),
+            np.datetime64("2000-01-01"),
+            np.datetime64("3000-01-01"),
+            np.datetime64("4000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+    c = TimeseriesConverter(source, target,)
+    with pytest.raises(InsufficientDataError):
+        c.convert_from(source_vals)

@@ -292,6 +292,8 @@ class TimeseriesConverter:
         """
         Wrap :func:`_convert_unsafe` to provide proper error handling.
 
+        Any nan values are removed from :obj:`source` before interpolation
+
         Parameters
         ----------
         values
@@ -316,6 +318,13 @@ class TimeseriesConverter:
         np.ndarray
             Converted time period average data for timeseries :obj:`values`
         """
+        values = np.asarray(values)
+        # Check for nans
+        nan_mask = np.isnan(values)
+        if nan_mask.sum():
+            values = values[~nan_mask]
+            source_time_points = source_time_points[~nan_mask]
+
         if len(values) < 3:
             raise InsufficientDataError
 

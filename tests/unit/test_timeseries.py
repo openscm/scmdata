@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 
+import cftime
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -143,3 +144,49 @@ def test_timeseries_mul(ts, inplace):
         ts2 = ts * 2
 
     npt.assert_allclose(ts2.values, [2, 4, 6])
+
+
+def test_interpolate(combo):
+    ts = TimeSeries(combo.source_values, time=combo.source)
+
+    res = ts.interpolate(
+        combo.target,
+        interpolation_type=combo.interpolation_type,
+        extrapolation_type=combo.extrapolation_type,
+    )
+
+    npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
+
+
+@pytest.mark.parametrize(
+    "dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day]
+)
+def test_extrapolation_long(dt):
+    source = np.arange(800, 1000)
+    source_times = [dt(y, 1, 1) for y in source]
+
+    ts = TimeSeries(source, time=source_times)
+
+    target = np.arange(800, 1100)
+    res = ts.interpolate([dt(y, 1, 1) for y in target], extrapolation_type="linear",)
+
+    # Interpolating annually using seconds is not identical to just assuming everything is years
+    npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=0)
+
+
+@pytest.mark.parametrize(
+    "dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day]
+)
+def test_extrapolation_nan(dt):
+    source = np.arange(2000, 2005, dtype=float)
+    source_times = [dt(int(y), 1, 1) for y in source]
+    source[-2:] = np.nan
+
+    ts = TimeSeries(source, time=source_times)
+
+    target = np.arange(2000, 2010)
+    res = ts.interpolate(
+        [dt(int(y), 1, 1) for y in target], extrapolation_type="linear",
+    )
+
+    npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=2)

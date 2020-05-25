@@ -271,24 +271,21 @@ class TimeSeries:
             Extrapolation type. Options are None, 'linear' or 'constant'
         Returns
         -------
-
+        :obj:`TimeSeries`
+            A new TimeSeries with the new time dimension
         """
-        target_times = np.asarray(target_times, dtype="datetime64[s]")
+        target_times = TimePoints(target_times)
         timeseries_converter = TimeseriesConverter(
             self.time_points.values,
-            target_times,
+            target_times.values,
             interpolation_type=interpolation_type,
             extrapolation_type=extrapolation_type,
         )
-        import cftime
 
-        cftime_dts = [
-            cftime.datetime(*dt.timetuple()[:6]) for dt in target_times.astype(object)
-        ]
-        d = self._data.reindex({"time": cftime_dts})
-        d[:] = timeseries_converter.convert_from(self._data.values)
+        ts = self.reindex(target_times.as_cftime())
+        ts._data[:] = timeseries_converter.convert_from(self._data.values)
 
-        return TimeSeries(d)
+        return ts
 
 
 inject_binary_ops(TimeSeries)
