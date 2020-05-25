@@ -1954,3 +1954,19 @@ def test_get_meta_no_duplicates(test_scm_df, no_duplicates):
             "Primary Energy",
             "Primary Energy|Coal",
         ]
+
+
+def test_raises_deprecation_warning(test_ts):
+    with pytest.warns(DeprecationWarning):
+        ScmDataFrame(
+            test_ts,
+            columns={
+                "model": ["a_iam"],
+                "climate_model": ["a_model"],
+                "scenario": ["a_scenario", "a_scenario", "a_scenario2"],
+                "region": ["World"],
+                "variable": ["Primary Energy", "Primary Energy|Coal", "Primary Energy"],
+                "unit": ["EJ/yr"],
+            },
+            index=[2005, 2010, 2015],
+        )

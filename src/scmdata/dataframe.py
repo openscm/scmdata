@@ -10,6 +10,7 @@ import os
 import warnings
 from logging import getLogger
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -290,6 +291,9 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         """
         Initialize.
 
+        .. deprecated:: 0.5.0
+          :class:`ScmDataFrame` will be removed in scmdata 0.6.0, it is replaced by :class:`scmdata.run.ScmRun`.
+
         Parameters
         ----------
         data: Union[ScmDataFrame, IamDataFrame, pd.DataFrame, pd.Series, np.ndarray, str]
@@ -336,6 +340,8 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         **kwargs:
             Additional parameters passed to :func:`pyam.core._read_file` to read files
 
+
+
         Raises
         ------
         ValueError
@@ -346,6 +352,11 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         TypeError
             Timeseries cannot be read from :obj:`data`
         """
+        warn(
+            "ScmDataFrame has been deprecated and will be removed in v0.6.0. Use the ScmRun class instead",
+            DeprecationWarning,
+            2,
+        )
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
         elif isinstance(data, ScmDataFrame):
