@@ -1,11 +1,11 @@
 import re
 from datetime import datetime
 
+import cftime
 import numpy as np
 import numpy.testing as npt
 import pytest
 import xarray as xr
-import cftime
 
 from scmdata.time import TimePoints
 from scmdata.timeseries import TimeSeries
@@ -158,7 +158,9 @@ def test_interpolate(combo):
     npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
 
 
-@pytest.mark.parametrize("dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day])
+@pytest.mark.parametrize(
+    "dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day]
+)
 def test_extrapolation_long(dt):
     source = np.arange(800, 1000)
     source_times = [dt(y, 1, 1) for y in source]
@@ -166,28 +168,25 @@ def test_extrapolation_long(dt):
     ts = TimeSeries(source, time=source_times)
 
     target = np.arange(800, 1100)
-    res = ts.interpolate(
-        [dt(y, 1, 1) for y in target],
-        extrapolation_type="linear",
-    )
+    res = ts.interpolate([dt(y, 1, 1) for y in target], extrapolation_type="linear",)
 
     # Interpolating annually using seconds is not perfect
     npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=0)
 
 
-@pytest.mark.parametrize("dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day])
+@pytest.mark.parametrize(
+    "dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day]
+)
 def test_extrapolation_nan(dt):
-    source = np.arange(800, 1000)
-    source_times = [dt(y, 1, 1) for y in source]
-    source[-5:] = np.nan
+    source = np.arange(2000, 2005, dtype=float)
+    source_times = [dt(int(y), 1, 1) for y in source]
+    source[-2:] = np.nan
 
     ts = TimeSeries(source, time=source_times)
 
-    target = np.arange(800, 1100)
+    target = np.arange(2000, 2010)
     res = ts.interpolate(
-        [dt(y, 1, 1) for y in target],
-        extrapolation_type="linear",
+        [dt(int(y), 1, 1) for y in target], extrapolation_type="linear",
     )
 
-    # Interpolating annually using seconds is not perfect
-    npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=0)
+    npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=2)
