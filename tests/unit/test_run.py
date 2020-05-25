@@ -686,6 +686,22 @@ def test_filter_by_regexp(test_scm_run):
     assert obs["scenario"].unique() == "a_scenario"
 
 
+@pytest.mark.parametrize("regexp,exp_units", (
+    (True, []),
+    (False, ["W/m^2"]),
+))
+def test_filter_by_regexp(test_scm_run, regexp, exp_units):
+    tunits = ["W/m2"] * test_scm_run.shape[1]
+    tunits[-1] = "W/m^2"
+    test_scm_run["unit"] = tunits
+    obs = test_scm_run.filter(unit="W/m^2", regexp=regexp)
+
+    if not exp_units:
+        assert obs.empty
+    else:
+        assert obs.get_unique_meta("unit") == exp_units
+
+
 def test_filter_timeseries_different_length():
     # This is different to how `ScmDataFrame` deals with nans
     # Nan and empty timeseries remain in the Run
