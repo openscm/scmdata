@@ -1994,13 +1994,6 @@ def test_lineplot_time_axis_junk_error(mock_sns_lineplot, test_scm_run):
     assert not mock_sns_lineplot.called  # doesn't get to trying to plot
 
 
-@pytest.mark.parametrize("tax1,tax2", (
-        ([dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)], [dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)]),
-        ([dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)], [dt.datetime(y, 1, 1) for y in range(2020, 2040, 10)]),
-        ([dt.datetime(y, 1, 1) for y in range(1000, 1020, 10)], [dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)]),
-        ([dt.datetime(y, 1, 1) for y in range(2000, 2020, 10)], [dt.datetime(y, 1, 1) for y in range(3000, 3020, 10)]),
-        ([dt.datetime(y, 1, 1) for y in range(1000, 2020, 100)], [dt.datetime(y, 1, 1) for y in range(2000, 2500, 10)]),
-))
 @pytest.mark.parametrize(
     "tax1,tax2",
     (
