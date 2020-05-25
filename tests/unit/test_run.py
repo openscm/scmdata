@@ -1881,10 +1881,10 @@ def test_lineplot_time_axis(
 
     test_scm_run.lineplot(time_axis=time_axis, other_kwarg="value")
 
-    mock_long_data.assert_called_once
+    mock_long_data.assert_called_once()
     mock_long_data.assert_called_with(time_axis=time_axis)
 
-    mock_sns_lineplot.assert_called_once
+    mock_sns_lineplot.assert_called_once()
     mock_sns_lineplot.assert_called_with(
         x="time",
         y="value",

@@ -478,9 +478,15 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         return d.T
 
-    def long_data(self):
+    # pylint: disable=unused-argument
+    def long_data(self, time_axis=None):
         """
         Return data in long form, particularly useful for plotting with seaborn
+
+        Parameters
+        ----------
+        time_axis: None
+            Not used
 
         Returns
         -------
