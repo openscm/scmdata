@@ -14,6 +14,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from dateutil import parser
+from warnings import warn
 
 from .filters import (
     HIERARCHY_SEPARATOR,
@@ -346,6 +347,11 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         TypeError
             Timeseries cannot be read from :obj:`data`
         """
+        warn(
+            "ScmDataFrame has been deprecated and will be removed in a future release. Use the ScmRun class instead",
+            DeprecationWarning,
+            2,
+        )
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
         elif isinstance(data, ScmDataFrame):
