@@ -1534,6 +1534,7 @@ def test_filter_by_int(test_scm_run):
     ("target_unit", "input_units", "filter_kwargs", "expected", "expected_units"),
     [
         ("EJ/yr", "EJ/yr", {}, [1.0, 0.5, 2.0], ["EJ/yr", "EJ/yr", "EJ/yr"]),
+        ("EJ/yr", "EJ/yr", {"variable": "Primary Energy"}, [1.0, 0.5, 2.0], ["EJ/yr", "EJ/yr", "EJ/yr"]),
         ("PJ/yr", "EJ/yr", {}, [1000.0, 500.0, 2000.0], ["PJ/yr", "PJ/yr", "PJ/yr"]),
         (
             "PJ/yr",
@@ -1549,6 +1550,8 @@ def test_filter_by_int(test_scm_run):
             [1.0, 0.5 * 1e-3, 2.0],
             ["EJ/yr", "PJ/yr", "Gt C / yr"],
         ),
+        ("W/m^2", "W/m^2", {}, [1.0, 0.5, 2.0], ["W/m^2", "W/m^2", "W/m^2"]),
+        ("W/m^2", "W/km^2", {}, [1.0*1e3, 0.5*1e3, 2.0*1e3], ["W/km^2", "W/km^2", "W/km^2"]),
     ],
 )
 def test_convert_unit(
