@@ -478,7 +478,6 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
         return d.T
 
-    # pylint: disable=unused-argument
     def long_data(self, time_axis=None):
         """
         Return data in long form, particularly useful for plotting with seaborn
@@ -493,6 +492,9 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         :obj:`pd.DataFrame`
             :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation per row).
         """
+
+        if time_axis is not None:
+            warnings.warn("Ignoring time_axis value. Use the ScmRun class instead")
         out = self.timeseries().stack()
         out.name = "value"
         out = out.to_frame().reset_index()
