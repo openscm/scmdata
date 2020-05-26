@@ -449,26 +449,101 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         raise KeyError("[{}] is not in metadata".format(key))
 
-    def __setitem__(  # pylint: disable=inconsistent-return-statements
-        self, key: Any, value: Any
+    def __setitem__(
+        self, key: str, value: Union[np.ndarray, list, int, float, str]
     ) -> Any:
         """
-        Set item of self with helpful direct access.
+        Update metadata
 
-        Provides direct access to set "time" as well as the columns in :attr:`meta`.
+        Notes
+        -----
+        If the meta values changes are applied to a filtered subset, the change will be reflected
+        in the original :obj:`ScmRun` object.
+
+        .. code:: python
+
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+            >>> df["climate_model"] = ["a_model", "a_model", "b_model"]
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model
+            >>> df2 = df.filter(variable="Primary Energy")
+            >>> df2["pe_only"] = True
+            >>> df2
+            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model pe_only
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model pe_only
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model     NaN
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
+
+        Parameters
+        ----------
+        key
+            Column name
+
+        value
+            Values to write
+
+            If a list of values is provided, then the length of that :obj:`value` must be the same as the number of timeseries
+
+        Raises
+        ------
+        ValueError
+            If the length of :obj:`meta` is inconsistent with the number of timeseries
         """
+        meta = np.atleast_1d(value)
         if key == "time":
-            self._time_points = TimePoints(value)
+            self._time_points = TimePoints(meta)
             for ts in self._ts:
-                if len(value) != len(ts):
+                if len(meta) != len(ts):
                     raise ValueError(
                         "New time series is the incorrect length (expected: {}, got: {})".format(
-                            len(value), len(ts)
+                            len(meta), len(ts)
                         )
                     )
                 ts["time"] = self._time_points.values
-            return self._time_points.values
-        return self.set_meta(value, name=key)
+        else:
+            if len(meta) == 1:
+                for ts in self._ts:
+                    ts.meta[key] = meta[0]
+            elif len(meta) == len(self):
+                for i, ts in enumerate(self._ts):
+                    ts.meta[key] = meta[i]
+            else:
+                raise ValueError(
+                    "Invalid length for metadata, `{}`, must be 1 or equal to the number of timeseries, `{}`".format(
+                        len(meta), len(self)
+                    )
+                )
 
     def __repr__(self):
         def _indent(s):
@@ -757,7 +832,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Return a filtered ScmRun (i.e., a subset of the data).
 
         Note that this this does not copy the underlying time-series data so any modifications will be reflected in the caller
-        ``ScmRun``. This allows for the updating a subset of the timeseries directly.
+        :obj`ScmRun`. This allows for the updating a subset of the timeseries directly.
 
         .. code:: python
 
@@ -1014,101 +1089,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             Tail of :func:`self.timeseries()`
         """
         return self.timeseries().tail(*args, **kwargs)
-
-    def set_meta(
-        self,
-        meta: Union[pd.Series, list, int, float, str],
-        name: Optional[str] = None,
-        index: Optional[Union[pd.DataFrame, pd.Series, pd.Index, pd.MultiIndex]] = None,
-    ) -> None:
-        """
-        Set metadata information.
-
-        This function has been deprecated and may be removed in future. Use the `[]` accessor
-        to update metadata instead.
-
-        .. code:: python
-
-            >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-            Time:
-                Start: 2005-01-01T00:00:00
-                End: 2015-01-01T00:00:00
-            Meta:
-                   model     scenario region             variable   unit climate_model
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-            >>> df["climate_model"] = ["a_model", "a_model", "b_model"]
-            >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-            Time:
-                Start: 2005-01-01T00:00:00
-                End: 2015-01-01T00:00:00
-            Meta:
-                   model     scenario region             variable   unit climate_model
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model
-            >>> df.filter(variable="Primary Energy")["pe_only"] = True
-            >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-            Time:
-                Start: 2005-01-01T00:00:00
-                End: 2015-01-01T00:00:00
-            Meta:
-                   model     scenario region             variable   unit climate_model pe_only
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model     NaN
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
-
-        Parameters
-        ----------
-        meta
-            Column to be added to metadata
-
-        name
-            Meta column name (defaults to :obj:`meta.name`)
-
-        index
-            *DEPRECATED* The index to which the metadata is to be applied.
-
-            This argument has been deprecated, but kept for compatibility with :class:`ScmDataFrame`
-
-
-        Raises
-        ------
-        ValueError
-            No name can be determined from inputs or index cannot be coerced to
-            :class:`pd.MultiIndex`
-
-        NotImplementedError
-            Any non-None value for `index` is provided
-        """
-        # check that name is valid and doesn't conflict with data columns
-        # mypy doesn't recognise if
-        if (name or (hasattr(meta, "name") and meta.name)) in [  # type: ignore
-            None,
-            False,
-        ]:
-            raise ValueError("Must pass a name or use a named pd.Series")
-        # mpy doesn't recognise if checks
-        name = name or meta.name  # type: ignore
-
-        if index is not None:
-            raise NotImplementedError(
-                "Removed `index` functionality. Filter and then set meta instead"
-            )
-
-        meta = np.atleast_1d(meta)
-        if len(meta) == 1:
-            for ts in self._ts:
-                ts.meta[name] = meta[0]
-        elif len(meta) == len(self):
-            for i, ts in enumerate(self._ts):
-                ts.meta[name] = meta[i]
-        else:
-            raise ValueError("Invalid shape for metadata")
 
     def get_unique_meta(
         self, meta: str, no_duplicates: Optional[bool] = False,

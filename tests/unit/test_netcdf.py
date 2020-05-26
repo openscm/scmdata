@@ -103,7 +103,7 @@ def test_run_to_nc_4d(scm_data, tmpdir):
 
 
 def test_run_to_nc_nan_dimension_error(scm_data, tmpdir):
-    scm_data.set_meta(np.nan, "run_id")
+    scm_data["run_id"] = np.nan
 
     out_fname = join(tmpdir, "out.nc")
     with pytest.raises(AssertionError, match="nan in dimension: `run_id`"):
@@ -169,7 +169,7 @@ def test_nc_to_run_non_unique_for_dimension(scm_data):
 
 
 def test_nc_to_run_non_unique_meta(scm_data):
-    scm_data.set_meta(["b_model", "a_model", "a_model"], "climate_model")
+    scm_data["climate_model"] = ["b_model", "a_model", "a_model"]
 
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
@@ -194,7 +194,7 @@ def test_run_to_nc_with_extras(scm_data, dtype):
             .astype(dtype)
         )
 
-        scm_data.set_meta(run_id, "run_id")
+        scm_data["run_id"] = run_id
         run_to_nc(scm_data, out_fname, dimensions=("scenario",), extras=("run_id",))
 
         assert exists(out_fname)
@@ -235,7 +235,7 @@ def test_run_to_nc_with_extras(scm_data, dtype):
 def test_nc_to_run_with_extras(scm_data):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        scm_data.set_meta([1, 1, 2], "run_id")
+        scm_data["run_id"] = [1, 1, 2]
         run_to_nc(scm_data, out_fname, dimensions=("scenario",), extras=("run_id",))
 
         assert exists(out_fname)
@@ -249,7 +249,7 @@ def test_nc_to_run_with_extras(scm_data):
 def test_nc_to_run_with_extras_non_unique_for_dimension(scm_data):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        scm_data.set_meta([1, 2, 1], "run_id")
+        scm_data["run_id"] = [1, 2, 1]
 
         error_msg = "metadata for run_id is not unique for requested dimensions"
         with pytest.raises(ValueError, match=error_msg):
