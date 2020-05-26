@@ -539,7 +539,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 for i, ts in enumerate(self._ts):
                     ts.meta[key] = meta[i]
             else:
-                raise ValueError("Invalid length for metadata, `{}`, must be 1 or equal to the number of timeseries, `{}`".format(len(meta), len(self)))
+                raise ValueError(
+                    "Invalid length for metadata, `{}`, must be 1 or equal to the number of timeseries, `{}`".format(
+                        len(meta), len(self)
+                    )
+                )
 
     def __repr__(self):
         def _indent(s):
