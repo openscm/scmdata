@@ -1483,34 +1483,9 @@ def test_time_mean_unsupported_style(test_scm_df_monthly):
         test_scm_df_monthly.time_mean("junk")
 
 
-def test_set_meta_as_series(test_scm_run):
-    s = pd.Series([0.3, 0.4, 0.5])
-    test_scm_run["meta_series"] = s
-
-    exp = pd.Series(data=s.values, index=test_scm_run.meta.index)
-    exp.name = "meta_series"
-
-    obs = test_scm_run["meta_series"]
-    pd.testing.assert_series_equal(obs, exp)
-    pd.testing.assert_index_equal(
-        test_scm_run.meta.columns,
-        pd.Index(
-            [
-                "model",
-                "scenario",
-                "region",
-                "variable",
-                "unit",
-                "climate_model",
-                "meta_series",
-            ]
-        ),
-    )
-
-
-def test_set_meta_as_series_wrong_length(test_scm_run):
-    s = pd.Series([0.3, 0.4])
-    with pytest.raises(ValueError, match="Invalid shape for metadata"):
+def test_set_meta_wrong_length(test_scm_run):
+    s = [0.3, 0.4]
+    with pytest.raises(ValueError, match="Invalid length for metadata"):
         test_scm_run["meta_series"] = s
 
 

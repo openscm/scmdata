@@ -450,14 +450,15 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         raise KeyError("[{}] is not in metadata".format(key))
 
     def __setitem__(
-        self, key: str, value: Union[pd.Series, np.ndarray, list, int, float, str]
+        self, key: str, value: Union[np.ndarray, list, int, float, str]
     ) -> Any:
         """
         Update metadata
 
         Notes
         -----
-        The meta values changes to a filtered subset and the change will be reflected in the original :obj:`ScmRun` object.
+        If the meta values changes are applied to a filtered subset, the change will be reflected
+        in the original :obj:`ScmRun` object.
 
         .. code:: python
 
@@ -538,7 +539,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 for i, ts in enumerate(self._ts):
                     ts.meta[key] = meta[i]
             else:
-                raise ValueError("Invalid shape for metadata")
+                raise ValueError("Invalid length for metadata, `{}`, must be 1 or equal to the number of timeseries, `{}`".format(len(meta), len(self)))
 
     def __repr__(self):
         def _indent(s):
