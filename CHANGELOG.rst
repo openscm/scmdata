@@ -7,6 +7,7 @@ master
 v0.5.0
 ------
 
+- (`#64 <https://github.com/openscm/scmdata/pull/64>`_) Remove spurious warning from :obj:`ScmRun`'s :meth:`filter` method
 - (`#63 <https://github.com/openscm/scmdata/pull/63>`_) Remove :meth:`set_meta` from :class:`ScmRun` in preference for using the :meth:`__setitem__` method
 - (`#62 <https://github.com/openscm/scmdata/pull/62>`_) Fix interpolation when the data contains nan values
 - (`#61 <https://github.com/openscm/scmdata/pull/61>`_) Hotfix filters to also include caret ("^") in pseudo-regexp syntax. Also adds :meth:`empty` property to :obj:`ScmRun`
