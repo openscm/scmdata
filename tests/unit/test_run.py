@@ -1670,6 +1670,15 @@ def test_convert_existing_unit_context(test_scm_run):
     assert all(obs["unit_context"] == "AR4GWP100")
 
 
+def test_convert_unit_does_not_warn(test_scm_run, caplog):
+    test_scm_run["unit"] = "GtC"
+
+    res = test_scm_run.convert_unit("MtC")
+
+    npt.assert_equal(len(caplog.records), 0)
+    npt.assert_array_equal(test_scm_run.values, res.values / 10 ** 3)
+
+
 def test_resample(data_cls):
     df_dts = [
         dt.datetime(2000, 1, 1),

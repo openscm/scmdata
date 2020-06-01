@@ -800,7 +800,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         bool
             If :obj:`ScmRun` is empty, return ``True``, if not return ``False``
         """
-        return np.equal(len(self._ts), 0)
+        return np.equal(len(self), 0)
 
     @property
     def meta(self) -> pd.DataFrame:
@@ -826,6 +826,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         keep: bool = True,
         inplace: bool = False,
         has_nan: bool = True,
+        log_if_empty: bool = True,
         **kwargs: Any,
     ):
         """
@@ -879,6 +880,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             :class:`np.nan`. If ``False``, the conversion is not applied and so a search
             in a string column which contains ;class:`np.nan` will result in a
             :class:`TypeError`.
+
+        log_if_empty
+            If ``True``, log a warning level message if the result is empty.
 
         **kwargs
             Argument names are keys with which to filter, values are used to do the
@@ -941,7 +945,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ret._ts = [ts[_keep_times] for ts in ret._ts]
             ret["time"] = self.time_points.values[_keep_times]
 
-        if len(ret) == 0:
+        if log_if_empty and ret.empty:
             _logger.warning("Filtered ScmRun is empty!")
 
         if not inplace:
@@ -1494,7 +1498,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ret["unit_context"] = None
 
         to_convert = ret.filter(**kwargs)
-        to_not_convert = ret.filter(**kwargs, keep=False)
+        to_not_convert = ret.filter(**kwargs, keep=False, log_if_empty=False)
 
         def apply_units(group):
             orig_unit = group.get_unique_meta("unit", no_duplicates=True)
