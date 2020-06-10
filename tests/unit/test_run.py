@@ -314,6 +314,15 @@ def test_init_df_with_extra_col(test_pd_df, data_cls):
     pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
 
 
+def test_init_df_without_required_arguments(test_run_ts):
+    with pytest.raises(ValueError, match="`columns` argument is required"):
+        ScmRun(test_run_ts, index=[2000, 20005, 2010], columns=None)
+    with pytest.raises(ValueError, match="`index` argument is required"):
+        ScmRun(test_run_ts, index=None, columns={
+            "variable": "test"
+        })
+
+
 def test_init_iam(test_iam_df, test_pd_df, data_cls):
     a = data_cls(test_iam_df)
     b = data_cls(test_pd_df)

@@ -380,6 +380,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         columns: Optional[Dict[str, list]] = None,
         **kwargs: Any,
     ):
+        if isinstance(data, np.ndarray):
+            if columns is None:
+                raise ValueError("`columns` argument is required")
+            if index is None:
+                raise ValueError("`index` argument is required")
+
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
         elif isinstance(data, ScmDataFrame):
