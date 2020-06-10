@@ -67,7 +67,9 @@ def _read_file(  # pylint: disable=missing-return-doc
     return _format_data(_read_pandas(fnames, *args, **kwargs))
 
 
-def _read_pandas(fname: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
+def _read_pandas(
+    fname: str, *args: Any, lowercase_cols=False, **kwargs: Any
+) -> pd.DataFrame:
     """
     Read a file and return a :class:`pd.DataFrame`.
 
@@ -75,6 +77,8 @@ def _read_pandas(fname: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
     ----------
     fname
         Path from which to read data
+    lowercase_cols
+        If True, convert the column names of the file to lowercase
     *args
         Passed to :func:`pd.read_csv` if :obj:`fname` ends with '.csv', otherwise passed
         to :func:`pd.read_excel`.
@@ -102,6 +106,8 @@ def _read_pandas(fname: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
             kwargs["sheet_name"] = "data"
         df = pd.read_excel(fname, *args, **kwargs)
 
+    if lowercase_cols:
+        df.columns = [c.lower() for c in df.columns]
     return df
 
 
@@ -356,9 +362,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Raises
         ------
         ValueError
-            If metadata for ['model', 'scenario', 'region', 'variable', 'unit'] is not
-            found. A :class:`ValueError` is also raised if you try to load from multiple
-            files at once. If you wish to do this, please use :func:`df_append` instead.
+            * If metadata for ['model', 'scenario', 'region', 'variable', 'unit'] is not found.
+            * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.df_append` instead.
+            * Not specifying :obj`index` and :obj`columns` if :obj`data` is a :obj`numpy.ndarray`
 
         TypeError
             Timeseries cannot be read from :obj:`data`
@@ -376,6 +382,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         columns: Optional[Dict[str, list]] = None,
         **kwargs: Any,
     ):
+        if isinstance(data, np.ndarray):
+            if columns is None:
+                raise ValueError("`columns` argument is required")
+            if index is None:
+                raise ValueError("`index` argument is required")
+
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
         elif isinstance(data, ScmDataFrame):
