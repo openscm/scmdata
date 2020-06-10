@@ -360,9 +360,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Raises
         ------
         ValueError
-            If metadata for ['model', 'scenario', 'region', 'variable', 'unit'] is not
-            found. A :class:`ValueError` is also raised if you try to load from multiple
-            files at once. If you wish to do this, please use :func:`df_append` instead.
+            * If metadata for ['model', 'scenario', 'region', 'variable', 'unit'] is not found.
+            * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.df_append` instead.
+            * Not specifying :obj`index` and :obj`columns` if :obj`data` is a :obj`numpy.ndarray`
 
         TypeError
             Timeseries cannot be read from :obj:`data`
