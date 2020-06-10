@@ -1815,7 +1815,7 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
         return None
 
     if duplicate_msg == "return":
-        warnings.warn("returning a `pd.DataFrame`, not an `ScmRun`")
+        warnings.warn("Result contains overlapping data values with non unique metadata")
         return data
 
     raise ValueError("Unrecognised value for duplicate_msg")

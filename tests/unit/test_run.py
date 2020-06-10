@@ -1139,14 +1139,14 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
     elif duplicate_msg == "return":
-        warn_msg = "returning a `pd.DataFrame`, not an `ScmRun`"
+        warn_msg = "Result contains overlapping data values with non unique metadata"
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
     else:
         assert not mock_warn_taking_average
 
     if duplicate_msg == "return":
-        assert isinstance(res, pd.DataFrame)
+        assert isinstance(res, ScmRun)
         # check res gives all timeseries back
         assert res.shape[0] == len(base) + len(other)
 
