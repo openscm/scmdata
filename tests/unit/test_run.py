@@ -1146,6 +1146,7 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
         assert not mock_warn_taking_average
 
     if duplicate_msg == "return":
+        assert isinstance(res, pd.DataFrame)
         # check res gives all timeseries back
         assert res.shape[0] == len(base) + len(other)
 
