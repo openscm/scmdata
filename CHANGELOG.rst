@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#67 <https://github.com/openscm/scmdata/pull/67>`_) Update the documentation for :meth`ScmRun.append`
+
 v0.5.0
 ------
 
