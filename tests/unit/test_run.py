@@ -214,7 +214,7 @@ def get_test_pd_df_with_datetime_columns(tpdf):
     )
 
 
-def test_init_ts(test_ts, test_pd_df, data_cls):
+def test_init_with_ts(test_ts, test_pd_df, data_cls):
     df = data_cls(
         test_ts,
         columns={
@@ -234,6 +234,13 @@ def test_init_ts(test_ts, test_pd_df, data_cls):
     b = data_cls(test_pd_df)
 
     assert_scmdf_almost_equal(df, b, check_ts_names=False)
+
+def test_init_with_scmdf(test_scm_datetime_df, test_scm_datetime_run):
+    df = ScmRun(
+        test_scm_datetime_df,
+    )
+
+    assert_scmdf_almost_equal(df, test_scm_datetime_run, check_ts_names=False)
 
 
 @pytest.mark.parametrize(
