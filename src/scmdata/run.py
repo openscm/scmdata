@@ -1709,9 +1709,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
             return ScmRun(data, index=index, columns=meta)
 
-    def duplicated(self):
-        ts = self.timeseries(check_duplicated=False)
-        return ts[ts.index.duplicated(keep=False)].sort_index()
 
 def df_append(
     runs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
@@ -1838,7 +1835,9 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
         return None
 
     if duplicate_msg == "return":
-        warnings.warn("Result contains overlapping data values with non unique metadata")
+        warnings.warn(
+            "Result contains overlapping data values with non unique metadata"
+        )
         return data
 
     raise ValueError("Unrecognised value for duplicate_msg")
