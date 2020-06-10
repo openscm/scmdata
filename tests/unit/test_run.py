@@ -235,10 +235,9 @@ def test_init_with_ts(test_ts, test_pd_df, data_cls):
 
     assert_scmdf_almost_equal(df, b, check_ts_names=False)
 
+
 def test_init_with_scmdf(test_scm_datetime_df, test_scm_datetime_run):
-    df = ScmRun(
-        test_scm_datetime_df,
-    )
+    df = ScmRun(test_scm_datetime_df,)
 
     assert_scmdf_almost_equal(df, test_scm_datetime_run, check_ts_names=False)
 
@@ -318,9 +317,7 @@ def test_init_df_without_required_arguments(test_run_ts):
     with pytest.raises(ValueError, match="`columns` argument is required"):
         ScmRun(test_run_ts, index=[2000, 20005, 2010], columns=None)
     with pytest.raises(ValueError, match="`index` argument is required"):
-        ScmRun(test_run_ts, index=None, columns={
-            "variable": "test"
-        })
+        ScmRun(test_run_ts, index=None, columns={"variable": "test"})
 
 
 def test_init_iam(test_iam_df, test_pd_df, data_cls):
@@ -1769,9 +1766,7 @@ def test_init_no_file(data_cls):
                 "test_data",
                 "rcp26_emissions_capitalised.csv",
             ),
-            {
-                "lowercase_cols": True
-            },
+            {"lowercase_cols": True},
         ),
         (
             os.path.join(
@@ -1837,9 +1832,9 @@ def test_read_from_disk_incorrect_labels():
 
     error_msg = exc_info.value.args[0]
     assert error_msg.startswith(exp_msg)
-    assert 'scenario' in error_msg
-    assert 'variable' in error_msg
-    assert 'unit' not in error_msg
+    assert "scenario" in error_msg
+    assert "variable" in error_msg
+    assert "unit" not in error_msg
 
 
 @pytest.mark.parametrize("separator", ["|", "__", "/", "~", "_", "-"])

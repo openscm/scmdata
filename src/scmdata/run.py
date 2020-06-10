@@ -67,7 +67,9 @@ def _read_file(  # pylint: disable=missing-return-doc
     return _format_data(_read_pandas(fnames, *args, **kwargs))
 
 
-def _read_pandas(fname: str, *args: Any, lowercase_cols=False, **kwargs: Any) -> pd.DataFrame:
+def _read_pandas(
+    fname: str, *args: Any, lowercase_cols=False, **kwargs: Any
+) -> pd.DataFrame:
     """
     Read a file and return a :class:`pd.DataFrame`.
 
