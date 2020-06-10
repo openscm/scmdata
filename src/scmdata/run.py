@@ -32,6 +32,7 @@ from .filters import (
 from .groupby import RunGroupBy
 from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
+from .ops import inject_ops_methods
 from .plotting import inject_plotting_methods
 from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
 from .time import _TARGET_DTYPE, TimePoints
@@ -1881,3 +1882,4 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
 inject_binary_ops(ScmRun)
 inject_nc_methods(ScmRun)
 inject_plotting_methods(ScmRun)
+inject_ops_methods(ScmRun)

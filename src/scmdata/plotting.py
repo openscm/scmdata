@@ -101,7 +101,7 @@ def _deprecated_line_plot(self, **kwargs):  # pragma: no cover
 
 def inject_plotting_methods(cls):
     """
-    Inject the plotting functions
+    Inject the plotting methods
 
     Parameters
     ----------
