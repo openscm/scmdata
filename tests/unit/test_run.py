@@ -214,7 +214,7 @@ def get_test_pd_df_with_datetime_columns(tpdf):
     )
 
 
-def test_init_ts(test_ts, test_pd_df, data_cls):
+def test_init_with_ts(test_ts, test_pd_df, data_cls):
     df = data_cls(
         test_ts,
         columns={
@@ -234,6 +234,12 @@ def test_init_ts(test_ts, test_pd_df, data_cls):
     b = data_cls(test_pd_df)
 
     assert_scmdf_almost_equal(df, b, check_ts_names=False)
+
+
+def test_init_with_scmdf(test_scm_datetime_df, test_scm_datetime_run):
+    df = ScmRun(test_scm_datetime_df,)
+
+    assert_scmdf_almost_equal(df, test_scm_datetime_run, check_ts_names=False)
 
 
 @pytest.mark.parametrize(
@@ -305,6 +311,13 @@ def test_init_df_with_extra_col(test_pd_df, data_cls):
     tdf = get_test_pd_df_with_datetime_columns(tdf)
     assert extra_col in df.meta
     pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
+
+
+def test_init_df_without_required_arguments(test_run_ts):
+    with pytest.raises(ValueError, match="`columns` argument is required"):
+        ScmRun(test_run_ts, index=[2000, 20005, 2010], columns=None)
+    with pytest.raises(ValueError, match="`index` argument is required"):
+        ScmRun(test_run_ts, index=None, columns={"variable": "test"})
 
 
 def test_init_iam(test_iam_df, test_pd_df, data_cls):
@@ -1751,6 +1764,15 @@ def test_init_no_file(data_cls):
                 os.path.dirname(os.path.abspath(__file__)),
                 "..",
                 "test_data",
+                "rcp26_emissions_capitalised.csv",
+            ),
+            {"lowercase_cols": True},
+        ),
+        (
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..",
+                "test_data",
                 "rcp26_emissions.xls",
             ),
             {},
@@ -1769,6 +1791,15 @@ def test_init_no_file(data_cls):
                 os.path.dirname(os.path.abspath(__file__)),
                 "..",
                 "test_data",
+                "rcp26_emissions_multi_sheet_capitalised.xlsx",
+            ),
+            {"sheet_name": "rcp26_emissions", "lowercase_cols": True},
+        ),
+        (
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..",
+                "test_data",
                 "rcp26_emissions_multi_sheet_data.xlsx",
             ),
             {},
@@ -1776,11 +1807,34 @@ def test_init_no_file(data_cls):
     ],
 )
 def test_read_from_disk(test_file, test_kwargs, data_cls):
+    if data_cls != ScmRun and "lowercase_cols" in test_kwargs:
+        pytest.skip("Only ScmRun supports lowercase_cols")
+
     loaded = data_cls(test_file, **test_kwargs)
     assert (
         loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
         == 0.010116813
     )
+
+
+def test_read_from_disk_incorrect_labels():
+    fname = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..",
+        "test_data",
+        "rcp26_emissions_capitalised.csv",
+    )
+
+    exp_msg = "missing required columns"
+
+    with pytest.raises(ValueError) as exc_info:
+        ScmRun(fname)
+
+    error_msg = exc_info.value.args[0]
+    assert error_msg.startswith(exp_msg)
+    assert "scenario" in error_msg
+    assert "variable" in error_msg
+    assert "unit" not in error_msg
 
 
 @pytest.mark.parametrize("separator", ["|", "__", "/", "~", "_", "-"])

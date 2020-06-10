@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#66 <https://github.com/openscm/scmdata/pull/66>`_) Raise ValueError if index/columns arguments are not provided when instantiating a :class`ScmRun` object with a numpy array. Add ``lowercase_cols`` argument to coerce the column names in CSV files to lowercase
+
 v0.5.0
 ------
 
