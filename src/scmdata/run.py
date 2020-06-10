@@ -67,7 +67,7 @@ def _read_file(  # pylint: disable=missing-return-doc
     return _format_data(_read_pandas(fnames, *args, **kwargs))
 
 
-def _read_pandas(fname: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
+def _read_pandas(fname: str, *args: Any, lowercase_cols=False, **kwargs: Any) -> pd.DataFrame:
     """
     Read a file and return a :class:`pd.DataFrame`.
 
@@ -75,6 +75,8 @@ def _read_pandas(fname: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
     ----------
     fname
         Path from which to read data
+    lowercase_cols
+        If True, convert the column names of the file to lowercase
     *args
         Passed to :func:`pd.read_csv` if :obj:`fname` ends with '.csv', otherwise passed
         to :func:`pd.read_excel`.
@@ -102,6 +104,8 @@ def _read_pandas(fname: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
             kwargs["sheet_name"] = "data"
         df = pd.read_excel(fname, *args, **kwargs)
 
+    if lowercase_cols:
+        df.columns = [c.lower() for c in df.columns]
     return df
 
 
