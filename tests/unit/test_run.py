@@ -1143,22 +1143,20 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
 
     if duplicate_msg == "warn":
         warn_msg = (
-            "Duplicate time points detected, the output will be the average of the "
-            "duplicates. Set `duplicate_msg='return'` to examine the "
-            "joint timeseries (the duplicates can be found by looking at "
-            "`res[res.index.duplicated(keep=False)].sort_index()`. Set "
-            "`duplicate_msg=False` to silence this message."
+            "Duplicate time points detected, the output will be the average of "
+            "the duplicates.  Set `duplicate_msg=False` to silence this message."
         )
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
     elif duplicate_msg == "return":
-        warn_msg = "returning a `pd.DataFrame`, not an `ScmRun`"
+        warn_msg = "Result contains overlapping data values with non unique metadata"
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
     else:
         assert not mock_warn_taking_average
 
     if duplicate_msg == "return":
+        assert isinstance(res, ScmRun)
         # check res gives all timeseries back
         assert res.shape[0] == len(base) + len(other)
 

@@ -1729,10 +1729,34 @@ def df_append(
     Append together many objects.
 
     When appending many objects, it may be more efficient to call this routine once with
-    a list of :class:`ScmRun`'s, than using :func:`ScmRun.append` multiple times. If
-    timeseries with duplicate metadata are found, the timeseries are appended and values
-    falling on the same timestep are averaged (this behaviour can be adjusted with the
-    :obj:`duplicate_msg` arguments).
+    a list of :class:`ScmRun`'s, than using :func:`ScmRun.append` multiple times.
+
+    If timeseries with duplicate metadata are found, the timeseries are appended and values
+    falling on the same timestep are averaged if :obj:`duplicate_msg` is not "return". If
+    :obj:`duplicate_msg` is "return", then the result will contain the duplicated timeseries
+    for further inspection.
+
+    .. code:: python
+
+        >>> res = base.append(other, duplicate_msg="return")
+        <scmdata.ScmRun (timeseries: 5, timepoints: 3)>
+        Time:
+            Start: 2005-01-01T00:00:00
+            End: 2015-06-12T00:00:00
+        Meta:
+                  scenario             variable  model climate_model region   unit
+            0   a_scenario       Primary Energy  a_iam       a_model  World  EJ/yr
+            1   a_scenario  Primary Energy|Coal  a_iam       a_model  World  EJ/yr
+            2  a_scenario2       Primary Energy  a_iam       a_model  World  EJ/yr
+            3  a_scenario3       Primary Energy  a_iam       a_model  World  EJ/yr
+            4   a_scenario       Primary Energy  a_iam       a_model  World  EJ/yr
+        >>> ts = res.timeseries(check_duplicated=False)
+        >>> ts[ts.index.duplicated(keep=False)]
+        time                                                        2005-01-01  ...  2015-06-12
+        scenario   variable       model climate_model region unit               ...
+        a_scenario Primary Energy a_iam a_model       World  EJ/yr         1.0  ...         7.0
+                                                             EJ/yr        -1.0  ...         1.0
+
 
     Parameters
     ----------
@@ -1746,15 +1770,14 @@ def df_append(
 
     duplicate_msg
         If "warn", raise a warning if duplicate data is detected. If "return", return
-        the joint dataframe (including duplicate timeseries) so the user can inspect
+        the joint :obj`ScmRun` (including duplicate timeseries) so the user can inspect
         further. If ``False``, take the average and do not raise a warning.
 
     Returns
     -------
     :obj:`ScmRun`
         If not :obj:`inplace`, the return value is the object containing the merged
-        data. The resultant class will be determined by the type of the first object. If
-        ``duplicate_msg == "return"``, a `pd.DataFrame` will be returned instead.
+        data. The resultant class will be determined by the type of the first object.
 
     Raises
     ------
@@ -1818,16 +1841,15 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
     if duplicate_msg == "warn":
         warn_msg = (
             "Duplicate time points detected, the output will be the average of "
-            "the duplicates. Set `duplicate_msg='return'` to examine the joint "
-            "timeseries (the duplicates can be found by looking at "
-            "`res[res.index.duplicated(keep=False)].sort_index()`. Set "
-            "`duplicate_msg=False` to silence this message."
+            "the duplicates.  Set `duplicate_msg=False` to silence this message."
         )
         warnings.warn(warn_msg)
         return None
 
     if duplicate_msg == "return":
-        warnings.warn("returning a `pd.DataFrame`, not an `ScmRun`")
+        warnings.warn(
+            "Result contains overlapping data values with non unique metadata"
+        )
         return data
 
     raise ValueError("Unrecognised value for duplicate_msg")
