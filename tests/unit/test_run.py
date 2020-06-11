@@ -13,7 +13,7 @@ from numpy import testing as npt
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.run import ScmRun, df_append
+from scmdata.run import ScmRun, df_append, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -1272,7 +1272,7 @@ def get_append_col_order_time_dfs(base):
 def test_append_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
-    res = df_append([test_scm_run, other, other_2])
+    res = run_append([test_scm_run, other, other_2])
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
@@ -1281,11 +1281,25 @@ def test_append_column_order_time_interpolation(test_scm_run):
     )
 
 
-def test_df_append_inplace_wrong_base(test_scm_run):
+def test_run_append_inplace_wrong_base(test_scm_run):
     error_msg = "Can only append inplace to an ScmRun"
     with pytest.raises(TypeError, match=error_msg):
         with warnings.catch_warnings(record=True):  # ignore warnings in this test
-            df_append([test_scm_run.timeseries(), test_scm_run], inplace=True)
+            run_append([test_scm_run.timeseries(), test_scm_run], inplace=True)
+
+
+def test_df_append_deprecated(test_scm_run):
+    base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
+
+    error_msg = "scmdata.run.df_append has been deprecated"
+    with pytest.warns(DeprecationWarning, match=error_msg):
+        res = df_append([test_scm_run, other, other_2])
+
+        pd.testing.assert_frame_equal(
+            res.timeseries().sort_index(),
+            exp.timeseries().reorder_levels(res.timeseries().index.names).sort_index(),
+            check_like=True,
+        )
 
 
 def test_append_chain_column_order_time_interpolation(test_scm_run):
@@ -1315,7 +1329,7 @@ def test_append_inplace_column_order_time_interpolation(test_scm_run):
     )
 
 
-def test_append_inplace_preexisinting_nan(test_scm_run):
+def test_append_inplace_preexisting_nan(test_scm_run):
     other = test_scm_run * 2
     other["climate_model"] = "a_model2"
     other["junk"] = np.nan
@@ -2138,7 +2152,7 @@ def test_append_long_run(tax1, tax2):
         data=np.arange(len(tax2)), index=tax2, columns={"scenario": "run2", **mdata}
     )
 
-    res = df_append([run1, run2])
+    res = run_append([run1, run2])
 
     expected = sorted(set(tax1 + tax2))
     assert len(res["time"]) == len(expected)

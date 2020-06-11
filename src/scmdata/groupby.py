@@ -79,8 +79,8 @@ class RunGroupBy(_GroupBy):
         in this group. If the result of this function call is None, than it is
         excluded from the results.
 
-        The results are appended together using :func`df_append`. The function
-        can change the size of the input :obj`ScmRun` as long as `df_append`
+        The results are appended together using :func`run_append`. The function
+        can change the size of the input :obj`ScmRun` as long as `run_append`
         can be applied to all results.
 
         Examples
@@ -116,7 +116,7 @@ class RunGroupBy(_GroupBy):
         """
         Recombine the applied objects like the original.
         """
-        from scmdata.run import df_append
+        from scmdata.run import run_append
 
         # Remove all None values
         applied = [df for df in applied if df is not None]
@@ -124,7 +124,7 @@ class RunGroupBy(_GroupBy):
         if len(applied) == 0:
             return None
         else:
-            return df_append(applied)
+            return run_append(applied)
 
     def reduce(self, func, dim=None, axis=None, **kwargs):
         """
