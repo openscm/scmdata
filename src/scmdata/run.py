@@ -363,7 +363,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ------
         ValueError
             * If metadata for ['model', 'scenario', 'region', 'variable', 'unit'] is not found.
-            * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.df_append` instead.
+            * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.run_append` instead.
             * Not specifying :obj`index` and :obj`columns` if :obj`data` is a :obj`numpy.ndarray`
 
         TypeError
@@ -1525,7 +1525,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         ret = to_convert.groupby("unit").map(apply_units)
 
-        ret = df_append([ret, to_not_convert], inplace=inplace)
+        ret = run_append([ret, to_not_convert], inplace=inplace)
         if not inplace:
             return ret
 
@@ -1582,7 +1582,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Append additional data to the current dataframe.
 
-        For details, see :func:`df_append`.
+        For details, see :func:`run_append`.
 
         Parameters
         ----------
@@ -1611,7 +1611,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if not isinstance(other, ScmRun):
             other = self.__class__(other, **kwargs)
 
-        return df_append([self, other], inplace=inplace, duplicate_msg=duplicate_msg)
+        return run_append([self, other], inplace=inplace, duplicate_msg=duplicate_msg)
 
     def to_iamdataframe(self) -> LongDatetimeIamDataFrame:  # pragma: no cover
         """
@@ -1722,7 +1722,30 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             return ScmRun(data, index=index, columns=meta)
 
 
-def df_append(
+def df_append(*args, **kwargs):
+    """
+    Append together many objects.
+
+    When appending many objects, it may be more efficient to call this routine once with
+    a list of :class:`ScmRun`'s, than using :func:`ScmRun.append` multiple times.
+
+    If timeseries with duplicate metadata are found, the timeseries are appended and values
+    falling on the same timestep are averaged if :obj:`duplicate_msg` is not "return". If
+    :obj:`duplicate_msg` is "return", then the result will contain the duplicated timeseries
+    for further inspection.
+
+    .. deprecated:: 0.5.0
+        :func:`df_append` will be removed in scmdata v0.6.0, it is replaced by :func:`scmdata.run.run_append`.
+    """
+    warnings.warn(
+        "scmdata.run.df_append has been deprecated and will be removed in v0.6.0. Use the scmdata.run.run_append class instead",
+        DeprecationWarning,
+        2,
+    )
+    return run_append(*args, **kwargs)
+
+
+def run_append(
     runs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
 ):
     """
