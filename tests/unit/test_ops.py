@@ -25,22 +25,48 @@ def get_single_ts(data=[1, 2, 3], index=[1, 2, 3], variable="Emissions|CO2",
         }
     )
 
+
 @pytest.fixture
 def base_single_scmrun():
     return get_single_ts(variable="Emissions|CO2")
+
 
 @pytest.fixture
 def other_single_scmrun():
     return get_single_ts(variable="Emissions|CO2|Fossil")
 
 
-def test_subtract_single_timeseries(base_single_scmrun, other_single_scmrun):
-    res = base_single_scmrun.subtract(other_single_scmrun, op_cols={"variable": "Emissions|CO2|AFOLU"})
+OPS_MARK = pytest.mark.parametrize("op", ("add", "subtract", "multiply", "divide"))
 
-    base_ts = base_single_scmrun.timeseries().reset_index("variable", drop=True)
-    other_ts = other_single_scmrun.timeseries().reset_index("variable", drop=True)
 
-    exp_ts = base_ts - other_ts
+def perform_op(base, other, op, reset_index):
+    base_ts = base.timeseries().reset_index(reset_index, drop=True)
+    other_ts = other.timeseries().reset_index(reset_index, drop=True)
+
+    if op == "add":
+        exp_ts = base_ts + other_ts
+    elif op == "subtract":
+        exp_ts = base_ts - other_ts
+    elif op == "multiply":
+        exp_ts = base_ts * other_ts
+    elif op == "divide":
+        exp_ts = base_ts / other_ts
+    else:
+        raise NotImplementedError(op)
+
+    return exp_ts
+
+
+@OPS_MARK
+def test_single_timeseries(op, base_single_scmrun, other_single_scmrun):
+    res = getattr(base_single_scmrun, op)(other_single_scmrun, op_cols={"variable": "Emissions|CO2|AFOLU"})
+
+    exp_ts = perform_op(
+        base_single_scmrun,
+        other_single_scmrun,
+        op,
+        "variable"
+    )
     exp_ts["variable"] = "Emissions|CO2|AFOLU"
 
     exp = ScmRun(exp_ts)
@@ -48,43 +74,3 @@ def test_subtract_single_timeseries(base_single_scmrun, other_single_scmrun):
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
 
-def test_add_single_timeseries(base_single_scmrun, other_single_scmrun):
-    res = base_single_scmrun.add(other_single_scmrun, op_cols={"variable": "Emissions|CO2|AFOLU"})
-
-    base_ts = base_single_scmrun.timeseries().reset_index("variable", drop=True)
-    other_ts = other_single_scmrun.timeseries().reset_index("variable", drop=True)
-
-    exp_ts = base_ts + other_ts
-    exp_ts["variable"] = "Emissions|CO2|AFOLU"
-
-    exp = ScmRun(exp_ts)
-
-    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
-
-
-def test_multiply_single_timeseries(base_single_scmrun, other_single_scmrun):
-    res = base_single_scmrun.multiply(other_single_scmrun, op_cols={"variable": "Emissions|CO2|AFOLU"})
-
-    base_ts = base_single_scmrun.timeseries().reset_index("variable", drop=True)
-    other_ts = other_single_scmrun.timeseries().reset_index("variable", drop=True)
-
-    exp_ts = base_ts * other_ts
-    exp_ts["variable"] = "Emissions|CO2|AFOLU"
-
-    exp = ScmRun(exp_ts)
-
-    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
-
-
-def test_divide_single_timeseries(base_single_scmrun, other_single_scmrun):
-    res = base_single_scmrun.divide(other_single_scmrun, op_cols={"variable": "Emissions|CO2|AFOLU"})
-
-    base_ts = base_single_scmrun.timeseries().reset_index("variable", drop=True)
-    other_ts = other_single_scmrun.timeseries().reset_index("variable", drop=True)
-
-    exp_ts = base_ts / other_ts
-    exp_ts["variable"] = "Emissions|CO2|AFOLU"
-
-    exp = ScmRun(exp_ts)
-
-    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
