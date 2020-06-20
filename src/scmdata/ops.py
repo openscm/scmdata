@@ -114,7 +114,7 @@ def subtract(self, other, op_cols, **kwargs):
     out = _perform_op(
         prep_for_op(self, op_cols, **kwargs),
         prep_for_op(other, op_cols, **kwargs),
-        "subtract"
+        "subtract",
     )
 
     out = set_op_values(out, op_cols)
@@ -145,7 +145,7 @@ def add(self, other, op_cols, **kwargs):
     out = _perform_op(
         prep_for_op(self, op_cols, **kwargs),
         prep_for_op(other, op_cols, **kwargs),
-        "add"
+        "add",
     )
 
     out = set_op_values(out, op_cols)
@@ -176,7 +176,7 @@ def multiply(self, other, op_cols, **kwargs):
     out = _perform_op(
         prep_for_op(self, op_cols, **kwargs),
         prep_for_op(other, op_cols, **kwargs),
-        "multiply"
+        "multiply",
     )
 
     out = set_op_values(out, op_cols)
@@ -207,7 +207,7 @@ def divide(self, other, op_cols, **kwargs):
     out = _perform_op(
         prep_for_op(self, op_cols, **kwargs),
         prep_for_op(other, op_cols, **kwargs),
-        "divide"
+        "divide",
     )
 
     out = set_op_values(out, op_cols)

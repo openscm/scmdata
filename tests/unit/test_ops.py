@@ -77,7 +77,9 @@ def base_multiple_scmrun():
 
 @pytest.fixture
 def other_multiple_scmrun():
-    return get_multiple_ts(data=np.array([[-1, 0, 3.2], [11.1, 20, 32.3]]).T, scenario="Scenario B")
+    return get_multiple_ts(
+        data=np.array([[-1, 0, 3.2], [11.1, 20, 32.3]]).T, scenario="Scenario B"
+    )
 
 
 def convert_to_pint_name(unit):
@@ -145,7 +147,11 @@ def test_multiple_timeseries(op, base_multiple_scmrun, other_multiple_scmrun):
         exp_ts["unit"] = exp_ts["unit"].apply(convert_to_pint_name).values
 
     elif op == "multiply":
-        exp_ts["unit"] = exp_ts["unit"].apply(lambda x: convert_to_pint_name("({})**2".format(x))).values
+        exp_ts["unit"] = (
+            exp_ts["unit"]
+            .apply(lambda x: convert_to_pint_name("({})**2".format(x)))
+            .values
+        )
 
     elif op == "divide":
         exp_ts["unit"] = "dimensionless"
@@ -159,7 +165,9 @@ def test_warming_per_gt():
     base = get_single_ts(variable="Surface Temperature", unit="K")
     other = get_single_ts(variable="Cumulative Emissions|CO2", unit="GtC")
 
-    res = base.divide(other, op_cols={"variable": "Warming per Cumulative emissions CO2"})
+    res = base.divide(
+        other, op_cols={"variable": "Warming per Cumulative emissions CO2"}
+    )
 
     exp_ts = perform_op(base, other, "divide", ["variable", "unit"])
     exp_ts["variable"] = "Warming per Cumulative emissions CO2"
