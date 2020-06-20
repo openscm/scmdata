@@ -36,6 +36,9 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     """
     Make a line plot via `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
 
+    If only a single unit is present, it will be used as the y-axis label.
+    The axis object is returned so this can be changed by the user if desired.
+
     Parameters
     ----------
     time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
