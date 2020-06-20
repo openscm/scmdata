@@ -66,6 +66,12 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
 
     ax = sns.lineplot(data=plt_df, **kwargs)
 
+    try:
+        unit = self.get_unique_meta("unit", no_duplicates=True)
+        ax.set_ylabel(unit)
+    except ValueError:
+        pass  # don't set ylabel
+
     return ax
 
 

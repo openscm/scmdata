@@ -79,10 +79,10 @@ def test_lineplot_units(mock_seaborn_lineplot, single_unit, test_scm_run):
 
     test_scm_run["unit"] = units
 
-    test_scm_run.lineplot(time_axis="year")
-
     mock_ax = MagicMock()
     mock_seaborn_lineplot.return_value = mock_ax
+
+    test_scm_run.lineplot(time_axis="year")
 
     mock_seaborn_lineplot.assert_called()
 
