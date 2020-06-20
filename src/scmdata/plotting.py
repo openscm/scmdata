@@ -1,5 +1,5 @@
 """
-Plotting helpers for DataFrames
+Plotting helpers for :obj:`ScmRun`
 
 See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 """

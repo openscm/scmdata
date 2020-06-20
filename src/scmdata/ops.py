@@ -1,3 +1,7 @@
+"""
+Operations for :obj:`ScmRun`
+"""
+
 import pandas as pd
 import pintpandas
 from openscm_units import unit_registry
