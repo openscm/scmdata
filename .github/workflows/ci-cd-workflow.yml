@@ -20,6 +20,7 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install -e .[dev]
+        pip install git+https://github.com/hgrecco/pint-pandas.git
     # TODO: add `pylint src`
     - name: Formatting and linters
       run: |
