@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -44,7 +44,9 @@ def test_lineplot(mock_long_data, mock_seaborn_lineplot, test_scm_run):
 
     mock_long_data.assert_called_with(time_axis="year")
 
-    mock_seaborn_lineplot.assert_called_with(ci='sd', data=trv, estimator=np.median, hue='scenario', x='time', y='value')
+    mock_seaborn_lineplot.assert_called_with(
+        ci="sd", data=trv, estimator=np.median, hue="scenario", x="time", y="value"
+    )
 
 
 @patch("scmdata.plotting.sns.lineplot")
