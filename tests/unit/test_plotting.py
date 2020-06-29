@@ -1,6 +1,9 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pytest
+
+from scmdata.run import ScmRun
 
 
 def test_plotting_injected_methods(test_scm_df, test_scm_run):
@@ -29,3 +32,63 @@ def test_no_seaborn(test_scm_run):
         ImportError, match="seaborn is not installed. Run 'pip install seaborn'"
     ):
         test_scm_run.lineplot()
+
+
+@patch("scmdata.plotting.sns.lineplot")
+@patch.object(ScmRun, "long_data")
+def test_lineplot(mock_long_data, mock_seaborn_lineplot, test_scm_run):
+    trv = "test long_data return value"
+    mock_long_data.return_value = trv
+
+    test_scm_run.lineplot(time_axis="year")
+
+    mock_long_data.assert_called_with(time_axis="year")
+
+    mock_seaborn_lineplot.assert_called_with(
+        ci="sd", data=trv, estimator=np.median, hue="scenario", x="time", y="value"
+    )
+
+
+@patch("scmdata.plotting.sns.lineplot")
+@patch.object(ScmRun, "long_data")
+def test_lineplot_kwargs(mock_long_data, mock_seaborn_lineplot, test_scm_run):
+    tkwargs = {
+        "x": "x",
+        "y": "y",
+        "hue": "hue",
+        "ci": "ci",
+        "estimator": "estimator",
+    }
+    trv = "test long_data return value"
+    mock_long_data.return_value = trv
+
+    test_scm_run.lineplot(time_axis="time_axis", **tkwargs)
+
+    mock_long_data.assert_called_with(time_axis="time_axis")
+
+    mock_seaborn_lineplot.assert_called_with(data=trv, **tkwargs)
+
+
+@pytest.mark.parametrize("single_unit", (True, False))
+@patch("scmdata.plotting.sns.lineplot")
+def test_lineplot_units(mock_seaborn_lineplot, single_unit, test_scm_run):
+    units = test_scm_run["unit"].values
+
+    if single_unit:
+        units[:] = "J/yr"
+    else:
+        units[-1] = "J/yr"
+
+    test_scm_run["unit"] = units
+
+    mock_ax = MagicMock()
+    mock_seaborn_lineplot.return_value = mock_ax
+
+    test_scm_run.lineplot(time_axis="year")
+
+    mock_seaborn_lineplot.assert_called()
+
+    if single_unit:
+        mock_ax.set_ylabel.assert_called_with(units[0])
+    else:
+        mock_ax.set_ylabel.assert_not_called()
