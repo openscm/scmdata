@@ -100,6 +100,7 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install -e .[tests,notebooks]
+        pip install git+https://github.com/hgrecco/pint-pandas.git
     - name: Test notebooks with nbval
       run: |
           pytest notebooks -r a --nbval-lax --sanitize-with tests/notebook-tests.cfg --no-cov
