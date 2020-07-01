@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from openscm_units import unit_registry
 
+from pint.errors import DimensionalityError
 from scmdata.run import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
 
@@ -83,7 +84,7 @@ def convert_to_pint_name(unit):
     return str(unit_registry(unit).units)
 
 
-OPS_MARK = pytest.mark.parametrize("op", ("add", "subtract"))
+OPS_MARK = pytest.mark.parametrize("op", ("add", "subtract", "multiply", "divide"))
 
 
 def perform_op(base, other, op, reset_index):
@@ -95,6 +96,12 @@ def perform_op(base, other, op, reset_index):
 
     elif op == "subtract":
         exp_ts = base_ts - other_ts
+
+    elif op == "divide":
+        exp_ts = base_ts / other_ts
+
+    elif op == "multiply":
+        exp_ts = base_ts * other_ts
 
     else:
         raise NotImplementedError(op)
@@ -111,16 +118,14 @@ def test_single_timeseries(op, base_single_scmrun, other_single_scmrun):
     exp_ts = perform_op(base_single_scmrun, other_single_scmrun, op, "variable")
     exp_ts["variable"] = "Emissions|CO2|AFOLU"
 
-    # when we add pint back in this happens
-    # if op in ["add", "subtract"]:
-    #     exp_ts["unit"] = "gigatC / a"
+    if op in ["add", "subtract"]:
+        exp_ts["unit"] = "gigatC / a"
 
-    # once we add multiply and divide in, turn these on
-    # elif op == "multiply":
-    #     exp_ts["unit"] = "gigatC ** 2 / a ** 2"
+    elif op == "multiply":
+        exp_ts["unit"] = "gigatC ** 2 / a ** 2"
 
-    # elif op == "divide":
-    #     exp_ts["unit"] = "dimensionless"
+    elif op == "divide":
+        exp_ts["unit"] = "dimensionless"
 
     exp = ScmRun(exp_ts)
 
@@ -136,19 +141,18 @@ def test_multiple_timeseries(op, base_multiple_scmrun, other_multiple_scmrun):
     exp_ts = perform_op(base_multiple_scmrun, other_multiple_scmrun, op, "scenario")
     exp_ts["scenario"] = "A to B"
 
-    # when we add pint back in this happens
-    # if op in ["add", "subtract"]:
-    #     exp_ts["unit"] = exp_ts["unit"].apply(convert_to_pint_name).values
+    if op in ["add", "subtract"]:
+        exp_ts["unit"] = exp_ts["unit"].apply(convert_to_pint_name).values
 
-    # elif op == "multiply":
-    #     exp_ts["unit"] = (
-    #         exp_ts["unit"]
-    #         .apply(lambda x: convert_to_pint_name("({})**2".format(x)))
-    #         .values
-    #     )
+    elif op == "multiply":
+        exp_ts["unit"] = (
+            exp_ts["unit"]
+            .apply(lambda x: convert_to_pint_name("({})**2".format(x)))
+            .values
+        )
 
-    # elif op == "divide":
-    #     exp_ts["unit"] = "dimensionless"
+    elif op == "divide":
+        exp_ts["unit"] = "dimensionless"
 
     exp = ScmRun(exp_ts)
 
@@ -161,8 +165,7 @@ def test_missing_series_error():
 
     error_msg = re.escape(
         "No equivalent in `other` for "
-        "[('scenario', 'scen'), ('model', 'mod'), ('unit', 'MtCH4 / yr'), "
-        "('region', 'World|R5REF')]"
+        "[('scenario', 'scen'), ('model', 'mod'), ('region', 'World|R5REF')]"
     )
     with pytest.raises(KeyError, match=error_msg):
         base.add(other, op_cols={"variable": "Warming plus Cumulative emissions CO2"})
@@ -173,11 +176,10 @@ def test_different_unit_error():
     other = get_single_ts(variable="Cumulative Emissions|CO2", unit="GtC")
 
     error_msg = re.escape(
-        "No equivalent in `other` for "
-        "[('scenario', 'scen'), ('model', 'mod'), ('unit', 'K'), "
-        "('region', 'World')]"
+        "Cannot convert from 'kelvin' ([temperature]) to "
+        "'gigatC' ([carbon] * [mass])"
     )
-    with pytest.raises(KeyError, match=error_msg):
+    with pytest.raises(DimensionalityError, match=error_msg):
         base.add(other, op_cols={"variable": "Warming plus Cumulative emissions CO2"})
 
 
@@ -196,6 +198,23 @@ def test_multiple_ops_cols():
     exp_ts = perform_op(base, other, "add", ["variable", "unit"])
     exp_ts["variable"] = "Warming plus Cumulative emissions CO2"
     exp_ts["unit"] = "nonsense"
+
+    exp = ScmRun(exp_ts)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+def test_warming_per_gt():
+    base = get_single_ts(variable="Surface Temperature", unit="K")
+    other = get_single_ts(variable="Cumulative Emissions|CO2", unit="GtC")
+
+    res = base.divide(
+        other, op_cols={"variable": "Warming per Cumulative emissions CO2"}
+    )
+
+    exp_ts = perform_op(base, other, "divide", ["variable", "unit"])
+    exp_ts["variable"] = "Warming per Cumulative emissions CO2"
+    exp_ts["unit"] = "kelvin / gigatC"
 
     exp = ScmRun(exp_ts)
 

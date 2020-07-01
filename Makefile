@@ -111,6 +111,7 @@ $(VENV_DIR): setup.py
 
 	$(VENV_DIR)/bin/pip install --upgrade pip
 	$(VENV_DIR)/bin/pip install -e .[dev]
+	$(VENV_DIR)/bin/pip install git+https://github.com/hgrecco/pint-pandas.git
 
 	touch $(VENV_DIR)
 
