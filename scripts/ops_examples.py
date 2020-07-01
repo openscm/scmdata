@@ -57,7 +57,6 @@ fos_times_afolu = fos.multiply(
 fos_times_afolu.head()
 
 warming_per_co2 = start.filter(variable="*Temperature*").divide(
-    start.filter(variable="Cumulative*"),
-    op_cols={"variable": "Warming per emissions"}
+    start.filter(variable="Cumulative*"), op_cols={"variable": "Warming per emissions"}
 )
 warming_per_co2.head()
