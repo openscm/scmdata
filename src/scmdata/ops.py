@@ -2,7 +2,6 @@
 Operations for :obj:`ScmRun`
 """
 import pandas as pd
-from openscm_units import unit_registry
 
 
 def prep_for_op(inp, op_cols):
@@ -112,14 +111,6 @@ def _perform_op(base, other, op):
     out = out.T
 
     return out
-
-
-def _check_unit_compatibility(first, second):
-    unit_first = first.get_unique_meta("unit", no_duplicates=True)
-    unit_second = second.get_unique_meta("unit", no_duplicates=True)
-
-    if unit_first != unit_second:
-        raise DimensionalityError(unit_first, unit_second)
 
 
 def subtract(self, other, op_cols, **kwargs):
