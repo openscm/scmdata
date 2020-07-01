@@ -1,5 +1,9 @@
 """
 Operations for :obj:`ScmRun`
+
+These rely on
+`Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
+to handle unit conversions automatically
 """
 import pandas as pd
 import pint_pandas
