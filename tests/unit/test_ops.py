@@ -1,10 +1,12 @@
 # tests to write:
-# - operations align properly (i.e. use more than one timeseries in tests)
 # - what happens if the subtraction doesn't align properly (either some rows in one ScmRun that aren't in the other or metadata is not unique once the ``op_cols`` are removed)
 # - multiple ``op_cols`` also works
 # - can do e.g. population per capita with right units
+import re
+
 import numpy as np
 import pytest
+from pint.errors import DimensionalityError
 from openscm_units import unit_registry
 
 from scmdata.run import ScmRun
@@ -86,7 +88,7 @@ def convert_to_pint_name(unit):
     return str(unit_registry(unit).units)
 
 
-OPS_MARK = pytest.mark.parametrize("op", ("add", "subtract", "multiply", "divide"))
+OPS_MARK = pytest.mark.parametrize("op", ("add", "subtract"))
 
 
 def perform_op(base, other, op, reset_index):
@@ -98,12 +100,6 @@ def perform_op(base, other, op, reset_index):
 
     elif op == "subtract":
         exp_ts = base_ts - other_ts
-
-    elif op == "multiply":
-        exp_ts = base_ts * other_ts
-
-    elif op == "divide":
-        exp_ts = base_ts / other_ts
 
     else:
         raise NotImplementedError(op)
@@ -161,18 +157,12 @@ def test_multiple_timeseries(op, base_multiple_scmrun, other_multiple_scmrun):
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
 
-def test_warming_per_gt():
+def test_different_unit_error():
     base = get_single_ts(variable="Surface Temperature", unit="K")
     other = get_single_ts(variable="Cumulative Emissions|CO2", unit="GtC")
 
-    res = base.divide(
-        other, op_cols={"variable": "Warming per Cumulative emissions CO2"}
-    )
-
-    exp_ts = perform_op(base, other, "divide", ["variable", "unit"])
-    exp_ts["variable"] = "Warming per Cumulative emissions CO2"
-    exp_ts["unit"] = "kelvin / gigatC"
-
-    exp = ScmRun(exp_ts)
-
-    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+    error_msg = re.escape("Units `K` and `GtC` are  not the same")
+    with pytest.raises(DimensionalityError, match=error_msg):
+        base.add(
+            other, op_cols={"variable": "Warming plus Cumulative emissions CO2"}
+        )
