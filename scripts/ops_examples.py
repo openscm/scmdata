@@ -9,17 +9,16 @@ start = ScmRun(
     index=IDX,
     columns={
         "variable": [
-            "Emissions|CO2|Fossil", "Emissions|CO2|AFOLU",
-            "Emissions|CO2|Fossil", "Emissions|CO2|AFOLU",
+            "Emissions|CO2|Fossil",
+            "Emissions|CO2|AFOLU",
+            "Emissions|CO2|Fossil",
+            "Emissions|CO2|AFOLU",
         ],
         "unit": "GtC / yr",
-        "region": [
-            "World|NH", "World|NH",
-            "World|SH", "World|SH",
-        ],
+        "region": ["World|NH", "World|NH", "World|SH", "World|SH",],
         "model": "idealised",
         "scenario": "idealised",
-    }
+    },
 )
 
 start.head()
@@ -43,7 +42,9 @@ world = nh.add(sh, op_cols={"region": "World"})
 world.head()
 
 
-fos_minus_afolu = fos.subtract(afolu, op_cols={"variable": "Emissions|CO2|Fossil - AFOLU"})
+fos_minus_afolu = fos.subtract(
+    afolu, op_cols={"variable": "Emissions|CO2|Fossil - AFOLU"}
+)
 fos_minus_afolu.head()
 
 nh_minus_sh = nh.subtract(sh, op_cols={"region": "World|NH - SH"})
