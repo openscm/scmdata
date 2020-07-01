@@ -3,8 +3,8 @@ import re
 import numpy as np
 import pytest
 from openscm_units import unit_registry
-
 from pint.errors import DimensionalityError
+
 from scmdata.run import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
 
