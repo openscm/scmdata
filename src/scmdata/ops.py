@@ -87,7 +87,9 @@ def _perform_op(base, other, op):
                     out.append(base[col] - other[col])
 
             except KeyError:
-                raise KeyError("No equivalent in `other` for {}".format(list(zip(col_names, col))))
+                raise KeyError(
+                    "No equivalent in `other` for {}".format(list(zip(col_names, col)))
+                )
 
         # elif op == "multiply":
         #     out.append(base[col] * other[col])

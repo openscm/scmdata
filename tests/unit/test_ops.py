@@ -166,9 +166,7 @@ def test_missing_series_error():
         "('region', 'World|R5REF')]"
     )
     with pytest.raises(KeyError, match=error_msg):
-        base.add(
-            other, op_cols={"variable": "Warming plus Cumulative emissions CO2"}
-        )
+        base.add(other, op_cols={"variable": "Warming plus Cumulative emissions CO2"})
 
 
 def test_different_unit_error():
@@ -181,9 +179,7 @@ def test_different_unit_error():
         "('region', 'World')]"
     )
     with pytest.raises(KeyError, match=error_msg):
-        base.add(
-            other, op_cols={"variable": "Warming plus Cumulative emissions CO2"}
-        )
+        base.add(other, op_cols={"variable": "Warming plus Cumulative emissions CO2"})
 
 
 def test_multiple_ops_cols():
@@ -191,10 +187,11 @@ def test_multiple_ops_cols():
     other = get_single_ts(variable="Cumulative Emissions|CO2", unit="GtC")
 
     res = base.add(
-        other, op_cols={
+        other,
+        op_cols={
             "variable": "Warming plus Cumulative emissions CO2",
             "unit": "nonsense",
-        }
+        },
     )
 
     exp_ts = perform_op(base, other, "add", ["variable", "unit"])
