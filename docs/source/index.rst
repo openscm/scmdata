@@ -31,6 +31,7 @@ SCMData
    scmdata.groupby
    scmdata.netcdf
    scmdata.offsets
+   scmdata.ops
    scmdata.plotting
    scmdata.run
    scmdata.testing

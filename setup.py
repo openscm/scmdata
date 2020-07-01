@@ -45,7 +45,7 @@ REQUIREMENTS_TESTS = (
     + REQUIREMENTS_OPTIONAL
 )
 REQUIREMENTS_DOCS = ["sphinx>2.1", "sphinx_rtd_theme"]
-REQUIREMENTS_DEPLOY = ["twine>=1.11.0", "setuptools>=38.6.0", "wheel>=0.31.0"]
+REQUIREMENTS_DEPLOY = ["twine>=1.11.0", "setuptools>=41.2", "wheel>=0.31.0"]
 
 REQUIREMENTS_DEV = [
     *[

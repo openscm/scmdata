@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#71 <https://github.com/openscm/scmdata/pull/71>`_) Start adding arithmetic support via ``scmdata.ops``. So far only add and subtract are supported.
 - (`#70 <https://github.com/openscm/scmdata/pull/70>`_) Automatically set y-axis label to units if it makes sense in :obj:`ScmRun`'s :meth:`lineplot` method
 
 v0.5.1

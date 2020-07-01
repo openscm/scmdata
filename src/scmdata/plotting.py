@@ -1,5 +1,5 @@
 """
-Plotting helpers for DataFrames
+Plotting helpers for :obj:`ScmRun`
 
 See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 """
@@ -101,7 +101,7 @@ def _deprecated_line_plot(self, **kwargs):  # pragma: no cover
 
 def inject_plotting_methods(cls):
     """
-    Inject the plotting functions
+    Inject the plotting methods
 
     Parameters
     ----------
