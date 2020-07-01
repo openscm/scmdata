@@ -1,4 +1,3 @@
-# - multiple ``op_cols`` also works
 import re
 
 import numpy as np
