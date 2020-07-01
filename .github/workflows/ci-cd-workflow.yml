@@ -20,7 +20,6 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install -e .[dev]
-        pip install git+https://github.com/hgrecco/pint-pandas.git
     # TODO: add `pylint src`
     - name: Formatting and linters
       run: |
@@ -64,7 +63,6 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install -e .[tests]
-        pip install git+https://github.com/hgrecco/pint-pandas.git
     - name: Test with pytest
       env:
         MIN_COVERAGE: 70  # TODO: put this back up to 95 once we start writing
