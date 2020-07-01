@@ -1,13 +1,11 @@
 """
 Operations for :obj:`ScmRun`
 """
-
 import pandas as pd
-import pintpandas
 from openscm_units import unit_registry
 
 
-def prep_for_op(inp, op_cols, ur=unit_registry):
+def prep_for_op(inp, op_cols):
     """
     Prepare dataframe for operation
 
@@ -17,7 +15,11 @@ def prep_for_op(inp, op_cols, ur=unit_registry):
         :obj:`ScmRun` containing data to prepare
 
     op_cols : dict of str: str
-        Dictionary containing the columns to drop in order to prepare for the operation as the keys (the values are not used). For example, if we have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then we will drop the "variable" column from the index.
+        Dictionary containing the columns to drop in order to prepare
+        for the operation as the keys (the values are not used). For
+        example, if we have
+        ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}``
+        then we will drop the "variable" column from the index.
 
     ur : :obj:`pint.UnitRegistry`
         Pint unit registry to use for the operation
@@ -25,18 +27,20 @@ def prep_for_op(inp, op_cols, ur=unit_registry):
     Returns
     -------
     :obj:`pd.DataFrame`
-        Timeseries to use for the operation. They are the transpose of the normal :meth:`ScmRun.timeseries` output with the columns being Pint arrays. We do this so that we can use
-        `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_ to handle unit conversions automatically.
+        Timeseries to use for the operation. They are the transpose of
+        the normal :meth:`ScmRun.timeseries` output. We do this so that
+        we can transition to using
+        `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
+        to handle unit conversions automatically in future.
     """
-    pintpandas.PintType.ureg = ur
-
     key_cols = list(op_cols.keys())
 
     out = inp.timeseries().reset_index(key_cols, drop=True)
 
     out = out.T
-    unit_level = out.columns.names.index("unit")
-    out = out.pint.quantify(level=unit_level)
+    # pint pandas interface to come
+    # unit_level = out.columns.names.index("unit")
+    # out = out.pint.quantify(level=unit_level)
 
     return out
 
@@ -51,7 +55,12 @@ def set_op_values(output, op_cols):
         Dataframe of which to update the values
 
     op_cols : dict of str: str
-        Dictionary containing the columns to update as the keys and the value those columns should hold in the output as the values. For example, if we have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then the output will have a "variable" column with the value "Emissions|CO2 - Emissions|CO2|Fossil".
+        Dictionary containing the columns to update as the keys and the value
+        those columns should hold in the output as the values. For example,
+        if we have
+        ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then
+        the output will have a "variable" column with the value
+        "Emissions|CO2 - Emissions|CO2|Fossil".
 
     Returns
     -------
@@ -65,20 +74,26 @@ def set_op_values(output, op_cols):
 
 
 def _perform_op(base, other, op):
-    # stupid pint means we have to do series by series
+    # pint handling means we have to do series by series
     out = []
+    col_names = base.columns.names
     for col in base:
-        if op == "add":
-            out.append(base[col] + other[col])
+        if op in ["add", "subtract"]:
+            try:
+                if op == "add":
+                    out.append(base[col] + other[col])
 
-        elif op == "subtract":
-            out.append(base[col] - other[col])
+                elif op == "subtract":
+                    out.append(base[col] - other[col])
 
-        elif op == "multiply":
-            out.append(base[col] * other[col])
+            except KeyError:
+                raise KeyError("No equivalent in `other` for {}".format(list(zip(col_names, col))))
 
-        elif op == "divide":
-            out.append(base[col] / other[col])
+        # elif op == "multiply":
+        #     out.append(base[col] * other[col])
+
+        # elif op == "divide":
+        #     out.append(base[col] / other[col])
 
         else:  # pragma: no cover
             raise NotImplementedError(op)
@@ -90,9 +105,19 @@ def _perform_op(base, other, op):
 
     out.columns.names = base.columns.names
 
-    out = out.pint.dequantify().T
+    # when we add pint back index
+    # out = out.pint.dequantify()
+    out = out.T
 
     return out
+
+
+def _check_unit_compatibility(first, second):
+    unit_first = first.get_unique_meta("unit", no_duplicates=True)
+    unit_second = second.get_unique_meta("unit", no_duplicates=True)
+
+    if unit_first != unit_second:
+        raise DimensionalityError(unit_first, unit_second)
 
 
 def subtract(self, other, op_cols, **kwargs):
@@ -157,66 +182,67 @@ def add(self, other, op_cols, **kwargs):
     return type(self)(out)
 
 
-def multiply(self, other, op_cols, **kwargs):
-    """
-    Multiply values
+# # ops below require unit awareness so reserve until pint is added
+# def multiply(self, other, op_cols, **kwargs):
+#     """
+#     Multiply values
 
-    Parameters
-    ----------
-    other : :obj:`ScmRun`
-        :obj:`ScmRun` containing data to multiply
+#     Parameters
+#     ----------
+#     other : :obj:`ScmRun`
+#         :obj:`ScmRun` containing data to multiply
 
-    op_cols : dict of str: str
-        Dictionary containing the columns to drop before multiplying as the keys and the value those columns should hold in the output as the values. For example, if we have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then the multiplication will be performed with an index that uses all columns except the "variable" column and the output will have a "variable" column with the value "Emissions|CO2 - Emissions|CO2|Fossil".
+#     op_cols : dict of str: str
+#         Dictionary containing the columns to drop before multiplying as the keys and the value those columns should hold in the output as the values. For example, if we have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then the multiplication will be performed with an index that uses all columns except the "variable" column and the output will have a "variable" column with the value "Emissions|CO2 - Emissions|CO2|Fossil".
 
-    **kwargs : any
-        Passed to :func:`prep_for_op`
+#     **kwargs : any
+#         Passed to :func:`prep_for_op`
 
-    Returns
-    -------
-    :obj:`ScmRun`
-        Product of ``self`` and ``other``, using ``op_cols`` to define the columns which should be dropped before the data is aligned and to define the value of these columns in the output.
-    """
-    out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
-        "multiply",
-    )
+#     Returns
+#     -------
+#     :obj:`ScmRun`
+#         Product of ``self`` and ``other``, using ``op_cols`` to define the columns which should be dropped before the data is aligned and to define the value of these columns in the output.
+#     """
+#     out = _perform_op(
+#         prep_for_op(self, op_cols, **kwargs),
+#         prep_for_op(other, op_cols, **kwargs),
+#         "multiply",
+#     )
 
-    out = set_op_values(out, op_cols)
+#     out = set_op_values(out, op_cols)
 
-    return type(self)(out)
+#     return type(self)(out)
 
 
-def divide(self, other, op_cols, **kwargs):
-    """
-    Divide values (self / other)
+# def divide(self, other, op_cols, **kwargs):
+#     """
+#     Divide values (self / other)
 
-    Parameters
-    ----------
-    other : :obj:`ScmRun`
-        :obj:`ScmRun` containing data to divide
+#     Parameters
+#     ----------
+#     other : :obj:`ScmRun`
+#         :obj:`ScmRun` containing data to divide
 
-    op_cols : dict of str: str
-        Dictionary containing the columns to drop before dividing as the keys and the value those columns should hold in the output as the values. For example, if we have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then the division will be performed with an index that uses all columns except the "variable" column and the output will have a "variable" column with the value "Emissions|CO2 - Emissions|CO2|Fossil".
+#     op_cols : dict of str: str
+#         Dictionary containing the columns to drop before dividing as the keys and the value those columns should hold in the output as the values. For example, if we have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then the division will be performed with an index that uses all columns except the "variable" column and the output will have a "variable" column with the value "Emissions|CO2 - Emissions|CO2|Fossil".
 
-    **kwargs : any
-        Passed to :func:`prep_for_op`
+#     **kwargs : any
+#         Passed to :func:`prep_for_op`
 
-    Returns
-    -------
-    :obj:`ScmRun`
-        Quotient of ``self`` and ``other``, using ``op_cols`` to define the columns which should be dropped before the data is aligned and to define the value of these columns in the output.
-    """
-    out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
-        "divide",
-    )
+#     Returns
+#     -------
+#     :obj:`ScmRun`
+#         Quotient of ``self`` and ``other``, using ``op_cols`` to define the columns which should be dropped before the data is aligned and to define the value of these columns in the output.
+#     """
+#     out = _perform_op(
+#         prep_for_op(self, op_cols, **kwargs),
+#         prep_for_op(other, op_cols, **kwargs),
+#         "divide",
+#     )
 
-    out = set_op_values(out, op_cols)
+#     out = set_op_values(out, op_cols)
 
-    return type(self)(out)
+#     return type(self)(out)
 
 
 def inject_ops_methods(cls):
@@ -231,8 +257,8 @@ def inject_ops_methods(cls):
     methods = [
         ("subtract", subtract),
         ("add", add),
-        ("multiply", multiply),
-        ("divide", divide),
+        # ("multiply", multiply),
+        # ("divide", divide),
     ]
 
     for name, f in methods:
