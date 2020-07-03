@@ -33,6 +33,7 @@ REQUIREMENTS = [
     "numpy",
     "openscm-units",
     "pandas",
+    "pint-pandas==0.1.0",
     "python-dateutil",
     "xarray",
 ]
