@@ -1830,7 +1830,7 @@ def run_append(
     # reindex if the timebase isn't the same
     all_valid_times = True
     for r in runs:
-        if not np.array_equal(new_t, r.time_points):
+        if not np.array_equal(new_t, r.time_points.values):
             all_valid_times = False
     if not all_valid_times:
         # Time values are converted to cftime to avoid OutOfBoundsDatetime errors
