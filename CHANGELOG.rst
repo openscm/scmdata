@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#73 <https://github.com/openscm/scmdata/pull/73>`_) Only reindex timeseries when dealing with different time points
+
 v0.5.2
 ------
 
