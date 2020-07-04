@@ -13,7 +13,7 @@ from numpy import testing as npt
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.run import ScmRun, df_append, run_append, TimeSeries
+from scmdata.run import ScmRun, TimeSeries, df_append, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -1358,10 +1358,14 @@ def test_append_reindexing(test_scm_run, same_times):
     if not same_times:
         other["time"] = [2002, 2010, 2020]
 
-    with patch.object(TimeSeries, "reindex", wraps=other._ts[0].reindex) as mock_reindex:
+    with patch.object(
+        TimeSeries, "reindex", wraps=other._ts[0].reindex
+    ) as mock_reindex:
         res = test_scm_run.append(other)
 
-        expected_times = set(np.concatenate([other.time_points.values, test_scm_run.time_points.values]))
+        expected_times = set(
+            np.concatenate([other.time_points.values, test_scm_run.time_points.values])
+        )
         if same_times:
             mock_reindex.assert_not_called()
         else:
