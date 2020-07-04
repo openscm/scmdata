@@ -13,7 +13,7 @@ from numpy import testing as npt
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.run import ScmRun, df_append, run_append
+from scmdata.run import ScmRun, TimeSeries, df_append, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -1349,6 +1349,31 @@ def test_append_inplace_preexisting_nan(test_scm_run):
         exp.sort_index().reset_index(),
         check_like=True,
     )
+
+
+@pytest.mark.parametrize("same_times", [True, False])
+def test_append_reindexing(test_scm_run, same_times):
+    other = copy.deepcopy(test_scm_run)
+    other["climate_model"] = "other"
+    if not same_times:
+        other["time"] = [2002, 2010, 2020]
+
+    with patch.object(
+        TimeSeries, "reindex", wraps=other._ts[0].reindex
+    ) as mock_reindex:
+        res = test_scm_run.append(other)
+
+        expected_times = set(
+            np.concatenate([other.time_points.values, test_scm_run.time_points.values])
+        )
+        if same_times:
+            mock_reindex.assert_not_called()
+        else:
+            mock_reindex.assert_called()
+
+        npt.assert_array_equal(res.time_points.values, sorted(expected_times))
+        for t in res._ts:
+            npt.assert_array_equal(t.time_points.values, sorted(expected_times))
 
 
 def test_interpolate(combo_df):
