@@ -1500,6 +1500,18 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         :obj:`ScmRun`
             If :obj:`inplace` is not ``False``, a new :class:`ScmRun` instance
             with the converted units.
+
+        Notes
+        -----
+        If ``context`` is not ``None``, then the context used for the conversion will
+        be checked against any existing metadata and, if the conversion is valid,
+        stored in the output's metadata.
+
+        Raises
+        ------
+        ValueError
+            ``"unit_context"`` is already included in ``self``'s :meth:`meta_attributes`
+            and it does not match ``context`` for the variables to be converted.
         """
         # pylint: disable=protected-access
         if inplace:
