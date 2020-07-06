@@ -1719,6 +1719,15 @@ def test_convert_existing_unit_context(test_scm_run):
     npt.assert_array_almost_equal(obs.filter(year=2005).values.squeeze(), expected)
     assert all(obs["unit_context"] == "AR4GWP100")
 
+# tests to write
+# - unit_context not used if unit_context is None
+# - unit_context used and applied to both `to_convert` and `to_not_convert`
+#   if unit_context has a value. if "unit_context"
+#   is not in `to_not_convert`, the question is what to fill with, np.nan?
+# - error raised if unit_context does not match existing unit_context (telling
+#   users they have to drop unit_context metadata first if they really want
+#   to change the unit system)
+#       - but this should only apply if unit_context isn't nan
 
 def test_convert_unit_does_not_warn(test_scm_run, caplog):
     test_scm_run["unit"] = "GtC"
