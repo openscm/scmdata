@@ -1515,14 +1515,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             # check if contexts don't match, unless the context is nan
             non_matching_contexts = len(unit_context) > 1 or unit_context[0] != context
             if isinstance(unit_context[0], float):
-                non_matching_contexts &= not np.isnan()
+                non_matching_contexts &= not np.isnan(unit_context[0])
 
             if non_matching_contexts:
                 raise ValueError(
-                    "Existing unit conversion contexts, `{}`, don't match input "
+                    "Existing unit conversion context(s), `{}`, doesn't match input "
                     "context, `{}`, drop `unit_context` metadata before doing "
                     "conversion".format(unit_context, context)
                 )
+
+            to_convert["unit_context"] = context
 
         elif context is not None:
             to_convert["unit_context"] = context
@@ -1539,7 +1541,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 ts._data[:] = uc.convert_from(ts._data.values)
 
             group["unit"] = unit
-            group["unit_context"] = context
+
             return group
 
         ret = to_convert.groupby("unit").map(apply_units)
