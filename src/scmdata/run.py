@@ -1500,6 +1500,18 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         :obj:`ScmRun`
             If :obj:`inplace` is not ``False``, a new :class:`ScmRun` instance
             with the converted units.
+
+        Notes
+        -----
+        If ``context`` is not ``None``, then the context used for the conversion will
+        be checked against any existing metadata and, if the conversion is valid,
+        stored in the output's metadata.
+
+        Raises
+        ------
+        ValueError
+            ``"unit_context"`` is already included in ``self``'s :meth:`meta_attributes`
+            and it does not match ``context`` for the variables to be converted.
         """
         # pylint: disable=protected-access
         if inplace:
@@ -1507,11 +1519,30 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         else:
             ret = self.copy()
 
-        if "unit_context" not in ret.meta_attributes:
-            ret["unit_context"] = None
-
         to_convert = ret.filter(**kwargs)
         to_not_convert = ret.filter(**kwargs, keep=False, log_if_empty=False)
+
+        if "unit_context" in to_convert.meta_attributes:
+            unit_context = to_convert.get_unique_meta("unit_context")
+            # check if contexts don't match, unless the context is nan
+            non_matching_contexts = len(unit_context) > 1 or unit_context[0] != context
+            if isinstance(unit_context[0], float):
+                non_matching_contexts &= not np.isnan(unit_context[0])
+
+            if non_matching_contexts:
+                raise ValueError(
+                    "Existing unit conversion context(s), `{}`, doesn't match input "
+                    "context, `{}`, drop `unit_context` metadata before doing "
+                    "conversion".format(unit_context, context)
+                )
+
+            to_convert["unit_context"] = context
+
+        elif context is not None:
+            to_convert["unit_context"] = context
+
+        if "unit_context" not in to_not_convert.meta_attributes and context is not None:
+            to_not_convert["unit_context"] = np.nan
 
         def apply_units(group):
             orig_unit = group.get_unique_meta("unit", no_duplicates=True)
@@ -1521,7 +1552,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 ts._data[:] = uc.convert_from(ts._data.values)
 
             group["unit"] = unit
-            group["unit_context"] = context
+
             return group
 
         ret = to_convert.groupby("unit").map(apply_units)

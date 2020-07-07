@@ -1484,9 +1484,9 @@ def df_append(
 
     # we want to put data into timeseries format and pass into format_ts instead of
     # _format_data
-    data = pd.concat(
-        [d.timeseries().reorder_levels(joint_meta_set) for d in joint_dfs], sort=False
-    )
+    to_concat = [d.timeseries().reorder_levels(joint_meta_set) for d in joint_dfs]
+
+    data = pd.concat(to_concat, sort=False)
 
     data = data.reset_index()
     data[list(joint_meta_set)] = data[joint_meta_set].replace(

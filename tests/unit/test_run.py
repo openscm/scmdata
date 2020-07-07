@@ -1720,6 +1720,213 @@ def test_convert_existing_unit_context(test_scm_run):
     assert all(obs["unit_context"] == "AR4GWP100")
 
 
+def test_unit_context_not_added_if_context_is_none(test_scm_run):
+    start = test_scm_run.filter(variable="Primary Energy")
+    start["unit"] = "EJ/yr"
+
+    res = start.convert_unit("MJ/yr")
+
+    assert "unit_context" not in res.meta_attributes
+
+
+def test_unit_context_added_if_context_is_not_none(test_scm_run):
+    start = test_scm_run.filter(variable="Primary Energy")
+    start["unit"] = "EJ/yr"
+
+    res = start.convert_unit("MJ/yr", context="AR4GWP100")
+
+    assert "unit_context" in res.meta_attributes
+
+
+@pytest.mark.parametrize("context", (None, "AR4GWP100"))
+def test_unit_context_no_existing_contexts(test_scm_run, context):
+    to_convert = "*Coal"
+    res = test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+
+    if context is None:
+        assert "unit_context" not in res.meta_attributes
+    else:
+        assert "unit_context" in res.meta_attributes
+        assert "AR4GWP100" == res.filter(variable=to_convert).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+        assert np.isnan(
+            res.filter(variable=to_convert, keep=False).get_unique_meta(
+                "unit_context", no_duplicates=True
+            )
+        )
+
+
+@pytest.mark.parametrize("to_not_convert_matches", (True, False))
+@pytest.mark.parametrize("context", (None, "AR4GWP100"))
+def test_unit_context_both_have_existing_context(
+    test_scm_run, context, to_not_convert_matches
+):
+    to_convert = "*Coal"
+
+    test_scm_run["unit_context"] = context
+    if to_not_convert_matches:
+        to_not_convert_context = context
+    else:
+        to_not_convert_context = "junk"
+
+    test_scm_run.filter(variable=to_convert, keep=False)[
+        "unit_context"
+    ] = to_not_convert_context
+
+    res = test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+
+    assert (
+        res.filter(variable=to_convert).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+        == context
+    )
+    assert (
+        res.filter(variable=to_convert, keep=False).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+        == to_not_convert_context
+    )
+
+
+@pytest.mark.parametrize("to_not_convert_matches", (True, False))
+@pytest.mark.parametrize("context", (None, "AR4GWP100"))
+def test_unit_context_both_have_existing_context_error(
+    test_scm_run, context, to_not_convert_matches
+):
+    to_convert = "*Coal"
+
+    test_scm_run["unit_context"] = "junk"
+    if to_not_convert_matches:
+        test_scm_run.filter(variable=to_convert, keep=False)["unit_context"] = context
+
+    error_msg = re.escape(
+        "Existing unit conversion context(s), `['junk']`, doesn't match input context, `{}`, drop "
+        "`unit_context` metadata before doing conversion".format(context)
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+
+
+@pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100"))
+def test_unit_context_to_convert_has_existing_context(test_scm_run, context):
+    to_convert = "*Coal"
+    start = test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+
+    assert (
+        start.filter(variable=to_convert).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+        == context
+    )
+    assert np.isnan(
+        start.filter(variable=to_convert, keep=False).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+    )
+
+    res = start.convert_unit("GJ/yr", variable=to_convert, context=context)
+
+    assert (
+        res.filter(variable=to_convert).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+        == context
+    )
+    assert np.isnan(
+        res.filter(variable=to_convert, keep=False).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+    )
+    assert (
+        res.filter(variable=to_convert).get_unique_meta("unit", no_duplicates=True)
+        == "GJ/yr"
+    )
+    assert (
+        res.filter(variable=to_convert, keep=False).get_unique_meta(
+            "unit", no_duplicates=True
+        )
+        == "EJ/yr"
+    )
+
+
+@pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100"))
+def test_unit_context_to_convert_has_existing_context_error(test_scm_run, context):
+    to_convert = "*Coal"
+    start = test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+
+    assert (
+        start.filter(variable=to_convert).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+        == context
+    )
+    assert np.isnan(
+        start.filter(variable=to_convert, keep=False).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+    )
+
+    error_msg = re.escape(
+        "Existing unit conversion context(s), `['{}']`, doesn't match input context, `junk`, drop "
+        "`unit_context` metadata before doing conversion".format(context)
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        start.convert_unit("GJ/yr", variable=to_convert, context="junk")
+
+
+@pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100", None))
+@pytest.mark.parametrize("to_not_convert_context", ("AR5GWP100", "AR4GWP100"))
+def test_unit_context_to_not_convert_has_existing_context(
+    test_scm_run, context, to_not_convert_context
+):
+    to_convert = "*Coal"
+    to_not_convert = test_scm_run.filter(
+        variable=to_convert, keep=False
+    ).get_unique_meta("variable")
+    start = test_scm_run.convert_unit(
+        "MJ/yr", variable=to_not_convert, context=to_not_convert_context
+    )
+    assert np.isnan(
+        start.filter(variable=to_convert).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+    )
+    assert (
+        start.filter(variable=to_convert, keep=False).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+        == to_not_convert_context
+    )
+
+    # no error, irrespective of context because to_convert context is nan
+    res = start.convert_unit("GJ/yr", variable=to_convert, context=context)
+
+    assert (
+        res.filter(variable=to_convert).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+        == context
+    )
+    assert (
+        res.filter(variable=to_convert, keep=False).get_unique_meta(
+            "unit_context", no_duplicates=True
+        )
+        == to_not_convert_context
+    )
+    assert (
+        res.filter(variable=to_convert).get_unique_meta("unit", no_duplicates=True)
+        == "GJ/yr"
+    )
+    assert (
+        res.filter(variable=to_convert, keep=False).get_unique_meta(
+            "unit", no_duplicates=True
+        )
+        == "MJ/yr"
+    )
+
+
 def test_convert_unit_does_not_warn(test_scm_run, caplog):
     test_scm_run["unit"] = "GtC"
 
