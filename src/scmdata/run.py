@@ -1542,7 +1542,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             to_convert["unit_context"] = context
 
         if "unit_context" not in to_not_convert.meta_attributes and context is not None:
-            # what to do here?
             to_not_convert["unit_context"] = np.nan
 
         def apply_units(group):
