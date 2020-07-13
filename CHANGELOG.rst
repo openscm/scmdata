@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.6.1
+------
+
 - (`#74 <https://github.com/openscm/scmdata/pull/74>`_) Update handling of unit conversion context during unit conversions
 - (`#73 <https://github.com/openscm/scmdata/pull/73>`_) Only reindex timeseries when dealing with different time points
 
