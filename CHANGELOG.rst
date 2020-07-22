@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#79 <https://github.com/openscm/scmdata/pull/79>`_) Update handling of duplicate metadata, introduce ``scmdata.errors.NonUniqueMetadataError`` (closes `#76 <https://github.com/openscm/scmdata/issues/76>`_)
+
 v0.6.1
 ------
 
