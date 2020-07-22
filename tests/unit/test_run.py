@@ -13,6 +13,7 @@ from numpy import testing as npt
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
+from scmdata.errors import NonUniqueMetadata
 from scmdata.run import ScmRun, TimeSeries, df_append, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
@@ -2397,3 +2398,55 @@ def test_append_long_run(tax1, tax2):
 def test_empty(test_scm_run):
     assert not test_scm_run.empty
     assert test_scm_run.filter(variable="junk nonsense").empty
+
+
+def test_init_duplicate_metadata_issue_76():
+    with pytest.raises(NonUniqueMetadata):
+        ScmRun(
+            data=np.arange(6).reshape(2, 3),
+            index=[10, 20],
+            columns={
+                "variable": "Emissions",
+                "unit": "Gt",
+                "model": "idealised",
+                "scenario": "idealised",
+                "region": "World"
+            }
+        )
+
+
+def test_set_item_duplicate_meta_issue_76(test_scm_run):
+    run = ScmRun(
+        data=np.arange(4).reshape(2, 2),
+        index=[10, 20],
+        columns={
+            "variable": ["Emissions", "Emissions removed"],
+            "unit": "Gt",
+            "model": "idealised",
+            "scenario": "idealised",
+            "region": "World"
+        }
+    )
+
+    # check that altering metadata in such a way that it becomes non-unique fails
+    with pytest.raises(NonUniqueMetadata):
+        run["variable"] = "Emissions"
+
+# test error message formatted as intended
+def test_non_unique_metadata_error_formatting():
+    sdf = pd.DataFrame(
+        np.arange(9).reshape(3, 3),
+        columns=[dt.datetime(y, 1, 1) for y in [2010, 2020, 2030]]
+    )
+    sdf["variable"] = ["Emissions", "Emissions", "Temperature"]
+    sdf["unit"] = ["Gt", "Gt", "K"]
+    sdf["model"] = "idealised"
+    sdf["scenario"] = "idealised"
+    sdf["region"] = "World"
+    sdf = sdf.set_index(["variable", "unit", "model", "scenario", "region"])
+
+    meta = sdf.index.to_frame().reset_index(drop=True)
+    meta_duplicated = meta[meta.duplicated()]
+    error_msg = re.escape("Duplicated metadata:\n{}".format(meta_duplicated))
+    with pytest.raises(NonUniqueMetadata, match=error_msg):
+        NonUniqueMetadata(sdf)
