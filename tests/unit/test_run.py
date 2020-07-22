@@ -1139,6 +1139,12 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     other = test_append_scm_runs["other"]
     expected = test_append_scm_runs["expected"]
 
+    if duplicate_msg and not isinstance(duplicate_msg, str):
+        with pytest.raises(NonUniqueMetadata):
+            base.append(other, duplicate_msg=duplicate_msg)
+
+        return
+
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
         res = base.append(other, duplicate_msg=duplicate_msg)
 
@@ -1149,25 +1155,12 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
         )
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
-    elif duplicate_msg:
-        warn_msg = "Result contains overlapping data values with non unique metadata"
-        assert len(mock_warn_taking_average) == 1
-        assert str(mock_warn_taking_average[0].message) == warn_msg
     else:
         assert not mock_warn_taking_average
 
-    if duplicate_msg and not isinstance(duplicate_msg, str):
-        assert isinstance(res, ScmRun)
-        # check res gives all timeseries back
-        assert res.shape[0] == len(base) + len(other)
-
-        # check advice given in message actually only finds duplicate rows
-        look_df = res.meta[res.meta.duplicated(keep=False)]
-        assert look_df.shape[0] == 2 * test_append_scm_runs["duplicate_rows"]
-    else:
-        pd.testing.assert_frame_equal(
-            res.timeseries(), expected.timeseries(), check_like=True
-        )
+    pd.testing.assert_frame_equal(
+        res.timeseries(), expected.timeseries(), check_like=True
+    )
 
 
 def test_append_doesnt_warn_if_continuous_times(test_append_scm_dfs):

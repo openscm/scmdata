@@ -1643,9 +1643,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             new :class:`ScmRun` instance with the appended data.
 
         duplicate_msg
-            If "warn", raise a warning if duplicate data is detected. If "return",
-            return the joint dataframe (including duplicate timeseries) so the user can
-            inspect further. If ``False``, take the average and do not raise a warning.
+            If ``"warn"``, raise a warning if duplicate data is detected. If ``True``,
+            raise a ``NonUniqueMetadata`` error so the user can see the duplicate
+            timeseries. If ``False``, take the average and do not raise a warning
+            or error.
 
         **kwargs
             Keywords to pass to :func:`ScmRun.__init__` when reading
@@ -1841,9 +1842,10 @@ def run_append(
         ``None``.
 
     duplicate_msg
-        If "warn", raise a warning if duplicate data is detected. If "return", return
-        the joint :obj:`ScmRun` (including duplicate timeseries) so the user can inspect
-        further. If ``False``, take the average and do not raise a warning.
+            If ``"warn"``, raise a warning if duplicate data is detected. If ``True``,
+            raise a ``NonUniqueMetadata`` error so the user can see the duplicate
+            timeseries. If ``False``, take the average and do not raise a warning
+            or error.
 
     Returns
     -------
