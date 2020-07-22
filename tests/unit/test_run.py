@@ -1133,7 +1133,7 @@ def test_append_duplicates_order_doesnt_matter(test_scm_run):
     npt.assert_almost_equal(obs, exp)
 
 
-@pytest.mark.parametrize("duplicate_msg", ("warn", "return", False))
+@pytest.mark.parametrize("duplicate_msg", ("warn", True, False))
 def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     base = test_append_scm_runs["base"]
     other = test_append_scm_runs["other"]
@@ -1149,14 +1149,14 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
         )
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
-    elif duplicate_msg == "return":
+    elif duplicate_msg:
         warn_msg = "Result contains overlapping data values with non unique metadata"
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
     else:
         assert not mock_warn_taking_average
 
-    if duplicate_msg == "return":
+    if duplicate_msg and not isinstance(duplicate_msg, str):
         assert isinstance(res, ScmRun)
         # check res gives all timeseries back
         assert res.shape[0] == len(base) + len(other)
@@ -2458,3 +2458,6 @@ def test_non_unique_metadata_error_formatting():
 
     with pytest.raises(NonUniqueMetadata, match=re.escape(error_msg)):
         raise NonUniqueMetadata(meta)
+
+# notebook
+# test run_append behaviour
