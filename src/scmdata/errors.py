@@ -2,6 +2,7 @@
 Custom errors and exceptions used by scmdata
 """
 
+
 class NonUniqueMetadata(ValueError):
     """
     Error raised when metadata is not unique

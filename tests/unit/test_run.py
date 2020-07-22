@@ -2410,8 +2410,8 @@ def test_init_duplicate_metadata_issue_76():
                 "unit": "Gt",
                 "model": "idealised",
                 "scenario": "idealised",
-                "region": "World"
-            }
+                "region": "World",
+            },
         )
 
 
@@ -2424,8 +2424,8 @@ def test_set_item_duplicate_meta_issue_76(test_scm_run):
             "unit": "Gt",
             "model": "idealised",
             "scenario": "idealised",
-            "region": "World"
-        }
+            "region": "World",
+        },
     )
 
     # check that altering metadata in such a way that it becomes non-unique fails
@@ -2436,7 +2436,7 @@ def test_set_item_duplicate_meta_issue_76(test_scm_run):
 def test_non_unique_metadata_error_formatting():
     sdf = pd.DataFrame(
         np.arange(9).reshape(3, 3),
-        columns=[dt.datetime(y, 1, 1) for y in [2010, 2020, 2030]]
+        columns=[dt.datetime(y, 1, 1) for y in [2010, 2020, 2030]],
     )
     sdf["variable"] = ["Emissions", "Emissions", "Temperature"]
     sdf["unit"] = ["Gt", "Gt", "K"]
