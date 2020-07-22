@@ -2432,7 +2432,7 @@ def test_set_item_duplicate_meta_issue_76(test_scm_run):
     with pytest.raises(NonUniqueMetadata):
         run["variable"] = "Emissions"
 
-# test error message formatted as intended
+
 def test_non_unique_metadata_error_formatting():
     sdf = pd.DataFrame(
         np.arange(9).reshape(3, 3),
@@ -2446,7 +2446,15 @@ def test_non_unique_metadata_error_formatting():
     sdf = sdf.set_index(["variable", "unit", "model", "scenario", "region"])
 
     meta = sdf.index.to_frame().reset_index(drop=True)
-    meta_duplicated = meta[meta.duplicated()]
-    error_msg = re.escape("Duplicated metadata:\n{}".format(meta_duplicated))
-    with pytest.raises(NonUniqueMetadata, match=error_msg):
-        NonUniqueMetadata(sdf)
+
+    exp = meta.groupby(meta.columns.tolist(), as_index=False).size()
+    exp = exp[exp > 1]
+    exp.name = "repeats"
+    exp = exp.to_frame().reset_index()
+    error_msg = (
+        "Duplicate metadata (numbers show how many times the given "
+        "metadata is repeated).\n{}".format(exp)
+    )
+
+    with pytest.raises(NonUniqueMetadata, match=re.escape(error_msg)):
+        raise NonUniqueMetadata(meta)

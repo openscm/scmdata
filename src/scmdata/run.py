@@ -20,6 +20,7 @@ from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
 from .dataframe import ScmDataFrame
+from .errors import NonUniqueMetadata
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,
@@ -376,6 +377,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         else:
             self._init_timeseries(data, index, columns, **kwargs)
 
+        if self._duplicated_meta():
+            raise NonUniqueMetadata(self.meta)
+
     def _init_timeseries(
         self,
         data,
@@ -558,6 +562,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     )
                 )
 
+        if self._duplicated_meta():
+            raise NonUniqueMetadata(self.meta)
+
     def __repr__(self):
         def _indent(s):
             lines = ["\t" + line for line in s.split("\n")]
@@ -703,8 +710,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             The value of `time_axis` would result in columns which aren't unique
         """
         df = pd.DataFrame(self.values)
-        _meta = self.meta if meta is None else self.meta[meta]
-        if check_duplicated and _meta.duplicated().any():
+
+        # Is `check_duplicated` now obsolete? I don't see how you can end up with
+        # duplicate metadata anymore. If it's not obsolete, we should add an
+        # explicit test for this behaviour (I can't see one at the moment).
+        if check_duplicated and self._duplicated_meta(meta=meta):
             raise ValueError("Duplicated meta values")
 
         if time_axis is None:
@@ -743,9 +753,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         df.columns = columns
         df.columns.name = "time"
+
+        _meta = self.meta if meta is None else self.meta[meta]
         df.index = pd.MultiIndex.from_arrays(_meta.values.T, names=_meta.columns)
 
         return df
+
+    def _duplicated_meta(self, meta=None):
+        _meta = self.meta if meta is None else self.meta[meta]
+
+        return _meta.duplicated().any()
 
     def long_data(self, time_axis=None):
         """
