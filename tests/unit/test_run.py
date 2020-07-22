@@ -13,7 +13,7 @@ from numpy import testing as npt
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.errors import NonUniqueMetadata
+from scmdata.errors import NonUniqueMetadataError
 from scmdata.run import ScmRun, TimeSeries, df_append, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
@@ -1140,7 +1140,7 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     expected = test_append_scm_runs["expected"]
 
     if duplicate_msg and not isinstance(duplicate_msg, str):
-        with pytest.raises(NonUniqueMetadata):
+        with pytest.raises(NonUniqueMetadataError):
             base.append(other, duplicate_msg=duplicate_msg)
 
         return
@@ -2394,7 +2394,7 @@ def test_empty(test_scm_run):
 
 
 def test_init_duplicate_metadata_issue_76():
-    with pytest.raises(NonUniqueMetadata):
+    with pytest.raises(NonUniqueMetadataError):
         ScmRun(
             data=np.arange(6).reshape(2, 3),
             index=[10, 20],
@@ -2422,7 +2422,7 @@ def test_set_item_duplicate_meta_issue_76(test_scm_run):
     )
 
     # check that altering metadata in such a way that it becomes non-unique fails
-    with pytest.raises(NonUniqueMetadata):
+    with pytest.raises(NonUniqueMetadataError):
         run["variable"] = "Emissions"
 
 
@@ -2449,8 +2449,5 @@ def test_non_unique_metadata_error_formatting():
         "metadata is repeated).\n{}".format(exp)
     )
 
-    with pytest.raises(NonUniqueMetadata, match=re.escape(error_msg)):
-        raise NonUniqueMetadata(meta)
-
-# notebook
-# test run_append behaviour
+    with pytest.raises(NonUniqueMetadataError, match=re.escape(error_msg)):
+        raise NonUniqueMetadataError(meta)

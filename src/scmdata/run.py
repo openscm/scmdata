@@ -20,7 +20,7 @@ from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
 from .dataframe import ScmDataFrame
-from .errors import NonUniqueMetadata
+from .errors import NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,
@@ -378,7 +378,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             self._init_timeseries(data, index, columns, **kwargs)
 
         if self._duplicated_meta():
-            raise NonUniqueMetadata(self.meta)
+            raise NonUniqueMetadataError(self.meta)
 
     def _init_timeseries(
         self,
@@ -563,7 +563,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 )
 
         if self._duplicated_meta():
-            raise NonUniqueMetadata(self.meta)
+            raise NonUniqueMetadataError(self.meta)
 
     def __repr__(self):
         def _indent(s):
@@ -1644,7 +1644,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         duplicate_msg
             If ``"warn"``, raise a warning if duplicate data is detected. If ``True``,
-            raise a ``NonUniqueMetadata`` error so the user can see the duplicate
+            raise a ``NonUniqueMetadataError`` error so the user can see the duplicate
             timeseries. If ``False``, take the average and do not raise a warning
             or error.
 
@@ -1843,7 +1843,7 @@ def run_append(
 
     duplicate_msg
             If ``"warn"``, raise a warning if duplicate data is detected. If ``True``,
-            raise a ``NonUniqueMetadata`` error so the user can see the duplicate
+            raise a ``NonUniqueMetadataError`` error so the user can see the duplicate
             timeseries. If ``False``, take the average and do not raise a warning
             or error.
 
@@ -1912,7 +1912,7 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
         return None
 
     if duplicate_msg and not isinstance(duplicate_msg, str):
-        raise NonUniqueMetadata(data.meta)
+        raise NonUniqueMetadataError(data.meta)
 
     raise ValueError("Unrecognised value for duplicate_msg")
 
