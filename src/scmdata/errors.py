@@ -1,7 +1,12 @@
+"""
+Custom errors and exceptions used by scmdata
+"""
+
 class NonUniqueMetadata(ValueError):
     """
     Error raised when metadata is not unique
     """
+
     def __init__(self, meta):
         # format table to show the metadata clash
         dup = meta.groupby(meta.columns.tolist(), as_index=False).size()
