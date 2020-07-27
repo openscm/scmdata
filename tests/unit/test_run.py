@@ -1299,7 +1299,9 @@ def test_df_append_deprecated(test_scm_run):
 def test_append_chain_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
-    res = test_scm_run.append(other, duplicate_msg="warn").append(other_2, duplicate_msg="warn")
+    res = test_scm_run.append(other, duplicate_msg="warn").append(
+        other_2, duplicate_msg="warn"
+    )
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
