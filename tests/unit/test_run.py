@@ -13,6 +13,7 @@ from numpy import testing as npt
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
+from scmdata.errors import NonUniqueMetadataError
 from scmdata.run import ScmRun, TimeSeries, df_append, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
@@ -1098,7 +1099,7 @@ def test_append(test_scm_run):
 def test_append_exact_duplicates(test_scm_run):
     other = copy.deepcopy(test_scm_run)
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
-        test_scm_run.append(other).timeseries()
+        test_scm_run.append(other, duplicate_msg="warn").timeseries()
 
     assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
@@ -1109,7 +1110,7 @@ def test_append_duplicates(test_scm_run):
     other = copy.deepcopy(test_scm_run)
     other["time"] = [2020, 2030, 2040]
 
-    res = test_scm_run.append(other)
+    res = test_scm_run.append(other, duplicate_msg="warn")
 
     obs = res.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2.0, 7.0, 7.0, 2.0, 7.0, 7.0]
@@ -1122,7 +1123,7 @@ def test_append_duplicates_order_doesnt_matter(test_scm_run):
     other["time"] = [2020, 2030, 2040]
     other._ts[2][2] = 5.0
 
-    res = other.append(test_scm_run)
+    res = other.append(test_scm_run, duplicate_msg="warn")
 
     obs = res.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2.0, 7.0, 7.0, 2.0, 7.0, 5.0]
@@ -1132,11 +1133,17 @@ def test_append_duplicates_order_doesnt_matter(test_scm_run):
     npt.assert_almost_equal(obs, exp)
 
 
-@pytest.mark.parametrize("duplicate_msg", ("warn", "return", False))
+@pytest.mark.parametrize("duplicate_msg", ("warn", True, False))
 def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     base = test_append_scm_runs["base"]
     other = test_append_scm_runs["other"]
     expected = test_append_scm_runs["expected"]
+
+    if duplicate_msg and not isinstance(duplicate_msg, str):
+        with pytest.raises(NonUniqueMetadataError):
+            base.append(other, duplicate_msg=duplicate_msg)
+
+        return
 
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
         res = base.append(other, duplicate_msg=duplicate_msg)
@@ -1148,25 +1155,12 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
         )
         assert len(mock_warn_taking_average) == 1
         assert str(mock_warn_taking_average[0].message) == warn_msg
-    elif duplicate_msg == "return":
-        warn_msg = "Result contains overlapping data values with non unique metadata"
-        assert len(mock_warn_taking_average) == 1
-        assert str(mock_warn_taking_average[0].message) == warn_msg
     else:
         assert not mock_warn_taking_average
 
-    if duplicate_msg == "return":
-        assert isinstance(res, ScmRun)
-        # check res gives all timeseries back
-        assert res.shape[0] == len(base) + len(other)
-
-        # check advice given in message actually only finds duplicate rows
-        look_df = res.meta[res.meta.duplicated(keep=False)]
-        assert look_df.shape[0] == 2 * test_append_scm_runs["duplicate_rows"]
-    else:
-        pd.testing.assert_frame_equal(
-            res.timeseries(), expected.timeseries(), check_like=True
-        )
+    pd.testing.assert_frame_equal(
+        res.timeseries(), expected.timeseries(), check_like=True
+    )
 
 
 def test_append_doesnt_warn_if_continuous_times(test_append_scm_dfs):
@@ -1205,7 +1199,7 @@ def test_append_inplace(test_scm_run):
     exp = [2, 7, 7]
     npt.assert_almost_equal(obs, exp)
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
-        test_scm_run.append(other, inplace=True)
+        test_scm_run.append(other, inplace=True, duplicate_msg="warn")
 
     assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
@@ -1272,7 +1266,7 @@ def get_append_col_order_time_dfs(base):
 def test_append_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
-    res = run_append([test_scm_run, other, other_2])
+    res = run_append([test_scm_run, other, other_2], duplicate_msg="warn")
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
@@ -1293,7 +1287,7 @@ def test_df_append_deprecated(test_scm_run):
 
     error_msg = "scmdata.run.df_append has been deprecated"
     with pytest.warns(DeprecationWarning, match=error_msg):
-        res = df_append([test_scm_run, other, other_2])
+        res = df_append([test_scm_run, other, other_2], duplicate_msg="warn")
 
         pd.testing.assert_frame_equal(
             res.timeseries().sort_index(),
@@ -1305,7 +1299,9 @@ def test_df_append_deprecated(test_scm_run):
 def test_append_chain_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
-    res = test_scm_run.append(other).append(other_2)
+    res = test_scm_run.append(other, duplicate_msg="warn").append(
+        other_2, duplicate_msg="warn"
+    )
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
@@ -1317,8 +1313,8 @@ def test_append_chain_column_order_time_interpolation(test_scm_run):
 def test_append_inplace_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
-    test_scm_run.append(other, inplace=True)
-    test_scm_run.append(other_2, inplace=True)
+    test_scm_run.append(other, duplicate_msg="warn", inplace=True)
+    test_scm_run.append(other_2, duplicate_msg="warn", inplace=True)
 
     pd.testing.assert_frame_equal(
         test_scm_run.timeseries().sort_index(),
@@ -1361,7 +1357,7 @@ def test_append_reindexing(test_scm_run, same_times):
     with patch.object(
         TimeSeries, "reindex", wraps=other._ts[0].reindex
     ) as mock_reindex:
-        res = test_scm_run.append(other)
+        res = test_scm_run.append(other, duplicate_msg="warn")
 
         expected_times = set(
             np.concatenate([other.time_points.values, test_scm_run.time_points.values])
@@ -2397,3 +2393,63 @@ def test_append_long_run(tax1, tax2):
 def test_empty(test_scm_run):
     assert not test_scm_run.empty
     assert test_scm_run.filter(variable="junk nonsense").empty
+
+
+def test_init_duplicate_metadata_issue_76():
+    with pytest.raises(NonUniqueMetadataError):
+        ScmRun(
+            data=np.arange(6).reshape(2, 3),
+            index=[10, 20],
+            columns={
+                "variable": "Emissions",
+                "unit": "Gt",
+                "model": "idealised",
+                "scenario": "idealised",
+                "region": "World",
+            },
+        )
+
+
+def test_set_item_duplicate_meta_issue_76(test_scm_run):
+    run = ScmRun(
+        data=np.arange(4).reshape(2, 2),
+        index=[10, 20],
+        columns={
+            "variable": ["Emissions", "Emissions removed"],
+            "unit": "Gt",
+            "model": "idealised",
+            "scenario": "idealised",
+            "region": "World",
+        },
+    )
+
+    # check that altering metadata in such a way that it becomes non-unique fails
+    with pytest.raises(NonUniqueMetadataError):
+        run["variable"] = "Emissions"
+
+
+def test_non_unique_metadata_error_formatting():
+    sdf = pd.DataFrame(
+        np.arange(9).reshape(3, 3),
+        columns=[dt.datetime(y, 1, 1) for y in [2010, 2020, 2030]],
+    )
+    sdf["variable"] = ["Emissions", "Emissions", "Temperature"]
+    sdf["unit"] = ["Gt", "Gt", "K"]
+    sdf["model"] = "idealised"
+    sdf["scenario"] = "idealised"
+    sdf["region"] = "World"
+    sdf = sdf.set_index(["variable", "unit", "model", "scenario", "region"])
+
+    meta = sdf.index.to_frame().reset_index(drop=True)
+
+    exp = meta.groupby(meta.columns.tolist(), as_index=False).size()
+    exp = exp[exp > 1]
+    exp.name = "repeats"
+    exp = exp.to_frame().reset_index()
+    error_msg = (
+        "Duplicate metadata (numbers show how many times the given "
+        "metadata is repeated).\n{}".format(exp)
+    )
+
+    with pytest.raises(NonUniqueMetadataError, match=re.escape(error_msg)):
+        raise NonUniqueMetadataError(meta)

@@ -20,6 +20,7 @@ from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
 from .dataframe import ScmDataFrame
+from .errors import NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,
@@ -376,6 +377,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         else:
             self._init_timeseries(data, index, columns, **kwargs)
 
+        if self._duplicated_meta():
+            raise NonUniqueMetadataError(self.meta)
+
     def _init_timeseries(
         self,
         data,
@@ -558,6 +562,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     )
                 )
 
+        if self._duplicated_meta():
+            raise NonUniqueMetadataError(self.meta)
+
     def __repr__(self):
         def _indent(s):
             lines = ["\t" + line for line in s.split("\n")]
@@ -703,8 +710,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             The value of `time_axis` would result in columns which aren't unique
         """
         df = pd.DataFrame(self.values)
-        _meta = self.meta if meta is None else self.meta[meta]
-        if check_duplicated and _meta.duplicated().any():
+
+        # Is `check_duplicated` now obsolete? I don't see how you can end up with
+        # duplicate metadata anymore. If it's not obsolete, we should add an
+        # explicit test for this behaviour (I can't see one at the moment).
+        if check_duplicated and self._duplicated_meta(meta=meta):
             raise ValueError("Duplicated meta values")
 
         if time_axis is None:
@@ -743,9 +753,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         df.columns = columns
         df.columns.name = "time"
+
+        _meta = self.meta if meta is None else self.meta[meta]
         df.index = pd.MultiIndex.from_arrays(_meta.values.T, names=_meta.columns)
 
         return df
+
+    def _duplicated_meta(self, meta=None):
+        _meta = self.meta if meta is None else self.meta[meta]
+
+        return _meta.duplicated().any()
 
     def long_data(self, time_axis=None):
         """
@@ -1608,7 +1625,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         self,
         other,
         inplace: bool = False,
-        duplicate_msg: Union[str, bool] = "warn",
+        duplicate_msg: Union[str, bool] = True,
         **kwargs: Any,
     ):
         """
@@ -1626,9 +1643,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             new :class:`ScmRun` instance with the appended data.
 
         duplicate_msg
-            If "warn", raise a warning if duplicate data is detected. If "return",
-            return the joint dataframe (including duplicate timeseries) so the user can
-            inspect further. If ``False``, take the average and do not raise a warning.
+            If ``True``, raise a ``NonUniqueMetadataError`` error so the user
+            can see the duplicate timeseries. If ``False``, take the average
+            and do not raise a warning or error. If ``"warn"``, raise a
+            warning if duplicate data is detected.
 
         **kwargs
             Keywords to pass to :func:`ScmRun.__init__` when reading
@@ -1778,7 +1796,7 @@ def df_append(*args, **kwargs):
 
 
 def run_append(
-    runs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
+    runs, inplace: bool = False, duplicate_msg: Union[str, bool] = True,
 ):
     """
     Append together many objects.
@@ -1824,9 +1842,10 @@ def run_append(
         ``None``.
 
     duplicate_msg
-        If "warn", raise a warning if duplicate data is detected. If "return", return
-        the joint :obj`ScmRun` (including duplicate timeseries) so the user can inspect
-        further. If ``False``, take the average and do not raise a warning.
+        If ``True``, raise a ``NonUniqueMetadataError`` error so the user can
+        see the duplicate timeseries. If ``False``, take the average and do
+        not raise a warning or error. If ``"warn"``, raise a warning if
+        duplicate data is detected.
 
     Returns
     -------
@@ -1863,17 +1882,16 @@ def run_append(
     for r in runs:
         if not np.array_equal(new_t, r.time_points.values):
             all_valid_times = False
+
     if not all_valid_times:
         # Time values are converted to cftime to avoid OutOfBoundsDatetime errors
         ret._time_points = TimePoints(new_t)
         new_t_cftime = ret._time_points.as_cftime()
         ret._ts = [ts.reindex(new_t_cftime) for ts in ret._ts]
 
-    if ret.meta.duplicated().any():
+    if ret._duplicated_meta():
         if duplicate_msg:
-            warn_handle_res = _handle_potential_duplicates_in_append(ret, duplicate_msg)
-            if warn_handle_res is not None:
-                return warn_handle_res  # type: ignore  # special case
+            _handle_potential_duplicates_in_append(ret, duplicate_msg)
 
         # average identical metadata
         ret._ts = ret.groupby(ret.meta_attributes).mean(axis=0)._ts
@@ -1885,14 +1903,6 @@ def run_append(
 
 
 def _handle_potential_duplicates_in_append(data, duplicate_msg):
-    # If only one number contributes to each of the timeseries, we're not looking at
-    # duplicates so can return.
-    ts = data.timeseries(check_duplicated=False)
-    contributing_values = (~ts.isnull()).astype(int).groupby(ts.index.names).sum()
-    duplicates = (contributing_values > 1).any().any()
-    if not duplicates:
-        return None
-
     if duplicate_msg == "warn":
         warn_msg = (
             "Duplicate time points detected, the output will be the average of "
@@ -1901,11 +1911,8 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
         warnings.warn(warn_msg)
         return None
 
-    if duplicate_msg == "return":
-        warnings.warn(
-            "Result contains overlapping data values with non unique metadata"
-        )
-        return data
+    if duplicate_msg and not isinstance(duplicate_msg, str):
+        raise NonUniqueMetadataError(data.meta)
 
     raise ValueError("Unrecognised value for duplicate_msg")
 
