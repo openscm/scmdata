@@ -1099,7 +1099,7 @@ def test_append(test_scm_run):
 def test_append_exact_duplicates(test_scm_run):
     other = copy.deepcopy(test_scm_run)
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
-        test_scm_run.append(other).timeseries()
+        test_scm_run.append(other, duplicate_msg="warn").timeseries()
 
     assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
@@ -1110,7 +1110,7 @@ def test_append_duplicates(test_scm_run):
     other = copy.deepcopy(test_scm_run)
     other["time"] = [2020, 2030, 2040]
 
-    res = test_scm_run.append(other)
+    res = test_scm_run.append(other, duplicate_msg="warn")
 
     obs = res.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2.0, 7.0, 7.0, 2.0, 7.0, 7.0]
@@ -1123,7 +1123,7 @@ def test_append_duplicates_order_doesnt_matter(test_scm_run):
     other["time"] = [2020, 2030, 2040]
     other._ts[2][2] = 5.0
 
-    res = other.append(test_scm_run)
+    res = other.append(test_scm_run, duplicate_msg="warn")
 
     obs = res.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2.0, 7.0, 7.0, 2.0, 7.0, 5.0]
@@ -1199,7 +1199,7 @@ def test_append_inplace(test_scm_run):
     exp = [2, 7, 7]
     npt.assert_almost_equal(obs, exp)
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
-        test_scm_run.append(other, inplace=True)
+        test_scm_run.append(other, inplace=True, duplicate_msg="warn")
 
     assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
@@ -1266,7 +1266,7 @@ def get_append_col_order_time_dfs(base):
 def test_append_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
-    res = run_append([test_scm_run, other, other_2])
+    res = run_append([test_scm_run, other, other_2], duplicate_msg="warn")
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
@@ -1287,7 +1287,7 @@ def test_df_append_deprecated(test_scm_run):
 
     error_msg = "scmdata.run.df_append has been deprecated"
     with pytest.warns(DeprecationWarning, match=error_msg):
-        res = df_append([test_scm_run, other, other_2])
+        res = df_append([test_scm_run, other, other_2], duplicate_msg="warn")
 
         pd.testing.assert_frame_equal(
             res.timeseries().sort_index(),
@@ -1299,7 +1299,7 @@ def test_df_append_deprecated(test_scm_run):
 def test_append_chain_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
-    res = test_scm_run.append(other).append(other_2)
+    res = test_scm_run.append(other, duplicate_msg="warn").append(other_2, duplicate_msg="warn")
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
@@ -1311,8 +1311,8 @@ def test_append_chain_column_order_time_interpolation(test_scm_run):
 def test_append_inplace_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
-    test_scm_run.append(other, inplace=True)
-    test_scm_run.append(other_2, inplace=True)
+    test_scm_run.append(other, duplicate_msg="warn", inplace=True)
+    test_scm_run.append(other_2, duplicate_msg="warn", inplace=True)
 
     pd.testing.assert_frame_equal(
         test_scm_run.timeseries().sort_index(),
@@ -1355,7 +1355,7 @@ def test_append_reindexing(test_scm_run, same_times):
     with patch.object(
         TimeSeries, "reindex", wraps=other._ts[0].reindex
     ) as mock_reindex:
-        res = test_scm_run.append(other)
+        res = test_scm_run.append(other, duplicate_msg="warn")
 
         expected_times = set(
             np.concatenate([other.time_points.values, test_scm_run.time_points.values])
