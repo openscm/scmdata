@@ -1625,7 +1625,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         self,
         other,
         inplace: bool = False,
-        duplicate_msg: Union[str, bool] = "warn",
+        duplicate_msg: Union[str, bool] = True,
         **kwargs: Any,
     ):
         """
@@ -1643,10 +1643,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             new :class:`ScmRun` instance with the appended data.
 
         duplicate_msg
-            If ``"warn"``, raise a warning if duplicate data is detected. If ``True``,
-            raise a ``NonUniqueMetadataError`` error so the user can see the duplicate
-            timeseries. If ``False``, take the average and do not raise a warning
-            or error.
+            If ``True``, raise a ``NonUniqueMetadataError`` error so the user
+            can see the duplicate timeseries. If ``False``, take the average
+            and do not raise a warning or error. If ``"warn"``, raise a
+            warning if duplicate data is detected.
 
         **kwargs
             Keywords to pass to :func:`ScmRun.__init__` when reading
@@ -1796,7 +1796,7 @@ def df_append(*args, **kwargs):
 
 
 def run_append(
-    runs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
+    runs, inplace: bool = False, duplicate_msg: Union[str, bool] = True,
 ):
     """
     Append together many objects.
@@ -1842,10 +1842,10 @@ def run_append(
         ``None``.
 
     duplicate_msg
-            If ``"warn"``, raise a warning if duplicate data is detected. If ``True``,
-            raise a ``NonUniqueMetadataError`` error so the user can see the duplicate
-            timeseries. If ``False``, take the average and do not raise a warning
-            or error.
+        If ``True``, raise a ``NonUniqueMetadataError`` error so the user can
+        see the duplicate timeseries. If ``False``, take the average and do
+        not raise a warning or error. If ``"warn"``, raise a warning if
+        duplicate data is detected.
 
     Returns
     -------
