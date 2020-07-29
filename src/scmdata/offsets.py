@@ -122,7 +122,11 @@ def to_offset(rule: str) -> DateOffset:
     offset = pd_to_offset(rule)
 
     # Ignoring BusinessDay, Custom Business day and Retail offsets
-    if offset.rule_code.startswith("B") or offset.rule_code.startswith("R") or offset.rule_code.startswith("C"):
+    if (
+        offset.rule_code.startswith("B")
+        or offset.rule_code.startswith("R")
+        or offset.rule_code.startswith("C")
+    ):
         raise ValueError(
             "Invalid rule for offset - Business related offsets are not supported"
         )
