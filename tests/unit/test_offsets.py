@@ -10,7 +10,7 @@ from scmdata.offsets import apply_dt, generate_range, to_offset
 
 @pytest.mark.parametrize(
     "offset_rule",
-    ["B", "C", "BM", "BMS", "CBM", "CBMS", "BQ", "BSS", "BA", "BAS", "RE", "BH", "CBH"],
+    ["B", "C", "BM", "BMS", "CBM", "CBMS", "BQ", "BSS", "BA", "BAS", "RE", "BH", "CBH", "R", "REQ"],
 )
 def test_invalid_offsets(offset_rule):
     with pytest.raises(ValueError):

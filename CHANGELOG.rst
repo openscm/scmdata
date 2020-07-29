@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#80 <https://github.com/openscm/scmdata/pull/80>`_) No longer use :class:`pandas.tseries.offsets.BusinessMixin` to determine Business-related offsets in :meth:`scmdata.offsets.to_offset`. (closes `#78 <https://github.com/openscm/scmdata/issues/78>`_)
 - (`#79 <https://github.com/openscm/scmdata/pull/79>`_) Introduce ``scmdata.errors.NonUniqueMetadataError``. Update handling of duplicate metadata so default behaviour of ``run_append`` is to raise a ``NonUniqueMetadataError``. (closes `#76 <https://github.com/openscm/scmdata/issues/76>`_)
 
 v0.6.1
@@ -16,14 +17,14 @@ v0.5.2
 ------
 
 - (`#65 <https://github.com/openscm/scmdata/pull/65>`_) Use pint for ops, making them automatically unit aware
-- (`#71 <https://github.com/openscm/scmdata/pull/71>`_) Start adding arithmetic support via ``scmdata.ops``. So far only add and subtract are supported.
+- (`#71 <https://github.com/openscm/scmdata/pull/71>`_) Start adding arithmetic support via :mod:`scmdata.ops`. So far only add and subtract are supported.
 - (`#70 <https://github.com/openscm/scmdata/pull/70>`_) Automatically set y-axis label to units if it makes sense in :obj:`ScmRun`'s :meth:`lineplot` method
 
 v0.5.1
 ------
 
-- (`#68 <https://github.com/openscm/scmdata/pull/68>`_) Rename :func`scmdata.run.df_append` to :func`scmdata.run.run_append`. :func`scmdata.run.df_append` deprecated and will be removed in v0.6.0
-- (`#67 <https://github.com/openscm/scmdata/pull/67>`_) Update the documentation for :meth`ScmRun.append`
+- (`#68 <https://github.com/openscm/scmdata/pull/68>`_) Rename :func:`scmdata.run.df_append` to :func`scmdata.run.run_append`. :func`scmdata.run.df_append` deprecated and will be removed in v0.6.0
+- (`#67 <https://github.com/openscm/scmdata/pull/67>`_) Update the documentation for :meth:`ScmRun.append`
 - (`#66 <https://github.com/openscm/scmdata/pull/66>`_) Raise ValueError if index/columns arguments are not provided when instantiating a :class`ScmRun` object with a numpy array. Add ``lowercase_cols`` argument to coerce the column names in CSV files to lowercase
 
 v0.5.0
