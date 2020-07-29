@@ -380,6 +380,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)
 
+        self.metadata = {}
+
     def _init_timeseries(
         self,
         data,
@@ -437,6 +439,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             :func:`copy.deepcopy` of ``self``
         """
         ret = copy.copy(self)
+        ret.metadata = copy.deepcopy(self.metadata)
         if copy_ts:
             ret._ts = [ts.copy() for ts in self._ts]
         return ret
@@ -1871,6 +1874,7 @@ def run_append(
 
     for run in runs[1:]:
         ret._ts.extend(run._ts)
+        ret.metadata.update(run.metadata)
 
     # Determine the new common timebase
     new_t = np.concatenate([r.time_points.values for r in runs])

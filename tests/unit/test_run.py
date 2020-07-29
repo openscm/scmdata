@@ -2453,3 +2453,20 @@ def test_non_unique_metadata_error_formatting():
 
     with pytest.raises(NonUniqueMetadataError, match=re.escape(error_msg)):
         raise NonUniqueMetadataError(meta)
+
+
+@pytest.mark.parametrize("copy_ts", [True, False])
+def test_copy(test_scm_run, copy_ts):
+    orig_run = test_scm_run
+    copy_run = test_scm_run.copy(copy_ts)
+
+    assert id(orig_run) != id(copy_run)
+
+    assert "test" not in orig_run.metadata
+    assert id(orig_run.metadata) != id(copy_run.metadata)
+
+    for o, c in zip(orig_run._ts, copy_run._ts):
+        if copy_ts:
+            assert id(o) != id(c)
+        else:
+            assert id(o) == id(c)
