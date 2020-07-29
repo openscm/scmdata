@@ -257,6 +257,8 @@ def _read_nc(cls, ds):
 
     if is_scmdf:
         df = ScmDataFrame(df)
+    else:
+        df.metadata.update({k: ds.getncattr(k) for k in ds.ncattrs()})
 
     return df
 
@@ -290,6 +292,10 @@ def run_to_nc(df, fname, dimensions=("region",), extras=()):
     with nc.Dataset(fname, "w", diskless=True, persist=True) as ds:
         ds.created_at = datetime.utcnow().isoformat()
         ds._scmdata_version = __version__
+
+        if hasattr(df, "metadata"):
+            ds.setncatts(df.metadata)
+
         _write_nc(ds, df, dimensions, extras)
 
 
