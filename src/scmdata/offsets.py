@@ -16,7 +16,6 @@ from typing import Any, Iterable
 import pandas as pd
 from pandas.tseries.frequencies import to_offset as pd_to_offset
 from pandas.tseries.offsets import (
-    BusinessMixin,
     DateOffset,
     NaT,
     as_datetime,
@@ -122,7 +121,8 @@ def to_offset(rule: str) -> DateOffset:
     """
     offset = pd_to_offset(rule)
 
-    if isinstance(offset, BusinessMixin) or offset.rule_code.startswith("B"):
+    # Ignoring BusinessDay, Custom Business day and Retail offsets
+    if offset.rule_code.startswith("B") or offset.rule_code.startswith("R") or offset.rule_code.startswith("C"):
         raise ValueError(
             "Invalid rule for offset - Business related offsets are not supported"
         )
