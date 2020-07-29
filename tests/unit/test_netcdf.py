@@ -298,16 +298,9 @@ def test_nc_read_failure(scm_data, test_data_path, caplog):
     )
 
 
-@pytest.mark.parametrize("mdata", (
-    {},
-    {
-        "test": "value"
-    },
-    {
-        "test_int": 1,
-        "test_float": 1.234,
-    },
-))
+@pytest.mark.parametrize(
+    "mdata", ({}, {"test": "value"}, {"test_int": 1, "test_float": 1.234,},)
+)
 def test_nc_with_metadata(test_scm_run, mdata):
     test_scm_run.metadata = mdata.copy()
     with tempfile.TemporaryDirectory() as tempdir:
@@ -331,11 +324,7 @@ def test_nc_with_metadata(test_scm_run, mdata):
         assert "created_at" in df.metadata
 
 
-@pytest.mark.parametrize("mdata", (
-    {
-        "test_fails": {"something": "else"},
-    },
-))
+@pytest.mark.parametrize("mdata", ({"test_fails": {"something": "else"},},))
 def test_nc_with_metadata_fails(test_scm_run, mdata):
     test_scm_run.metadata = mdata.copy()
     with tempfile.TemporaryDirectory() as tempdir:

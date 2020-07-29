@@ -113,8 +113,6 @@ def test_timeseries_init_time_and_coords(data):
         TimeSeries(data, time=[2010, 2020, 2030], coords={"lat": [45, 0, -45]})
 
 
-
-
 @pytest.mark.parametrize("inplace", [True, False])
 def test_timeseries_add(ts, inplace):
     if inplace:
