@@ -109,6 +109,8 @@ def to_offset(rule: str) -> DateOffset:
         The rule to use to generate the offset. For options see `pandas offset aliases
         <http://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliases>`_.
 
+        Business-related offsets, such as 'B', 'C' or 'RE', are not supported.
+
     Returns
     -------
     :obj:`DateOffset`
@@ -117,7 +119,7 @@ def to_offset(rule: str) -> DateOffset:
     Raises
     ------
     ValueError
-        If unsupported offset rule is requested, e.g. all business related offsets
+        If unsupported offset rule is requested, e.g. all business-related offsets
     """
     offset = pd_to_offset(rule)
 
