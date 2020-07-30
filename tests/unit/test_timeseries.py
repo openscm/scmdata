@@ -11,6 +11,14 @@ from scmdata.time import TimePoints
 from scmdata.timeseries import TimeSeries
 
 
+@pytest.fixture(scope="function")
+def ts():
+    times = np.asarray(
+        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1),]
+    )
+    return TimeSeries([1, 2, 3], time=times)
+
+
 @pytest.mark.parametrize("data", ([1, 2, 3], (1, 2, 3), np.array([1, 2, 3])))
 @pytest.mark.parametrize(
     "time",
@@ -105,14 +113,6 @@ def test_timeseries_init_time_and_coords(data):
         TimeSeries(data, time=[2010, 2020, 2030], coords={"lat": [45, 0, -45]})
 
 
-@pytest.fixture(scope="function")
-def ts():
-    times = np.asarray(
-        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1),]
-    )
-    return TimeSeries([1, 2, 3], time=times)
-
-
 @pytest.mark.parametrize("inplace", [True, False])
 def test_timeseries_add(ts, inplace):
     if inplace:
@@ -190,3 +190,12 @@ def test_extrapolation_nan(dt):
     )
 
     npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=2)
+
+
+def test_copy(ts):
+    orig = ts
+    copy = ts.copy()
+
+    assert id(orig) != id(copy)
+    assert id(orig._data) != id(copy._data)
+    assert id(orig._data.attrs) != id(copy._data.attrs)

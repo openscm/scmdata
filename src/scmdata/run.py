@@ -45,6 +45,8 @@ _logger = getLogger(__name__)
 REQUIRED_COLS = ["model", "scenario", "region", "variable", "unit"]
 """Minimum metadata columns required by an ScmRun"""
 
+MetadataType = Dict[str, Union[str, int, float]]
+
 
 def _read_file(  # pylint: disable=missing-return-doc
     fnames: str, *args: Any, **kwargs: Any
@@ -291,6 +293,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         data,
         index: Any = None,
         columns: Optional[Union[Dict[str, list], Dict[str, str]]] = None,
+        metadata: Optional[MetadataType] = None,
         **kwargs: Any,
     ):
         """
@@ -358,6 +361,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     ScmRun(d, columns=col_2).meta
                 )
 
+        metadata:
+            Optional dictionary of metadata for instance as a whole.
+
+            This can be used to store information such as the longer-form information
+            about a particular dataset, for example, dataset description or DOIs.
+
+            Defaults to an empty :obj:`dict` if no default metadata are provided.
+
         **kwargs:
             Additional parameters passed to :func:`_read_file` to read files
 
@@ -374,11 +385,15 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if isinstance(data, ScmRun):
             self._ts = data._ts
             self._time_points = TimePoints(data.time_points.values)
+            if metadata is None:
+                metadata = data.metadata.copy()
         else:
             self._init_timeseries(data, index, columns, **kwargs)
 
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)
+
+        self.metadata = metadata.copy() if metadata is not None else {}
 
     def _init_timeseries(
         self,
@@ -437,6 +452,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             :func:`copy.deepcopy` of ``self``
         """
         ret = copy.copy(self)
+        ret.metadata = copy.deepcopy(self.metadata)
         if copy_ts:
             ret._ts = [ts.copy() for ts in self._ts]
         return ret
@@ -1626,6 +1642,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         other,
         inplace: bool = False,
         duplicate_msg: Union[str, bool] = True,
+        metadata: Optional[MetadataType] = None,
         **kwargs: Any,
     ):
         """
@@ -1648,6 +1665,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             and do not raise a warning or error. If ``"warn"``, raise a
             warning if duplicate data is detected.
 
+        metadata
+            If not ``None``, override the metadata of the resulting :obj:`ScmRun` with ``metadata``.
+            Otherwise, the metadata for the runs are merged. In the case where there are duplicate
+            metadata keys, the values from the first run are used.
+
         **kwargs
             Keywords to pass to :func:`ScmRun.__init__` when reading
             :obj:`other`
@@ -1661,7 +1683,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if not isinstance(other, ScmRun):
             other = self.__class__(other, **kwargs)
 
-        return run_append([self, other], inplace=inplace, duplicate_msg=duplicate_msg)
+        return run_append(
+            [self, other],
+            inplace=inplace,
+            duplicate_msg=duplicate_msg,
+            metadata=metadata,
+        )
 
     def to_iamdataframe(self) -> LongDatetimeIamDataFrame:  # pragma: no cover
         """
@@ -1795,8 +1822,21 @@ def df_append(*args, **kwargs):
     return run_append(*args, **kwargs)
 
 
+def _merge_metadata(metadata):
+    res = metadata[0].copy()
+
+    for m in metadata[1:]:
+        for k, v in m.items():
+            if k not in res:
+                res[k] = v
+    return res
+
+
 def run_append(
-    runs, inplace: bool = False, duplicate_msg: Union[str, bool] = True,
+    runs,
+    inplace: bool = False,
+    duplicate_msg: Union[str, bool] = True,
+    metadata: Optional[MetadataType] = None,
 ):
     """
     Append together many objects.
@@ -1846,6 +1886,11 @@ def run_append(
         see the duplicate timeseries. If ``False``, take the average and do
         not raise a warning or error. If ``"warn"``, raise a warning if
         duplicate data is detected.
+
+    metadata
+        If not ``None``, override the metadata of the resulting :obj:`ScmRun` with ``metadata``.
+        Otherwise, the metadata for the runs are merged. In the case where there are duplicate
+        metadata keys, the values from the first run are used.
 
     Returns
     -------
@@ -1897,6 +1942,11 @@ def run_append(
         ret._ts = ret.groupby(ret.meta_attributes).mean(axis=0)._ts
 
     ret._ts.sort(key=lambda a: a.name)
+
+    if metadata is not None:
+        ret.metadata = metadata
+    else:
+        ret.metadata = _merge_metadata([r.metadata for r in runs])
 
     if not inplace:
         return ret

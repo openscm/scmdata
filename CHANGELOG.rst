@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#81 <https://github.com/openscm/scmdata/pull/81>`_) Add :attr:`scmdata.run.ScmRun.metadata` to track :obj:`ScmRun` instance-specific metadata (closes `#77 <https://github.com/openscm/scmdata/issues/77>`_)
 - (`#80 <https://github.com/openscm/scmdata/pull/80>`_) No longer use :class:`pandas.tseries.offsets.BusinessMixin` to determine Business-related offsets in :meth:`scmdata.offsets.to_offset`. (closes `#78 <https://github.com/openscm/scmdata/issues/78>`_)
 - (`#79 <https://github.com/openscm/scmdata/pull/79>`_) Introduce ``scmdata.errors.NonUniqueMetadataError``. Update handling of duplicate metadata so default behaviour of ``run_append`` is to raise a ``NonUniqueMetadataError``. (closes `#76 <https://github.com/openscm/scmdata/issues/76>`_)
 

@@ -257,11 +257,13 @@ def _read_nc(cls, ds):
 
     if is_scmdf:
         df = ScmDataFrame(df)
+    else:
+        df.metadata.update({k: ds.getncattr(k) for k in ds.ncattrs()})
 
     return df
 
 
-def run_to_nc(df, fname, dimensions=("region",), extras=()):
+def run_to_nc(run, fname, dimensions=("region",), extras=()):
     """
     Write timeseries to disk as a netCDF4 file
 
@@ -290,7 +292,11 @@ def run_to_nc(df, fname, dimensions=("region",), extras=()):
     with nc.Dataset(fname, "w", diskless=True, persist=True) as ds:
         ds.created_at = datetime.utcnow().isoformat()
         ds._scmdata_version = __version__
-        _write_nc(ds, df, dimensions, extras)
+
+        if hasattr(run, "metadata"):
+            ds.setncatts(run.metadata)
+
+        _write_nc(ds, run, dimensions, extras)
 
 
 def nc_to_run(cls, fname):

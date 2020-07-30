@@ -335,6 +335,26 @@ def test_init_self(test_iam_df, data_cls):
     assert_scmdf_almost_equal(a, b)
 
 
+def test_init_with_metadata(test_scm_run):
+    expected_metadata = {"test": "example"}
+    b = ScmRun(test_scm_run.timeseries(), metadata=expected_metadata)
+
+    # Data should be copied
+    assert id(b.metadata) != id(expected_metadata)
+    assert b.metadata == expected_metadata
+
+
+def test_init_self_with_metadata(test_scm_run):
+    test_scm_run.metadata["test"] = "example"
+
+    b = ScmRun(test_scm_run)
+    assert id(test_scm_run.metadata) != id(b.metadata)
+    assert test_scm_run.metadata == b.metadata
+
+    c = ScmRun(test_scm_run, metadata={"test": "other"})
+    assert c.metadata == {"test": "other"}
+
+
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type, data_cls):
     df = data_cls(test_pd_df).to_iamdataframe()
 
@@ -2390,6 +2410,52 @@ def test_append_long_run(tax1, tax2):
     assert res.get_unique_meta("scenario") == ["run1", "run2"]
 
 
+@pytest.mark.parametrize(
+    "metadata_1,metadata_2,metadata,expected",
+    (
+        (
+            {"first": "example"},
+            {"second": "other_example"},
+            None,
+            {"first": "example", "second": "other_example"},
+        ),
+        (
+            {"first": "example", "second": "other_example"},
+            {"first": "other",},
+            None,
+            {"first": "example", "second": "other_example"},
+        ),
+        (
+            {"first": "example", "second": "other_example"},
+            {"first": "other",},
+            {"first": "", "third": "other_example"},
+            {"first": "", "third": "other_example"},
+        ),
+    ),
+)
+@pytest.mark.parametrize("inplace", [True, False])
+@pytest.mark.parametrize("use_cls_method", [True, False])
+def test_append_metadata(
+    test_scm_run, metadata_1, metadata_2, metadata, expected, inplace, use_cls_method
+):
+    run1 = test_scm_run.copy()
+    run1["ensemble_member"] = 1
+    run1.metadata = metadata_1
+    run2 = test_scm_run.copy()
+    run2["ensemble_member"] = 2
+    run2.metadata = metadata_2
+
+    if use_cls_method:
+        res = run1.append(run2, metadata=metadata, inplace=inplace)
+    else:
+        res = run_append([run1, run2], metadata=metadata, inplace=inplace)
+
+    if inplace:
+        res = run1
+
+    assert res.metadata == expected
+
+
 def test_empty(test_scm_run):
     assert not test_scm_run.empty
     assert test_scm_run.filter(variable="junk nonsense").empty
@@ -2453,3 +2519,20 @@ def test_non_unique_metadata_error_formatting():
 
     with pytest.raises(NonUniqueMetadataError, match=re.escape(error_msg)):
         raise NonUniqueMetadataError(meta)
+
+
+@pytest.mark.parametrize("copy_ts", [True, False])
+def test_copy(test_scm_run, copy_ts):
+    orig_run = test_scm_run
+    copy_run = test_scm_run.copy(copy_ts)
+
+    assert id(orig_run) != id(copy_run)
+
+    assert "test" not in orig_run.metadata
+    assert id(orig_run.metadata) != id(copy_run.metadata)
+
+    for o, c in zip(orig_run._ts, copy_run._ts):
+        if copy_ts:
+            assert id(o) != id(c)
+        else:
+            assert id(o) == id(c)
