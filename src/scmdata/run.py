@@ -293,6 +293,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         data,
         index: Any = None,
         columns: Optional[Union[Dict[str, list], Dict[str, str]]] = None,
+        metadata: Optional[MetadataType] = None,
         **kwargs: Any,
     ):
         """
@@ -360,6 +361,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     ScmRun(d, columns=col_2).meta
                 )
 
+        metadata:
+            Optional dictionary of metadata for instance as a whole.
+
+            This can be used to store information such as the longer-form information
+            about a particular dataset, for example, dataset description or DOIs.
+
+            Defaults to an empty :obj:`dict` if no default metadata are provided.
+
         **kwargs:
             Additional parameters passed to :func:`_read_file` to read files
 
@@ -376,13 +385,15 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if isinstance(data, ScmRun):
             self._ts = data._ts
             self._time_points = TimePoints(data.time_points.values)
+            if metadata is None:
+                metadata = data.metadata
         else:
             self._init_timeseries(data, index, columns, **kwargs)
 
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)
 
-        self.metadata = {}
+        self.metadata = metadata if metadata is not None else {}
 
     def _init_timeseries(
         self,
