@@ -10,9 +10,9 @@ import functools
 from typing import Any, Callable, List, Union
 
 import numpy as np
+import openscm_units.unit_registry as ur
 import pint
 import xarray as xr
-import openscm_units.unit_registry as ur
 from xarray.core.ops import inject_binary_ops
 
 from .time import TimePoints, TimeseriesConverter
@@ -217,11 +217,7 @@ class TimeSeries:
             else:
                 self_data = self._data
 
-            ts = (
-                f(self_data, other_data)
-                if not reflexive
-                else f(other_data, self_data)
-            )
+            ts = f(self_data, other_data) if not reflexive else f(other_data, self_data)
             ts.attrs = self._data.attrs
             if isinstance(other, pint.Quantity):
                 ts.attrs["unit"] = str(ts.data.units)

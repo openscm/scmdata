@@ -204,7 +204,7 @@ def test_timeseries_div_pint(ts_gtc_per_yr_units, inplace):
     else:
         ts2 = ts_gtc_per_yr_units / to_div
 
-    npt.assert_allclose(ts2.values, [1/2, 2/2, 3/2])
+    npt.assert_allclose(ts2.values, [1 / 2, 2 / 2, 3 / 2])
     assert ts2.meta["unit"] == "gigatC"
 
 
@@ -269,7 +269,7 @@ def test_timeseries_div_pint_no_units(ts, inplace, op):
             raise NotImplementedError(op)
 
     # operation works because units of base assumed to be dimensionless
-    npt.assert_allclose(ts2.values, [1/2, 1, 3/2])
+    npt.assert_allclose(ts2.values, [1 / 2, 1, 3 / 2])
     assert ts2.meta["unit"] == "a / gigatC"
 
 
@@ -279,7 +279,9 @@ def test_timeseries_add_sub_pint_invalid_units(ts_gtc_per_yr_units, inplace, op)
     other_unit = "{} / yr".format(ts_gtc_per_yr_units.meta["unit"])
     scalar = 2 * ur(other_unit)
 
-    error_msg = re.escape("Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / a ** 2' ([carbon] * [mass] / [time] ** 2)")
+    error_msg = re.escape(
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / a ** 2' ([carbon] * [mass] / [time] ** 2)"
+    )
     with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
         if inplace:
             if op == "add":

@@ -297,7 +297,9 @@ def test_scalar_ops_pint_wrong_unit(op):
         variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
     )
 
-    error_msg = re.escape("Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])")
+    error_msg = re.escape(
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
+    )
     with pytest.raises(DimensionalityError, match=error_msg):
         if op == "add":
             start + scalar
