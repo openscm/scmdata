@@ -1,6 +1,7 @@
 import re
 
 import numpy as np
+import pandas as pd
 import pytest
 from openscm_units import unit_registry
 from pint.errors import DimensionalityError
@@ -217,5 +218,123 @@ def test_warming_per_gt():
     exp_ts["unit"] = "kelvin / gigatC"
 
     exp = ScmRun(exp_ts)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+def perform_scalar_op(base, scalar, op):
+    base_ts = base.timeseries().T
+    unit_level = base_ts.columns.names.index("unit")
+    base_ts = base_ts.pint.quantify(level=unit_level)
+
+    out = []
+    for _, series in base_ts.iteritems():
+        if op == "add":
+            op_series = series + scalar
+
+        elif op == "subtract":
+            op_series = series - scalar
+
+        elif op == "divide":
+            op_series = series / scalar
+
+        elif op == "multiply":
+            op_series = series * scalar
+
+        else:
+            raise NotImplementedError(op)
+
+        out.append(op_series)
+
+    out = pd.concat(out, axis="columns")
+    out.columns.names = base_ts.columns.names
+    out = out.pint.dequantify().T
+
+    return out
+
+
+@OPS_MARK
+def test_scalar_ops_pint(op):
+    unit = "GtC / yr"
+    scalar = 1 * unit_registry(unit)
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit=unit, scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_scalar_op(start, scalar, op)
+    exp = ScmRun(exp_ts)
+
+    if op in ["add", "subtract"]:
+        exp["unit"] = "gigatC / a"
+
+    elif op == "multiply":
+        exp["unit"] = "gigatC ** 2 / a ** 2"
+
+    elif op == "divide":
+        exp["unit"] = "dimensionless"
+
+    if op == "add":
+        res = start + scalar
+
+    elif op == "subtract":
+        res = start - scalar
+
+    elif op == "divide":
+        res = start / scalar
+
+    elif op == "multiply":
+        res = start * scalar
+
+    else:
+        raise NotImplementedError(op)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+def perform_scalar_op_float_int(base, scalar, op):
+    base_ts = base.timeseries()
+
+    if op == "add":
+        base_ts = base_ts + scalar
+
+    elif op == "subtract":
+        base_ts = base_ts - scalar
+
+    elif op == "divide":
+        base_ts = base_ts / scalar
+
+    elif op == "multiply":
+        base_ts = base_ts * scalar
+
+    else:
+        raise NotImplementedError(op)
+
+    return base_ts
+
+
+@OPS_MARK
+@pytest.mark.parametrize("scalar", (1, 1.0))
+def test_scalar_ops_float_int(op, scalar):
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_scalar_op_float_int(start, scalar, op)
+    exp = ScmRun(exp_ts)
+
+    if op == "add":
+        res = start + scalar
+
+    elif op == "subtract":
+        res = start - scalar
+
+    elif op == "divide":
+        res = start / scalar
+
+    elif op == "multiply":
+        res = start * scalar
+
+    else:
+        raise NotImplementedError(op)
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
