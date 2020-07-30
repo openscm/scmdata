@@ -15,6 +15,57 @@ from scmdata.netcdf import nc_to_run, run_to_nc
 from scmdata.testing import assert_scmdf_almost_equal
 
 
+from scmdata import ScmRun
+
+def test_run_to_nc_required_cols_in_extras():
+    start = ScmRun(
+        np.arange(6).reshape(3, 2),
+        index=[2010, 2020, 2030],
+        columns={
+            "variable": "Surface Temperature",
+            "unit": "K",
+            "model": ["model_a", "model_b"],
+            "scenario": ["scen_a", "scen_b"],
+            "region": "World",
+        }
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        run_to_nc(start, out_fname, dimensions=("scenario",), extras=("model",))
+
+        loaded = ScmRun.from_nc(out_fname)
+
+    assert_scmdf_almost_equal(start, loaded)
+
+        assert exists(out_fname)
+
+        ds = nc.Dataset(out_fname)
+
+        assert ds.dimensions["time"].size == len(scm_data.time_points)
+        assert ds.dimensions["scenario"].size == 2
+
+        assert ds.variables["scenario"][0] == "a_scenario"
+        assert ds.variables["scenario"][1] == "a_scenario2"
+
+        npt.assert_allclose(
+            ds.variables["Primary_Energy"][0, :],
+            scm_data.filter(variable="Primary Energy", scenario="a_scenario").values[0],
+        )
+        npt.assert_allclose(
+            ds.variables["Primary_Energy"][1, :],
+            scm_data.filter(variable="Primary Energy", scenario="a_scenario2").values[
+                0
+            ],
+        )
+        npt.assert_allclose(
+            ds.variables["Primary_Energy__Coal"][0, :],
+            scm_data.filter(
+                variable="Primary Energy|Coal", scenario="a_scenario"
+            ).values[0],
+        )
+
+
 def test_run_to_nc(scm_data):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")

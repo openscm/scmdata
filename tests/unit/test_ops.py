@@ -2,12 +2,16 @@ import re
 
 import numpy as np
 import pandas as pd
+import pint_pandas
 import pytest
 from openscm_units import unit_registry
 from pint.errors import DimensionalityError
 
 from scmdata.run import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
+
+
+pint_pandas.PintType.ureg = unit_registry
 
 
 def get_ts(data, index, **kwargs):
@@ -238,8 +242,14 @@ def perform_scalar_op(base, scalar, op):
         elif op == "divide":
             op_series = series / scalar
 
+        elif op == "divide_inverse":
+            op_series = scalar / series
+
         elif op == "multiply":
             op_series = series * scalar
+
+        elif op == "multiply_inverse":
+            op_series = scalar * series
 
         else:
             raise NotImplementedError(op)
@@ -286,6 +296,40 @@ def test_scalar_ops_pint(op):
 
     else:
         raise NotImplementedError(op)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@pytest.mark.xfail(reason="pint doesn't recognise ScmRun")
+def test_scalar_divide_pint_by_run():
+    scalar = 1 * unit_registry("MtC / yr")
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_scalar_op(start, scalar, "divide_inverse")
+    exp = ScmRun(exp_ts)
+
+    exp["unit"] = "megatC / gigatC"
+
+    res = scalar / start
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@pytest.mark.xfail(reason="pint doesn't recognise ScmRun")
+def test_scalar_multiply_pint_by_run():
+    scalar = 1 * unit_registry("MtC / yr")
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_scalar_op(start, scalar, "multiply_inverse")
+    exp = ScmRun(exp_ts)
+
+    exp["unit"] = "megatC * gigatC / a**2"
+
+    res = scalar * start
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 

@@ -232,20 +232,14 @@ def test_timeseries_add_sub_pint_no_units(ts, inplace, op):
 
 
 @pytest.mark.parametrize("inplace", [True, False])
-@pytest.mark.parametrize("op", ["mul"])
-def test_timeseries_mul_pint_no_units(ts, inplace, op):
+def test_timeseries_mul_pint_no_units(ts, inplace):
     scalar = 2 * ur("GtC / yr")
     if inplace:
-        if op == "mul":
-            ts *= scalar
-            ts2 = ts
-        else:
-            raise NotImplementedError(op)
+        ts *= scalar
+        ts2 = ts
+
     else:
-        if op == "mul":
-            ts2 = ts * scalar
-        else:
-            raise NotImplementedError(op)
+        ts2 = ts * scalar
 
     # operation works because units of base assumed to be dimensionless
     npt.assert_allclose(ts2.values, [2, 4, 6])
