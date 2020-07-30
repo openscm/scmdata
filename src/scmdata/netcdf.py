@@ -263,7 +263,7 @@ def _read_nc(cls, ds):
     return df
 
 
-def run_to_nc(df, fname, dimensions=("region",), extras=()):
+def run_to_nc(run, fname, dimensions=("region",), extras=()):
     """
     Write timeseries to disk as a netCDF4 file
 
@@ -293,10 +293,10 @@ def run_to_nc(df, fname, dimensions=("region",), extras=()):
         ds.created_at = datetime.utcnow().isoformat()
         ds._scmdata_version = __version__
 
-        if hasattr(df, "metadata"):
-            ds.setncatts(df.metadata)
+        if hasattr(run, "metadata"):
+            ds.setncatts(run.metadata)
 
-        _write_nc(ds, df, dimensions, extras)
+        _write_nc(ds, run, dimensions, extras)
 
 
 def nc_to_run(cls, fname):
