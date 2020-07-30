@@ -413,7 +413,7 @@ def test_wrong_shape_ops(op):
     other = np.arange(np.prod(start.shape)).reshape(start.shape)[:, :-1]
 
     error_msg = re.escape(
-        "operands could not be broadcast together with shapes (3,) (2,2)"
+        "other ((2, 2)) does not have the same shape as self ((2, 3))"
     )
     with pytest.raises(ValueError, match=error_msg):
         if op == "add":
@@ -440,7 +440,9 @@ def test_wrong_length_ops(op):
 
     other = np.arange(np.prod(start.shape)).reshape(start.shape)[:-1, :]
 
-    error_msg = re.escape("Incorrect length")
+    error_msg = re.escape(
+        "other ((1, 3)) does not have the same shape as self ((2, 3))"
+    )
     with pytest.raises(ValueError, match=error_msg):
         if op == "add":
             start + other
