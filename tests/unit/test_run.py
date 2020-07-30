@@ -2433,7 +2433,9 @@ def test_append_long_run(tax1, tax2):
         ),
     ),
 )
-def test_append_metadata(test_scm_run, metadata_1, metadata_2, metadata, expected):
+@pytest.mark.parametrize("inplace", [True, False])
+@pytest.mark.parametrize("use_cls_method", [True, False])
+def test_append_metadata(test_scm_run, metadata_1, metadata_2, metadata, expected, inplace, use_cls_method):
     run1 = test_scm_run.copy()
     run1["ensemble_member"] = 1
     run1.metadata = metadata_1
@@ -2441,11 +2443,14 @@ def test_append_metadata(test_scm_run, metadata_1, metadata_2, metadata, expecte
     run2["ensemble_member"] = 2
     run2.metadata = metadata_2
 
-    res = run_append([run1, run2], metadata=metadata)
+    if use_cls_method:
+        res = run1.append(run2, metadata=metadata, inplace=inplace)
+    else:
+        res = run_append([run1, run2], metadata=metadata, inplace=inplace)
 
-    assert res.metadata == expected
+    if inplace:
+        res = run1
 
-    res = run1.append(run2, metadata=metadata)
     assert res.metadata == expected
 
 
