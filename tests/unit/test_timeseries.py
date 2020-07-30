@@ -198,3 +198,4 @@ def test_copy(ts):
 
     assert id(orig) != id(copy)
     assert id(orig._data) != id(copy._data)
+    assert id(orig._data.attrs) != id(copy._data.attrs)

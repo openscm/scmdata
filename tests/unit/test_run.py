@@ -339,6 +339,8 @@ def test_init_with_metadata(test_scm_run):
     expected_metadata = {"test": "example"}
     b = ScmRun(test_scm_run.timeseries(), metadata=expected_metadata)
 
+    # Data should be copied
+    assert id(b.metadata) != id(expected_metadata)
     assert b.metadata == expected_metadata
 
 
@@ -346,6 +348,7 @@ def test_init_self_with_metadata(test_scm_run):
     test_scm_run.metadata["test"] = "example"
 
     b = ScmRun(test_scm_run)
+    assert id(test_scm_run.metadata) != id(b.metadata)
     assert test_scm_run.metadata == b.metadata
 
     c = ScmRun(test_scm_run, metadata={"test": "other"})

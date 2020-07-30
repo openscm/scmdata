@@ -386,14 +386,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             self._ts = data._ts
             self._time_points = TimePoints(data.time_points.values)
             if metadata is None:
-                metadata = data.metadata
+                metadata = data.metadata.copy()
         else:
             self._init_timeseries(data, index, columns, **kwargs)
 
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)
 
-        self.metadata = metadata if metadata is not None else {}
+        self.metadata = metadata.copy() if metadata is not None else {}
 
     def _init_timeseries(
         self,
@@ -1668,7 +1668,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         metadata
             If not ``None``, override the metadata of the resulting :obj:`ScmRun` with ``metadata``.
             Otherwise, the metadata for the runs are merged. In the case where there are duplicate
-            metadata keys, the values from the first run is used.
+            metadata keys, the values from the first run are used.
 
         **kwargs
             Keywords to pass to :func:`ScmRun.__init__` when reading
@@ -1822,6 +1822,16 @@ def df_append(*args, **kwargs):
     return run_append(*args, **kwargs)
 
 
+def _merge_metadata(metadata):
+    res = metadata[0].copy()
+
+    for m in metadata[1:]:
+        for k, v in m.items():
+            if k not in res:
+                res[k] = v
+    return res
+
+
 def run_append(
     runs,
     inplace: bool = False,
@@ -1880,7 +1890,7 @@ def run_append(
     metadata
         If not ``None``, override the metadata of the resulting :obj:`ScmRun` with ``metadata``.
         Otherwise, the metadata for the runs are merged. In the case where there are duplicate
-        metadata keys, the values from the first run is used.
+        metadata keys, the values from the first run are used.
 
     Returns
     -------
@@ -1906,9 +1916,6 @@ def run_append(
 
     for run in runs[1:]:
         ret._ts.extend(run._ts)
-        for k, v in run.metadata.items():
-            if metadata is None and k not in ret.metadata:
-                ret.metadata[k] = v
 
     # Determine the new common timebase
     new_t = np.concatenate([r.time_points.values for r in runs])
@@ -1938,6 +1945,8 @@ def run_append(
 
     if metadata is not None:
         ret.metadata = metadata
+    else:
+        ret.metadata = _merge_metadata([r.metadata for r in runs])
 
     if not inplace:
         return ret
