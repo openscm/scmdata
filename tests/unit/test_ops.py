@@ -358,3 +358,57 @@ def test_scalar_ops_float_int(op, scalar):
         raise NotImplementedError(op)
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@OPS_MARK
+def test_wrong_shape_ops(op):
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    other = np.arange(np.prod(start.shape)).reshape(start.shape)[:, :-1]
+
+    error_msg = re.escape(
+        "operands could not be broadcast together with shapes (3,) (2,2)"
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        if op == "add":
+            start + other
+
+        elif op == "subtract":
+            start - other
+
+        elif op == "divide":
+            start / other
+
+        elif op == "multiply":
+            start * other
+
+        else:
+            raise NotImplementedError(op)
+
+
+@OPS_MARK
+def test_wrong_length_ops(op):
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    other = np.arange(np.prod(start.shape)).reshape(start.shape)[:-1, :]
+
+    error_msg = re.escape("Incorrect length")
+    with pytest.raises(ValueError, match=error_msg):
+        if op == "add":
+            start + other
+
+        elif op == "subtract":
+            start - other
+
+        elif op == "divide":
+            start / other
+
+        elif op == "multiply":
+            start * other
+
+        else:
+            raise NotImplementedError(op)
