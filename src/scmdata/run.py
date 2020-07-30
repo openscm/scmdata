@@ -1812,10 +1812,10 @@ def df_append(*args, **kwargs):
     for further inspection.
 
     .. deprecated:: 0.5.0
-        :func:`df_append` will be removed in scmdata v0.6.0, it is replaced by :func:`scmdata.run.run_append`.
+        :func:`df_append` will be removed in scmdata v0.7.0, it is replaced by :func:`scmdata.run.run_append`.
     """
     warnings.warn(
-        "scmdata.run.df_append has been deprecated and will be removed in v0.6.0. Use the scmdata.run.run_append class instead",
+        "scmdata.run.df_append has been deprecated and will be removed in v0.7.0. Use the scmdata.run.run_append class instead",
         DeprecationWarning,
         2,
     )

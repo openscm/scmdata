@@ -353,7 +353,7 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
             Timeseries cannot be read from :obj:`data`
         """
         warn(
-            "ScmDataFrame has been deprecated and will be removed in v0.6.0. Use the ScmRun class instead",
+            "ScmDataFrame has been deprecated and will be removed in v0.7.0. Use the ScmRun class instead",
             DeprecationWarning,
             2,
         )
