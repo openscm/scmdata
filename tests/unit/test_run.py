@@ -2155,6 +2155,7 @@ def test_meta_filtered(test_scm_run):
         pd.Series([1.0, 1.0, np.nan], name="test"), test_scm_run["test"]
     )
 
+
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
 def test_drop_meta(test_scm_run, label, inplace):
@@ -2223,8 +2224,10 @@ def test_drop_meta_inplace_default(test_scm_run):
     label = "extra"
     test_scm_run[label] = "test"
 
-    msg = "drop_meta default behaviour will change to not performing operation inplace in v0.7.0. " \
-          "Explicitly set inplace=True to retain current behaviour"
+    msg = (
+        "drop_meta default behaviour will change to not performing operation inplace in v0.7.0. "
+        "Explicitly set inplace=True to retain current behaviour"
+    )
     with pytest.warns(DeprecationWarning, match=msg):
         res = test_scm_run.drop_meta(label)
 
