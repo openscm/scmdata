@@ -17,7 +17,7 @@ def test_groupby(test_scm_run, g):
 
     res = test_scm_run.groupby(*g).map(func)
 
-    assert_scmdf_almost_equal(res, test_scm_run, allow_unordered=True)
+    assert_scmdf_almost_equal(res, test_scm_run, allow_unordered=True, check_ts_names=True)
 
 
 def test_groupby_return_none(test_scm_run):
