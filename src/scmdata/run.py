@@ -19,6 +19,7 @@ import xarray as xr
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
+from . import REQUIRED_COLS
 from .dataframe import ScmDataFrame
 from .errors import NonUniqueMetadataError
 from .filters import (
@@ -42,8 +43,6 @@ from .units import UnitConverter
 
 _logger = getLogger(__name__)
 
-REQUIRED_COLS = ["model", "scenario", "region", "variable", "unit"]
-"""Minimum metadata columns required by an ScmRun"""
 
 MetadataType = Dict[str, Union[str, int, float]]
 

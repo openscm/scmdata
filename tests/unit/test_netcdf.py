@@ -10,6 +10,7 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
+from scmdata import ScmRun
 from scmdata.netcdf import nc_to_run, run_to_nc
 from scmdata.testing import assert_scmdf_almost_equal
 
@@ -351,3 +352,48 @@ def test_nc_with_metadata_fails(test_scm_run, mdata):
         msg = "illegal data type for attribute b'test_fails'"
         with pytest.raises(TypeError, match=msg):
             run_to_nc(test_scm_run, out_fname, dimensions=("scenario",))
+
+
+def test_run_to_nc_required_cols_in_extras():
+    start = ScmRun(
+        np.arange(6).reshape(3, 2),
+        index=[2010, 2020, 2030],
+        columns={
+            "variable": "Surface Temperature",
+            "unit": "K",
+            "model": ["model_a", "model_b"],
+            "scenario": ["scen_a", "scen_b"],
+            "region": "World",
+        }
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        start.to_nc(out_fname, dimensions=("scenario",), extras=("model",))
+
+        loaded = ScmRun.from_nc(out_fname)
+
+    assert_scmdf_almost_equal(start, loaded, check_ts_names=False)
+
+
+@pytest.mark.xfail(reason="Can't handle duplicated cols")
+def test_run_to_nc_required_cols_in_extras_duplicates():
+    start = ScmRun(
+        np.arange(6).reshape(3, 2),
+        index=[2010, 2020, 2030],
+        columns={
+            "variable": "Surface Temperature",
+            "unit": "K",
+            "model": ["model_a", "model_b"],
+            "scenario": "scen_a",
+            "region": "World",
+        }
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        start.to_nc(out_fname, extras=("model",))
+
+        loaded = ScmRun.from_nc(out_fname)
+
+    assert_scmdf_almost_equal(start, loaded, check_ts_names=False)
