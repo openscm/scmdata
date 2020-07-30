@@ -2435,7 +2435,9 @@ def test_append_long_run(tax1, tax2):
 )
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("use_cls_method", [True, False])
-def test_append_metadata(test_scm_run, metadata_1, metadata_2, metadata, expected, inplace, use_cls_method):
+def test_append_metadata(
+    test_scm_run, metadata_1, metadata_2, metadata, expected, inplace, use_cls_method
+):
     run1 = test_scm_run.copy()
     run1["ensemble_member"] = 1
     run1.metadata = metadata_1

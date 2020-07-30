@@ -299,9 +299,25 @@ def test_nc_read_failure(scm_data, test_data_path, caplog):
 
 
 @pytest.mark.parametrize(
-    "mdata", ({}, {"test": "value"}, {"test_int": 1, "test_float": 1.234,},)
+    "mdata",
+    (
+        {},
+        {"test": "value"},
+        {
+            "test_int": 1,
+            "test_float": 1.234,
+            "test_array": np.asarray([1, 2, 3]),
+            "test_list": [1, 2, 3],
+        },
+    ),
 )
 def test_nc_with_metadata(test_scm_run, mdata):
+    def _cmp(a, b):
+        if isinstance(a, (list, np.ndarray)):
+            return (a == b).all()
+        else:
+            return a == b
+
     test_scm_run.metadata = mdata.copy()
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
@@ -313,18 +329,20 @@ def test_nc_with_metadata(test_scm_run, mdata):
         nc_attrs = {a: ds.getncattr(a) for a in ds.ncattrs()}
         for k, v in mdata.items():
             assert k in nc_attrs
-            assert nc_attrs[k] == v
+            assert _cmp(nc_attrs[k], v)
         assert "created_at" in nc_attrs
 
         df = nc_to_run(test_scm_run.__class__, out_fname)
 
         for k, v in mdata.items():
             assert k in df.metadata
-            assert df.metadata[k] == v
+            assert _cmp(df.metadata[k], v)
         assert "created_at" in df.metadata
 
 
-@pytest.mark.parametrize("mdata", ({"test_fails": {"something": "else"},},))
+@pytest.mark.parametrize(
+    "mdata", ({"test_fails": {"something": "else"},}, {"test_fails": {1, 2, 3}},),
+)
 def test_nc_with_metadata_fails(test_scm_run, mdata):
     test_scm_run.metadata = mdata.copy()
     with tempfile.TemporaryDirectory() as tempdir:
