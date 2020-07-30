@@ -2155,9 +2155,9 @@ def test_meta_filtered(test_scm_run):
         pd.Series([1.0, 1.0, np.nan], name="test"), test_scm_run["test"]
     )
 
-
+@pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
-def test_drop_meta(test_scm_run, label):
+def test_drop_meta(test_scm_run, label, inplace):
     if type(label) == str:
         test_scm_run[label] = 1.0
         assert label in test_scm_run.meta.columns
@@ -2166,17 +2166,27 @@ def test_drop_meta(test_scm_run, label):
             test_scm_run[lbl] = 1.0
             assert lbl in test_scm_run.meta.columns
 
-    test_scm_run.drop_meta(label)
+    # TODO: remove warning check in v0.7.0
+    # Check that the deprecation warning isn't raised
+    with warnings.catch_warnings(record=True) as warn:
+        if inplace:
+            test_scm_run.drop_meta(label, inplace=True)
+            res = test_scm_run
+        else:
+            res = test_scm_run.drop_meta(label, inplace=False)
+            assert id(res) != id(test_scm_run)
+
+        assert len(warn) == 0
 
     if type(label) == str:
-        assert label not in test_scm_run.meta.columns
-        assert label not in test_scm_run.meta_attributes
+        assert label not in res.meta.columns
+        assert label not in res.meta_attributes
     else:
         for lbl in label:
-            assert lbl not in test_scm_run.meta.columns
-            assert lbl not in test_scm_run.meta_attributes
+            assert lbl not in res.meta.columns
+            assert lbl not in res.meta_attributes
 
-    assert "variable" in test_scm_run.meta.columns
+    assert "variable" in res.meta.columns
 
 
 @pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
@@ -2207,6 +2217,21 @@ def test_drop_meta_not_inplace(test_scm_run):
 
     res = res * 2
     np.testing.assert_almost_equal(res.values, test_scm_run.values * 2)
+
+
+def test_drop_meta_inplace_default(test_scm_run):
+    label = "extra"
+    test_scm_run[label] = "test"
+
+    msg = "drop_meta default behaviour will change to not performing operation inplace in v0.7.0. " \
+          "Explicitly set inplace=True to retain current behaviour"
+    with pytest.warns(DeprecationWarning, match=msg):
+        res = test_scm_run.drop_meta(label)
+
+    # Should default to inplace
+    # To change in v0.7.0
+    assert res is None
+    assert label not in test_scm_run.meta
 
 
 time_axis_checks = pytest.mark.parametrize(
