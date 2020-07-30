@@ -1670,7 +1670,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             Otherwise, the metadata for the runs are merged. In the case where there are duplicate
             metadata keys, the values from the first run is used.
 
-
         **kwargs
             Keywords to pass to :func:`ScmRun.__init__` when reading
             :obj:`other`
