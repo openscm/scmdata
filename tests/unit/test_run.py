@@ -2390,6 +2390,63 @@ def test_append_long_run(tax1, tax2):
     assert res.get_unique_meta("scenario") == ["run1", "run2"]
 
 
+@pytest.mark.parametrize("metadata_1,metadata_2,metadata,expected", (
+    (
+        {"first": "example"},
+        {"second": "other_example"},
+        None,
+        {
+            "first": "example",
+            "second": "other_example"
+        },
+    ),
+    (
+        {
+            "first": "example",
+            "second": "other_example"
+        },
+        {
+            "first": "other",
+        },
+        None,
+        {
+            "first": "example",
+            "second": "other_example"
+        },
+    ),
+    (
+        {
+            "first": "example",
+            "second": "other_example"
+        },
+        {
+            "first": "other",
+        },
+        {
+            "first": "",
+            "third": "other_example"
+        },
+        {
+            "first": "",
+            "third": "other_example"
+        },
+    )
+))
+def test_append_metadata(test_scm_run, metadata_1, metadata_2, metadata, expected):
+    run1 = test_scm_run.copy()
+    run1["ensemble_member"] = 1
+    run1.metadata = metadata_1
+    run2 = test_scm_run.copy()
+    run2["ensemble_member"] = 2
+    run2.metadata = metadata_2
+
+    res = run_append([run1, run2], metadata=metadata)
+
+    assert res.metadata == expected
+
+    res = run1.append(run2, metadata=metadata)
+    assert res.metadata == expected
+
 def test_empty(test_scm_run):
     assert not test_scm_run.empty
     assert test_scm_run.filter(variable="junk nonsense").empty
