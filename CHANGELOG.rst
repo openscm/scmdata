@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#84 <https://github.com/openscm/scmdata/pull/84>`_) Raise a DeprecationWarning if no default ``inplace`` argument is provided for :meth:`ScmRun.drop_meta`. inplace default behaviour scheduled to be changed to ``False`` in v0.7.0
 - (`#81 <https://github.com/openscm/scmdata/pull/81>`_) Add :attr:`scmdata.run.ScmRun.metadata` to track :obj:`ScmRun` instance-specific metadata (closes `#77 <https://github.com/openscm/scmdata/issues/77>`_)
 - (`#80 <https://github.com/openscm/scmdata/pull/80>`_) No longer use :class:`pandas.tseries.offsets.BusinessMixin` to determine Business-related offsets in :meth:`scmdata.offsets.to_offset`. (closes `#78 <https://github.com/openscm/scmdata/issues/78>`_)
 - (`#79 <https://github.com/openscm/scmdata/pull/79>`_) Introduce ``scmdata.errors.NonUniqueMetadataError``. Update handling of duplicate metadata so default behaviour of ``run_append`` is to raise a ``NonUniqueMetadataError``. (closes `#76 <https://github.com/openscm/scmdata/issues/76>`_)
