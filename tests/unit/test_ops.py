@@ -404,6 +404,8 @@ def test_scalar_ops_float_int(op, scalar):
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
 
+# TODO: tests of ops with 2d data
+
 @OPS_MARK
 def test_wrong_shape_ops(op):
     start = get_multiple_ts(
