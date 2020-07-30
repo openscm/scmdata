@@ -4,8 +4,10 @@ from datetime import datetime
 import cftime
 import numpy as np
 import numpy.testing as npt
+import pint.errors
 import pytest
 import xarray as xr
+from openscm_units import unit_registry as ur
 
 from scmdata.time import TimePoints
 from scmdata.timeseries import TimeSeries
@@ -144,6 +146,51 @@ def test_timeseries_mul(ts, inplace):
         ts2 = ts * 2
 
     npt.assert_allclose(ts2.values, [2, 4, 6])
+
+
+@pytest.fixture(scope="function")
+def ts_gtc_per_yr_units():
+    times = np.asarray(
+        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1),]
+    )
+    return TimeSeries([1, 2, 3], time=times, attrs={"unit": "GtC / yr"})
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+def test_timeseries_add_pint(ts_gtc_per_yr_units, inplace):
+    to_add = 2 * ur(ts_gtc_per_yr_units.meta["unit"])
+    if inplace:
+        ts_gtc_per_yr_units += to_add
+        ts2 = ts_gtc_per_yr_units
+    else:
+        ts2 = ts_gtc_per_yr_units + to_add
+
+    npt.assert_allclose(ts2.values, [3, 4, 5])
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+def test_timeseries_add_pint_no_units(ts, inplace):
+    to_add = 2 * ur("GtC / yr")
+
+    error_msg = re.escape("Cannot convert from 'dimensionless' to 'gigatC / a'")
+    with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
+        if inplace:
+            ts += to_add
+        else:
+            ts + to_add
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+def test_timeseries_add_pint_invalid_units(ts_gtc_per_yr_units, inplace):
+    other_unit = "{} / yr".format(ts_gtc_per_yr_units.meta["unit"])
+    to_add = 2 * ur(other_unit)
+
+    error_msg = re.escape("Cannot convert from 'gigatC / a**2' to 'gigatC / a'")
+    with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
+        if inplace:
+            ts_gtc_per_yr_units += to_add
+        else:
+            ts_gtc_per_yr_units + to_add
 
 
 def test_interpolate(combo):

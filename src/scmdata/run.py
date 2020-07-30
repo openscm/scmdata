@@ -603,6 +603,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         def func(self, other):
             if isinstance(other, ScmRun):
                 return NotImplemented
+
             if not isinstance(other, numbers.Number) and len(other) != len(self):
                 raise ValueError("Incorrect length")
 
