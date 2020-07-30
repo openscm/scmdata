@@ -332,7 +332,7 @@ def test_init_self(test_iam_df, data_cls):
     a = data_cls(test_iam_df)
     b = data_cls(a)
 
-    assert_scmdf_almost_equal(a, b)
+    assert_scmdf_almost_equal(a, b, check_ts_names=True)
 
 
 def test_init_with_metadata(test_scm_run):
@@ -1123,7 +1123,7 @@ def test_append_exact_duplicates(test_scm_run):
 
     assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
-    assert_scmdf_almost_equal(test_scm_run, other)
+    assert_scmdf_almost_equal(test_scm_run, other, check_ts_names=True)
 
 
 def test_append_duplicates(test_scm_run):

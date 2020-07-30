@@ -7,7 +7,7 @@ import numpy.testing as npt
 import pandas.testing as pdt
 
 
-def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names=True):
+def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names=False):
     """
     Check that left and right :obj:`ScmDataFrame` or :obj:`ScmRun` are equal.
 
