@@ -336,9 +336,7 @@ def test_init_self(test_iam_df, data_cls):
 
 
 def test_init_with_metadata(test_scm_run):
-    expected_metadata = {
-        "test": "example"
-    }
+    expected_metadata = {"test": "example"}
     b = ScmRun(test_scm_run.timeseries(), metadata=expected_metadata)
 
     assert b.metadata == expected_metadata
