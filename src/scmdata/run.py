@@ -1673,7 +1673,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if not isinstance(other, ScmRun):
             other = self.__class__(other, **kwargs)
 
-        return run_append([self, other], inplace=inplace, duplicate_msg=duplicate_msg, metadata=metadata)
+        return run_append(
+            [self, other],
+            inplace=inplace,
+            duplicate_msg=duplicate_msg,
+            metadata=metadata,
+        )
 
     def to_iamdataframe(self) -> LongDatetimeIamDataFrame:  # pragma: no cover
         """
@@ -1808,7 +1813,10 @@ def df_append(*args, **kwargs):
 
 
 def run_append(
-    runs, inplace: bool = False, duplicate_msg: Union[str, bool] = True, metadata: Optional[MetadataType] = None
+    runs,
+    inplace: bool = False,
+    duplicate_msg: Union[str, bool] = True,
+    metadata: Optional[MetadataType] = None,
 ):
     """
     Append together many objects.
