@@ -224,7 +224,7 @@ class TimeSeries:
             )
             ts.attrs = self._data.attrs
             if isinstance(other, pint.Quantity):
-                ts.attrs["unit"] = ts.data.units
+                ts.attrs["unit"] = str(ts.data.units)
                 ts.data = ts.values
 
             return TimeSeries(ts)
