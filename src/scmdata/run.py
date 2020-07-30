@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import pint
 import xarray as xr
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops
@@ -604,7 +605,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             if isinstance(other, ScmRun):
                 return NotImplemented
 
-            if not isinstance(other, numbers.Number) and len(other) != len(self):
+            is_number = isinstance(other, (numbers.Number, pint.Quantity))
+            if not is_number and len(other) != len(self):
                 raise ValueError("Incorrect length")
 
             ret = self.copy(copy_ts=False)

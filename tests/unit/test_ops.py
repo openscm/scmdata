@@ -255,10 +255,9 @@ def perform_scalar_op(base, scalar, op):
 
 @OPS_MARK
 def test_scalar_ops_pint(op):
-    unit = "GtC / yr"
-    scalar = 1 * unit_registry(unit)
+    scalar = 1 * unit_registry("MtC / yr")
     start = get_multiple_ts(
-        variable="Emissions|CO2", unit=unit, scenario=["scen_a", "scen_b"]
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
     )
 
     exp_ts = perform_scalar_op(start, scalar, op)
@@ -268,10 +267,10 @@ def test_scalar_ops_pint(op):
         exp["unit"] = "gigatC / a"
 
     elif op == "multiply":
-        exp["unit"] = "gigatC ** 2 / a ** 2"
+        exp["unit"] = "gigatC * megatC / a ** 2"
 
     elif op == "divide":
-        exp["unit"] = "dimensionless"
+        exp["unit"] = "gigatC / megatC"
 
     if op == "add":
         res = start + scalar
@@ -289,6 +288,25 @@ def test_scalar_ops_pint(op):
         raise NotImplementedError(op)
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@pytest.mark.parametrize("op", ["add", "subtract"])
+def test_scalar_ops_pint_wrong_unit(op):
+    scalar = 1 * unit_registry("Mt CH4 / yr")
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    error_msg = re.escape("Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])")
+    with pytest.raises(DimensionalityError, match=error_msg):
+        if op == "add":
+            start + scalar
+
+        elif op == "subtract":
+            start - scalar
+
+        else:
+            raise NotImplementedError(op)
 
 
 def perform_scalar_op_float_int(base, scalar, op):
