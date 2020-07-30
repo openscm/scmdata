@@ -185,7 +185,7 @@ def test_timeseries_add_pint_invalid_units(ts_gtc_per_yr_units, inplace):
     other_unit = "{} / yr".format(ts_gtc_per_yr_units.meta["unit"])
     to_add = 2 * ur(other_unit)
 
-    error_msg = re.escape("Cannot convert from 'gigatC / a**2' to 'gigatC / a'")
+    error_msg = re.escape("Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / a ** 2' ([carbon] * [mass] / [time] ** 2)")
     with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
         if inplace:
             ts_gtc_per_yr_units += to_add
