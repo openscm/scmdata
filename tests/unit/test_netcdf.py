@@ -376,7 +376,7 @@ def test_run_to_nc_required_cols_in_extras():
     assert_scmdf_almost_equal(start, loaded, check_ts_names=False)
 
 
-def test_run_to_nc_required_cols_in_extras_duplicated():
+def test_error_run_to_nc_required_cols_in_extras_duplicated():
     start = ScmRun(
         np.arange(6).reshape(3, 2),
         index=[2010, 2020, 2030],
