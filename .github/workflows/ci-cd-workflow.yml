@@ -65,7 +65,7 @@ jobs:
         pip install -e .[tests]
     - name: Test with pytest
       env:
-        MIN_COVERAGE: 70  # TODO: put this back up to 95 once we start writing
+        MIN_COVERAGE: 95
       run: |
           pytest tests -r a --cov=scmdata --cov-report=xml
           if ! coverage report --fail-under=${MIN_COVERAGE} --show-missing
@@ -79,6 +79,41 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         file: ./coverage.xml
+
+  build-pandas-versions:
+    needs: linting-and-docs
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+        pandas-version: [1.0.5, 1.1]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .[tests]
+
+          pip install pandas==${{ matrix.pandas-version }}
+
+      - name: Test with pytest
+        env:
+          MIN_COVERAGE: 95
+        run: |
+          pytest tests -r a --cov=scmdata --cov-report=xml
+          if ! coverage report --fail-under=${MIN_COVERAGE} --show-missing
+          then
+              echo
+              echo "Error: Test coverage has to be at least ${MIN_COVERAGE}"
+              exit 1
+          fi
 
   test-notebooks:
     needs: build

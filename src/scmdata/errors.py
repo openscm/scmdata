@@ -1,6 +1,7 @@
 """
 Custom errors and exceptions used by scmdata
 """
+import pandas as pd
 
 
 class NonUniqueMetadataError(ValueError):
@@ -11,9 +12,13 @@ class NonUniqueMetadataError(ValueError):
     def __init__(self, meta):
         # format table to show the metadata clash
         dup = meta.groupby(meta.columns.tolist(), as_index=False).size()
-        dup = dup[dup > 1]
-        dup.name = "repeats"
-        dup = dup.to_frame().reset_index()
+        if isinstance(dup, pd.Series):
+            # pandas < 1.1 Groupby.size returns a series
+            dup.name = "repeats"
+            dup = dup.to_frame().reset_index()
+        else:
+            dup = dup.rename(columns={"size": "repeats"})
+        dup = dup[dup.repeats > 1]
         msg = (
             "Duplicate metadata (numbers show how many times the given "
             "metadata is repeated).\n{}".format(dup)

@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy import testing as npt
+from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
@@ -964,9 +965,15 @@ def test_process_over_unrecognised_operation_error(test_scm_run):
         test_scm_run.process_over("scenario", "junk")
 
 
-def test_process_over_kwargs_error(test_scm_run):
-    with pytest.raises(UnsupportedFunctionCall):
-        test_scm_run.process_over("scenario", "mean", junk=4)
+def test_process_over_kwargs_error(scm_data):
+    v = parse(pd.__version__)
+
+    if v.major == 1 and v.minor < 1:
+        exp_exc = UnsupportedFunctionCall
+    else:
+        exp_exc = TypeError
+    with pytest.raises(exp_exc):
+        scm_data.process_over("scenario", "mean", junk=4)
 
 
 @pytest.mark.parametrize(
@@ -1364,6 +1371,7 @@ def test_append_inplace_preexisting_nan(test_scm_run):
         res.timeseries().reorder_levels(exp.index.names).sort_index().reset_index(),
         exp.sort_index().reset_index(),
         check_like=True,
+        check_dtype=False,
     )
 
 
@@ -2536,7 +2544,7 @@ def test_non_unique_metadata_error_formatting():
 
     meta = sdf.index.to_frame().reset_index(drop=True)
 
-    exp = meta.groupby(meta.columns.tolist(), as_index=False).size()
+    exp = meta.groupby(meta.columns.tolist(), as_index=True).size()
     exp = exp[exp > 1]
     exp.name = "repeats"
     exp = exp.to_frame().reset_index()

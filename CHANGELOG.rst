@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#91 <https://github.com/openscm/scmdata/pull/91>`_) Provide support for pandas==1.1
+
 v0.6.2
 ------
 

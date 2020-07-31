@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy import testing as npt
-from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.dataframe import ScmDataFrame, df_append
@@ -887,11 +886,6 @@ def test_process_over_unrecognised_operation_error(test_scm_df):
         test_scm_df.process_over("scenario", "junk")
 
 
-def test_process_over_kwargs_error(test_scm_df):
-    with pytest.raises(UnsupportedFunctionCall):
-        test_scm_df.process_over("scenario", "mean", junk=4)
-
-
 def test_append(test_scm_df):
     test_scm_df.set_meta([5, 6, 7], name="col1")
     other = test_scm_df.filter(scenario="a_scenario2").rename(
@@ -1191,6 +1185,7 @@ def test_append_inplace_preexisinting_nan(test_scm_df):
         res.timeseries().reorder_levels(exp.index.names).sort_index().reset_index(),
         exp.sort_index().reset_index(),
         check_like=True,
+        check_dtype=False,
     )
 
 
