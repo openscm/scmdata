@@ -404,20 +404,16 @@ def test_scalar_ops_float_int(op, scalar):
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
 
-# TODO: tests of ops with 2d data
-
-
 @OPS_MARK
-def test_wrong_shape_ops(op):
+@pytest.mark.parametrize("shape", ((2, 2), (3, 2), (3, 3, 3)))
+def test_wrong_shape_ops(op, shape):
     start = get_multiple_ts(
         variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
     )
 
-    other = np.arange(np.prod(start.shape)).reshape(start.shape)[:, :-1]
+    other = np.arange(np.prod(shape)).reshape(shape)
 
-    error_msg = re.escape(
-        "other ((2, 2)) does not have the same shape as self ((2, 3))"
-    )
+    error_msg = re.escape("operations with {}d data are not supported".format(len(shape)))
     with pytest.raises(ValueError, match=error_msg):
         if op == "add":
             start + other
@@ -441,10 +437,11 @@ def test_wrong_length_ops(op):
         variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
     )
 
-    other = np.arange(np.prod(start.shape)).reshape(start.shape)[:-1, :]
+    other = np.arange(start.shape[1] - 1)
 
     error_msg = re.escape(
-        "other ((1, 3)) does not have the same shape as self ((2, 3))"
+        "only vectors with the same number of timesteps as self (3) are "
+        "supported"
     )
     with pytest.raises(ValueError, match=error_msg):
         if op == "add":

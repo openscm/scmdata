@@ -606,12 +606,18 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 return NotImplemented
 
             is_number = isinstance(other, (numbers.Number, pint.Quantity))
-            if not is_number and other.shape != self.shape:
-                raise ValueError(
-                    "other ({}) does not have the same shape as self ({})".format(
-                        other.shape, self.shape,
+            if not is_number:
+                other_ndim = len(other.shape)
+                if other_ndim == 1:
+                    if other.shape[0] != self.shape[1]:
+                        raise ValueError(
+                            "only vectors with the same number of timesteps "
+                            "as self ({}) are supported".format(self.shape[1])
+                        )
+                else:
+                    raise ValueError(
+                        "operations with {}d data are not supported".format(other_ndim)
                     )
-                )
 
             ret = self.copy(copy_ts=False)
             ret._ts = [
