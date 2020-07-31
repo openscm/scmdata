@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import pint
 import xarray as xr
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops
@@ -603,8 +604,20 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         def func(self, other):
             if isinstance(other, ScmRun):
                 return NotImplemented
-            if not isinstance(other, numbers.Number) and len(other) != len(self):
-                raise ValueError("Incorrect length")
+
+            is_number = isinstance(other, (numbers.Number, pint.Quantity))
+            if not is_number:
+                other_ndim = len(other.shape)
+                if other_ndim == 1:
+                    if other.shape[0] != self.shape[1]:
+                        raise ValueError(
+                            "only vectors with the same number of timesteps "
+                            "as self ({}) are supported".format(self.shape[1])
+                        )
+                else:
+                    raise ValueError(
+                        "operations with {}d data are not supported".format(other_ndim)
+                    )
 
             ret = self.copy(copy_ts=False)
             ret._ts = [

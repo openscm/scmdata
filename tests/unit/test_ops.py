@@ -1,12 +1,16 @@
 import re
 
 import numpy as np
+import pandas as pd
+import pint_pandas
 import pytest
 from openscm_units import unit_registry
 from pint.errors import DimensionalityError
 
 from scmdata.run import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
+
+pint_pandas.PintType.ureg = unit_registry
 
 
 def get_ts(data, index, **kwargs):
@@ -219,3 +223,329 @@ def test_warming_per_gt():
     exp = ScmRun(exp_ts)
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+def perform_pint_op(base, pint_obj, op):
+    base_ts = base.timeseries().T
+    unit_level = base_ts.columns.names.index("unit")
+    base_ts = base_ts.pint.quantify(level=unit_level)
+
+    out = []
+    for _, series in base_ts.iteritems():
+        if op == "add":
+            op_series = series + pint_obj
+
+        elif op == "subtract":
+            op_series = series - pint_obj
+
+        elif op == "divide":
+            op_series = series / pint_obj
+
+        elif op == "divide_inverse":
+            op_series = pint_obj / series
+
+        elif op == "multiply":
+            op_series = series * pint_obj
+
+        elif op == "multiply_inverse":
+            op_series = pint_obj * series
+
+        else:
+            raise NotImplementedError(op)
+
+        out.append(op_series)
+
+    out = pd.concat(out, axis="columns")
+    out.columns.names = base_ts.columns.names
+    out = out.pint.dequantify().T
+
+    return out
+
+
+@OPS_MARK
+def test_scalar_ops_pint(op):
+    scalar = 1 * unit_registry("MtC / yr")
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_pint_op(start, scalar, op)
+    exp = ScmRun(exp_ts)
+
+    if op in ["add", "subtract"]:
+        exp["unit"] = "gigatC / a"
+
+    elif op == "multiply":
+        exp["unit"] = "gigatC * megatC / a ** 2"
+
+    elif op == "divide":
+        exp["unit"] = "gigatC / megatC"
+
+    if op == "add":
+        res = start + scalar
+
+    elif op == "subtract":
+        res = start - scalar
+
+    elif op == "divide":
+        res = start / scalar
+
+    elif op == "multiply":
+        res = start * scalar
+
+    else:
+        raise NotImplementedError(op)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@pytest.mark.xfail(reason="pint doesn't recognise ScmRun")
+def test_scalar_divide_pint_by_run():
+    scalar = 1 * unit_registry("MtC / yr")
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_pint_op(start, scalar, "divide_inverse")
+    exp = ScmRun(exp_ts)
+
+    exp["unit"] = "megatC / gigatC"
+
+    res = scalar / start
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@pytest.mark.xfail(reason="pint doesn't recognise ScmRun")
+def test_scalar_multiply_pint_by_run():
+    scalar = 1 * unit_registry("MtC / yr")
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_pint_op(start, scalar, "multiply_inverse")
+    exp = ScmRun(exp_ts)
+
+    exp["unit"] = "megatC * gigatC / a**2"
+
+    res = scalar * start
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@pytest.mark.parametrize("op", ["add", "subtract"])
+def test_scalar_ops_pint_wrong_unit(op):
+    scalar = 1 * unit_registry("Mt CH4 / yr")
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    error_msg = re.escape(
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
+    )
+    with pytest.raises(DimensionalityError, match=error_msg):
+        if op == "add":
+            start + scalar
+
+        elif op == "subtract":
+            start - scalar
+
+        else:
+            raise NotImplementedError(op)
+
+
+@OPS_MARK
+def test_vector_ops_pint(op):
+    vector = np.arange(3) * unit_registry("MtC / yr")
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_pint_op(start, vector, op)
+    exp = ScmRun(exp_ts)
+
+    if op in ["add", "subtract"]:
+        exp["unit"] = "gigatC / a"
+
+    elif op == "multiply":
+        exp["unit"] = "gigatC * megatC / a ** 2"
+
+    elif op == "divide":
+        exp["unit"] = "gigatC / megatC"
+
+    if op == "add":
+        res = start + vector
+
+    elif op == "subtract":
+        res = start - vector
+
+    elif op == "divide":
+        res = start / vector
+
+    elif op == "multiply":
+        res = start * vector
+
+    else:
+        raise NotImplementedError(op)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@pytest.mark.parametrize("op", ["add", "subtract"])
+@pytest.mark.parametrize("start_unit", ("GtC / yr", ["Mt CH4 / yr", "GtC / yr"]))
+def test_vector_ops_pint_wrong_unit(op, start_unit):
+    vector = np.arange(3) * unit_registry("Mt CH4 / yr")
+    start = get_multiple_ts(
+        variable="Emissions|Gas", unit=start_unit, scenario=["scen_a", "scen_b"]
+    )
+
+    error_msg = re.escape(
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
+    )
+    with pytest.raises(DimensionalityError, match=error_msg):
+        if op == "add":
+            start + vector
+
+        elif op == "subtract":
+            start - vector
+
+        else:
+            raise NotImplementedError(op)
+
+
+def perform_op_float_int(base, scalar, op):
+    base_ts = base.timeseries()
+
+    if op == "add":
+        base_ts = base_ts + scalar
+
+    elif op == "subtract":
+        base_ts = base_ts - scalar
+
+    elif op == "divide":
+        base_ts = base_ts / scalar
+
+    elif op == "multiply":
+        base_ts = base_ts * scalar
+
+    else:
+        raise NotImplementedError(op)
+
+    return base_ts
+
+
+@OPS_MARK
+@pytest.mark.parametrize("scalar", (1, 1.0))
+def test_scalar_ops_float_int(op, scalar):
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_op_float_int(start, scalar, op)
+    exp = ScmRun(exp_ts)
+
+    if op == "add":
+        res = start + scalar
+
+    elif op == "subtract":
+        res = start - scalar
+
+    elif op == "divide":
+        res = start / scalar
+
+    elif op == "multiply":
+        res = start * scalar
+
+    else:
+        raise NotImplementedError(op)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@OPS_MARK
+@pytest.mark.parametrize("shape", ((2, 2), (3, 2), (3, 3, 3)))
+def test_wrong_shape_ops(op, shape):
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    other = np.arange(np.prod(shape)).reshape(shape)
+
+    error_msg = re.escape(
+        "operations with {}d data are not supported".format(len(shape))
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        if op == "add":
+            start + other
+
+        elif op == "subtract":
+            start - other
+
+        elif op == "divide":
+            start / other
+
+        elif op == "multiply":
+            start * other
+
+        else:
+            raise NotImplementedError(op)
+
+
+@OPS_MARK
+@pytest.mark.parametrize(
+    "vector", (np.arange(3).astype(int), np.arange(3).astype(float))
+)
+def test_vector_ops_float_int(op, vector):
+    start = get_multiple_ts(
+        variable="Emissions|Gas",
+        unit=["GtC / yr", "Mt CH4 / yr"],
+        scenario=["scen_a", "scen_b"],
+    )
+
+    exp_ts = perform_op_float_int(start, vector, op)
+    exp = ScmRun(exp_ts)
+
+    if op == "add":
+        res = start + vector
+
+    elif op == "subtract":
+        res = start - vector
+
+    elif op == "divide":
+        res = start / vector
+
+    elif op == "multiply":
+        res = start * vector
+
+    else:
+        raise NotImplementedError(op)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@OPS_MARK
+def test_wrong_length_ops(op):
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    other = np.arange(start.shape[1] - 1)
+
+    error_msg = re.escape(
+        "only vectors with the same number of timesteps as self (3) are supported"
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        if op == "add":
+            start + other
+
+        elif op == "subtract":
+            start - other
+
+        elif op == "divide":
+            start / other
+
+        elif op == "multiply":
+            start * other
+
+        else:
+            raise NotImplementedError(op)

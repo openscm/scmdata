@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#82 <https://github.com/openscm/scmdata/pull/82>`_) Add support for adding Pint scalars and vectors to :obj:`scmdata.Timeseries` and :obj:`scmdata.ScmRun` instances
 - (`#85 <https://github.com/openscm/scmdata/pull/85>`_) Allow required columns to be read as ``extras`` from netCDF files (closes `#83 <https://github.com/openscm/scmdata/issues/83>`_)
 - (`#84 <https://github.com/openscm/scmdata/pull/84>`_) Raise a DeprecationWarning if no default ``inplace`` argument is provided for :meth:`ScmRun.drop_meta`. inplace default behaviour scheduled to be changed to ``False`` in v0.7.0
 - (`#81 <https://github.com/openscm/scmdata/pull/81>`_) Add :attr:`scmdata.run.ScmRun.metadata` to track :obj:`ScmRun` instance-specific metadata (closes `#77 <https://github.com/openscm/scmdata/issues/77>`_)
