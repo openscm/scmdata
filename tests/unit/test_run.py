@@ -1371,7 +1371,7 @@ def test_append_inplace_preexisting_nan(test_scm_run):
         res.timeseries().reorder_levels(exp.index.names).sort_index().reset_index(),
         exp.sort_index().reset_index(),
         check_like=True,
-        check_dtype=False
+        check_dtype=False,
     )
 
 
