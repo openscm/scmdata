@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.6.2
+------
+
 - (`#87 <https://github.com/openscm/scmdata/pull/87>`_) Upgrade workflow to use ``isort>=5``
 - (`#82 <https://github.com/openscm/scmdata/pull/82>`_) Add support for adding Pint scalars and vectors to :obj:`scmdata.Timeseries` and :obj:`scmdata.ScmRun` instances
 - (`#85 <https://github.com/openscm/scmdata/pull/85>`_) Allow required columns to be read as ``extras`` from netCDF files (closes `#83 <https://github.com/openscm/scmdata/issues/83>`_)
