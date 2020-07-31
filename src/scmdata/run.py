@@ -563,7 +563,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                             len(meta), len(ts)
                         )
                     )
-                ts["time"] = self._time_points.values
+                ts["time"] = self._time_points.as_cftime()
         else:
             if len(meta) == 1:
                 for ts in self._ts:

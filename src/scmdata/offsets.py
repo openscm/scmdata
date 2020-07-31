@@ -112,11 +112,12 @@ def generate_range(
      cftime.datetime(2005, 4, 1, 0, 0),
      cftime.datetime(2005, 7, 1, 0, 0)]
     """
-    start_cf = cftime.datetime(*start.timetuple()[:6])
-    end_cf = cftime.datetime(*end.timetuple()[:6])
+    # Uses the Gregorian calendar - allows for adding/subtracting datetime.timedelta in range calc
+    start_cf = cftime.DatetimeGregorian(*start.timetuple()[:6])
+    end_cf = cftime.DatetimeGregorian(*end.timetuple()[:6])
 
-    offset.rollback(start_cf)
-
-    return cftime_offsets.cftime_range(
+    res = cftime_offsets.cftime_range(
         offset.rollback(start_cf), offset.rollforward(end_cf), freq=offset
     )
+
+    return [cftime.datetime(*dt.timetuple()[:6]) for dt in res]
