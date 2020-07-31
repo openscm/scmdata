@@ -115,4 +115,6 @@ def generate_range(
     start_cf = cftime.datetime(*start.timetuple()[:6])
     end_cf = cftime.datetime(*end.timetuple()[:6])
 
-    return cftime_offsets.cftime_range(start_cf, end_cf, freq=offset)
+    offset.rollback(start_cf)
+
+    return cftime_offsets.cftime_range(offset.rollback(start_cf), offset.rollforward(end_cf), freq=offset)

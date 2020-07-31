@@ -887,11 +887,6 @@ def test_process_over_unrecognised_operation_error(test_scm_df):
         test_scm_df.process_over("scenario", "junk")
 
 
-def test_process_over_kwargs_error(test_scm_df):
-    with pytest.raises(UnsupportedFunctionCall):
-        test_scm_df.process_over("scenario", "mean", junk=4)
-
-
 def test_append(test_scm_df):
     test_scm_df.set_meta([5, 6, 7], name="col1")
     other = test_scm_df.filter(scenario="a_scenario2").rename(

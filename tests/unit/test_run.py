@@ -5,7 +5,7 @@ import re
 import warnings
 from datetime import datetime
 from unittest.mock import patch
-
+from packaging.version import parse
 import numpy as np
 import pandas as pd
 import pytest
@@ -964,9 +964,15 @@ def test_process_over_unrecognised_operation_error(test_scm_run):
         test_scm_run.process_over("scenario", "junk")
 
 
-def test_process_over_kwargs_error(test_scm_run):
-    with pytest.raises(UnsupportedFunctionCall):
-        test_scm_run.process_over("scenario", "mean", junk=4)
+def test_process_over_kwargs_error(scm_data):
+    v = parse(pd.__version__)
+
+    if v.major == 1 and v.minor < 1:
+        exp_exc = UnsupportedFunctionCall
+    else:
+        exp_exc = TypeError
+    with pytest.raises(exp_exc):
+        scm_data.process_over("scenario", "mean", junk=4)
 
 
 @pytest.mark.parametrize(
