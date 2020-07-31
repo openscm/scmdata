@@ -17,7 +17,7 @@ from logging import getLogger
 
 import numpy as np
 
-from . import __version__
+from . import REQUIRED_COLS, __version__
 
 logger = getLogger(__name__)
 
@@ -213,6 +213,10 @@ def _read_nc(cls, ds):
         # Check if metadata column
         if var.getncattr("_is_metadata"):
             extra_cols.append(var_name)
+
+            # Intialise the required columns and load later
+            if var_name in REQUIRED_COLS:
+                columns[var_name] = ""
             continue
 
         name = _nc_to_var(var_name)
