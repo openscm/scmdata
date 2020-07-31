@@ -7,7 +7,7 @@ from typing import Iterable
 
 import cftime
 from xarray.coding import cftime_offsets
-from xarray.coding.cftime_offsets import to_offset
+from xarray.coding.cftime_offsets import to_offset  # noqa: F401, E402
 
 
 def generate_range(

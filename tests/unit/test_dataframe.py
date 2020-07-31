@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy import testing as npt
-from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.dataframe import ScmDataFrame, df_append
