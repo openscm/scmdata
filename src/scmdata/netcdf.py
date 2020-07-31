@@ -17,8 +17,7 @@ from logging import getLogger
 
 import numpy as np
 
-from . import __version__, REQUIRED_COLS
-
+from . import REQUIRED_COLS, __version__
 
 logger = getLogger(__name__)
 
