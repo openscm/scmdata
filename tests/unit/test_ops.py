@@ -10,7 +10,6 @@ from pint.errors import DimensionalityError
 from scmdata.run import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
 
-
 pint_pandas.PintType.ureg = unit_registry
 
 
@@ -472,7 +471,9 @@ def test_wrong_shape_ops(op, shape):
 
     other = np.arange(np.prod(shape)).reshape(shape)
 
-    error_msg = re.escape("operations with {}d data are not supported".format(len(shape)))
+    error_msg = re.escape(
+        "operations with {}d data are not supported".format(len(shape))
+    )
     with pytest.raises(ValueError, match=error_msg):
         if op == "add":
             start + other
@@ -491,10 +492,14 @@ def test_wrong_shape_ops(op, shape):
 
 
 @OPS_MARK
-@pytest.mark.parametrize("vector", (np.arange(3).astype(int), np.arange(3).astype(float)))
+@pytest.mark.parametrize(
+    "vector", (np.arange(3).astype(int), np.arange(3).astype(float))
+)
 def test_vector_ops_float_int(op, vector):
     start = get_multiple_ts(
-        variable="Emissions|Gas", unit=["GtC / yr", "Mt CH4 / yr"], scenario=["scen_a", "scen_b"]
+        variable="Emissions|Gas",
+        unit=["GtC / yr", "Mt CH4 / yr"],
+        scenario=["scen_a", "scen_b"],
     )
 
     exp_ts = perform_op_float_int(start, vector, op)
@@ -527,8 +532,7 @@ def test_wrong_length_ops(op):
     other = np.arange(start.shape[1] - 1)
 
     error_msg = re.escape(
-        "only vectors with the same number of timesteps as self (3) are "
-        "supported"
+        "only vectors with the same number of timesteps as self (3) are supported"
     )
     with pytest.raises(ValueError, match=error_msg):
         if op == "add":
