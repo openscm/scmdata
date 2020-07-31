@@ -607,10 +607,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
             is_number = isinstance(other, (numbers.Number, pint.Quantity))
             if not is_number and other.shape != self.shape:
-                raise ValueError("other ({}) does not have the same shape as self ({})".format(
-                    other.shape,
-                    self.shape,
-                ))
+                raise ValueError(
+                    "other ({}) does not have the same shape as self ({})".format(
+                        other.shape, self.shape,
+                    )
+                )
 
             ret = self.copy(copy_ts=False)
             ret._ts = [
