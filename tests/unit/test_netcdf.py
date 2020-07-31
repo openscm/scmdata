@@ -364,7 +364,7 @@ def test_run_to_nc_required_cols_in_extras():
             "model": ["model_a", "model_b"],
             "scenario": ["scen_a", "scen_b"],
             "region": "World",
-        }
+        },
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
@@ -376,8 +376,7 @@ def test_run_to_nc_required_cols_in_extras():
     assert_scmdf_almost_equal(start, loaded, check_ts_names=False)
 
 
-@pytest.mark.xfail(reason="Can't handle duplicated cols")
-def test_run_to_nc_required_cols_in_extras_duplicates():
+def test_run_to_nc_required_cols_in_extras_duplicated():
     start = ScmRun(
         np.arange(6).reshape(3, 2),
         index=[2010, 2020, 2030],
@@ -387,13 +386,11 @@ def test_run_to_nc_required_cols_in_extras_duplicates():
             "model": ["model_a", "model_b"],
             "scenario": "scen_a",
             "region": "World",
-        }
+        },
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        start.to_nc(out_fname, extras=("model",))
-
-        loaded = ScmRun.from_nc(out_fname)
-
-    assert_scmdf_almost_equal(start, loaded, check_ts_names=False)
+        msg = "metadata for model is not unique for requested dimensions"
+        with pytest.raises(ValueError, match=msg):
+            start.to_nc(out_fname, extras=("model",))
