@@ -117,4 +117,6 @@ def generate_range(
 
     offset.rollback(start_cf)
 
-    return cftime_offsets.cftime_range(offset.rollback(start_cf), offset.rollforward(end_cf), freq=offset)
+    return cftime_offsets.cftime_range(
+        offset.rollback(start_cf), offset.rollforward(end_cf), freq=offset
+    )

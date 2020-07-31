@@ -5,11 +5,12 @@ import re
 import warnings
 from datetime import datetime
 from unittest.mock import patch
-from packaging.version import parse
+
 import numpy as np
 import pandas as pd
 import pytest
 from numpy import testing as npt
+from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
