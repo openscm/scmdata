@@ -10,91 +10,13 @@ for longer running models.
 
 """
 import datetime
-import functools
-from typing import Any, Iterable
+from typing import Iterable
 
-import pandas as pd
-from pandas.tseries.frequencies import to_offset as pd_to_offset
-from pandas.tseries.offsets import (
-    DateOffset,
-    NaT,
-    as_datetime,
-    conversion,
-    normalize_date,
-)
+import cftime
+from xarray.coding import cftime_offsets
 
 
-def apply_dt(func):
-    """
-    Apply a wrapper which keeps the result as a datetime instead of converting to
-    :class:`pd.Timestamp`.
-
-    This decorator is a simplified version of
-    :func:`pandas.tseries.offsets.apply_wraps`. It is required to avoid running into
-    errors when our time data is outside panda's limited time range of ``1677-09-22
-    00:12:43.145225`` to ``2262-04-11 23:47:16.854775807``, see `this discussion
-    <https://stackoverflow.com/a/37226672>`_.
-    """
-    # should self be renamed in the function signature to something else, `ipt`?
-    @functools.wraps(func)
-    def wrapper(self, other: datetime.datetime) -> Any:
-        if pd.isnull(other):
-            return NaT
-
-        tz = getattr(other, "tzinfo", None)
-
-        result = func(self, as_datetime(other))
-
-        if self.normalize:
-            # normalize_date returns normal datetime
-            result = normalize_date(result)
-
-        if tz is not None and result.tzinfo is None:
-            result = conversion.localize_pydatetime(  # pylint: disable=c-extension-no-member  # pragma: no cover
-                result, tz
-            )
-
-        return result
-
-    return wrapper
-
-
-def _long_class_factory(OffsetClass):
-    class LongOffsetClass(OffsetClass):
-
-        # these two methods are tested in tests/unit/test_offsets.py but code coverage
-        # gets confused by the factory class hence the `pragm: no cover`
-        def _rollforward(
-            self, dt: datetime.datetime
-        ) -> datetime.datetime:  # pragma: no cover
-            """
-            Roll provided date forward to next offset, only if not on offset.
-            """
-            dt = as_datetime(dt)
-            if not self.onOffset(dt):
-                dt = dt + type(self)(1, normalize=self.normalize, **self.kwds)
-            return as_datetime(dt)  # type: ignore # pandas doesn't have type annotations
-
-        def _rollback(
-            self, dt: datetime.datetime
-        ) -> datetime.datetime:  # pragma: no cover
-            """
-            Roll provided date backward to previous offset, only if not on offset.
-            """
-            dt = as_datetime(dt)
-            if not self.onOffset(dt):
-                dt = dt - type(self)(1, normalize=self.normalize, **self.kwds)
-            return as_datetime(dt)  # type: ignore # pandas doesn't have type annotations
-
-    LongOffsetClass.__name__ = "Long{}".format(OffsetClass.__name__)
-
-    if hasattr(LongOffsetClass.apply, "__wrapped__"):  # pragma: no cover
-        LongOffsetClass.apply = apply_dt(LongOffsetClass.apply.__wrapped__)
-
-    return LongOffsetClass
-
-
-def to_offset(rule: str) -> DateOffset:
+def to_offset(rule: str) -> cftime_offsets.BaseCFTimeOffset:
     """
     Return a wrapped :class:`DateOffset` instance for a given rule.
 
@@ -121,25 +43,11 @@ def to_offset(rule: str) -> DateOffset:
     ValueError
         If unsupported offset rule is requested, e.g. all business-related offsets
     """
-    offset = pd_to_offset(rule)
-
-    # Ignoring BusinessDay, Custom Business day and Retail offsets
-    if (
-        offset.rule_code.startswith("B")
-        or offset.rule_code.startswith("R")
-        or offset.rule_code.startswith("C")
-    ):
-        raise ValueError(
-            "Invalid rule for offset - Business related offsets are not supported"
-        )
-
-    # Create a new offset using a *long* version of the offset - This provides support for datetimes outside of Timesteps
-    LongClass = _long_class_factory(type(offset))
-    return LongClass(n=offset.n, normalize=offset.normalize, **offset.kwds)
+    return cftime_offsets.to_offset(rule)
 
 
 def generate_range(
-    start: datetime.datetime, end: datetime.datetime, offset: DateOffset
+    start: datetime.datetime, end: datetime.datetime, offset: cftime_offsets.BaseCFTimeOffset
 ) -> Iterable[datetime.datetime]:
     """
     Generate a range of datetime objects between start and end, using offset to
@@ -239,19 +147,7 @@ def generate_range(
      datetime.datetime(2005, 4, 1, 0, 0),
      datetime.datetime(2005, 7, 1, 0, 0)]
     """
-    # Get the bounds
-    start = offset.rollback(start)
-    end = offset.rollforward(end)
+    start_cf = cftime.datetime(*start.timetuple()[:6])
+    end_cf = cftime.datetime(*end.timetuple()[:6])
 
-    # Iterate to find all the required timesteps
-    current = start
-    while current <= end:
-        yield current
-
-        next_current = offset.apply(current)
-        if next_current <= current:
-            raise ValueError(  # pragma: no cover  # emergency valve
-                "Offset is not increasing datetime: {}".format(current.isoformat())
-            )
-
-        current = next_current
+    return cftime_offsets.cftime_range(start_cf, end_cf, freq=offset)
