@@ -17,7 +17,7 @@ class NonUniqueMetadataError(ValueError):
             dup.name = "repeats"
             dup = dup.to_frame().reset_index()
         else:
-            dup = dup.rename({"size": "repeats"})
+            dup = dup.rename(columns={"size": "repeats"})
         dup = dup[dup.repeats > 1]
         msg = (
             "Duplicate metadata (numbers show how many times the given "

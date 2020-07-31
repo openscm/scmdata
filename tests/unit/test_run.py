@@ -1371,6 +1371,7 @@ def test_append_inplace_preexisting_nan(test_scm_run):
         res.timeseries().reorder_levels(exp.index.names).sort_index().reset_index(),
         exp.sort_index().reset_index(),
         check_like=True,
+        check_dtype=False
     )
 
 
@@ -2543,7 +2544,7 @@ def test_non_unique_metadata_error_formatting():
 
     meta = sdf.index.to_frame().reset_index(drop=True)
 
-    exp = meta.groupby(meta.columns.tolist(), as_index=False).size()
+    exp = meta.groupby(meta.columns.tolist(), as_index=True).size()
     exp = exp[exp > 1]
     exp.name = "repeats"
     exp = exp.to_frame().reset_index()

@@ -1185,6 +1185,7 @@ def test_append_inplace_preexisinting_nan(test_scm_df):
         res.timeseries().reorder_levels(exp.index.names).sort_index().reset_index(),
         exp.sort_index().reset_index(),
         check_like=True,
+        check_dtype=False
     )
 
 
