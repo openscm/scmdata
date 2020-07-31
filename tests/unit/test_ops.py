@@ -226,7 +226,7 @@ def test_warming_per_gt():
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
 
-def perform_scalar_op(base, scalar, op):
+def perform_pint_op(base, pint_obj, op):
     base_ts = base.timeseries().T
     unit_level = base_ts.columns.names.index("unit")
     base_ts = base_ts.pint.quantify(level=unit_level)
@@ -234,22 +234,22 @@ def perform_scalar_op(base, scalar, op):
     out = []
     for _, series in base_ts.iteritems():
         if op == "add":
-            op_series = series + scalar
+            op_series = series + pint_obj
 
         elif op == "subtract":
-            op_series = series - scalar
+            op_series = series - pint_obj
 
         elif op == "divide":
-            op_series = series / scalar
+            op_series = series / pint_obj
 
         elif op == "divide_inverse":
-            op_series = scalar / series
+            op_series = pint_obj / series
 
         elif op == "multiply":
-            op_series = series * scalar
+            op_series = series * pint_obj
 
         elif op == "multiply_inverse":
-            op_series = scalar * series
+            op_series = pint_obj * series
 
         else:
             raise NotImplementedError(op)
@@ -270,7 +270,7 @@ def test_scalar_ops_pint(op):
         variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
     )
 
-    exp_ts = perform_scalar_op(start, scalar, op)
+    exp_ts = perform_pint_op(start, scalar, op)
     exp = ScmRun(exp_ts)
 
     if op in ["add", "subtract"]:
@@ -307,7 +307,7 @@ def test_scalar_divide_pint_by_run():
         variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
     )
 
-    exp_ts = perform_scalar_op(start, scalar, "divide_inverse")
+    exp_ts = perform_pint_op(start, scalar, "divide_inverse")
     exp = ScmRun(exp_ts)
 
     exp["unit"] = "megatC / gigatC"
@@ -324,7 +324,7 @@ def test_scalar_multiply_pint_by_run():
         variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
     )
 
-    exp_ts = perform_scalar_op(start, scalar, "multiply_inverse")
+    exp_ts = perform_pint_op(start, scalar, "multiply_inverse")
     exp = ScmRun(exp_ts)
 
     exp["unit"] = "megatC * gigatC / a**2"
@@ -350,6 +350,65 @@ def test_scalar_ops_pint_wrong_unit(op):
 
         elif op == "subtract":
             start - scalar
+
+        else:
+            raise NotImplementedError(op)
+
+
+@OPS_MARK
+def test_vector_ops_pint(op):
+    vector = np.arange(3) * unit_registry("MtC / yr")
+    start = get_multiple_ts(
+        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_pint_op(start, vector, op)
+    exp = ScmRun(exp_ts)
+
+    if op in ["add", "subtract"]:
+        exp["unit"] = "gigatC / a"
+
+    elif op == "multiply":
+        exp["unit"] = "gigatC * megatC / a ** 2"
+
+    elif op == "divide":
+        exp["unit"] = "gigatC / megatC"
+
+    if op == "add":
+        res = start + vector
+
+    elif op == "subtract":
+        res = start - vector
+
+    elif op == "divide":
+        res = start / vector
+
+    elif op == "multiply":
+        res = start * vector
+
+    else:
+        raise NotImplementedError(op)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@pytest.mark.parametrize("op", ["add", "subtract"])
+@pytest.mark.parametrize("start_unit", ("GtC / yr", ["Mt CH4 / yr", "GtC / yr"]))
+def test_vector_ops_pint_wrong_unit(op, start_unit):
+    vector = np.arange(3) * unit_registry("Mt CH4 / yr")
+    start = get_multiple_ts(
+        variable="Emissions|Gas", unit=start_unit, scenario=["scen_a", "scen_b"]
+    )
+
+    error_msg = re.escape(
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
+    )
+    with pytest.raises(DimensionalityError, match=error_msg):
+        if op == "add":
+            start + vector
+
+        elif op == "subtract":
+            start - vector
 
         else:
             raise NotImplementedError(op)
