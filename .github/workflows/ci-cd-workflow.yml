@@ -25,7 +25,7 @@ jobs:
       run: |
         black --check src tests setup.py --exclude scmdata/_version.py
         black-nb --check notebooks
-        isort --check-only --quiet --recursive src tests setup.py
+        isort --check-only --quiet src tests setup.py
         pydocstyle src
         bandit -c .bandit.yml -r scmdata
         flake8 src tests setup.py
