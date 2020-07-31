@@ -1,6 +1,7 @@
-import versioneer
 from setuptools import find_packages, setup
 from setuptools.command.test import test as TestCommand
+
+import versioneer
 
 PACKAGE_NAME = "scmdata"
 DESCRIPTION = "Data handling for simple climate model data"
@@ -54,7 +55,7 @@ REQUIREMENTS_DEV = [
         "black",
         "black-nb",
         "flake8",
-        "isort<5",  # isort>5 incompatible with pylint and our Makefile
+        "isort>=5",
         "nbdime",
         "notebook",
         "pydocstyle",
