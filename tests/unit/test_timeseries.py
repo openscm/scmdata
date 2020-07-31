@@ -157,33 +157,33 @@ def ts_gtc_per_yr_units():
 
 
 @pytest.mark.parametrize("inplace", [True, False])
-def test_timeseries_add_pint(ts_gtc_per_yr_units, inplace):
-    to_add = 2 * ur(ts_gtc_per_yr_units.meta["unit"])
+def test_timeseries_add_pint_scalar(ts_gtc_per_yr_units, inplace):
+    to_add = 2 * ur("MtC / yr")
     if inplace:
         ts_gtc_per_yr_units += to_add
         ts2 = ts_gtc_per_yr_units
     else:
         ts2 = ts_gtc_per_yr_units + to_add
 
-    npt.assert_allclose(ts2.values, [3, 4, 5])
+    npt.assert_allclose(ts2.values, [1.002, 2.002, 3.002])
     assert ts2.meta["unit"] == "gigatC / a"
 
 
 @pytest.mark.parametrize("inplace", [True, False])
-def test_timeseries_sub_pint(ts_gtc_per_yr_units, inplace):
-    to_sub = 2 * ur(ts_gtc_per_yr_units.meta["unit"])
+def test_timeseries_sub_pint_scalar(ts_gtc_per_yr_units, inplace):
+    to_sub = 2 * ur("MtC / yr")
     if inplace:
         ts_gtc_per_yr_units -= to_sub
         ts2 = ts_gtc_per_yr_units
     else:
         ts2 = ts_gtc_per_yr_units - to_sub
 
-    npt.assert_allclose(ts2.values, [-1, 0, 1])
+    npt.assert_allclose(ts2.values, [0.998, 1.998, 2.998])
     assert ts2.meta["unit"] == "gigatC / a"
 
 
 @pytest.mark.parametrize("inplace", [True, False])
-def test_timeseries_mul_pint(ts_gtc_per_yr_units, inplace):
+def test_timeseries_mul_pint_scalar(ts_gtc_per_yr_units, inplace):
     to_mul = 2 * ur("yr")
     if inplace:
         ts_gtc_per_yr_units *= to_mul
@@ -196,7 +196,7 @@ def test_timeseries_mul_pint(ts_gtc_per_yr_units, inplace):
 
 
 @pytest.mark.parametrize("inplace", [True, False])
-def test_timeseries_div_pint(ts_gtc_per_yr_units, inplace):
+def test_timeseries_div_pint_scalar(ts_gtc_per_yr_units, inplace):
     to_div = 2 * ur("yr**-1")
     if inplace:
         ts_gtc_per_yr_units /= to_div
@@ -210,7 +210,7 @@ def test_timeseries_div_pint(ts_gtc_per_yr_units, inplace):
 
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("op", ["add", "sub"])
-def test_timeseries_add_sub_pint_no_units(ts, inplace, op):
+def test_timeseries_add_sub_pint_scalar_no_ts_units(ts, inplace, op):
     scalar = 2 * ur("GtC / yr")
 
     error_msg = re.escape("Cannot convert from 'dimensionless' to 'gigatC / a'")
@@ -232,7 +232,7 @@ def test_timeseries_add_sub_pint_no_units(ts, inplace, op):
 
 
 @pytest.mark.parametrize("inplace", [True, False])
-def test_timeseries_mul_pint_no_units(ts, inplace):
+def test_timeseries_mul_pint_scalar_no_units(ts, inplace):
     scalar = 2 * ur("GtC / yr")
     if inplace:
         ts *= scalar
@@ -248,7 +248,7 @@ def test_timeseries_mul_pint_no_units(ts, inplace):
 
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("op", ["div"])
-def test_timeseries_div_pint_no_units(ts, inplace, op):
+def test_timeseries_div_pint_scalar_no_units(ts, inplace, op):
     scalar = 2 * ur("GtC / yr")
     if inplace:
         if op == "div":
@@ -269,7 +269,7 @@ def test_timeseries_div_pint_no_units(ts, inplace, op):
 
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("op", ["add", "sub"])
-def test_timeseries_add_sub_pint_invalid_units(ts_gtc_per_yr_units, inplace, op):
+def test_timeseries_add_sub_pint_scalar_invalid_units(ts_gtc_per_yr_units, inplace, op):
     other_unit = "{} / yr".format(ts_gtc_per_yr_units.meta["unit"])
     scalar = 2 * ur(other_unit)
 
@@ -289,6 +289,143 @@ def test_timeseries_add_sub_pint_invalid_units(ts_gtc_per_yr_units, inplace, op)
                 ts_gtc_per_yr_units + scalar
             elif op == "sub":
                 ts_gtc_per_yr_units - scalar
+            else:
+                raise NotImplementedError(op)
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+def test_timeseries_add_pint_vector(ts_gtc_per_yr_units, inplace):
+    to_add = np.arange(3) * ur("MtC / yr")
+    if inplace:
+        ts_gtc_per_yr_units += to_add
+        ts2 = ts_gtc_per_yr_units
+    else:
+        ts2 = ts_gtc_per_yr_units + to_add
+
+    npt.assert_allclose(ts2.values, [1, 2.001, 3.002])
+    assert ts2.meta["unit"] == "gigatC / a"
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+def test_timeseries_sub_pint_vector(ts_gtc_per_yr_units, inplace):
+    to_sub = np.arange(3) * ur("MtC / yr")
+    if inplace:
+        ts_gtc_per_yr_units -= to_sub
+        ts2 = ts_gtc_per_yr_units
+    else:
+        ts2 = ts_gtc_per_yr_units - to_sub
+
+    npt.assert_allclose(ts2.values, [1, 1.999, 2.998])
+    assert ts2.meta["unit"] == "gigatC / a"
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+def test_timeseries_mul_pint_vector(ts_gtc_per_yr_units, inplace):
+    to_mul = np.arange(3) * ur("yr")
+    if inplace:
+        ts_gtc_per_yr_units *= to_mul
+        ts2 = ts_gtc_per_yr_units
+    else:
+        ts2 = ts_gtc_per_yr_units * to_mul
+
+    npt.assert_allclose(ts2.values, [0, 2, 6])
+    assert ts2.meta["unit"] == "gigatC"
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+def test_timeseries_div_pint_vector(ts_gtc_per_yr_units, inplace):
+    to_div = np.arange(3) * ur("yr**-1")
+    if inplace:
+        ts_gtc_per_yr_units /= to_div
+        ts2 = ts_gtc_per_yr_units
+    else:
+        ts2 = ts_gtc_per_yr_units / to_div
+
+    npt.assert_allclose(ts2.values, [np.inf, 2 / 1, 3 / 2])
+    assert ts2.meta["unit"] == "gigatC"
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+@pytest.mark.parametrize("op", ["add", "sub"])
+def test_timeseries_add_sub_pint_vector_no_ts_units(ts, inplace, op):
+    vector = np.arange(3) * ur("GtC / yr")
+
+    error_msg = re.escape("Cannot convert from 'dimensionless' to 'gigatC / a'")
+    with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
+        if inplace:
+            if op == "add":
+                ts += vector
+            elif op == "sub":
+                ts -= vector
+            else:
+                raise NotImplementedError(op)
+        else:
+            if op == "add":
+                ts + vector
+            elif op == "sub":
+                ts - vector
+            else:
+                raise NotImplementedError(op)
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+def test_timeseries_mul_pint_vector_no_units(ts, inplace):
+    vector = np.arange(3) * ur("GtC / yr")
+    if inplace:
+        ts *= vector
+        ts2 = ts
+
+    else:
+        ts2 = ts * vector
+
+    # operation works because units of base assumed to be dimensionless
+    npt.assert_allclose(ts2.values, [0, 2, 6])
+    assert ts2.meta["unit"] == "gigatC / a"
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+@pytest.mark.parametrize("op", ["div"])
+def test_timeseries_div_pint_vector_no_units(ts, inplace, op):
+    vector = np.arange(3) * ur("GtC / yr")
+    if inplace:
+        if op == "div":
+            ts /= vector
+            ts2 = ts
+        else:
+            raise NotImplementedError(op)
+    else:
+        if op == "div":
+            ts2 = ts / vector
+        else:
+            raise NotImplementedError(op)
+
+    # operation works because units of base assumed to be dimensionless
+    npt.assert_allclose(ts2.values, [np.inf, 2, 3 / 2])
+    assert ts2.meta["unit"] == "a / gigatC"
+
+
+@pytest.mark.parametrize("inplace", [True, False])
+@pytest.mark.parametrize("op", ["add", "sub"])
+def test_timeseries_add_sub_pint_vector_invalid_units(ts_gtc_per_yr_units, inplace, op):
+    other_unit = "{} / yr".format(ts_gtc_per_yr_units.meta["unit"])
+    vector = np.arange(3) * ur(other_unit)
+
+    error_msg = re.escape(
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / a ** 2' ([carbon] * [mass] / [time] ** 2)"
+    )
+    with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
+        if inplace:
+            if op == "add":
+                ts_gtc_per_yr_units += vector
+            elif op == "sub":
+                ts_gtc_per_yr_units -= vector
+            else:
+                raise NotImplementedError(op)
+        else:
+            if op == "add":
+                ts_gtc_per_yr_units + vector
+            elif op == "sub":
+                ts_gtc_per_yr_units - vector
             else:
                 raise NotImplementedError(op)
 
