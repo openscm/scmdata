@@ -65,7 +65,7 @@ jobs:
         pip install -e .[tests]
     - name: Test with pytest
       env:
-        MIN_COVERAGE: 70  # TODO: put this back up to 95 once we start writing
+        MIN_COVERAGE: 95
       run: |
           pytest tests -r a --cov=scmdata --cov-report=xml
           if ! coverage report --fail-under=${MIN_COVERAGE} --show-missing
@@ -79,7 +79,8 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         file: ./coverage.xml
-  build-old-pandas:
+
+  build-pandas-versions:
     needs: linting-and-docs
 
     runs-on: ubuntu-latest
@@ -104,7 +105,7 @@ jobs:
 
       - name: Test with pytest
         env:
-          MIN_COVERAGE: 70  # TODO: put this back up to 95 once we start writing
+          MIN_COVERAGE: 95
         run: |
           pytest tests -r a --cov=scmdata --cov-report=xml
           if ! coverage report --fail-under=${MIN_COVERAGE} --show-missing
