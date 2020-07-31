@@ -414,7 +414,7 @@ def test_vector_ops_pint_wrong_unit(op, start_unit):
             raise NotImplementedError(op)
 
 
-def perform_scalar_op_float_int(base, scalar, op):
+def perform_op_float_int(base, scalar, op):
     base_ts = base.timeseries()
 
     if op == "add":
@@ -442,7 +442,7 @@ def test_scalar_ops_float_int(op, scalar):
         variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
     )
 
-    exp_ts = perform_scalar_op_float_int(start, scalar, op)
+    exp_ts = perform_op_float_int(start, scalar, op)
     exp = ScmRun(exp_ts)
 
     if op == "add":
@@ -488,6 +488,34 @@ def test_wrong_shape_ops(op, shape):
 
         else:
             raise NotImplementedError(op)
+
+
+@OPS_MARK
+@pytest.mark.parametrize("vector", (np.arange(3).astype(int), np.arange(3).astype(float)))
+def test_vector_ops_float_int(op, vector):
+    start = get_multiple_ts(
+        variable="Emissions|Gas", unit=["GtC / yr", "Mt CH4 / yr"], scenario=["scen_a", "scen_b"]
+    )
+
+    exp_ts = perform_op_float_int(start, vector, op)
+    exp = ScmRun(exp_ts)
+
+    if op == "add":
+        res = start + vector
+
+    elif op == "subtract":
+        res = start - vector
+
+    elif op == "divide":
+        res = start / vector
+
+    elif op == "multiply":
+        res = start * vector
+
+    else:
+        raise NotImplementedError(op)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
 
 @OPS_MARK
