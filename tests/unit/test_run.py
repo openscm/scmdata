@@ -2610,8 +2610,8 @@ def test_metadata_consistency(model):
             "scenario": "scenario",
             "variable": "variable",
             "region": "region",
-            "unit": "unit"
-        }
+            "unit": "unit",
+        },
     )
     modified = start.copy()
     modified.filter(model=model)["new_meta"] = "hi"
@@ -2622,4 +2622,3 @@ def test_metadata_consistency(model):
 
     modified.drop_meta("new_meta", inplace=True)
     assert_scmdf_almost_equal(start, modified)
-
