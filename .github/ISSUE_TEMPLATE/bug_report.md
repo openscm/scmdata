@@ -13,7 +13,7 @@ A clear and concise description of what the bug is.
 Please put the code (ideally in the form of a unit
 test) which fails below
 
-**Expected behavior**
+**Expected behaviour**
 
 A clear and concise description of what you expected to happen.
 
