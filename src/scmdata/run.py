@@ -676,7 +676,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         # pylint: disable=protected-access
         for ts in df._ts:
             for c in columns:
-                del ts._data.attrs[c]
+                try:
+                    del ts._data.attrs[c]
+                except KeyError:
+                    pass
 
         if not inplace:
             return df
