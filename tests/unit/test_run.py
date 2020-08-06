@@ -2600,7 +2600,8 @@ def test_copy(test_scm_run, copy_ts):
             assert id(o) == id(c)
 
 
-def test_metadata_consistency():
+@pytest.mark.parametrize("model", ["model_a", "model_b"])
+def test_metadata_consistency(model):
     start = ScmRun(
         np.arange(6).reshape(3, 2),
         [2010, 2020, 2030],
@@ -2613,7 +2614,7 @@ def test_metadata_consistency():
         }
     )
     modified = start.copy()
-    modified.filter(model="model_a")["new_meta"] = "hi"
+    modified.filter(model=model)["new_meta"] = "hi"
 
     modified_dropped = modified.drop_meta("new_meta", inplace=False)
 
