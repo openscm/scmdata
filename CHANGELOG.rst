@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#94 <https://github.com/openscm/scmdata/pull/94>`_) Fix edge-case issue with drop_meta (closes `#92 <https://github.com/openscm/scmdata/issues/92>`_)
 - (`#95 <https://github.com/openscm/scmdata/pull/95>`_) Add ``drop_all_nan_times`` keyword argument to :meth:`ScmRun.timeseries` so time points with no data of interest can easily be removed
 
 v0.6.3
