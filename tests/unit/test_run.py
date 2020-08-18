@@ -403,8 +403,9 @@ def test_timeseries(test_scm_run):
     assert isinstance(res, pd.DataFrame)
 
 
+@pytest.mark.parametrize("time_axis", (None, "year", "year-month"))
 @pytest.mark.parametrize("drop_all_nan_times", (True, False))
-def test_timeseries_no_nan(drop_all_nan_times):
+def test_timeseries_no_nan(drop_all_nan_times, time_axis):
     dat = np.arange(12).reshape(4, 3).astype(float)
     dat[3, :] = np.nan
     dat[1, 1] = np.nan
@@ -418,14 +419,14 @@ def test_timeseries_no_nan(drop_all_nan_times):
         }
     )
 
-    res = start.timeseries(drop_all_nan_times=drop_all_nan_times)
+    res = start.timeseries(drop_all_nan_times=drop_all_nan_times, time_axis=time_axis)
     if drop_all_nan_times:
         # leave the solo nan, drop all others
-        assert res.isnull().sum() == 1
-        assert (res.columns.apply(lambda x: x.year) == time[:-1]).all()
+        assert res.isnull().sum().sum() == 1
+        assert len(res.columns) == 3
     else:
-        assert res.isnull().sum() == 4
-        assert (res.columns.apply(lambda x: x.year) == time).all()
+        assert res.isnull().sum().sum() == 4
+        assert len(res.columns) == 4
 
 
 def test_head(test_scm_run):

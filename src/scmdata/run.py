@@ -707,7 +707,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         return self._time_points
 
-    def timeseries(self, meta=None, check_duplicated=True, time_axis=None):
+    def timeseries(self, meta=None, check_duplicated=True, time_axis=None, drop_all_nan_times=False):
         """
         Return the data with metadata as a :obj:`pd.DataFrame`.
 
@@ -730,6 +730,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             will be used (calculated using the ``datetime``  module). If
             `"seconds since 1970-01-01"`, the number of seconds  since 1st Jan
             1970 will be used (calculated using the ``datetime`` module).
+
+        drop_all_nan_times : bool
+            Should time points which contain only nan values be dropped? This operation is applied
+            after any transforms introduced by the value of ``time_axis``.
 
         Returns
         -------
@@ -796,6 +800,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         _meta = self.meta if meta is None else self.meta[meta]
         df.index = pd.MultiIndex.from_arrays(_meta.values.T, names=_meta.columns)
+
+        if drop_all_nan_times:
+            df = df.dropna(how="all", axis="columns")
 
         return df
 
