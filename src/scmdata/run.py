@@ -707,7 +707,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         return self._time_points
 
-    def timeseries(self, meta=None, check_duplicated=True, time_axis=None, drop_all_nan_times=False):
+    def timeseries(
+        self, meta=None, check_duplicated=True, time_axis=None, drop_all_nan_times=False
+    ):
         """
         Return the data with metadata as a :obj:`pd.DataFrame`.
 
