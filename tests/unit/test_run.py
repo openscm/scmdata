@@ -398,6 +398,36 @@ def test_len(test_scm_run):
     assert len(test_scm_run) == len(test_scm_run._ts)
 
 
+def test_timeseries(test_scm_run):
+    res = test_scm_run.timeseries()
+    assert isinstance(res, pd.DataFrame)
+
+
+@pytest.mark.parametrize("drop_all_nan_times", (True, False))
+def test_timeseries_no_nan(drop_all_nan_times):
+    dat = np.arange(12).reshape(4, 3).astype(float)
+    dat[3, :] = np.nan
+    dat[1, 1] = np.nan
+    time = [2010, 2020, 2030, 2040]
+    start = ScmRun(
+        dat,
+        index=time,
+        columns={
+            "variable": ["v1", "v2", "v3"],
+            **{k: k for k in ["model", "scenario", "region", "unit"]}
+        }
+    )
+
+    res = start.timeseries(drop_all_nan_times=drop_all_nan_times)
+    if drop_all_nan_times:
+        # leave the solo nan, drop all others
+        assert res.isnull().sum() == 1
+        assert (res.columns.apply(lambda x: x.year) == time[:-1]).all()
+    else:
+        assert res.isnull().sum() == 4
+        assert (res.columns.apply(lambda x: x.year) == time).all()
+
+
 def test_head(test_scm_run):
     pd.testing.assert_frame_equal(
         test_scm_run.head(2), test_scm_run.timeseries().head(2)
