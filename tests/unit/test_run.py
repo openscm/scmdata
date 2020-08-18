@@ -840,6 +840,32 @@ def test_timeseries_duplicated(test_scm_run):
     pytest.raises(ValueError, test_scm_run.timeseries, meta=["scenario"])
 
 
+@pytest.mark.parametrize("time_axis", (None, "year", "year-month"))
+@pytest.mark.parametrize("drop_all_nan_times", (True, False))
+def test_timeseries_drop_all_nan_times(drop_all_nan_times, time_axis):
+    dat = np.arange(12).reshape(4, 3).astype(float)
+    dat[3, :] = np.nan
+    dat[1, 1] = np.nan
+    time = [2010, 2020, 2030, 2040]
+    start = ScmRun(
+        dat,
+        index=time,
+        columns={
+            "variable": ["v1", "v2", "v3"],
+            **{k: k for k in ["model", "scenario", "region", "unit"]},
+        },
+    )
+
+    res = start.timeseries(drop_all_nan_times=drop_all_nan_times, time_axis=time_axis)
+    if drop_all_nan_times:
+        # leave the solo nan, drop all others
+        assert res.isnull().sum().sum() == 1
+        assert len(res.columns) == 3
+    else:
+        assert res.isnull().sum().sum() == 4
+        assert len(res.columns) == 4
+
+
 def test_quantile_over_lower(test_processing_scm_df):
     exp = pd.DataFrame(
         [
