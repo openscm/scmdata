@@ -661,28 +661,31 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             inplace = True
 
         if inplace:
-            df = self
+            ret = self
         else:
-            df = self.copy(copy_ts=True)
+            ret = self.copy(copy_ts=True)
 
         if isinstance(columns, str):
             columns = [columns]
 
-        existing_cols = df.meta_attributes
+        existing_cols = ret.meta_attributes
         for c in columns:
             if c not in existing_cols:
                 raise KeyError(c)
 
         # pylint: disable=protected-access
-        for ts in df._ts:
+        for ts in ret._ts:
             for c in columns:
                 try:
                     del ts._data.attrs[c]
                 except KeyError:
                     pass
 
+        if ret._duplicated_meta():
+            raise NonUniqueMetadataError(ret.meta)
+
         if not inplace:
-            return df
+            return ret
 
     @property
     def meta_attributes(self):

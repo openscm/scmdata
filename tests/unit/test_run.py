@@ -2622,3 +2622,21 @@ def test_metadata_consistency(model):
 
     modified.drop_meta("new_meta", inplace=True)
     assert_scmdf_almost_equal(start, modified)
+
+
+def test_drop_meta_nonunique():
+    start = ScmRun(
+        np.arange(6).reshape(3, 2),
+        [2010, 2020, 2030],
+        columns={
+            "model": "model",
+            "scenario": "scenario",
+            "variable": "variable",
+            "region": "region",
+            "unit": "unit",
+            "new_meta": ["a", "b"]
+        },
+    )
+
+    with pytest.raises(NonUniqueMetadataError):
+        start.drop_meta("new_meta")
