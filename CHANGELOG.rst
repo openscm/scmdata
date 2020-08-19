@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#96 <https://github.com/openscm/scmdata/pull/96>`_) Fix non-unique timeseries metadata checks for :meth:`ScmRun.timeseries`
 - (`#100 <https://github.com/openscm/scmdata/pull/100>`_) When initialising :obj:`ScmRun` from file, make the default be to read with :func:`pd.read_csv`. This means we now initialising reading from gzipped CSV files.
 - (`#99 <https://github.com/openscm/scmdata/pull/99>`_) Hotfix failing notebook test
 - (`#94 <https://github.com/openscm/scmdata/pull/94>`_) Fix edge-case issue with drop_meta (closes `#92 <https://github.com/openscm/scmdata/issues/92>`_)
