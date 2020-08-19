@@ -2598,3 +2598,45 @@ def test_copy(test_scm_run, copy_ts):
             assert id(o) != id(c)
         else:
             assert id(o) == id(c)
+
+
+@pytest.mark.parametrize("model", ["model_a", "model_b"])
+def test_metadata_consistency(model):
+    start = ScmRun(
+        np.arange(6).reshape(3, 2),
+        [2010, 2020, 2030],
+        columns={
+            "model": ["model_a", "model_b"],
+            "scenario": "scenario",
+            "variable": "variable",
+            "region": "region",
+            "unit": "unit",
+        },
+    )
+    modified = start.copy()
+    modified.filter(model=model)["new_meta"] = "hi"
+
+    modified_dropped = modified.drop_meta("new_meta", inplace=False)
+
+    assert_scmdf_almost_equal(start, modified_dropped)
+
+    modified.drop_meta("new_meta", inplace=True)
+    assert_scmdf_almost_equal(start, modified)
+
+
+def test_drop_meta_nonunique():
+    start = ScmRun(
+        np.arange(6).reshape(3, 2),
+        [2010, 2020, 2030],
+        columns={
+            "model": "model",
+            "scenario": "scenario",
+            "variable": "variable",
+            "region": "region",
+            "unit": "unit",
+            "new_meta": ["a", "b"],
+        },
+    )
+
+    with pytest.raises(NonUniqueMetadataError):
+        start.drop_meta("new_meta")
