@@ -761,7 +761,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Raises
         ------
-        ValueError
+        NonUniqueMetadataError
             If the metadata are not unique between timeseries and
             ``check_duplicated`` is ``True``
 
@@ -772,12 +772,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             The value of `time_axis` would result in columns which aren't unique
         """
         df = pd.DataFrame(self.values)
+        _meta = self.meta if meta is None else self.meta[meta]
 
-        # Is `check_duplicated` now obsolete? I don't see how you can end up with
-        # duplicate metadata anymore. If it's not obsolete, we should add an
-        # explicit test for this behaviour (I can't see one at the moment).
-        if check_duplicated and self._duplicated_meta(meta=meta):
-            raise ValueError("Duplicated meta values")
+        if check_duplicated and self._duplicated_meta(meta=_meta):
+            raise NonUniqueMetadataError(_meta)
 
         if time_axis is None:
             columns = self._time_points.to_index()
@@ -816,7 +814,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         df.columns = columns
         df.columns.name = "time"
 
-        _meta = self.meta if meta is None else self.meta[meta]
         df.index = pd.MultiIndex.from_arrays(_meta.values.T, names=_meta.columns)
 
         if drop_all_nan_times:
@@ -825,7 +822,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return df
 
     def _duplicated_meta(self, meta=None):
-        _meta = self.meta if meta is None else self.meta[meta]
+        _meta = self.meta if meta is None else meta
 
         return _meta.duplicated().any()
 
@@ -1837,8 +1834,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 m = self.meta
                 n_unique = m.nunique(axis=0)
                 m = m.drop(columns=n_unique[n_unique > 1].index).drop_duplicates()
-                if len(m) != 1:
-                    raise ValueError("Could not determine unique metadata")
+                assert len(m) == 1, m
 
                 meta = m.to_dict("list")
 
