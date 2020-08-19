@@ -2634,7 +2634,7 @@ def test_drop_meta_nonunique():
             "variable": "variable",
             "region": "region",
             "unit": "unit",
-            "new_meta": ["a", "b"]
+            "new_meta": ["a", "b"],
         },
     )
 
