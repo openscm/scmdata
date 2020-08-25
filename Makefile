@@ -109,7 +109,7 @@ virtual-environment:  ## update venv, create a new venv if it doesn't exist
 $(VENV_DIR): setup.py
 	[ -d $(VENV_DIR) ] || python3 -m venv $(VENV_DIR)
 
-	$(VENV_DIR)/bin/pip install --upgrade pip
+	$(VENV_DIR)/bin/pip install --upgrade pip wheel
 	$(VENV_DIR)/bin/pip install -e .[dev] --use-feature=2020-resolver
 
 	touch $(VENV_DIR)
