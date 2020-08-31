@@ -722,7 +722,9 @@ def test_filter_by_regexp(test_scm_run):
     assert obs["scenario"].unique() == "a_scenario"
 
 
-@pytest.mark.parametrize("regexp,exp_units", ((True, []), (False, ["W/m^2"]),))
+@pytest.mark.parametrize(
+    "regexp,exp_units", ((True, []), (False, ["W/m^2"]),),
+)
 def test_filter_by_regexp_caret(test_scm_run, regexp, exp_units):
     tunits = ["W/m2"] * test_scm_run.shape[1]
     tunits[-1] = "W/m^2"
@@ -2052,6 +2054,15 @@ def test_init_no_file(data_cls):
                 "rcp26_emissions.csv",
             ),
             {},
+        ),
+        (
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..",
+                "test_data",
+                "rcp26_emissions.csv.gz",
+            ),
+            {"lowercase_cols": True},
         ),
         (
             os.path.join(

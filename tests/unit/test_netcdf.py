@@ -49,7 +49,7 @@ def test_run_to_nc(scm_data):
 
 
 @pytest.mark.parametrize(
-    "v", ["primary energy", "Primary Energy", "Primary Energy|Coal|Test",]
+    "v", ["primary energy", "Primary Energy", "Primary Energy|Coal|Test",],
 )
 def test_run_to_nc_case(scm_data, v):
     with tempfile.TemporaryDirectory() as tempdir:
