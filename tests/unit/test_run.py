@@ -2058,6 +2058,15 @@ def test_init_no_file(data_cls):
                 os.path.dirname(os.path.abspath(__file__)),
                 "..",
                 "test_data",
+                "rcp26_emissions.csv.gz",
+            ),
+            {"lowercase_cols": True},
+        ),
+        (
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..",
+                "test_data",
                 "rcp26_emissions_capitalised.csv",
             ),
             {"lowercase_cols": True},
