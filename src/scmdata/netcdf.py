@@ -87,9 +87,7 @@ def _write_nc(ds, df, dimensions, extras):
     # Create the dimensions
     ds.createDimension("time", len(df.time_points))
     ds.createVariable(
-        "time",
-        "f8",
-        "time",
+        "time", "f8", "time",
     )
     ds.variables["time"][:] = df.time_points.values
 

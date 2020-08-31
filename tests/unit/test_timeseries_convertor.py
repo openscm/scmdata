@@ -8,10 +8,7 @@ from scmdata.time import InsufficientDataError, TimeseriesConverter
 
 def test_short_data(combo):
     timeseriesconverter = TimeseriesConverter(
-        combo.source,
-        combo.target,
-        combo.interpolation_type,
-        combo.extrapolation_type,
+        combo.source, combo.target, combo.interpolation_type, combo.extrapolation_type,
     )
     for a in [[], [0], [0, 1]]:
         with pytest.raises(InsufficientDataError):
@@ -55,10 +52,7 @@ def test_really_long_timespan():
         dtype=np.datetime64,
     )
     target_vals = [1.0, 2.0, 3.0]
-    c = TimeseriesConverter(
-        source,
-        target,
-    )
+    c = TimeseriesConverter(source, target,)
 
     np.testing.assert_allclose(c.convert_to(target_vals), source_vals, rtol=1e-3)
     np.testing.assert_allclose(c.convert_from(source_vals), target_vals, rtol=1e-3)
@@ -85,10 +79,7 @@ def test_extrapolation_with_nans():
         dtype=np.datetime64,
     )
     target_vals = [1.0, 2.0, 3.0, 4.0]
-    c = TimeseriesConverter(
-        source,
-        target,
-    )
+    c = TimeseriesConverter(source, target,)
 
     np.testing.assert_allclose(c.convert_from(source_vals), target_vals, rtol=1e-3)
 
@@ -113,9 +104,6 @@ def test_not_enough():
         ],
         dtype=np.datetime64,
     )
-    c = TimeseriesConverter(
-        source,
-        target,
-    )
+    c = TimeseriesConverter(source, target,)
     with pytest.raises(InsufficientDataError):
         c.convert_from(source_vals)

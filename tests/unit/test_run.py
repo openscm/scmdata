@@ -239,9 +239,7 @@ def test_init_with_ts(test_ts, test_pd_df, data_cls):
 
 
 def test_init_with_scmdf(test_scm_datetime_df, test_scm_datetime_run):
-    df = ScmRun(
-        test_scm_datetime_df,
-    )
+    df = ScmRun(test_scm_datetime_df,)
 
     assert_scmdf_almost_equal(df, test_scm_datetime_run, check_ts_names=False)
 
@@ -725,11 +723,7 @@ def test_filter_by_regexp(test_scm_run):
 
 
 @pytest.mark.parametrize(
-    "regexp,exp_units",
-    (
-        (True, []),
-        (False, ["W/m^2"]),
-    ),
+    "regexp,exp_units", ((True, []), (False, ["W/m^2"]),),
 )
 def test_filter_by_regexp_caret(test_scm_run, regexp, exp_units):
     tunits = ["W/m2"] * test_scm_run.shape[1]
@@ -2197,10 +2191,7 @@ def test_get_meta_no_duplicates(test_scm_run, no_duplicates):
         ) == ["a_model"]
         assert test_scm_run.get_unique_meta(
             "variable", no_duplicates=no_duplicates
-        ) == [
-            "Primary Energy",
-            "Primary Energy|Coal",
-        ]
+        ) == ["Primary Energy", "Primary Energy|Coal",]
 
 
 def test_meta_filtered(test_scm_run):
@@ -2503,17 +2494,13 @@ def test_append_long_run(tax1, tax2):
         ),
         (
             {"first": "example", "second": "other_example"},
-            {
-                "first": "other",
-            },
+            {"first": "other",},
             None,
             {"first": "example", "second": "other_example"},
         ),
         (
             {"first": "example", "second": "other_example"},
-            {
-                "first": "other",
-            },
+            {"first": "other",},
             {"first": "", "third": "other_example"},
             {"first": "", "third": "other_example"},
         ),

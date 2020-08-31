@@ -40,20 +40,9 @@ REQUIREMENTS = [
 ]
 REQUIREMENTS_OPTIONAL = ["netCDF4", "xlrd"]
 REQUIREMENTS_PLOTTING = ["seaborn"]
-REQUIREMENTS_NOTEBOOKS = (
-    [
-        "notebook",
-    ]
-    + REQUIREMENTS_PLOTTING
-    + REQUIREMENTS_OPTIONAL
-)
+REQUIREMENTS_NOTEBOOKS = ["notebook",] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
 REQUIREMENTS_TESTS = (
-    [
-        "codecov",
-        "nbval",
-        "pytest-cov",
-        "pytest>=5.0.0, <6",
-    ]
+    ["codecov", "nbval", "pytest-cov", "pytest>=5.0.0, <6",]
     + REQUIREMENTS_PLOTTING
     + REQUIREMENTS_OPTIONAL
 )
@@ -63,7 +52,7 @@ REQUIREMENTS_DEPLOY = ["twine>=1.11.0", "setuptools>=41.2", "wheel>=0.31.0"]
 REQUIREMENTS_DEV = [
     *[
         "bandit",
-        "black",
+        "black==19.10b0",
         "black-nb",
         "flake8",
         "isort>=5",

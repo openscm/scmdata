@@ -4,13 +4,7 @@ from scmdata.testing import assert_scmdf_almost_equal
 
 
 @pytest.mark.parametrize(
-    "g",
-    (
-        ("variable",),
-        ("variable", "scenario"),
-        ("variable", "region"),
-        ("model",),
-    ),
+    "g", (("variable",), ("variable", "scenario"), ("variable", "region"), ("model",),),
 )
 def test_groupby(test_scm_run, g):
     # Check that the metadata for each group is unique for the dimensions being grouped together

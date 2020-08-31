@@ -16,11 +16,7 @@ from scmdata.timeseries import TimeSeries
 @pytest.fixture(scope="function")
 def ts():
     times = np.asarray(
-        [
-            datetime(2000, 1, 1),
-            datetime(2001, 1, 1),
-            datetime(2002, 1, 1),
-        ]
+        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1),]
     )
     return TimeSeries([1, 2, 3], time=times)
 
@@ -155,11 +151,7 @@ def test_timeseries_mul(ts, inplace):
 @pytest.fixture(scope="function")
 def ts_gtc_per_yr_units():
     times = np.asarray(
-        [
-            datetime(2000, 1, 1),
-            datetime(2001, 1, 1),
-            datetime(2002, 1, 1),
-        ]
+        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1),]
     )
     return TimeSeries([1, 2, 3], time=times, attrs={"unit": "GtC / yr"})
 
@@ -460,10 +452,7 @@ def test_extrapolation_long(dt):
     ts = TimeSeries(source, time=source_times)
 
     target = np.arange(800, 1100)
-    res = ts.interpolate(
-        [dt(y, 1, 1) for y in target],
-        extrapolation_type="linear",
-    )
+    res = ts.interpolate([dt(y, 1, 1) for y in target], extrapolation_type="linear",)
 
     # Interpolating annually using seconds is not identical to just assuming everything is years
     npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=0)
@@ -481,8 +470,7 @@ def test_extrapolation_nan(dt):
 
     target = np.arange(2000, 2010)
     res = ts.interpolate(
-        [dt(int(y), 1, 1) for y in target],
-        extrapolation_type="linear",
+        [dt(int(y), 1, 1) for y in target], extrapolation_type="linear",
     )
 
     npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=2)
