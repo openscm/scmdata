@@ -2419,6 +2419,15 @@ def test_timeseries_time_axis_junk_error(test_scm_run):
         test_scm_run.timeseries(time_axis="junk")
 
 
+def test_timeseries_check_duplicated(test_scm_run):
+    with pytest.raises(NonUniqueMetadataError):
+        test_scm_run.timeseries(meta=["region", "unit"], check_duplicated=True)
+
+    # Default behaviour
+    with pytest.raises(NonUniqueMetadataError):
+        test_scm_run.timeseries(meta=["region", "unit"])
+
+
 def test_long_data_time_axis_junk_error(test_scm_run):
     error_msg = re.escape("time_axis = 'junk")
     with pytest.raises(NotImplementedError, match=error_msg):
