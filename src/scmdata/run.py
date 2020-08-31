@@ -102,13 +102,15 @@ def _read_pandas(
     """
     if not os.path.exists(fname):
         raise OSError("no data file `{}` found!".format(fname))
-    if fname.endswith("csv"):
-        df = pd.read_csv(fname, *args, **kwargs)
-    else:
+    if fname.endswith("xlsx") or fname.endswith("xls"):
+        _logger.debug("Assuming excel file")
         xl = pd.ExcelFile(fname)
         if len(xl.sheet_names) > 1 and "sheet_name" not in kwargs:
             kwargs["sheet_name"] = "data"
         df = pd.read_excel(fname, *args, **kwargs)
+    else:
+        _logger.debug("Reading with pandas read_csv")
+        df = pd.read_csv(fname, *args, **kwargs)
 
     if lowercase_cols:
         df.columns = [c.lower() for c in df.columns]
