@@ -81,14 +81,17 @@ def _read_pandas(
     ----------
     fname
         Path from which to read data
+
     lowercase_cols
         If True, convert the column names of the file to lowercase
+
     *args
-        Passed to :func:`pd.read_csv` if :obj:`fname` ends with '.csv', otherwise passed
-        to :func:`pd.read_excel`.
+        Passed to :func:`pd.read_excel` if :obj:`fname` ends with '.xls' or
+        '.xslx, otherwise passed to :func:`pd.read_csv`.
+
     **kwargs
-        Passed to :func:`pd.read_csv` if :obj:`fname` ends with '.csv', otherwise passed
-        to :func:`pd.read_excel`.
+        Passed to :func:`pd.read_excel` if :obj:`fname` ends with '.xls' or
+        '.xslx, otherwise passed to :func:`pd.read_csv`.
 
     Returns
     -------
@@ -102,18 +105,23 @@ def _read_pandas(
     """
     if not os.path.exists(fname):
         raise OSError("no data file `{}` found!".format(fname))
+
     if fname.endswith("xlsx") or fname.endswith("xls"):
         _logger.debug("Assuming excel file")
         xl = pd.ExcelFile(fname)
+
         if len(xl.sheet_names) > 1 and "sheet_name" not in kwargs:
             kwargs["sheet_name"] = "data"
+
         df = pd.read_excel(fname, *args, **kwargs)
+
     else:
         _logger.debug("Reading with pandas read_csv")
         df = pd.read_csv(fname, *args, **kwargs)
 
     if lowercase_cols:
         df.columns = [c.lower() for c in df.columns]
+
     return df
 
 
@@ -317,7 +325,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
              is the number of timesteps and `n_series` is the number of time series.
 
             If a string is passed, data will be attempted to be read from file. Currently,
-            reading from CSV or Excel formatted files is supported.
+            reading from CSV, gzipped CSV and Excel formatted files is supported.
 
         index: np.ndarray
             If :obj:`index` is not ``None``, then the :obj`index` is used as the timesteps
