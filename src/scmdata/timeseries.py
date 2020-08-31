@@ -201,7 +201,9 @@ class TimeSeries:
 
     @staticmethod
     def _binary_op(
-        f: Callable[..., Any], reflexive=False, **kwargs,
+        f: Callable[..., Any],
+        reflexive=False,
+        **kwargs,
     ) -> Callable[..., "TimeSeries"]:
         @functools.wraps(f)
         def func(self, other):

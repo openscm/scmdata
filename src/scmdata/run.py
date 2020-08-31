@@ -608,7 +608,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def _binary_op(
-        f: Callable[..., Any], reflexive=False, **kwargs,
+        f: Callable[..., Any],
+        reflexive=False,
+        **kwargs,
     ) -> Callable[..., "ScmRun"]:
         @functools.wraps(f)
         def func(self, other):
@@ -1190,7 +1192,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return self.timeseries().tail(*args, **kwargs)
 
     def get_unique_meta(
-        self, meta: str, no_duplicates: Optional[bool] = False,
+        self,
+        meta: str,
+        no_duplicates: Optional[bool] = False,
     ) -> Union[List[Any], Any]:
         """
         Get unique values in a metadata column.

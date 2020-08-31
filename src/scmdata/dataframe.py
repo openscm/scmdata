@@ -875,7 +875,9 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
         self._sort_meta_cols()
 
     def get_unique_meta(
-        self, meta: str, no_duplicates: Optional[bool] = False,
+        self,
+        meta: str,
+        no_duplicates: Optional[bool] = False,
     ) -> Union[List[Any], Any]:
         """
         Get unique values in a metadata column.
@@ -1425,7 +1427,9 @@ class ScmDataFrame:  # pylint: disable=too-many-public-methods
 
 
 def df_append(
-    dfs, inplace: bool = False, duplicate_msg: Union[str, bool] = "warn",
+    dfs,
+    inplace: bool = False,
+    duplicate_msg: Union[str, bool] = "warn",
 ):
     """
     Append together many objects.

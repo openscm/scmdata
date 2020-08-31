@@ -49,7 +49,12 @@ def test_run_to_nc(scm_data):
 
 
 @pytest.mark.parametrize(
-    "v", ["primary energy", "Primary Energy", "Primary Energy|Coal|Test",]
+    "v",
+    [
+        "primary energy",
+        "Primary Energy",
+        "Primary Energy|Coal|Test",
+    ],
 )
 def test_run_to_nc_case(scm_data, v):
     with tempfile.TemporaryDirectory() as tempdir:
@@ -342,7 +347,13 @@ def test_nc_with_metadata(test_scm_run, mdata):
 
 
 @pytest.mark.parametrize(
-    "mdata", ({"test_fails": {"something": "else"},}, {"test_fails": {1, 2, 3}},),
+    "mdata",
+    (
+        {
+            "test_fails": {"something": "else"},
+        },
+        {"test_fails": {1, 2, 3}},
+    ),
 )
 def test_nc_with_metadata_fails(test_scm_run, mdata):
     test_scm_run.metadata = mdata.copy()
