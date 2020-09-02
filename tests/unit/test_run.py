@@ -2046,30 +2046,12 @@ def test_init_no_file(data_cls):
 @pytest.mark.parametrize(
     ("test_file", "test_kwargs"),
     [
-        (
-            "rcp26_emissions.csv",
-            {},
-        ),
-        (
-            "rcp26_emissions.csv.gz",
-            {"lowercase_cols": True},
-        ),
-        (
-            "rcp26_emissions_capitalised.csv",
-            {"lowercase_cols": True},
-        ),
-        (
-            "rcp26_emissions_int.csv",
-            {"lowercase_cols": True},
-        ),
-        (
-            "rcp26_emissions.xls",
-            {},
-        ),
-        (
-            "rcp26_emissions_multi_sheet.xlsx",
-            {"sheet_name": "rcp26_emissions"},
-        ),
+        ("rcp26_emissions.csv", {},),
+        ("rcp26_emissions.csv.gz", {"lowercase_cols": True},),
+        ("rcp26_emissions_capitalised.csv", {"lowercase_cols": True},),
+        ("rcp26_emissions_int.csv", {"lowercase_cols": True},),
+        ("rcp26_emissions.xls", {},),
+        ("rcp26_emissions_multi_sheet.xlsx", {"sheet_name": "rcp26_emissions"},),
         (
             "rcp26_emissions_multi_sheet_capitalised.xlsx",
             {"sheet_name": "rcp26_emissions", "lowercase_cols": True},
@@ -2078,18 +2060,14 @@ def test_init_no_file(data_cls):
             "rcp26_emissions_multi_sheet_capitalised_int.xlsx",
             {"sheet_name": "rcp26_emissions", "lowercase_cols": True},
         ),
-        (
-            "rcp26_emissions_multi_sheet_data.xlsx",
-            {},
-        ),
+        ("rcp26_emissions_multi_sheet_data.xlsx", {},),
     ],
 )
 def test_read_from_disk(test_file, test_kwargs, data_cls, test_data_path):
     if data_cls != ScmRun and "lowercase_cols" in test_kwargs:
         pytest.skip("Only ScmRun supports lowercase_cols")
 
-    loaded = data_cls(os.path.join(test_data_path,
-                                  test_file), **test_kwargs)
+    loaded = data_cls(os.path.join(test_data_path, test_file), **test_kwargs)
     assert (
         loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
         == 0.010116813
