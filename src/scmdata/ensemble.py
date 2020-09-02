@@ -67,6 +67,9 @@ class ScmEnsemble:
             return ScmEnsemble(runs)
 
     def timeseries(self, **kwargs):
+        if not len(self.runs):
+            return pd.DataFrame()
+
         def _get_timeseries(run_id, r):
             df = r.timeseries(**kwargs)
             if self.meta_col in df.index.names:
