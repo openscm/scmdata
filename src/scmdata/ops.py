@@ -10,7 +10,7 @@ import pint_pandas
 from openscm_units import unit_registry
 
 
-def prep_for_op(inp, op_cols, ur=unit_registry):
+def prep_for_op(inp, op_cols, meta, ur=unit_registry):
     """
     Prepare dataframe for operation
 
@@ -44,7 +44,7 @@ def prep_for_op(inp, op_cols, ur=unit_registry):
 
     key_cols = list(op_cols.keys())
 
-    out = inp.timeseries().reset_index(key_cols, drop=True)
+    out = inp.timeseries(meta=meta).reset_index(key_cols, drop=True)
 
     out = out.T
 
@@ -220,8 +220,8 @@ def subtract(self, other, op_cols, **kwargs):
                                       Emissions|CO2|AFOLU  gigatC / a                 -2.0                 -2.0                 -2.0
     """
     out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
+        prep_for_op(self, op_cols, self.meta.columns, **kwargs),
+        prep_for_op(other, op_cols, self.meta.columns, **kwargs),
         "subtract",
         use_pint_units="unit" not in op_cols,
     )
@@ -338,8 +338,8 @@ def add(self, other, op_cols, **kwargs):
                                Emissions|CO2|AFOLU  gigatC / a                  4.0                 16.0                 28.0
     """
     out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
+        prep_for_op(self, op_cols, self.meta.columns, **kwargs),
+        prep_for_op(other, op_cols, self.meta.columns, **kwargs),
         "add",
         use_pint_units="unit" not in op_cols,
     )
@@ -428,8 +428,8 @@ def multiply(self, other, op_cols, **kwargs):
                         World|SH Emissions|CO2|Fossil : AFOLU gigatC ** 2 / a ** 2                  6.0                 72.0                210.0
     """
     out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
+        prep_for_op(self, op_cols, self.meta.columns, **kwargs),
+        prep_for_op(other, op_cols, self.meta.columns, **kwargs),
         "multiply",
         use_pint_units="unit" not in op_cols,
     )
@@ -518,8 +518,8 @@ def divide(self, other, op_cols, **kwargs):
                         World|SH Emissions|CO2|Fossil : AFOLU dimensionless             0.666667             0.888889             0.933333
     """
     out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
+        prep_for_op(self, op_cols, self.meta.columns, **kwargs),
+        prep_for_op(other, op_cols,self.meta.columns,  **kwargs),
         "divide",
         use_pint_units="unit" not in op_cols,
     )
