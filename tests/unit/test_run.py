@@ -2105,6 +2105,15 @@ def test_init_no_file(data_cls):
                 os.path.dirname(os.path.abspath(__file__)),
                 "..",
                 "test_data",
+                "rcp26_emissions_multi_sheet_capitalised_int.xlsx",
+            ),
+            {"sheet_name": "rcp26_emissions", "lowercase_cols": True},
+        ),
+        (
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..",
+                "test_data",
                 "rcp26_emissions_multi_sheet_data.xlsx",
             ),
             {},

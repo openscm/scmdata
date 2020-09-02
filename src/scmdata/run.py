@@ -119,8 +119,13 @@ def _read_pandas(
         _logger.debug("Reading with pandas read_csv")
         df = pd.read_csv(fname, *args, **kwargs)
 
+    def _to_lower(c):
+        if hasattr(c, "lower"):
+            return c.lower()
+        return c
+
     if lowercase_cols:
-        df.columns = [c.lower() for c in df.columns]
+        df.columns = [_to_lower(c) for c in df.columns]
 
     return df
 
