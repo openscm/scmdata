@@ -449,11 +449,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         self._time_points = TimePoints(_df.index.values)
         _df = _df.astype(float)
 
-        self._ts = []
-        time_variable = xr.Variable("time", self._time_points.as_cftime())
-        for name, attrs in _meta.iterrows():
-            ts = TimeSeries(data=_df[name], time=time_variable, attrs=attrs)
-            self._ts.append(ts)
+        self._df = _df
+        self._meta = pd.MultiIndex.from_frame(_meta)
 
     def copy(self, copy_ts=True):
         """
@@ -476,7 +473,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Get the number of timeseries.
         """
-        return len(self._ts)
+        return self._df.shape[1]
 
     def __getitem__(self, key: Any) -> Any:
         """
@@ -571,14 +568,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         meta = np.atleast_1d(value)
         if key == "time":
             self._time_points = TimePoints(meta)
-            for ts in self._ts:
-                if len(meta) != len(ts):
-                    raise ValueError(
-                        "New time series is the incorrect length (expected: {}, got: {})".format(
-                            len(meta), len(ts)
-                        )
-                    )
-                ts["time"] = self._time_points.as_cftime()
         else:
             if len(meta) == 1:
                 for ts in self._ts:
@@ -712,10 +701,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         list
             Sorted list of meta keys
         """
-        meta = []
-        for ts in self._ts:
-            meta.extend(ts.meta.keys())
-        return sorted(list(set(meta)))
+        return sorted(list(self._meta.names))
 
     @property
     def time_points(self):
@@ -827,7 +813,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return df
 
     def _duplicated_meta(self, meta=None):
-        _meta = self.meta if meta is None else meta
+        _meta = self._meta if meta is None else meta
 
         return _meta.duplicated().any()
 
@@ -909,14 +895,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         )
 
     def _meta_column(self, col) -> pd.Series:
-        vals = []
-        for ts in self._ts:
-            try:
-                vals.append(ts.meta[col])
-            except KeyError:
-                vals.append(np.nan)
-
-        return pd.Series(vals, name=col, index=[ts.name for ts in self._ts])
+        out = self._meta.get_level_values(col)
+        return pd.Series(out, name=col, index=self._df.columns)
 
     def filter(
         self,
@@ -1032,15 +1012,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 # When nothing is filtered, drop everything
                 reduce_rows = True
 
-        # Filter the timeseries first
-        # I wish lists had the same indexing interface as ndarrays
-        if reduce_rows:
-            ret._ts = [ret._ts[i] for i, v in enumerate(_keep_rows) if v]
-
-        # Then filter the times if needed
-        if reduce_times:
-            ret._ts = [ts[_keep_times] for ts in ret._ts]
-            ret["time"] = self.time_points.values[_keep_times]
+        ret._df = ret._df.loc[_keep_times, _keep_rows]
+        ret._meta = ret._meta[_keep_rows]
+        ret["time"] = self.time_points.values[_keep_times]
 
         if log_if_empty and ret.empty:
             _logger.warning("Filtered ScmRun is empty!")
@@ -1090,15 +1064,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         for col, values in filters.items():
             if col == "variable":
                 level = filters["level"] if "level" in filters else None
-                keep_meta &= pattern_match(
+                tmp = pattern_match(
                     self._meta_column(col),
                     values,
                     level,
                     regexp,
                     has_nan=has_nan,
                     separator=self.data_hierarchy_separator,
-                ).values
-            elif col in self.meta_attributes:
+                )
+                keep_meta &= tmp.values
+            elif col in self._meta.names:
                 keep_meta &= pattern_match(
                     self._meta_column(col),
                     values,

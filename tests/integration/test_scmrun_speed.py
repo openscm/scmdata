@@ -39,11 +39,13 @@ def test_recreate_from_timeseries(benchmark, big_scmrun):
 
 def test_filter(benchmark, big_scmrun):
     def variable_filter():
-        return big_scmrun.filter(variable="Effective Radiative Forcing")
+        return big_scmrun.filter(variable="Effective Radiative Forcing", year=range(1850, 1910 + 1))
 
 
     result = benchmark.pedantic(variable_filter, iterations=2, rounds=5)
     assert result.get_unique_meta("variable", no_duplicates=True) == "Effective Radiative Forcing"
+    assert result["year"].iloc[0] == 1850
+    assert result["year"].iloc[-1] == 1910
 
 
 def test_get_unique_meta(benchmark, big_scmrun):
