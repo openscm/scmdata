@@ -636,4 +636,36 @@ def test_integration_nan_handling():
         rtol=1e-3,
     )
 
-# multiple, different unit handling
+
+def test_integration_multiple_ts():
+    variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10]]).T,
+        index=[2020, 2025, 2040],
+        variable=variables,
+        unit=["Mt CO2 / yr", "W / m^2", "K"],
+    )
+
+    res = start.integrate()
+
+    exp = get_single_ts(
+        data=np.array([[0, 7.5, 45], [0, -7.5, -45], [0, 12.5, 125]]).T,
+        index=[2020, 2025, 2040],
+        variable=["Cumulative {}".format(v) for v in variables],
+        unit=[
+            "Mt CO2",
+            "W / m^2 * yr",
+            "K * yr"
+        ]
+    )
+
+    for v in variables:
+        cv = "Cumulative {}".format(v)
+        exp_comp = exp.filter(variable=cv)
+        res_comp = res.filter(variable=cv).convert_unit(
+            exp_comp.get_unique_meta("unit", no_duplicates=True),
+        )
+
+        assert_scmdf_almost_equal(
+            res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3
+        )
