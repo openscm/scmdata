@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 import scmdata
-# , 10 ** 3, 10 ** 3.5
-@pytest.fixture(params=[10, 10 ** 2])
+
+@pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 5, 10 ** 5.5])
 def big_scmrun(request):
     length = int(request.param)
     t_steps = 750
