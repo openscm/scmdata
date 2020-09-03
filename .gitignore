@@ -1,6 +1,8 @@
 # Example output folder
 example-outputs
 
+.benchmarks
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

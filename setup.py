@@ -42,7 +42,7 @@ REQUIREMENTS_OPTIONAL = ["netCDF4", "xlrd"]
 REQUIREMENTS_PLOTTING = ["seaborn"]
 REQUIREMENTS_NOTEBOOKS = ["notebook",] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
 REQUIREMENTS_TESTS = (
-    ["codecov", "nbval", "pytest-cov", "pytest>=5.0.0, <6",]
+    ["codecov", "nbval", "pytest>=5.0.0, <6", "pytest-benchmark", "pytest-cov"]
     + REQUIREMENTS_PLOTTING
     + REQUIREMENTS_OPTIONAL
 )
