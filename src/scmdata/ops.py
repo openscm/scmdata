@@ -1,10 +1,12 @@
 """
 Operations for :obj:`ScmRun`
 
-These rely on
+These largely rely on
 `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
 to handle unit conversions automatically
 """
+import warnings
+
 import pandas as pd
 import pint_pandas
 import scipy
@@ -557,12 +559,12 @@ def integrate(self, out_var=None):
     # some thinking about unit handling
     _initial = 0.0
     out = pd.DataFrame(scipy.integrate.cumtrapz(y=ts, x=times_in_s, axis=1, initial=_initial))
-
     out.index = ts.index
     out.columns = ts.columns
 
     out = type(self)(out)
-    out = out * unit_registry(time_unit)
+    out *= unit_registry(time_unit)
+
     try:
         out_unit = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
         out_unit = str(unit_registry(out_unit).to_reduced_units().units)
