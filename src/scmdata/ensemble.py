@@ -65,7 +65,18 @@ class ScmEnsemble:
 
     def __getitem__(self, item):
         # Convert to multiindex?
-        return pd.concat([r[item] for r in self._runs])
+
+        if item in ["time", "year"]:
+            # Drop duplicate years
+            res = (
+                pd.concat([r[item] for r in self._runs])
+                .drop_duplicates()
+                .reset_index(drop=True)
+            )
+        else:
+            res = pd.concat([r[item] for r in self._runs])
+
+        return res
 
     def copy(self, deep=False):
         return ScmEnsemble(self.runs, self._run_ids)

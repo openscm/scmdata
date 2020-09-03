@@ -39,6 +39,23 @@ def test_ensemble_num_timeseries(ensemble):
     assert ensemble.num_timeseries > 0
 
 
+@pytest.mark.parametrize("item", ("time", "year", "scenario", "variable"))
+def test_ensemble_getitem(ensemble, item):
+    if item == "year":
+        assert isinstance(ensemble[item], pd.Series)
+        npt.assert_array_almost_equal(ensemble["year"], [2005, 2010, 2015, 2020, 2025])
+    elif item == "time":
+        assert isinstance(ensemble[item], pd.Series)
+        assert np.all(
+            ensemble["time"]
+            == [dt.datetime(y, 1, 1) for y in [2005, 2010, 2015, 2020, 2025]]
+        )
+    else:
+        assert isinstance(ensemble[item], pd.Series)
+        exp = pd.concat([r[item] for r in ensemble.runs])
+        pdt.assert_series_equal(ensemble[item], exp)
+
+
 def test_ensemble_timeseries(ensemble):
     res = ensemble.timeseries()
 
