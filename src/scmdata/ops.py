@@ -7,6 +7,7 @@ to handle unit conversions automatically
 """
 import pandas as pd
 import pint_pandas
+import scipy
 from openscm_units import unit_registry
 
 
@@ -529,6 +530,56 @@ def divide(self, other, op_cols, **kwargs):
     return type(self)(out)
 
 
+def integrate(self, out_var=None):
+    """
+    Integrate with respect to time
+
+    TODO: Describe what happens with nans
+
+    Parameters
+    ----------
+    out_var : str
+        If provided, the variable column of the output is set equal to
+        ``out_var``. Otherwise, the output variables are equal to the input
+        variables, prefixed with "Cumulative " .
+
+    Returns
+    -------
+    :obj:`scmdata.ScmRun`
+        :obj:`scmdata.ScmRun` containing the integral of ``self`` with respect
+        to time
+    """
+    time_unit = "s"
+    times_in_s = self.time_points.values.astype("datetime64[{}]".format(time_unit)).astype("int")
+
+    ts = self.timeseries()
+    # If required, we can remove the hard-coding of initial, it just requires
+    # some thinking about unit handling
+    _initial = 0.0
+    out = pd.DataFrame(scipy.integrate.cumtrapz(y=ts, x=times_in_s, axis=1, initial=_initial))
+
+    out.index = ts.index
+    out.columns = ts.columns
+
+    out = type(self)(out)
+    out = out * unit_registry(time_unit)
+    try:
+        out_unit = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
+        out_unit = str(unit_registry(out_unit).to_reduced_units().units)
+        out = out.convert_unit(out_unit)
+
+    except ValueError:
+        # more than one unit, don't try to clean up
+        pass
+
+    if out_var is None:
+        out["variable"] = "Cumulative " + out["variable"]
+    else:
+        out["variable"] = out_var
+
+    return out
+
+
 def inject_ops_methods(cls):
     """
     Inject the operation methods
@@ -543,6 +594,7 @@ def inject_ops_methods(cls):
         ("add", add),
         ("multiply", multiply),
         ("divide", divide),
+        ("integrate", integrate),
     ]
 
     for name, f in methods:

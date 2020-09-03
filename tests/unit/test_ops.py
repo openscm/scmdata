@@ -553,8 +553,10 @@ def test_wrong_length_ops(op):
 
 
 @pytest.mark.parametrize("out_var", (None, "new out var"))
-@pytest.mark.parametrize("initial", (None, 0, 1, -1.345))
-def test_integration(out_var, initial):
+# We can add initial back if use case arises. At the moment I can't see an easy
+# way to make the units behave.
+# @pytest.mark.parametrize("initial", (None, 0, 1, -1.345))
+def test_integration(out_var):
     dat = [1, 2, 3]
     start = get_single_ts(
         data=dat,
@@ -562,26 +564,24 @@ def test_integration(out_var, initial):
         unit="GtC / yr"
     )
 
-    call_kwargs = {"out_var": out_var}
-    if initial is None:
-        _initial = 0
-    else:
-        _initial = initial
-        call_kwargs["initial"] = initial
-
-    res = start.integrate(**call_kwargs)
-
-    exp = get_single_ts(
-        data=_initial + np.array([0, 1.5, 4]),
-        index=[1, 2, 3],
-        unit="GtC"
-    )
-    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+    res = start.integrate(out_var=out_var)
 
     if out_var is None:
-        assert (res["variable"] == "Cumulative " + start["variable"]).all()
+        exp_var = ("Cumulative " + start["variable"]).values
     else:
-        assert res.get_unique_meta("variable", no_duplicates=True) == out_var
+        exp_var = out_var
+
+    exp = get_single_ts(
+        data=np.array([0, 1.5, 4]),
+        index=[1, 2, 3],
+        variable=exp_var,
+        unit="gigatC"
+    )
+    # rtol is because our calculation uses seconds, which doesn't work out
+    # quite the same as assuming a regular year
+    assert_scmdf_almost_equal(
+        res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
+    )
 
 
 def test_integration_time_handling_big_jumps():
@@ -593,7 +593,11 @@ def test_integration_time_handling_big_jumps():
 
     res = start.integrate()
 
-    npt.assert_allclose(res.values, [0, 15, 50])
+    npt.assert_allclose(
+        res.values.squeeze(),
+        [0, 15, 90],
+        rtol=1e-3,
+    )
 
 
 def test_integration_time_handling_all_over_jumps():
@@ -606,11 +610,15 @@ def test_integration_time_handling_all_over_jumps():
     res = start.integrate()
 
     first = 0
-    second = first + 1 * 0.1
+    second = first + 1.5 * 0.1
     third = second + 2.5 * 0.9
     fourth = third + 3 * 9
     fifth = fourth + 2.4 * 30
-    npt.assert_allclose(res.values, [first, second, third, fourth, fifth])
+    npt.assert_allclose(
+        res.values.squeeze(),
+        [first, second, third, fourth, fifth],
+        rtol=1e-3
+    )
 
 
 def test_integration_nan_handling():
@@ -622,4 +630,10 @@ def test_integration_nan_handling():
 
     res = start.integrate()
 
-    npt.assert_allclose(res.values, [0, 15, 50, np.nan, np.nan, np.nan, np.nan, np.nan])
+    npt.assert_allclose(
+        res.values.squeeze(),
+        [0, 15, 90, np.nan, np.nan, np.nan, np.nan, np.nan],
+        rtol=1e-3,
+    )
+
+# multiple, different unit handling

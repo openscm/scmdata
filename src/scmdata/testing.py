@@ -7,7 +7,7 @@ import numpy.testing as npt
 import pandas.testing as pdt
 
 
-def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names=True):
+def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names=True, rtol=1e-5, atol=1e-8):
     """
     Check that left and right :obj:`ScmDataFrame` or :obj:`ScmRun` are equal.
 
@@ -23,6 +23,12 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
     check_ts_names : bool
         If true, check that the meta names are the same
 
+    rtol : float
+        Relative tolerance on numeric comparisons
+
+    atol : float
+        Absolute tolerance on numeric comparisons
+
     Raises
     ------
     AssertionError
@@ -36,7 +42,7 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
             df1_index = np.argsort(left.meta.index)
             df2_index = np.argsort(right.meta.index)
             pdt.assert_frame_equal(left.meta, right.meta, check_like=True)
-            npt.assert_allclose(left.values[df1_index], right.values[df2_index])
+            npt.assert_allclose(left.values[df1_index], right.values[df2_index], rtol=rtol, atol=atol)
 
         else:
             # ignore differing meta index labels
@@ -53,8 +59,8 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
 
             right_sorted = right.timeseries(left_sorted.index.names).sort_index()
             # this checks both the index (i.e. sorted meta) and values are the same
-            pdt.assert_frame_equal(left_sorted, right_sorted)
+            pdt.assert_frame_equal(left_sorted, right_sorted, rtol=rtol, atol=atol)
 
     else:
         pdt.assert_frame_equal(left.meta, right.meta)
-        npt.assert_allclose(left.values, right.values)
+        npt.assert_allclose(left.values, right.values, rtol=rtol, atol=atol)
