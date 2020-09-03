@@ -14,6 +14,7 @@ from logging import getLogger
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+import numpy.testing as npt
 import pandas as pd
 import pint
 import xarray as xr
@@ -198,7 +199,8 @@ def _format_long_data(df):
 
 
 def _format_wide_data(df):
-    orig = df.copy()
+    # data already copied in _init_timeseries
+    # orig = df.copy()
 
     cols = set(df.columns) - set(REQUIRED_COLS)
     time_cols, extra_cols = False, []
@@ -226,11 +228,11 @@ def _format_wide_data(df):
         msg = "invalid column format, must contain some time (int, float or datetime) columns!"
         raise ValueError(msg)
 
-    df = df.drop(REQUIRED_COLS + extra_cols, axis="columns").T
-    df.index.name = "time"
-    meta = orig[REQUIRED_COLS + extra_cols].set_index(df.columns)
+    df_out = df.drop(REQUIRED_COLS + extra_cols, axis="columns").T
+    df_out.index.name = "time"
+    meta = df[REQUIRED_COLS + extra_cols].set_index(df_out.columns)
 
-    return df, meta
+    return df_out, meta
 
 
 def _from_ts(
@@ -425,6 +427,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
         elif isinstance(data, (pd.DataFrame, pd.Series)):
+            # the copy here is really slow once the data becomes big, should we
+            # make it optional?
             (_df, _meta) = _format_data(data.copy())
         elif (IamDataFrame is not None) and isinstance(data, IamDataFrame):
             (_df, _meta) = _format_data(data.data.copy())
@@ -441,10 +445,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             (_df, _meta) = _read_file(data, **kwargs)
 
         self._time_points = TimePoints(_df.index.values)
-        _df = _df.astype(float)
 
+        _df = _df.astype(float)
         self._df = _df
-        self._meta = pd.MultiIndex.from_frame(_meta)
+        self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
 
     def copy(self, copy_ts=True):
         """
@@ -458,9 +462,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             :func:`copy.deepcopy` of ``self``
         """
         ret = copy.copy(self)
-        ret.metadata = copy.deepcopy(self.metadata)
-        if copy_ts:
-            ret._ts = [ts.copy() for ts in self._ts]
+        ret._df = self._df.copy()
+        ret._meta = self._meta.copy()
+        # if copy_ts:
+        #     ret._ts = [ts.copy() for ts in self._ts]
         return ret
 
     def __len__(self) -> int:
@@ -484,7 +489,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if key == "year":
             return pd.Series(self._time_points.years())
         if set(_key_check).issubset(self.meta_attributes):
-            return self._meta_column(key)
+            return self._meta_column(key).astype(
+                self._meta_column(key).cat.categories.dtype
+            )
 
         raise KeyError("[{}] is not in metadata".format(key))
 
@@ -563,12 +570,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if key == "time":
             self._time_points = TimePoints(meta)
         else:
+            level_idx = self._meta.names.index(key)
             if len(meta) == 1:
-                for ts in self._ts:
-                    ts.meta[key] = meta[0]
+                new_meta = self._meta.to_frame()
+                new_meta[key] = meta
+                self._meta = pd.MultiIndex.from_frame(new_meta.astype("category"))
             elif len(meta) == len(self):
-                for i, ts in enumerate(self._ts):
-                    ts.meta[key] = meta[i]
+                self._meta = self._meta.set_levels(meta, level=level_idx)
             else:
                 raise ValueError(
                     "Invalid length for metadata, `{}`, must be 1 or equal to the number of timeseries, `{}`".format(
@@ -756,8 +764,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ValueError
             The value of `time_axis` would result in columns which aren't unique
         """
-        df = pd.DataFrame(self.values)
-        _meta = self.meta if meta is None else self.meta[meta]
+        df = self._df.T
+        _meta = self._meta if meta is None else self._meta[meta]
 
         if check_duplicated and self._duplicated_meta(meta=_meta):
             raise NonUniqueMetadataError(_meta)
@@ -797,9 +805,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             )
 
         df.columns = columns
-        df.columns.name = "time"
-
-        df.index = pd.MultiIndex.from_arrays(_meta.values.T, names=_meta.columns)
+        df.index = self._meta
 
         if drop_all_nan_times:
             df = df.dropna(how="all", axis="columns")
@@ -1056,25 +1062,33 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         # filter by columns and list of values
         for col, values in filters.items():
-            if col == "variable":
-                level = filters["level"] if "level" in filters else None
-                tmp = pattern_match(
-                    self._meta_column(col),
-                    values,
-                    level,
-                    regexp,
-                    has_nan=has_nan,
-                    separator=self.data_hierarchy_separator,
-                )
-                keep_meta &= tmp.values
-            elif col in self._meta.names:
+            if col in self._meta.names:
+                if col == "variable":
+                    level = filters["level"] if "level" in filters else None
+                else:
+                    level = None
+
                 keep_meta &= pattern_match(
-                    self._meta_column(col),
+                    self._meta.get_level_values(col),
                     values,
+                    level=level,
                     regexp=regexp,
                     has_nan=has_nan,
                     separator=self.data_hierarchy_separator,
-                ).values
+                )
+
+            elif col == "level":
+                if "variable" not in filters.keys():
+                    keep_meta &= pattern_match(
+                        self._meta.get_level_values("variable"),
+                        "*",
+                        level=values,
+                        regexp=regexp,
+                        has_nan=has_nan,
+                        separator=self.data_hierarchy_separator,
+                    )
+                # else do nothing as level handled in variable filtering
+
             elif col == "year":
                 keep_ts &= years_match(self._time_points.years(), values)
 
@@ -1089,18 +1103,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
             elif col == "time":
                 keep_ts &= datetime_match(self._time_points.values, values)
-
-            elif col == "level":
-                if "variable" not in filters.keys():
-                    keep_meta &= pattern_match(
-                        self._meta_column("variable"),
-                        "*",
-                        values,
-                        regexp=regexp,
-                        has_nan=has_nan,
-                        separator=self.data_hierarchy_separator,
-                    ).values
-                # else do nothing as level handled in variable filtering
 
             else:
                 raise ValueError("filter by `{}` not supported".format(col))
@@ -1187,7 +1189,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             List of unique metadata values. If ``no_duplicates`` is ``True`` the
             metadata value will be returned (rather than a list).
         """
-        vals = self[meta].unique().tolist()
+        vals = self._meta.get_level_values(meta).categories.tolist()
         if no_duplicates:
             if len(vals) != 1:
                 raise ValueError(
@@ -1910,25 +1912,31 @@ def run_append(
     else:
         ret = runs[0].copy()
 
+    new_min = ret._df.shape[1]
+    to_join_dfs = []
+    to_join_metas = []
     for run in runs[1:]:
-        ret._ts.extend(run._ts)
+        # do we need a copy here?
+        run_to_join_df = run._df
+        run_to_join_df.columns += new_min
+        run_to_join_meta = run._meta.to_frame().reset_index(drop=True)
+        run_to_join_meta.index += new_min
 
-    # Determine the new common timebase
-    new_t = np.concatenate([r.time_points.values for r in runs])
-    new_t = np.unique(new_t)
-    new_t.sort()
+        # check everything still makes sense
+        npt.assert_array_equal(run_to_join_meta.index, run_to_join_df.columns)
 
-    # reindex if the timebase isn't the same
-    all_valid_times = True
-    for r in runs:
-        if not np.array_equal(new_t, r.time_points.values):
-            all_valid_times = False
+        new_min += run_to_join_df.shape[1]
+        to_join_dfs.append(run_to_join_df)
+        to_join_metas.append(run_to_join_meta)
 
-    if not all_valid_times:
-        # Time values are converted to cftime to avoid OutOfBoundsDatetime errors
-        ret._time_points = TimePoints(new_t)
-        new_t_cftime = ret._time_points.as_cftime()
-        ret._ts = [ts.reindex(new_t_cftime) for ts in ret._ts]
+    ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns")
+    ret._meta = pd.MultiIndex.from_frame(
+        pd.concat([ret._meta.to_frame().reset_index(drop=True)] + to_join_metas).astype(
+            "category"
+        )
+    )
+
+    ret._time_points = TimePoints(ret._df.index.values)
 
     if ret._duplicated_meta():
         if duplicate_msg:
@@ -1936,8 +1944,6 @@ def run_append(
 
         # average identical metadata
         ret._ts = ret.groupby(ret.meta_attributes).mean(axis=0)._ts
-
-    ret._ts.sort(key=lambda a: a.name)
 
     if metadata is not None:
         ret.metadata = metadata

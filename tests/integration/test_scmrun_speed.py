@@ -50,7 +50,7 @@ def test_recreate_from_timeseries(benchmark, big_scmrun):
     def recreate():
         return scmdata.ScmRun(big_scmrun.timeseries())
 
-    benchmark.pedantic(recreate, iterations=1, rounds=2)
+    benchmark.pedantic(recreate, iterations=1, rounds=5)
 
 
 def test_filter(benchmark, big_scmrun):
