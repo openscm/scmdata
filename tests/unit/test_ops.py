@@ -558,11 +558,7 @@ def test_wrong_length_ops(op):
 # @pytest.mark.parametrize("initial", (None, 0, 1, -1.345))
 def test_integration(out_var):
     dat = [1, 2, 3]
-    start = get_single_ts(
-        data=dat,
-        index=[1, 2, 3],
-        unit="GtC / yr"
-    )
+    start = get_single_ts(data=dat, index=[1, 2, 3], unit="GtC / yr")
 
     res = start.integrate(out_var=out_var)
 
@@ -572,10 +568,7 @@ def test_integration(out_var):
         exp_var = out_var
 
     exp = get_single_ts(
-        data=np.array([0, 1.5, 4]),
-        index=[1, 2, 3],
-        variable=exp_var,
-        unit="gigatC"
+        data=np.array([0, 1.5, 4]), index=[1, 2, 3], variable=exp_var, unit="gigatC"
     )
     # rtol is because our calculation uses seconds, which doesn't work out
     # quite the same as assuming a regular year
@@ -585,26 +578,18 @@ def test_integration(out_var):
 
 
 def test_integration_time_handling_big_jumps():
-    start = get_single_ts(
-        data=[1, 2, 3],
-        index=[10, 20, 50],
-        unit="GtC / yr"
-    )
+    start = get_single_ts(data=[1, 2, 3], index=[10, 20, 50], unit="GtC / yr")
 
     res = start.integrate()
 
     npt.assert_allclose(
-        res.values.squeeze(),
-        [0, 15, 90],
-        rtol=1e-3,
+        res.values.squeeze(), [0, 15, 90], rtol=1e-3,
     )
 
 
 def test_integration_time_handling_all_over_jumps():
     start = get_single_ts(
-        data=[1, 2, 3, 3, 1.8],
-        index=[10, 10.1, 11, 20, 50],
-        unit="GtC / yr"
+        data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC / yr"
     )
 
     res = start.integrate()
@@ -615,9 +600,7 @@ def test_integration_time_handling_all_over_jumps():
     fourth = third + 3 * 9
     fifth = fourth + 2.4 * 30
     npt.assert_allclose(
-        res.values.squeeze(),
-        [first, second, third, fourth, fifth],
-        rtol=1e-3
+        res.values.squeeze(), [first, second, third, fourth, fifth], rtol=1e-3
     )
 
 
@@ -625,7 +608,7 @@ def test_integration_nan_handling():
     start = get_single_ts(
         data=[1, 2, 3, np.nan, 12, np.nan, 30, 40],
         index=[10, 20, 50, 60, 70, 80, 90, 100],
-        unit="GtC / yr"
+        unit="GtC / yr",
     )
 
     res = start.integrate()
@@ -652,11 +635,7 @@ def test_integration_multiple_ts():
         data=np.array([[0, 7.5, 45], [0, -7.5, -45], [0, 12.5, 125]]).T,
         index=[2020, 2025, 2040],
         variable=["Cumulative {}".format(v) for v in variables],
-        unit=[
-            "Mt CO2",
-            "W / m^2 * yr",
-            "K * yr"
-        ]
+        unit=["Mt CO2", "W / m^2 * yr", "K * yr"],
     )
 
     for v in variables:

@@ -7,7 +7,9 @@ import numpy.testing as npt
 import pandas.testing as pdt
 
 
-def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names=True, rtol=1e-5, atol=1e-8):
+def assert_scmdf_almost_equal(
+    left, right, allow_unordered=False, check_ts_names=True, rtol=1e-5, atol=1e-8
+):
     """
     Check that left and right :obj:`ScmDataFrame` or :obj:`ScmRun` are equal.
 
@@ -42,7 +44,9 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
             df1_index = np.argsort(left.meta.index)
             df2_index = np.argsort(right.meta.index)
             pdt.assert_frame_equal(left.meta, right.meta, check_like=True)
-            npt.assert_allclose(left.values[df1_index], right.values[df2_index], rtol=rtol, atol=atol)
+            npt.assert_allclose(
+                left.values[df1_index], right.values[df2_index], rtol=rtol, atol=atol
+            )
 
         else:
             # ignore differing meta index labels

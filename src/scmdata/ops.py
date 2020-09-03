@@ -5,8 +5,6 @@ These largely rely on
 `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
 to handle unit conversions automatically
 """
-import warnings
-
 import pandas as pd
 import pint_pandas
 import scipy
@@ -522,7 +520,7 @@ def divide(self, other, op_cols, **kwargs):
     """
     out = _perform_op(
         prep_for_op(self, op_cols, self.meta.columns, **kwargs),
-        prep_for_op(other, op_cols,self.meta.columns,  **kwargs),
+        prep_for_op(other, op_cols, self.meta.columns, **kwargs),
         "divide",
         use_pint_units="unit" not in op_cols,
     )
@@ -552,13 +550,17 @@ def integrate(self, out_var=None):
         to time
     """
     time_unit = "s"
-    times_in_s = self.time_points.values.astype("datetime64[{}]".format(time_unit)).astype("int")
+    times_in_s = self.time_points.values.astype(
+        "datetime64[{}]".format(time_unit)
+    ).astype("int")
 
     ts = self.timeseries()
     # If required, we can remove the hard-coding of initial, it just requires
     # some thinking about unit handling
     _initial = 0.0
-    out = pd.DataFrame(scipy.integrate.cumtrapz(y=ts, x=times_in_s, axis=1, initial=_initial))
+    out = pd.DataFrame(
+        scipy.integrate.cumtrapz(y=ts, x=times_in_s, axis=1, initial=_initial)
+    )
     out.index = ts.index
     out.columns = ts.columns
 
