@@ -1,6 +1,7 @@
 import re
 
 import numpy as np
+import numpy.testing as npt
 import pandas as pd
 import pint_pandas
 import pytest
@@ -549,3 +550,76 @@ def test_wrong_length_ops(op):
 
         else:
             raise NotImplementedError(op)
+
+
+@pytest.mark.parametrize("out_var", (None, "new out var"))
+@pytest.mark.parametrize("initial", (None, 0, 1, -1.345))
+def test_integration(out_var, initial):
+    dat = [1, 2, 3]
+    start = get_single_ts(
+        data=dat,
+        index=[1, 2, 3],
+        unit="GtC / yr"
+    )
+
+    call_kwargs = {"out_var": out_var}
+    if initial is None:
+        _initial = 0
+    else:
+        _initial = initial
+        call_kwargs["initial"] = initial
+
+    res = start.integrate(**call_kwargs)
+
+    exp = get_single_ts(
+        data=_initial + np.array([0, 1.5, 4]),
+        index=[1, 2, 3],
+        unit="GtC"
+    )
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+    if out_var is None:
+        assert (res["variable"] == "Cumulative " + start["variable"]).all()
+    else:
+        assert res.get_unique_meta("variable", no_duplicates=True) == out_var
+
+
+def test_integration_time_handling_big_jumps():
+    start = get_single_ts(
+        data=[1, 2, 3],
+        index=[10, 20, 50],
+        unit="GtC / yr"
+    )
+
+    res = start.integrate()
+
+    npt.assert_allclose(res.values, [0, 15, 50])
+
+
+def test_integration_time_handling_all_over_jumps():
+    start = get_single_ts(
+        data=[1, 2, 3, 3, 1.8],
+        index=[10, 10.1, 11, 20, 50],
+        unit="GtC / yr"
+    )
+
+    res = start.integrate()
+
+    first = 0
+    second = first + 1 * 0.1
+    third = second + 2.5 * 0.9
+    fourth = third + 3 * 9
+    fifth = fourth + 2.4 * 30
+    npt.assert_allclose(res.values, [first, second, third, fourth, fifth])
+
+
+def test_integration_nan_handling():
+    start = get_single_ts(
+        data=[1, 2, 3, np.nan, 12, np.nan, 30, 40],
+        index=[10, 20, 50, 60, 70, 80, 90, 100],
+        unit="GtC / yr"
+    )
+
+    res = start.integrate()
+
+    npt.assert_allclose(res.values, [0, 15, 50, np.nan, np.nan, np.nan, np.nan, np.nan])
