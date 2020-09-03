@@ -6,6 +6,7 @@ import warnings
 
 import pandas as pd
 
+from scmdata.plotting import inject_plotting_methods
 from scmdata.run import ScmRun
 from scmdata.timeseries import _Counter
 
@@ -78,6 +79,42 @@ class ScmEnsemble:
 
         return res
 
+    def get_unique_meta(self, meta, no_duplicates=False):
+        """
+        Get unique values in a metadata column.
+
+        Parameters
+        ----------
+        meta
+            Column to retrieve metadata for
+
+        no_duplicates
+            Should I raise an error if there is more than one unique value in the
+            metadata column?
+
+        Raises
+        ------
+        ValueError
+            There is more than one unique value in the metadata column and
+            ``no_duplicates`` is ``True``.
+
+        Returns
+        -------
+        [List[Any], Any]
+            List of unique metadata values. If ``no_duplicates`` is ``True`` the
+            metadata value will be returned (rather than a list).
+        """
+        vals = self[meta].unique().tolist()
+        if no_duplicates:
+            if len(vals) != 1:
+                raise ValueError(
+                    "`{}` column is not unique (found values: {})".format(meta, vals)
+                )
+
+            return vals[0]
+
+        return vals
+
     def copy(self, deep=False):
         return ScmEnsemble(self.runs, self._run_ids)
 
@@ -146,3 +183,6 @@ def ensemble_append(ensemble_or_runs, inplace=False):
 
     if not inplace:
         return ret
+
+
+inject_plotting_methods(ScmEnsemble)
