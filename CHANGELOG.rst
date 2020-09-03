@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#106 <https://github.com/openscm/scmdata/pull/106>`_) Add :meth:`ScmRun.integrate` so we can integrate timeseries with respect to time
 - (`#104 <https://github.com/openscm/scmdata/pull/104>`_) Fix bug when reading csv/excel files which use integer years and ``lowercase_cols=True`` (closes `#102 <https://github.com/openscm/scmdata/issues/102>`_)
 
 v0.6.4
