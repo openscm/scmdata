@@ -6,6 +6,7 @@ import pytest
 import scmdata
 
 @pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 5, 10 ** 5.5])
+# @pytest.fixture(params=[10 ** 1, 10 ** 2])
 def big_scmrun(request):
     length = int(request.param)
     t_steps = 750
@@ -34,7 +35,7 @@ def test_recreate_from_timeseries(benchmark, big_scmrun):
         return scmdata.ScmRun(big_scmrun.timeseries())
 
 
-    benchmark.pedantic(recreate, iterations=2, rounds=5)
+    benchmark.pedantic(recreate, iterations=1, rounds=5)
 
 
 def test_filter(benchmark, big_scmrun):
@@ -42,7 +43,7 @@ def test_filter(benchmark, big_scmrun):
         return big_scmrun.filter(variable="Effective Radiative Forcing", year=range(1850, 1910 + 1))
 
 
-    result = benchmark.pedantic(variable_filter, iterations=2, rounds=5)
+    result = benchmark.pedantic(variable_filter, iterations=1, rounds=5)
     assert result.get_unique_meta("variable", no_duplicates=True) == "Effective Radiative Forcing"
     assert result["year"].iloc[0] == 1850
     assert result["year"].iloc[-1] == 1910
@@ -53,30 +54,36 @@ def test_get_unique_meta(benchmark, big_scmrun):
         return big_scmrun.get_unique_meta("variable")
 
 
-    result = benchmark.pedantic(retrieve_unique_meta, iterations=2, rounds=5)
+    result = benchmark.pedantic(retrieve_unique_meta, iterations=1, rounds=5)
     assert len(result) > 0
 
 
 def test_append(benchmark, big_scmrun):
-    def append_runs():
+    def setup():
         other = big_scmrun.copy()
         other["ensemble_member"] += max(other["ensemble_member"]) + 1
 
+        return (), {"other": other}
+
+
+    def append_runs(other):
         return big_scmrun.append(other)
 
 
-    benchmark.pedantic(append_runs, iterations=2, rounds=5)
+    benchmark.pedantic(append_runs, setup=setup, iterations=1, rounds=5)
 
 
 def test_append_other_time_axis(benchmark, big_scmrun):
-    other = big_scmrun.timeseries(time_axis="year")
-    other.columns = other.columns.map(lambda x: x + max(other.columns) + 1)
-    other = scmdata.ScmRun(other)
-    other["ensemble_member"] += max(other["ensemble_member"]) + 1
+    def setup():
+        other = big_scmrun.timeseries(time_axis="year")
+        other.columns = other.columns.map(lambda x: x + max(other.columns) + 1)
+        other = scmdata.ScmRun(other)
+        other["ensemble_member"] += max(other["ensemble_member"]) + 1
 
+        return (), {"other": other}
 
-    def append_runs_different_times():
+    def append_runs_different_times(other):
         return scmdata.run_append([big_scmrun, other])
 
 
-    benchmark.pedantic(append_runs_different_times, iterations=2, rounds=5)
+    benchmark.pedantic(append_runs_different_times, setup=setup, iterations=1, rounds=5)

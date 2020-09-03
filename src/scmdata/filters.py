@@ -101,7 +101,7 @@ def find_depth(
     def apply_test(val):
         return test(len(pipe.findall(val.replace(regexp, ""))))
 
-    return np.array([b for b in [apply_test(m) for m in meta_col]])
+    return [m for m in meta_col.categories if apply_test(m)]
 
 
 def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
@@ -157,19 +157,8 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         else values
     )
 
-    _meta_col = meta_col.copy()
-    if has_nan:
-        _meta_col.loc[
-            [np.isnan(i) if not isinstance(i, str) else False for i in _meta_col]
-        ] = "nan"
-
-    handle_as_number = np.issubdtype(meta_col.dtype, np.number)
-
-    if not handle_as_number and "" in _values:
-        _values.append("nan")
-
     for s in _values:
-        if not handle_as_number and (isinstance(s, str) or np.isnan(s)):
+        if (isinstance(s, str) or np.isnan(s)):
             _regexp = (
                 str(s)
                 .replace("|", "\\|")
@@ -183,7 +172,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
             ) + "$"
             pattern = re.compile(_regexp if not regexp else str(s))
             try:
-                subset = [m for m in _meta_col if pattern.match(m)]
+                subset = [m for m in meta_col.categories if pattern.match(m)]
             except TypeError as e:
                 # if it's not the cryptic pandas message we expect, raise
                 msg = str(e)
@@ -196,12 +185,11 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
                 )
                 raise TypeError(error_msg)
 
-            depth = (
-                True
-                if level is None
-                else find_depth(_meta_col, str(s), level, separator=separator)
-            )
-            matches |= _meta_col.isin(subset) & depth
+            if level is not None:
+                depth = find_depth(meta_col, str(s), level, separator=separator)
+                subset = set(subset).intersection(set(depth))
+
+            matches |= meta_col.isin(subset)
         else:
             s = float(s)
             if np.isnan(s):
@@ -209,7 +197,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
             else:
                 matches |= np.isclose(s, meta_col)
 
-    return pd.Series(matches, index=_meta_col.index)
+    return matches
 
 
 def years_match(data: List, years: Union[List[int], int]) -> np.ndarray:
