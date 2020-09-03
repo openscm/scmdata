@@ -77,15 +77,17 @@ def test_ensemble_timeseries_empty():
 
 
 @inplace_param
-def test_ensemble_filter_basic(test_scm_ensemble, inplace):
-    res = test_scm_ensemble.filter(scenario="a_scenario2")
+def test_ensemble_filter_basic(ensemble, inplace):
+    res = ensemble.filter(scenario="a_scenario2", inplace=inplace)
 
     if inplace:
         assert res is None
-        res = test_scm_ensemble
+        res = ensemble
     else:
-        assert id(res) != id(test_scm_ensemble)
-        assert len(res) != id(test_scm_ensemble)
+        assert id(res) != id(ensemble)
+        assert len(res) != id(ensemble)
+
+    assert np.all(res["scenario"] == "a_scenario2")
 
 
 @inplace_param

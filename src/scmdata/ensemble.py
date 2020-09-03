@@ -63,6 +63,10 @@ class ScmEnsemble:
     def __iter__(self):
         return zip(self._run_ids, self._runs)
 
+    def __getitem__(self, item):
+        # Convert to multiindex?
+        return pd.concat([r[item] for r in self._runs])
+
     def copy(self, deep=False):
         return ScmEnsemble(self.runs, self._run_ids)
 
@@ -72,12 +76,13 @@ class ScmEnsemble:
         return self._runs[:]
 
     def filter(self, inplace=False, keep=True, **kwargs):
-        runs = [r.filter(inplace=inplace, keep=keep, **kwargs) for r in self.runs]
-
         if inplace:
-            self._runs = runs
+            for r in self._runs:
+                r.filter(inplace=True, keep=keep, **kwargs)
         else:
-            return ScmEnsemble(runs)
+            return ScmEnsemble(
+                [r.filter(inplace=False, keep=keep, **kwargs) for r in self.runs]
+            )
 
     def timeseries(self, **kwargs):
         if not len(self.runs):
