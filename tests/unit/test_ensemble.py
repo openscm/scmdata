@@ -6,7 +6,10 @@ import pandas as pd
 import pandas.testing as pdt
 import pytest
 
-from scmdata.ensemble import ScmEnsemble
+from scmdata.ensemble import ScmEnsemble, ensemble_append
+
+
+inplace_param = pytest.mark.parametrize("inplace", [True, False])
 
 
 @pytest.fixture(scope="function")
@@ -73,7 +76,7 @@ def test_ensemble_timeseries_empty():
     assert res.empty
 
 
-@pytest.mark.parametrize("inplace", [True, False])
+@inplace_param
 def test_ensemble_filter_basic(test_scm_ensemble, inplace):
     res = test_scm_ensemble.filter(scenario="a_scenario2")
 
@@ -83,3 +86,38 @@ def test_ensemble_filter_basic(test_scm_ensemble, inplace):
     else:
         assert id(res) != id(test_scm_ensemble)
         assert len(res) != id(test_scm_ensemble)
+
+
+@inplace_param
+def test_ensemble_append(ensemble, test_scm_run, inplace):
+    orig = ensemble.copy()
+    res = ensemble_append([ensemble, ensemble.copy()], inplace=inplace)
+
+    if inplace:
+        assert res is None
+        res = ensemble
+    else:
+        assert id(res) != id(ensemble)
+
+    assert isinstance(res, ScmEnsemble)
+
+    assert len(res) == len(orig) * 2
+
+
+def test_ensemble_append_wrong_first(ensemble, test_scm_run):
+    with pytest.raises(TypeError, match="Can only append inplace to an ScmEnsemble"):
+        ensemble_append([test_scm_run, ensemble], inplace=True)
+
+
+def test_ensemble_append_mixed(ensemble, test_scm_run):
+    res = ensemble_append([ensemble, ensemble])
+    assert isinstance(res, ScmEnsemble)
+    assert len(res) == 4
+
+    res = ensemble_append([ensemble, test_scm_run])
+    assert isinstance(res, ScmEnsemble)
+    assert len(res) == 3
+
+    res = ensemble_append([test_scm_run])
+    assert isinstance(res, ScmEnsemble)
+    assert len(res) == 1

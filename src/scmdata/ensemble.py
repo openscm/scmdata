@@ -6,6 +6,7 @@ import warnings
 
 import pandas as pd
 
+from scmdata.run import ScmRun
 from scmdata.timeseries import _Counter
 
 get_default_name = _Counter()
@@ -25,15 +26,24 @@ class ScmEnsemble:
     has unique metadata
     """
 
-    def __init__(self, runs=None):
+    def __init__(self, runs=None, run_ids=None):
         """
 
+        Parameters
+        ----------
+        runs : list of ScmRun
         """
 
         if runs is None:
             runs = []
+
         self._runs = runs
-        self._run_ids = [get_default_name() for _ in runs]
+        if run_ids:
+            if len(run_ids) != len(runs):
+                raise ValueError("length of run_ids must equal the length of runs")
+            self._run_ids = run_ids[:]
+        else:
+            self._run_ids = [get_default_name() for _ in runs]
 
     def __len__(self):
         # Should this be sum (len(r) for r in runs)
@@ -52,6 +62,9 @@ class ScmEnsemble:
 
     def __iter__(self):
         return zip(self._run_ids, self._runs)
+
+    def copy(self, deep=False):
+        return ScmEnsemble(self.runs, self._run_ids)
 
     @property
     def runs(self):
@@ -83,6 +96,37 @@ class ScmEnsemble:
 
         return pd.concat([_get_timeseries(run_id, r) for run_id, r in self])
 
-    def append(self, run, run_id=None):
-        self._runs.append(run)
-        self._run_ids.append(run_id or get_default_name())
+    def append(
+        self, run, inplace=False,
+    ):
+        return ensemble_append([self, run], inplace=inplace)
+
+
+def ensemble_append(ensemble_or_runs, inplace=False):
+
+    first = ensemble_or_runs[0]
+    if inplace:
+        if not isinstance(first, ScmEnsemble):
+            raise TypeError("Can only append inplace to an ScmEnsemble")
+        ret = first
+    else:
+        if isinstance(first, ScmEnsemble):
+            ret = first.copy()
+        elif isinstance(first, ScmRun):
+            ret = ScmEnsemble([first])
+        else:
+            raise TypeError("Cannot handle appending type {}".format(type(first)))
+
+    for run in ensemble_or_runs[1:]:
+        if isinstance(run, ScmEnsemble):
+            for r_id, r in run:
+                ret._runs.append(r)
+                ret._run_ids.append(r_id or get_default_name())
+        elif isinstance(run, ScmRun):
+            ret._runs.append(run)
+            ret._run_ids.append(get_default_name())
+        else:
+            raise TypeError("Cannot handle appending type {}".format(type(run)))
+
+    if not inplace:
+        return ret
