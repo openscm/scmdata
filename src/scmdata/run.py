@@ -570,12 +570,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if key == "time":
             self._time_points = TimePoints(meta)
         else:
-            level_idx = self._meta.names.index(key)
             if len(meta) == 1:
                 new_meta = self._meta.to_frame()
-                new_meta[key] = meta
+                new_meta[key] = meta[0]
                 self._meta = pd.MultiIndex.from_frame(new_meta.astype("category"))
             elif len(meta) == len(self):
+                level_idx = self._meta.names.index(key)
                 self._meta = self._meta.set_levels(meta, level=level_idx)
             else:
                 raise ValueError(
@@ -765,7 +765,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             The value of `time_axis` would result in columns which aren't unique
         """
         df = self._df.T
-        _meta = self._meta if meta is None else self._meta[meta]
+        _meta = self.meta if meta is None else self.meta[meta]
 
         if check_duplicated and self._duplicated_meta(meta=_meta):
             raise NonUniqueMetadataError(_meta)
@@ -805,7 +805,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             )
 
         df.columns = columns
-        df.index = self._meta
+        df.index = pd.MultiIndex.from_frame(self.meta)
 
         if drop_all_nan_times:
             df = df.dropna(how="all", axis="columns")
@@ -871,7 +871,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             The array in the same shape as :py:obj:`ScmRun.shape`, that is
             ``(num_timeseries, num_timesteps)``.
         """
-        return np.asarray([ts._data.values for ts in self._ts])
+        return self._df.values.T
 
     @property
     def empty(self) -> bool:
@@ -890,9 +890,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Metadata
         """
-        return pd.DataFrame(
-            [ts.meta for ts in self._ts], index=[ts.name for ts in self._ts]
-        )
+        return pd.DataFrame(self._meta.to_list(), columns=self._meta.names)
 
     def _meta_column(self, col) -> pd.Series:
         out = self._meta.get_level_values(col)
@@ -1603,9 +1601,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             orig_unit = group.get_unique_meta("unit", no_duplicates=True)
             uc = UnitConverter(orig_unit, unit, context=context)
 
-            for ts in group._ts:  # todo: fix when we have an apply function
-                ts._data[:] = uc.convert_from(ts._data.values)
-
+            group._df.values[:] = uc.convert_from(group._df.values)
             group["unit"] = unit
 
             return group

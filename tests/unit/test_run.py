@@ -96,7 +96,7 @@ def test_init_df_formats(test_pd_run_df, in_format):
     res_df = res_df.reset_index()
 
     pd.testing.assert_frame_equal(
-        res_df[test_pd_run_df.columns.tolist()], test_pd_run_df, check_like=True
+        res_df[test_pd_run_df.columns.tolist()], test_pd_run_df, check_like=True,
     )
 
 
