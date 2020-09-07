@@ -9,7 +9,7 @@ from openscm_units import unit_registry
 from pint.errors import DimensionalityError
 
 from scmdata.run import ScmRun
-from scmdata.testing import assert_scmdf_almost_equal
+from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
 
 pint_pandas.PintType.ureg = unit_registry
 
@@ -555,6 +555,9 @@ def test_wrong_length_ops(op):
             raise NotImplementedError(op)
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 @pytest.mark.parametrize("out_var", (None, "new out var"))
 # We can add initial back if use case arises. At the moment I can't see an easy
 # way to make the units behave.
@@ -630,6 +633,9 @@ def test_integration_nan_handling():
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_integration_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
     start = get_multiple_ts(
