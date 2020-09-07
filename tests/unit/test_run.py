@@ -148,7 +148,7 @@ def test_init_ts_missing_col_error(test_ts):
 def test_init_multiple_file_error():
     error_msg = re.escape(
         "Initialising from multiple files not supported, use "
-        "`scmdata.dataframe.ScmRun.append()`"
+        "`scmdata.run.ScmRun.append()`"
     )
     with pytest.raises(ValueError, match=error_msg):
         ScmRun(["file_1", "filepath_2"])
