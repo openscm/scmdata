@@ -6,7 +6,8 @@ import pytest
 import scmdata
 
 
-@pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 4.5])
+# @pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 4.5])
+@pytest.fixture(params=[10, 10 ** 2, 10 ** 3])
 def big_scmrun(request):
     length = int(request.param)
     t_steps = 750
