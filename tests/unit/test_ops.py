@@ -115,6 +115,7 @@ def perform_op(base, other, op, reset_index):
 
 
 @OPS_MARK
+@pytest.mark.filterwarnings("ignore:divide by zero")
 def test_single_timeseries(op, base_single_scmrun, other_single_scmrun):
     res = getattr(base_single_scmrun, op)(
         other_single_scmrun, op_cols={"variable": "Emissions|CO2|AFOLU"}
@@ -138,6 +139,7 @@ def test_single_timeseries(op, base_single_scmrun, other_single_scmrun):
 
 
 @OPS_MARK
+@pytest.mark.filterwarnings("ignore:divide by zero")
 def test_multiple_timeseries(op, base_multiple_scmrun, other_multiple_scmrun):
     res = getattr(base_multiple_scmrun, op)(
         other_multiple_scmrun, op_cols={"scenario": "A to B"}
@@ -356,6 +358,7 @@ def test_scalar_ops_pint_wrong_unit(op):
 
 
 @OPS_MARK
+@pytest.mark.filterwarnings("ignore:divide by zero")
 def test_vector_ops_pint(op):
     vector = np.arange(3) * unit_registry("MtC / yr")
     start = get_multiple_ts(
@@ -611,7 +614,12 @@ def test_integration_nan_handling():
         unit="GtC / yr",
     )
 
-    warn_msg = re.escape("You are integrating data which contains nans so your result will also contain nans. Perhaps you want to remove the nans before performing the integration using a combination of :meth:`filter` and :meth:`interpolate`?")
+    warn_msg = re.escape(
+        "You are integrating data which contains nans so your result will also "
+        "contain nans. Perhaps you want to remove the nans before performing "
+        "the integration using a combination of :meth:`filter` and "
+        ":meth:`interpolate`?"
+    )
     with pytest.warns(UserWarning, match=warn_msg):
         res = start.integrate()
 

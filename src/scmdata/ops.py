@@ -5,6 +5,8 @@ These largely rely on
 `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
 to handle unit conversions automatically
 """
+import warnings
+
 import pandas as pd
 import pint_pandas
 import scipy
@@ -534,8 +536,6 @@ def integrate(self, out_var=None):
     """
     Integrate with respect to time
 
-    TODO: Describe what happens with nans
-
     Parameters
     ----------
     out_var : str
@@ -548,6 +548,12 @@ def integrate(self, out_var=None):
     :obj:`scmdata.ScmRun`
         :obj:`scmdata.ScmRun` containing the integral of ``self`` with respect
         to time
+
+    Warns
+    -----
+    UserWarning
+        The data being integrated contains nans. If this happens, the output
+        data will also contain nans.
     """
     time_unit = "s"
     times_in_s = self.time_points.values.astype(
@@ -555,6 +561,13 @@ def integrate(self, out_var=None):
     ).astype("int")
 
     ts = self.timeseries()
+    if ts.isnull().sum().sum() > 0:
+        warnings.warn(
+            "You are integrating data which contains nans so your result will "
+            "also contain nans. Perhaps you want to remove the nans before "
+            "performing the integration using a combination of :meth:`filter` "
+            "and :meth:`interpolate`?"
+        )
     # If required, we can remove the hard-coding of initial, it just requires
     # some thinking about unit handling
     _initial = 0.0
