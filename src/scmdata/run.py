@@ -21,7 +21,6 @@ from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
 from . import REQUIRED_COLS
-from .dataframe import ScmDataFrame
 from .errors import NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
@@ -316,8 +315,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Parameters
         ----------
-        data: Union[ScmDataFrame, ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str]
-            If a :class`ScmDataFrame` or :class`ScmRun` object is provided, then a new
+        data: Union[ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str]
+            If a :class`ScmRun` object is provided, then a new
             :obj`ScmRun` is created with a copy of the values and metadata from :obj`data`.
 
             A :class`pd.DataFrame with IAMC-format data columns (the result
@@ -425,11 +424,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
-        elif isinstance(data, ScmDataFrame):
-            (_df, _meta) = (
-                data._data,  # pylint: disable=protected-access
-                data._meta,  # pylint: disable=protected-access
-            )
         elif isinstance(data, (pd.DataFrame, pd.Series)):
             (_df, _meta) = _format_data(data.copy())
         elif (IamDataFrame is not None) and isinstance(data, IamDataFrame):
@@ -959,8 +953,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
                 [3 rows x 7 columns]
 
-        This functionality is different to how :class`scmdata.ScmDataFrame` works which always returns a copy. If you do not want to
-        change the parent `ScmRun` create a copy :func`ScmRun.copy()`. Any changes to this copy will not be reflected in the parent.
+        If you do not want to change the parent `ScmRun` create a copy :func`ScmRun.copy()`. Any changes to this copy will not be
+        reflected in the parent.
 
         Parameters
         ----------
@@ -1662,7 +1656,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmDataFrame`
+        :obj:`ScmRun`
             New object containing the timeseries, adjusted to the reference period mean.
             The reference period year bounds are stored in the meta columns
             ``"reference_period_start_year"`` and ``"reference_period_end_year"``.

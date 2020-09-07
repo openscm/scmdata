@@ -1,6 +1,6 @@
 import numpy as np
 
-from scmdata import ScmDataFrame
+from scmdata import ScmRun
 
 
 def test_convert_to_scen_units():
@@ -32,7 +32,7 @@ def test_convert_to_scen_units():
         ("Emissions|SF6", "t SF6/yr", "kt SF6/yr", 1 / 1000, None),
     )
 
-    start = ScmDataFrame(
+    start = ScmRun(
         data=np.ones((1, len(var_start_units_scen_units_conv_factor))),
         index=np.array([2015]),
         columns={
