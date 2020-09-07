@@ -4,7 +4,21 @@ Testing utilities
 
 import numpy as np
 import numpy.testing as npt
+import packaging.version
+import pandas as pd
 import pandas.testing as pdt
+
+
+def _check_pandas_less_110():
+    return packaging.version.parse(pd.__version__) < packaging.version.Version("1.1.0")
+
+
+def assert_frame_equal(left, right, **kwargs):
+    if _check_pandas_less_110():
+        kwargs.pop("rtol", None)
+        kwargs.pop("atol", None)
+
+    pdt.assert_frame_equal(left, right, **kwargs)
 
 
 def assert_scmdf_almost_equal(
@@ -43,7 +57,7 @@ def assert_scmdf_almost_equal(
         if check_ts_names:
             df1_index = np.argsort(left.meta.index)
             df2_index = np.argsort(right.meta.index)
-            pdt.assert_frame_equal(left.meta, right.meta, check_like=True)
+            assert_frame_equal(left.meta, right.meta, check_like=True)
             npt.assert_allclose(
                 left.values[df1_index], right.values[df2_index], rtol=rtol, atol=atol
             )
@@ -63,8 +77,8 @@ def assert_scmdf_almost_equal(
 
             right_sorted = right.timeseries(left_sorted.index.names).sort_index()
             # this checks both the index (i.e. sorted meta) and values are the same
-            pdt.assert_frame_equal(left_sorted, right_sorted, rtol=rtol, atol=atol)
+            assert_frame_equal(left_sorted, right_sorted, rtol=rtol, atol=atol)
 
     else:
-        pdt.assert_frame_equal(left.meta, right.meta)
+        assert_frame_equal(left.meta, right.meta)
         npt.assert_allclose(left.values, right.values, rtol=rtol, atol=atol)
