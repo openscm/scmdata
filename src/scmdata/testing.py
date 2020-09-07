@@ -4,10 +4,26 @@ Testing utilities
 
 import numpy as np
 import numpy.testing as npt
+import packaging.version
+import pandas as pd
 import pandas.testing as pdt
 
 
-def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names=True):
+def _check_pandas_less_110():
+    return packaging.version.parse(pd.__version__) < packaging.version.Version("1.1.0")
+
+
+def _assert_frame_equal(left, right, **kwargs):
+    if _check_pandas_less_110():
+        kwargs.pop("rtol", None)
+        kwargs.pop("atol", None)
+
+    pdt.assert_frame_equal(left, right, **kwargs)
+
+
+def assert_scmdf_almost_equal(
+    left, right, allow_unordered=False, check_ts_names=True, rtol=1e-5, atol=1e-8
+):
     """
     Check that left and right :obj:`ScmDataFrame` or :obj:`ScmRun` are equal.
 
@@ -23,6 +39,12 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
     check_ts_names : bool
         If true, check that the meta names are the same
 
+    rtol : float
+        Relative tolerance on numeric comparisons
+
+    atol : float
+        Absolute tolerance on numeric comparisons
+
     Raises
     ------
     AssertionError
@@ -35,8 +57,10 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
         if check_ts_names:
             df1_index = np.argsort(left.meta.index)
             df2_index = np.argsort(right.meta.index)
-            pdt.assert_frame_equal(left.meta, right.meta, check_like=True)
-            npt.assert_allclose(left.values[df1_index], right.values[df2_index])
+            _assert_frame_equal(left.meta, right.meta, check_like=True)
+            npt.assert_allclose(
+                left.values[df1_index], right.values[df2_index], rtol=rtol, atol=atol
+            )
 
         else:
             # ignore differing meta index labels
@@ -53,8 +77,8 @@ def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names
 
             right_sorted = right.timeseries(left_sorted.index.names).sort_index()
             # this checks both the index (i.e. sorted meta) and values are the same
-            pdt.assert_frame_equal(left_sorted, right_sorted)
+            _assert_frame_equal(left_sorted, right_sorted, rtol=rtol, atol=atol)
 
     else:
-        pdt.assert_frame_equal(left.meta, right.meta)
-        npt.assert_allclose(left.values, right.values)
+        _assert_frame_equal(left.meta, right.meta)
+        npt.assert_allclose(left.values, right.values, rtol=rtol, atol=atol)

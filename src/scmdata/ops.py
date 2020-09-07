@@ -1,16 +1,19 @@
 """
 Operations for :obj:`ScmRun`
 
-These rely on
+These largely rely on
 `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
 to handle unit conversions automatically
 """
+import warnings
+
 import pandas as pd
 import pint_pandas
+import scipy
 from openscm_units import unit_registry
 
 
-def prep_for_op(inp, op_cols, ur=unit_registry):
+def prep_for_op(inp, op_cols, meta, ur=unit_registry):
     """
     Prepare dataframe for operation
 
@@ -44,7 +47,7 @@ def prep_for_op(inp, op_cols, ur=unit_registry):
 
     key_cols = list(op_cols.keys())
 
-    out = inp.timeseries().reset_index(key_cols, drop=True)
+    out = inp.timeseries(meta=meta).reset_index(key_cols, drop=True)
 
     out = out.T
 
@@ -220,8 +223,8 @@ def subtract(self, other, op_cols, **kwargs):
                                       Emissions|CO2|AFOLU  gigatC / a                 -2.0                 -2.0                 -2.0
     """
     out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
+        prep_for_op(self, op_cols, self.meta.columns, **kwargs),
+        prep_for_op(other, op_cols, self.meta.columns, **kwargs),
         "subtract",
         use_pint_units="unit" not in op_cols,
     )
@@ -338,8 +341,8 @@ def add(self, other, op_cols, **kwargs):
                                Emissions|CO2|AFOLU  gigatC / a                  4.0                 16.0                 28.0
     """
     out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
+        prep_for_op(self, op_cols, self.meta.columns, **kwargs),
+        prep_for_op(other, op_cols, self.meta.columns, **kwargs),
         "add",
         use_pint_units="unit" not in op_cols,
     )
@@ -428,8 +431,8 @@ def multiply(self, other, op_cols, **kwargs):
                         World|SH Emissions|CO2|Fossil : AFOLU gigatC ** 2 / a ** 2                  6.0                 72.0                210.0
     """
     out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
+        prep_for_op(self, op_cols, self.meta.columns, **kwargs),
+        prep_for_op(other, op_cols, self.meta.columns, **kwargs),
         "multiply",
         use_pint_units="unit" not in op_cols,
     )
@@ -518,8 +521,8 @@ def divide(self, other, op_cols, **kwargs):
                         World|SH Emissions|CO2|Fossil : AFOLU dimensionless             0.666667             0.888889             0.933333
     """
     out = _perform_op(
-        prep_for_op(self, op_cols, **kwargs),
-        prep_for_op(other, op_cols, **kwargs),
+        prep_for_op(self, op_cols, self.meta.columns, **kwargs),
+        prep_for_op(other, op_cols, self.meta.columns, **kwargs),
         "divide",
         use_pint_units="unit" not in op_cols,
     )
@@ -527,6 +530,71 @@ def divide(self, other, op_cols, **kwargs):
     out = set_op_values(out, op_cols)
 
     return type(self)(out)
+
+
+def integrate(self, out_var=None):
+    """
+    Integrate with respect to time
+
+    Parameters
+    ----------
+    out_var : str
+        If provided, the variable column of the output is set equal to
+        ``out_var``. Otherwise, the output variables are equal to the input
+        variables, prefixed with "Cumulative " .
+
+    Returns
+    -------
+    :obj:`scmdata.ScmRun`
+        :obj:`scmdata.ScmRun` containing the integral of ``self`` with respect
+        to time
+
+    Warns
+    -----
+    UserWarning
+        The data being integrated contains nans. If this happens, the output
+        data will also contain nans.
+    """
+    time_unit = "s"
+    times_in_s = self.time_points.values.astype(
+        "datetime64[{}]".format(time_unit)
+    ).astype("int")
+
+    ts = self.timeseries()
+    if ts.isnull().sum().sum() > 0:
+        warnings.warn(
+            "You are integrating data which contains nans so your result will "
+            "also contain nans. Perhaps you want to remove the nans before "
+            "performing the integration using a combination of :meth:`filter` "
+            "and :meth:`interpolate`?"
+        )
+    # If required, we can remove the hard-coding of initial, it just requires
+    # some thinking about unit handling
+    _initial = 0.0
+    out = pd.DataFrame(
+        scipy.integrate.cumtrapz(y=ts, x=times_in_s, axis=1, initial=_initial)
+    )
+    out.index = ts.index
+    out.columns = ts.columns
+
+    out = type(self)(out)
+    out *= unit_registry(time_unit)
+
+    try:
+        out_unit = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
+        out_unit = str(unit_registry(out_unit).to_reduced_units().units)
+        out = out.convert_unit(out_unit)
+
+    except ValueError:
+        # more than one unit, don't try to clean up
+        pass
+
+    if out_var is None:
+        out["variable"] = "Cumulative " + out["variable"]
+    else:
+        out["variable"] = out_var
+
+    return out
 
 
 def inject_ops_methods(cls):
@@ -543,6 +611,7 @@ def inject_ops_methods(cls):
         ("add", add),
         ("multiply", multiply),
         ("divide", divide),
+        ("integrate", integrate),
     ]
 
     for name, f in methods:
