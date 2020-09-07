@@ -611,7 +611,9 @@ def test_integration_nan_handling():
         unit="GtC / yr",
     )
 
-    res = start.integrate()
+    warn_msg = re.escape("You are integrating data which contains nans so your result will also contain nans. Perhaps you want to remove the nans before performing the integration using a combination of :meth:`filter` and :meth:`interpolate`?")
+    with pytest.warns(UserWarning, match=warn_msg):
+        res = start.integrate()
 
     npt.assert_allclose(
         res.values.squeeze(),
