@@ -20,7 +20,7 @@ def test_to_int_value_error(test_iam_df):
         LongDatetimeIamDataFrame(idf)
 
 
-@mock.patch("scmdata.dataframe.LongDatetimeIamDataFrame", None)
-def test_pyam_missing(test_scm_df):
+@mock.patch("scmdata.run.LongDatetimeIamDataFrame", None)
+def test_pyam_missing(scm_run):
     with pytest.raises(ImportError):
-        test_scm_df.to_iamdataframe()
+        scm_run.to_iamdataframe()

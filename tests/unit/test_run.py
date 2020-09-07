@@ -236,8 +236,8 @@ def test_init_with_ts(test_ts, test_pd_df):
     assert_scmdf_almost_equal(df, b, check_ts_names=False)
 
 
-def test_init_with_scmdf(test_scm_datetime_df, test_scm_datetime_run):
-    df = ScmRun(test_scm_datetime_df,)
+def test_init_with_scmdf(test_scm_run_datetimes, test_scm_datetime_run):
+    df = ScmRun(test_scm_run_datetimes,)
 
     assert_scmdf_almost_equal(df, test_scm_datetime_run, check_ts_names=False)
 
@@ -334,23 +334,23 @@ def test_init_self(test_iam_df):
     assert_scmdf_almost_equal(a, b)
 
 
-def test_init_with_metadata(test_scm_run):
+def test_init_with_metadata(scm_run):
     expected_metadata = {"test": "example"}
-    b = ScmRun(test_scm_run.timeseries(), metadata=expected_metadata)
+    b = ScmRun(scm_run.timeseries(), metadata=expected_metadata)
 
     # Data should be copied
     assert id(b.metadata) != id(expected_metadata)
     assert b.metadata == expected_metadata
 
 
-def test_init_self_with_metadata(test_scm_run):
-    test_scm_run.metadata["test"] = "example"
+def test_init_self_with_metadata(scm_run):
+    scm_run.metadata["test"] = "example"
 
-    b = ScmRun(test_scm_run)
-    assert id(test_scm_run.metadata) != id(b.metadata)
-    assert test_scm_run.metadata == b.metadata
+    b = ScmRun(scm_run)
+    assert id(scm_run.metadata) != id(b.metadata)
+    assert scm_run.metadata == b.metadata
 
-    c = ScmRun(test_scm_run, metadata={"test": "other"})
+    c = ScmRun(scm_run, metadata={"test": "other"})
     assert c.metadata == {"test": "other"}
 
 
@@ -368,54 +368,50 @@ def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
     pd.testing.assert_frame_equal(test_iam_df.data, tdf, check_like=True)
 
 
-def test_get_item(test_scm_run):
-    assert test_scm_run["model"].unique() == ["a_iam"]
+def test_get_item(scm_run):
+    assert scm_run["model"].unique() == ["a_iam"]
 
 
-def test_get_item_not_in_meta(test_scm_run):
+def test_get_item_not_in_meta(scm_run):
     dud_key = 0
     error_msg = re.escape("[{}] is not in metadata".format(dud_key))
     with pytest.raises(KeyError, match=error_msg):
-        test_scm_run[dud_key]
+        scm_run[dud_key]
 
 
-def test_set_item(test_scm_run):
-    test_scm_run["model"] = ["a_iam", "b_iam", "c_iam"]
-    assert all(test_scm_run["model"] == ["a_iam", "b_iam", "c_iam"])
+def test_set_item(scm_run):
+    scm_run["model"] = ["a_iam", "b_iam", "c_iam"]
+    assert all(scm_run["model"] == ["a_iam", "b_iam", "c_iam"])
 
 
-def test_set_item_not_in_meta(test_scm_run):
+def test_set_item_not_in_meta(scm_run):
     with pytest.raises(ValueError):
-        test_scm_run["junk"] = ["hi", "bye"]
+        scm_run["junk"] = ["hi", "bye"]
 
-    test_scm_run["junk"] = ["hi", "bye", "ciao"]
-    assert all(test_scm_run["junk"] == ["hi", "bye", "ciao"])
-
-
-def test_len(test_scm_run):
-    assert len(test_scm_run) == len(test_scm_run._ts)
+    scm_run["junk"] = ["hi", "bye", "ciao"]
+    assert all(scm_run["junk"] == ["hi", "bye", "ciao"])
 
 
-def test_head(test_scm_run):
-    pd.testing.assert_frame_equal(
-        test_scm_run.head(2), test_scm_run.timeseries().head(2)
-    )
+def test_len(scm_run):
+    assert len(scm_run) == len(scm_run._ts)
 
 
-def test_tail(test_scm_run):
-    pd.testing.assert_frame_equal(
-        test_scm_run.tail(1), test_scm_run.timeseries().tail(1)
-    )
+def test_head(scm_run):
+    pd.testing.assert_frame_equal(scm_run.head(2), scm_run.timeseries().head(2))
 
 
-def test_values(test_scm_run):
+def test_tail(scm_run):
+    pd.testing.assert_frame_equal(scm_run.tail(1), scm_run.timeseries().tail(1))
+
+
+def test_values(scm_run):
     # implicitly checks that `.values` returns the data with each row being a
     # timeseries and each column being a timepoint
-    npt.assert_array_equal(test_scm_run.values, test_scm_run.timeseries().values)
+    npt.assert_array_equal(scm_run.values, scm_run.timeseries().values)
 
 
-def test_variable_depth_0(test_scm_run):
-    obs = list(test_scm_run.filter(level=0)["variable"].unique())
+def test_variable_depth_0(scm_run):
+    obs = list(scm_run.filter(level=0)["variable"].unique())
     exp = ["Primary Energy"]
     assert obs == exp
 
@@ -448,52 +444,52 @@ def test_variable_depth_0_with_base():
     assert all([e in obs for e in exp]) and len(obs) == len(exp)
 
 
-def test_variable_depth_0_keep_false(test_scm_run):
-    obs = list(test_scm_run.filter(level=0, keep=False)["variable"].unique())
+def test_variable_depth_0_keep_false(scm_run):
+    obs = list(scm_run.filter(level=0, keep=False)["variable"].unique())
     exp = ["Primary Energy|Coal"]
     assert obs == exp
 
 
-def test_variable_depth_0_minus(test_scm_run):
-    obs = list(test_scm_run.filter(level="0-")["variable"].unique())
+def test_variable_depth_0_minus(scm_run):
+    obs = list(scm_run.filter(level="0-")["variable"].unique())
     exp = ["Primary Energy"]
     assert obs == exp
 
 
-def test_variable_depth_0_plus(test_scm_run):
-    obs = list(test_scm_run.filter(level="0+")["variable"].unique())
+def test_variable_depth_0_plus(scm_run):
+    obs = list(scm_run.filter(level="0+")["variable"].unique())
     exp = ["Primary Energy", "Primary Energy|Coal"]
     assert obs == exp
 
 
-def test_variable_depth_1(test_scm_run):
-    obs = list(test_scm_run.filter(level=1)["variable"].unique())
+def test_variable_depth_1(scm_run):
+    obs = list(scm_run.filter(level=1)["variable"].unique())
     exp = ["Primary Energy|Coal"]
     assert obs == exp
 
 
-def test_variable_depth_1_minus(test_scm_run):
-    obs = list(test_scm_run.filter(level="1-")["variable"].unique())
+def test_variable_depth_1_minus(scm_run):
+    obs = list(scm_run.filter(level="1-")["variable"].unique())
     exp = ["Primary Energy", "Primary Energy|Coal"]
     assert obs == exp
 
 
-def test_variable_depth_1_plus(test_scm_run):
-    obs = list(test_scm_run.filter(level="1+")["variable"].unique())
+def test_variable_depth_1_plus(scm_run):
+    obs = list(scm_run.filter(level="1+")["variable"].unique())
     exp = ["Primary Energy|Coal"]
     assert obs == exp
 
 
-def test_variable_depth_raises(test_scm_run):
-    pytest.raises(ValueError, test_scm_run.filter, level="1/")
+def test_variable_depth_raises(scm_run):
+    pytest.raises(ValueError, scm_run.filter, level="1/")
 
 
-def test_filter_error(test_scm_run):
-    pytest.raises(ValueError, test_scm_run.filter, foo="foo")
+def test_filter_error(scm_run):
+    pytest.raises(ValueError, scm_run.filter, foo="foo")
 
 
-def test_filter_year(test_scm_datetime_df):
-    obs = test_scm_datetime_df.filter(year=2005)
+def test_filter_year(test_scm_run_datetimes):
+    obs = test_scm_run_datetimes.filter(year=2005)
     expected = dt.datetime(2005, 6, 17, 12)
 
     unique_time = obs["time"].unique()
@@ -501,24 +497,24 @@ def test_filter_year(test_scm_datetime_df):
     assert unique_time[0] == expected
 
 
-def test_filter_year_error(test_scm_datetime_df):
+def test_filter_year_error(test_scm_run_datetimes):
     error_msg = re.escape("`year` can only be filtered with ints or lists of ints")
     with pytest.raises(TypeError, match=error_msg):
-        test_scm_datetime_df.filter(year=2005.0)
+        test_scm_run_datetimes.filter(year=2005.0)
 
 
-def test_filter_inplace(test_scm_datetime_df):
-    test_scm_datetime_df.filter(year=2005, inplace=True)
+def test_filter_inplace(test_scm_run_datetimes):
+    test_scm_run_datetimes.filter(year=2005, inplace=True)
     expected = dt.datetime(2005, 6, 17, 12)
 
-    unique_time = test_scm_datetime_df["time"].unique()
+    unique_time = test_scm_run_datetimes["time"].unique()
     assert len(unique_time) == 1
     assert unique_time[0] == expected
 
 
 @pytest.mark.parametrize("test_month", [6, "June", "Jun", "jun", ["Jun", "jun"]])
-def test_filter_month(test_scm_datetime_df, test_month):
-    obs = test_scm_datetime_df.filter(month=test_month)
+def test_filter_month(test_scm_run_datetimes, test_month):
+    obs = test_scm_run_datetimes.filter(month=test_month)
     expected = dt.datetime(2005, 6, 17, 12)
     unique_time = obs["time"].unique()
     assert len(unique_time) == 1
@@ -526,8 +522,8 @@ def test_filter_month(test_scm_datetime_df, test_month):
 
 
 @pytest.mark.parametrize("test_month", [6, "Jun", "jun", ["Jun", "jun"]])
-def test_filter_year_month(test_scm_datetime_df, test_month):
-    obs = test_scm_datetime_df.filter(year=2005, month=test_month)
+def test_filter_year_month(test_scm_run_datetimes, test_month):
+    obs = test_scm_run_datetimes.filter(year=2005, month=test_month)
     expected = dt.datetime(2005, 6, 17, 12)
     unique_time = obs["time"].unique()
     assert len(unique_time) == 1
@@ -535,8 +531,8 @@ def test_filter_year_month(test_scm_datetime_df, test_month):
 
 
 @pytest.mark.parametrize("test_day", [17, "Fri", "Friday", "friday", ["Fri", "fri"]])
-def test_filter_day(test_scm_datetime_df, test_day):
-    obs = test_scm_datetime_df.filter(day=test_day)
+def test_filter_day(test_scm_run_datetimes, test_day):
+    obs = test_scm_run_datetimes.filter(day=test_day)
     expected = dt.datetime(2005, 6, 17, 12)
     unique_time = obs["time"].unique()
     assert len(unique_time) == 1
@@ -544,45 +540,47 @@ def test_filter_day(test_scm_datetime_df, test_day):
 
 
 @pytest.mark.parametrize("test_hour", [12, [12, 13]])
-def test_filter_hour(test_scm_datetime_df, test_hour):
-    obs = test_scm_datetime_df.filter(hour=test_hour)
+def test_filter_hour(test_scm_run_datetimes, test_hour):
+    obs = test_scm_run_datetimes.filter(hour=test_hour)
     test_hour = [test_hour] if isinstance(test_hour, int) else test_hour
-    expected_rows = test_scm_datetime_df["time"].apply(lambda x: x.hour).isin(test_hour)
-    expected = test_scm_datetime_df["time"].loc[expected_rows].unique()
+    expected_rows = (
+        test_scm_run_datetimes["time"].apply(lambda x: x.hour).isin(test_hour)
+    )
+    expected = test_scm_run_datetimes["time"].loc[expected_rows].unique()
 
     unique_time = obs["time"].unique()
     assert len(unique_time) == 1
     assert unique_time[0] == expected[0]
 
 
-def test_filter_hour_multiple(test_scm_datetime_df):
-    obs = test_scm_datetime_df.filter(hour=0)
-    expected_rows = test_scm_datetime_df["time"].apply(lambda x: x.hour).isin([0])
-    expected = test_scm_datetime_df["time"].loc[expected_rows].unique()
+def test_filter_hour_multiple(test_scm_run_datetimes):
+    obs = test_scm_run_datetimes.filter(hour=0)
+    expected_rows = test_scm_run_datetimes["time"].apply(lambda x: x.hour).isin([0])
+    expected = test_scm_run_datetimes["time"].loc[expected_rows].unique()
 
     unique_time = obs["time"].unique()
     assert len(unique_time) == 2
     assert all([dt in unique_time for dt in expected])
 
 
-def test_filter_time_exact_match(test_scm_datetime_df):
-    obs = test_scm_datetime_df.filter(time=dt.datetime(2005, 6, 17, 12))
+def test_filter_time_exact_match(test_scm_run_datetimes):
+    obs = test_scm_run_datetimes.filter(time=dt.datetime(2005, 6, 17, 12))
     expected = dt.datetime(2005, 6, 17, 12)
     unique_time = obs["time"].unique()
     assert len(unique_time) == 1
     assert unique_time[0] == expected
 
 
-def test_filter_time_range(test_scm_datetime_df):
+def test_filter_time_range(test_scm_run_datetimes):
     error_msg = r".*datetime.datetime.*"
     with pytest.raises(TypeError, match=error_msg):
-        test_scm_datetime_df.filter(
+        test_scm_run_datetimes.filter(
             year=range(dt.datetime(2000, 6, 17), dt.datetime(2009, 6, 17))
         )
 
 
-def test_filter_time_range_year(test_scm_datetime_df):
-    obs = test_scm_datetime_df.filter(year=range(2000, 2008))
+def test_filter_time_range_year(test_scm_run_datetimes):
+    obs = test_scm_run_datetimes.filter(year=range(2000, 2008))
 
     unique_time = obs["time"].unique()
     expected = dt.datetime(2005, 6, 17, 12)
@@ -592,8 +590,8 @@ def test_filter_time_range_year(test_scm_datetime_df):
 
 
 @pytest.mark.parametrize("month_range", [range(3, 7), "Mar-Jun"])
-def test_filter_time_range_month(test_scm_datetime_df, month_range):
-    obs = test_scm_datetime_df.filter(month=month_range)
+def test_filter_time_range_month(test_scm_run_datetimes, month_range):
+    obs = test_scm_run_datetimes.filter(month=month_range)
     expected = dt.datetime(2005, 6, 17, 12)
 
     unique_time = obs["time"].unique()
@@ -601,7 +599,7 @@ def test_filter_time_range_month(test_scm_datetime_df, month_range):
     assert unique_time[0] == expected
 
 
-def test_filter_time_range_month_unrecognised_error(test_scm_datetime_df):
+def test_filter_time_range_month_unrecognised_error(test_scm_run_datetimes):
     fail_filter = "Marb-Jun"
     error_msg = re.escape(
         "Could not convert month '{}' to integer".format(
@@ -609,29 +607,29 @@ def test_filter_time_range_month_unrecognised_error(test_scm_datetime_df):
         )
     )
     with pytest.raises(ValueError, match=error_msg):
-        test_scm_datetime_df.filter(month=fail_filter)
+        test_scm_run_datetimes.filter(month=fail_filter)
 
 
 @pytest.mark.parametrize("month_range", [["Mar-Jun", "Nov-Feb"]])
-def test_filter_time_range_round_the_clock_error(test_scm_datetime_df, month_range):
+def test_filter_time_range_round_the_clock_error(test_scm_run_datetimes, month_range):
     error_msg = re.escape(
         "string ranges must lead to increasing integer ranges, "
         "Nov-Feb becomes [11, 2]"
     )
     with pytest.raises(ValueError, match=error_msg):
-        test_scm_datetime_df.filter(month=month_range)
+        test_scm_run_datetimes.filter(month=month_range)
 
 
 @pytest.mark.parametrize("day_range", [range(14, 20), "Thu-Sat"])
-def test_filter_time_range_day(test_scm_datetime_df, day_range):
-    obs = test_scm_datetime_df.filter(day=day_range)
+def test_filter_time_range_day(test_scm_run_datetimes, day_range):
+    obs = test_scm_run_datetimes.filter(day=day_range)
     expected = dt.datetime(2005, 6, 17, 12)
     unique_time = obs["time"].unique()
     assert len(unique_time) == 1
     assert unique_time[0] == expected
 
 
-def test_filter_time_range_day_unrecognised_error(test_scm_datetime_df):
+def test_filter_time_range_day_unrecognised_error(test_scm_run_datetimes):
     fail_filter = "Thud-Sat"
     error_msg = re.escape(
         "Could not convert day '{}' to integer".format(
@@ -639,17 +637,17 @@ def test_filter_time_range_day_unrecognised_error(test_scm_datetime_df):
         )
     )
     with pytest.raises(ValueError, match=error_msg):
-        test_scm_datetime_df.filter(day=fail_filter)
+        test_scm_run_datetimes.filter(day=fail_filter)
 
 
 @pytest.mark.parametrize("hour_range", [range(10, 14)])
-def test_filter_time_range_hour(test_scm_datetime_df, hour_range):
-    obs = test_scm_datetime_df.filter(hour=hour_range)
+def test_filter_time_range_hour(test_scm_run_datetimes, hour_range):
+    obs = test_scm_run_datetimes.filter(hour=hour_range)
 
     expected_rows = (
-        test_scm_datetime_df["time"].apply(lambda x: x.hour).isin(hour_range)
+        test_scm_run_datetimes["time"].apply(lambda x: x.hour).isin(hour_range)
     )
-    expected = test_scm_datetime_df["time"][expected_rows].unique()
+    expected = test_scm_run_datetimes["time"][expected_rows].unique()
 
     unique_time = obs["time"].unique()
     assert len(unique_time) == 1
@@ -663,25 +661,25 @@ def test_filter_time_no_match(test_scm_datetime_run):
     assert obs.values.shape[1] == 0
 
 
-def test_filter_time_not_datetime_error(test_scm_datetime_df):
+def test_filter_time_not_datetime_error(test_scm_run_datetimes):
     error_msg = re.escape("`time` can only be filtered with datetimes")
     with pytest.raises(TypeError, match=error_msg):
-        test_scm_datetime_df.filter(time=2005)
+        test_scm_run_datetimes.filter(time=2005)
 
 
-def test_filter_time_not_datetime_range_error(test_scm_datetime_df):
+def test_filter_time_not_datetime_range_error(test_scm_run_datetimes):
     error_msg = re.escape("`time` can only be filtered with datetimes")
     with pytest.raises(TypeError, match=error_msg):
-        test_scm_datetime_df.filter(time=range(2000, 2008))
+        test_scm_run_datetimes.filter(time=range(2000, 2008))
 
 
-def test_filter_as_kwarg(test_scm_run):
-    obs = list(test_scm_run.filter(variable="Primary Energy|Coal")["scenario"].unique())
+def test_filter_as_kwarg(scm_run):
+    obs = list(scm_run.filter(variable="Primary Energy|Coal")["scenario"].unique())
     assert obs == ["a_scenario"]
 
 
-def test_filter_keep_false_time(test_scm_run):
-    df = test_scm_run.filter(year=2005, keep=False)
+def test_filter_keep_false_time(scm_run):
+    df = scm_run.filter(year=2005, keep=False)
     assert 2005 not in df.time_points.years()
     assert 2010 in df.time_points.years()
 
@@ -689,8 +687,8 @@ def test_filter_keep_false_time(test_scm_run):
     npt.assert_array_equal(obs, [6, 6, 3, 3])
 
 
-def test_filter_keep_false_metadata(test_scm_run):
-    df = test_scm_run.filter(variable="Primary Energy|Coal", keep=False)
+def test_filter_keep_false_metadata(scm_run):
+    df = scm_run.filter(variable="Primary Energy|Coal", keep=False)
     assert "Primary Energy|Coal" not in df["variable"].tolist()
     assert "Primary Energy" in df["variable"].tolist()
 
@@ -698,36 +696,36 @@ def test_filter_keep_false_metadata(test_scm_run):
     npt.assert_array_equal(obs, [1, 6, 6])
 
 
-def test_filter_keep_false_time_and_metadata(test_scm_run):
+def test_filter_keep_false_time_and_metadata(scm_run):
     error_msg = (
         "If keep==False, filtering cannot be performed on the temporal axis "
         "and with metadata at the same time"
     )
     with pytest.raises(ValueError, match=re.escape(error_msg)):
-        test_scm_run.filter(variable="Primary Energy|Coal", year=2005, keep=False)
+        scm_run.filter(variable="Primary Energy|Coal", year=2005, keep=False)
 
 
-def test_filter_keep_false_successive(test_scm_run):
-    df = test_scm_run.filter(variable="Primary Energy|Coal", keep=False).filter(
+def test_filter_keep_false_successive(scm_run):
+    df = scm_run.filter(variable="Primary Energy|Coal", keep=False).filter(
         year=2005, keep=False
     )
     obs = df.filter(scenario="a_scenario").timeseries().values.ravel()
     npt.assert_array_equal(obs, [6, 6])
 
 
-def test_filter_by_regexp(test_scm_run):
-    obs = test_scm_run.filter(scenario="a_scenari.$", regexp=True)
+def test_filter_by_regexp(scm_run):
+    obs = scm_run.filter(scenario="a_scenari.$", regexp=True)
     assert obs["scenario"].unique() == "a_scenario"
 
 
 @pytest.mark.parametrize(
     "regexp,exp_units", ((True, []), (False, ["W/m^2"]),),
 )
-def test_filter_by_regexp_caret(test_scm_run, regexp, exp_units):
-    tunits = ["W/m2"] * test_scm_run.shape[1]
+def test_filter_by_regexp_caret(scm_run, regexp, exp_units):
+    tunits = ["W/m2"] * scm_run.shape[1]
     tunits[-1] = "W/m^2"
-    test_scm_run["unit"] = tunits
-    obs = test_scm_run.filter(unit="W/m^2", regexp=regexp)
+    scm_run["unit"] = tunits
+    obs = scm_run.filter(unit="W/m^2", regexp=regexp)
 
     if not exp_units:
         assert obs.empty
@@ -813,7 +811,7 @@ def test_filter_timeseries_nan_meta(has_nan):
         with_nan_assertion(res, exp)
 
 
-def test_timeseries(test_scm_run):
+def test_timeseries(scm_run):
     dct = {
         "model": ["a_model"] * 3,
         "scenario": ["a_scenario"] * 3,
@@ -823,21 +821,19 @@ def test_timeseries(test_scm_run):
     exp = pd.DataFrame(dct).pivot_table(
         index=["model", "scenario"], columns=["years"], values="value"
     )
-    obs = test_scm_run.filter(
-        variable="Primary Energy", scenario="a_scenario"
-    ).timeseries()
+    obs = scm_run.filter(variable="Primary Energy", scenario="a_scenario").timeseries()
     npt.assert_array_equal(obs, exp)
 
 
-def test_timeseries_meta(test_scm_run):
-    obs = test_scm_run.filter(variable="Primary Energy").timeseries(
+def test_timeseries_meta(scm_run):
+    obs = scm_run.filter(variable="Primary Energy").timeseries(
         meta=["scenario", "model"]
     )
     npt.assert_array_equal(obs.index.names, ["scenario", "model"])
 
 
-def test_timeseries_duplicated(test_scm_run):
-    pytest.raises(ValueError, test_scm_run.timeseries, meta=["scenario"])
+def test_timeseries_duplicated(scm_run):
+    pytest.raises(ValueError, scm_run.timeseries, meta=["scenario"])
 
 
 @pytest.mark.parametrize("time_axis", (None, "year", "year-month"))
@@ -985,13 +981,13 @@ def test_median_over(test_processing_scm_df):
     pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
 
 
-def test_process_over_unrecognised_operation_error(test_scm_run):
+def test_process_over_unrecognised_operation_error(scm_run):
     error_msg = re.escape("operation must be one of ['median', 'mean', 'quantile']")
     with pytest.raises(ValueError, match=error_msg):
-        test_scm_run.process_over("scenario", "junk")
+        scm_run.process_over("scenario", "junk")
 
 
-def test_process_over_kwargs_error(scm_data):
+def test_process_over_kwargs_error(scm_run):
     v = parse(pd.__version__)
 
     if v.major == 1 and v.minor < 1:
@@ -999,7 +995,7 @@ def test_process_over_kwargs_error(scm_data):
     else:
         exp_exc = TypeError
     with pytest.raises(exp_exc):
-        scm_data.process_over("scenario", "mean", junk=4)
+        scm_run.process_over("scenario", "mean", junk=4)
 
 
 @pytest.mark.parametrize(
@@ -1106,18 +1102,18 @@ def test_relative_to_ref_period_mean(test_processing_scm_df, tfilter):
     )
 
 
-def test_append(test_scm_run):
-    test_scm_run["col1"] = [5, 6, 7]
-    other = test_scm_run.filter(scenario="a_scenario2").copy()
+def test_append(scm_run):
+    scm_run["col1"] = [5, 6, 7]
+    other = scm_run.filter(scenario="a_scenario2").copy()
     other["variable"] = "Primary Energy clone"
     other["col1"] = 2
     other["col2"] = "b"
 
-    df = test_scm_run.append(other)
+    df = scm_run.append(other)
     assert isinstance(df, ScmRun)
 
     # check that the new meta.index is updated, but not the original one
-    assert "col1" in test_scm_run.meta_attributes
+    assert "col1" in scm_run.meta_attributes
 
     # assert that merging of meta works as expected
     npt.assert_array_equal(
@@ -1149,21 +1145,21 @@ def test_append(test_scm_run):
     )
 
 
-def test_append_exact_duplicates(test_scm_run):
-    other = copy.deepcopy(test_scm_run)
+def test_append_exact_duplicates(scm_run):
+    other = copy.deepcopy(scm_run)
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
-        test_scm_run.append(other, duplicate_msg="warn").timeseries()
+        scm_run.append(other, duplicate_msg="warn").timeseries()
 
     assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
-    assert_scmdf_almost_equal(test_scm_run, other)
+    assert_scmdf_almost_equal(scm_run, other)
 
 
-def test_append_duplicates(test_scm_run):
-    other = copy.deepcopy(test_scm_run)
+def test_append_duplicates(scm_run):
+    other = copy.deepcopy(scm_run)
     other["time"] = [2020, 2030, 2040]
 
-    res = test_scm_run.append(other, duplicate_msg="warn")
+    res = scm_run.append(other, duplicate_msg="warn")
 
     obs = res.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2.0, 7.0, 7.0, 2.0, 7.0, 7.0]
@@ -1171,12 +1167,12 @@ def test_append_duplicates(test_scm_run):
     npt.assert_almost_equal(obs, exp)
 
 
-def test_append_duplicates_order_doesnt_matter(test_scm_run):
-    other = copy.deepcopy(test_scm_run)
+def test_append_duplicates_order_doesnt_matter(scm_run):
+    other = copy.deepcopy(scm_run)
     other["time"] = [2020, 2030, 2040]
     other._ts[2][2] = 5.0
 
-    res = other.append(test_scm_run, duplicate_msg="warn")
+    res = other.append(scm_run, duplicate_msg="warn")
 
     obs = res.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2.0, 7.0, 7.0, 2.0, 7.0, 5.0]
@@ -1216,10 +1212,9 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     )
 
 
-def test_append_doesnt_warn_if_continuous_times(test_append_scm_dfs):
-    join_year = 2011
-    base = test_append_scm_dfs["base"].filter(year=range(1, join_year))
-    other = test_append_scm_dfs["other"].filter(year=range(join_year, 30000))
+def test_append_doesnt_warn_if_different(test_append_scm_runs):
+    base = test_append_scm_runs["base"].filter(scenario="a_scenario")
+    other = test_append_scm_runs["base"].filter(scenario="a_scenario2")
 
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
         base.append(other)
@@ -1227,36 +1222,26 @@ def test_append_doesnt_warn_if_continuous_times(test_append_scm_dfs):
     assert len(mock_warn_taking_average) == 0
 
 
-def test_append_doesnt_warn_if_different(test_append_scm_dfs):
-    base = test_append_scm_dfs["base"].filter(scenario="a_scenario")
-    other = test_append_scm_dfs["base"].filter(scenario="a_scenario2")
-
-    with warnings.catch_warnings(record=True) as mock_warn_taking_average:
-        base.append(other)
-
-    assert len(mock_warn_taking_average) == 0
-
-
-def test_append_duplicate_times_error_msg(test_scm_run):
-    other = test_scm_run * 2
+def test_append_duplicate_times_error_msg(scm_run):
+    other = scm_run * 2
 
     error_msg = re.escape("Unrecognised value for duplicate_msg")
     with pytest.raises(ValueError, match=error_msg):
-        test_scm_run.append(other, duplicate_msg="junk")
+        scm_run.append(other, duplicate_msg="junk")
 
 
-def test_append_inplace(test_scm_run):
-    other = test_scm_run * 2
+def test_append_inplace(scm_run):
+    other = scm_run * 2
 
-    obs = test_scm_run.filter(scenario="a_scenario2").timeseries().squeeze()
+    obs = scm_run.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2, 7, 7]
     npt.assert_almost_equal(obs, exp)
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
-        test_scm_run.append(other, inplace=True, duplicate_msg="warn")
+        scm_run.append(other, inplace=True, duplicate_msg="warn")
 
     assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
-    obs = test_scm_run.filter(scenario="a_scenario2").timeseries().squeeze()
+    obs = scm_run.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [(2.0 + 4.0) / 2, (7.0 + 14.0) / 2, (7.0 + 14.0) / 2]
     npt.assert_almost_equal(obs, exp)
 
@@ -1316,10 +1301,10 @@ def get_append_col_order_time_dfs(base):
     return base, other, other_2, exp
 
 
-def test_append_column_order_time_interpolation(test_scm_run):
-    base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
+def test_append_column_order_time_interpolation(scm_run):
+    base, other, other_2, exp = get_append_col_order_time_dfs(scm_run)
 
-    res = run_append([test_scm_run, other, other_2], duplicate_msg="warn")
+    res = run_append([scm_run, other, other_2], duplicate_msg="warn")
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
@@ -1328,31 +1313,17 @@ def test_append_column_order_time_interpolation(test_scm_run):
     )
 
 
-def test_run_append_inplace_wrong_base(test_scm_run):
+def test_run_append_inplace_wrong_base(scm_run):
     error_msg = "Can only append inplace to an ScmRun"
     with pytest.raises(TypeError, match=error_msg):
         with warnings.catch_warnings(record=True):  # ignore warnings in this test
-            run_append([test_scm_run.timeseries(), test_scm_run], inplace=True)
+            run_append([scm_run.timeseries(), scm_run], inplace=True)
 
 
-def test_df_append_deprecated(test_scm_run):
-    base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
+def test_append_chain_column_order_time_interpolation(scm_run):
+    base, other, other_2, exp = get_append_col_order_time_dfs(scm_run)
 
-    error_msg = "scmdata.run.df_append has been deprecated"
-    with pytest.warns(DeprecationWarning, match=error_msg):
-        res = df_append([test_scm_run, other, other_2], duplicate_msg="warn")
-
-        pd.testing.assert_frame_equal(
-            res.timeseries().sort_index(),
-            exp.timeseries().reorder_levels(res.timeseries().index.names).sort_index(),
-            check_like=True,
-        )
-
-
-def test_append_chain_column_order_time_interpolation(test_scm_run):
-    base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
-
-    res = test_scm_run.append(other, duplicate_msg="warn").append(
+    res = scm_run.append(other, duplicate_msg="warn").append(
         other_2, duplicate_msg="warn"
     )
 
@@ -1363,33 +1334,31 @@ def test_append_chain_column_order_time_interpolation(test_scm_run):
     )
 
 
-def test_append_inplace_column_order_time_interpolation(test_scm_run):
-    base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
+def test_append_inplace_column_order_time_interpolation(scm_run):
+    base, other, other_2, exp = get_append_col_order_time_dfs(scm_run)
 
-    test_scm_run.append(other, duplicate_msg="warn", inplace=True)
-    test_scm_run.append(other_2, duplicate_msg="warn", inplace=True)
+    scm_run.append(other, duplicate_msg="warn", inplace=True)
+    scm_run.append(other_2, duplicate_msg="warn", inplace=True)
 
     pd.testing.assert_frame_equal(
-        test_scm_run.timeseries().sort_index(),
-        exp.timeseries()
-        .reorder_levels(test_scm_run.timeseries().index.names)
-        .sort_index(),
+        scm_run.timeseries().sort_index(),
+        exp.timeseries().reorder_levels(scm_run.timeseries().index.names).sort_index(),
         check_like=True,
     )
 
 
-def test_append_inplace_preexisting_nan(test_scm_run):
-    other = test_scm_run * 2
+def test_append_inplace_preexisting_nan(scm_run):
+    other = scm_run * 2
     other["climate_model"] = "a_model2"
     other["junk"] = np.nan
 
-    original_ts = test_scm_run.timeseries().copy()
-    res = test_scm_run.append(other)
+    original_ts = scm_run.timeseries().copy()
+    res = scm_run.append(other)
 
     # make sure underlying hasn't changed when not appending inplace
-    pd.testing.assert_frame_equal(original_ts, test_scm_run.timeseries())
+    pd.testing.assert_frame_equal(original_ts, scm_run.timeseries())
 
-    exp = pd.concat([test_scm_run.timeseries(), other.timeseries()])
+    exp = pd.concat([scm_run.timeseries(), other.timeseries()])
     exp["junk"] = np.nan
     exp.set_index("junk", append=True, inplace=True)
 
@@ -1402,8 +1371,8 @@ def test_append_inplace_preexisting_nan(test_scm_run):
 
 
 @pytest.mark.parametrize("same_times", [True, False])
-def test_append_reindexing(test_scm_run, same_times):
-    other = copy.deepcopy(test_scm_run)
+def test_append_reindexing(scm_run, same_times):
+    other = copy.deepcopy(scm_run)
     other["climate_model"] = "other"
     if not same_times:
         other["time"] = [2002, 2010, 2020]
@@ -1411,10 +1380,10 @@ def test_append_reindexing(test_scm_run, same_times):
     with patch.object(
         TimeSeries, "reindex", wraps=other._ts[0].reindex
     ) as mock_reindex:
-        res = test_scm_run.append(other, duplicate_msg="warn")
+        res = scm_run.append(other, duplicate_msg="warn")
 
         expected_times = set(
-            np.concatenate([other.time_points.values, test_scm_run.time_points.values])
+            np.concatenate([other.time_points.values, scm_run.time_points.values])
         )
         if same_times:
             mock_reindex.assert_not_called()
@@ -1583,23 +1552,21 @@ def test_time_mean_unsupported_style(test_scm_df_monthly):
         test_scm_df_monthly.time_mean("junk")
 
 
-def test_set_meta_wrong_length(test_scm_run):
+def test_set_meta_wrong_length(scm_run):
     s = [0.3, 0.4]
     with pytest.raises(ValueError, match="Invalid length for metadata"):
-        test_scm_run["meta_series"] = s
+        scm_run["meta_series"] = s
 
 
-def test_set_meta_as_float(test_scm_run):
-    test_scm_run["meta_int"] = 3.2
+def test_set_meta_as_float(scm_run):
+    scm_run["meta_int"] = 3.2
 
-    exp = pd.Series(
-        data=[3.2, 3.2, 3.2], index=test_scm_run.meta.index, name="meta_int"
-    )
+    exp = pd.Series(data=[3.2, 3.2, 3.2], index=scm_run.meta.index, name="meta_int")
 
-    obs = test_scm_run["meta_int"]
+    obs = scm_run["meta_int"]
     pd.testing.assert_series_equal(obs, exp)
     pd.testing.assert_index_equal(
-        test_scm_run.meta.columns,
+        scm_run.meta.columns,
         pd.Index(
             [
                 "model",
@@ -1614,19 +1581,19 @@ def test_set_meta_as_float(test_scm_run):
     )
 
 
-def test_set_meta_as_str(test_scm_run):
-    test_scm_run["meta_str"] = "testing"
+def test_set_meta_as_str(scm_run):
+    scm_run["meta_str"] = "testing"
 
     exp = pd.Series(
         data=["testing", "testing", "testing"],
-        index=test_scm_run.meta.index,
+        index=scm_run.meta.index,
         name="meta_str",
     )
 
-    obs = test_scm_run["meta_str"]
+    obs = scm_run["meta_str"]
     pd.testing.assert_series_equal(obs, exp)
     pd.testing.assert_index_equal(
-        test_scm_run.meta.columns,
+        scm_run.meta.columns,
         pd.Index(
             [
                 "model",
@@ -1641,21 +1608,21 @@ def test_set_meta_as_str(test_scm_run):
     )
 
 
-def test_set_meta_as_str_list(test_scm_run):
-    test_scm_run["category"] = ["testing", "testing2", "testing2"]
-    obs = test_scm_run.filter(category="testing")
+def test_set_meta_as_str_list(scm_run):
+    scm_run["category"] = ["testing", "testing2", "testing2"]
+    obs = scm_run.filter(category="testing")
     assert obs["scenario"].unique() == "a_scenario"
 
 
-def test_filter_by_bool(test_scm_run):
-    test_scm_run["exclude"] = [True, False, False]
-    obs = test_scm_run.filter(exclude=True)
+def test_filter_by_bool(scm_run):
+    scm_run["exclude"] = [True, False, False]
+    obs = scm_run.filter(exclude=True)
     assert obs["scenario"].unique() == "a_scenario"
 
 
-def test_filter_by_int(test_scm_run):
-    test_scm_run["test"] = [1, 2, 3]
-    obs = test_scm_run.filter(test=1)
+def test_filter_by_int(scm_run):
+    scm_run["test"] = [1, 2, 3]
+    obs = scm_run.filter(test=1)
     assert obs["scenario"].unique() == "a_scenario"
 
 
@@ -1696,55 +1663,55 @@ def test_filter_by_int(test_scm_run):
     ],
 )
 def test_convert_unit(
-    test_scm_run, target_unit, input_units, filter_kwargs, expected, expected_units
+    scm_run, target_unit, input_units, filter_kwargs, expected, expected_units
 ):
-    test_scm_run["unit"] = input_units
-    obs = test_scm_run.convert_unit(target_unit, **filter_kwargs)
+    scm_run["unit"] = input_units
+    obs = scm_run.convert_unit(target_unit, **filter_kwargs)
 
     exp_units = pd.Series(expected_units, name="unit")
 
     pd.testing.assert_series_equal(obs["unit"], exp_units, check_less_precise=True)
     npt.assert_array_almost_equal(obs.filter(year=2005).values.squeeze(), expected)
-    assert (test_scm_run["unit"] == input_units).all()
+    assert (scm_run["unit"] == input_units).all()
 
 
-def test_convert_unit_unknown_unit(test_scm_run):
+def test_convert_unit_unknown_unit(scm_run):
     unknown_unit = "Unknown"
-    test_scm_run["unit"] = unknown_unit
+    scm_run["unit"] = unknown_unit
 
     error_msg = re.escape(
         "'{}' is not defined in the unit registry".format(unknown_unit)
     )
     with pytest.raises(UndefinedUnitError, match=error_msg):
-        test_scm_run.convert_unit("EJ/yr")
+        scm_run.convert_unit("EJ/yr")
 
 
-def test_convert_unit_dimensionality(test_scm_run):
+def test_convert_unit_dimensionality(scm_run):
     error_msg = "Cannot convert from 'exajoule / a' .* to 'kelvin'"
     with pytest.raises(DimensionalityError, match=error_msg):
-        test_scm_run.convert_unit("kelvin")
+        scm_run.convert_unit("kelvin")
 
 
-def test_convert_unit_inplace(test_scm_run):
-    units = test_scm_run["unit"].copy()
+def test_convert_unit_inplace(scm_run):
+    units = scm_run["unit"].copy()
 
-    ret = test_scm_run.convert_unit("PJ/yr", inplace=True)
+    ret = scm_run.convert_unit("PJ/yr", inplace=True)
     assert ret is None
 
-    assert (test_scm_run["unit"] != units).all()
+    assert (scm_run["unit"] != units).all()
     npt.assert_array_almost_equal(
-        test_scm_run.filter(year=2005).values.squeeze(), [1000.0, 500.0, 2000.0]
+        scm_run.filter(year=2005).values.squeeze(), [1000.0, 500.0, 2000.0]
     )
 
 
-def test_convert_unit_context(test_scm_run):
-    test_scm_run = test_scm_run.filter(
+def test_convert_unit_context(scm_run):
+    scm_run = scm_run.filter(
         variable="Primary Energy"
     )  # Duplicated meta if set all 3 ts to the same variable name
-    test_scm_run["unit"] = "kg SF5CF3 / yr"
-    test_scm_run["variable"] = "SF5CF3"
+    scm_run["unit"] = "kg SF5CF3 / yr"
+    scm_run["variable"] = "SF5CF3"
 
-    obs = test_scm_run.convert_unit("kg CO2 / yr", context="AR4GWP100")
+    obs = scm_run.convert_unit("kg CO2 / yr", context="AR4GWP100")
     factor = 17700
     expected = [1.0 * factor, 2.0 * factor]
     npt.assert_array_almost_equal(obs.filter(year=2005).values.squeeze(), expected)
@@ -1752,26 +1719,26 @@ def test_convert_unit_context(test_scm_run):
 
     error_msg = "Cannot convert from 'SF5CF3 * kilogram / a' ([SF5CF3] * [mass] / [time]) to 'CO2 * kilogram / a' ([carbon] * [mass] / [time])"
     with pytest.raises(DimensionalityError, match=re.escape(error_msg)):
-        test_scm_run.convert_unit("kg CO2 / yr")
+        scm_run.convert_unit("kg CO2 / yr")
 
 
-def test_convert_existing_unit_context(test_scm_run):
-    test_scm_run = test_scm_run.filter(
+def test_convert_existing_unit_context(scm_run):
+    scm_run = scm_run.filter(
         variable="Primary Energy"
     )  # Duplicated meta if set all 3 ts to the same variable name
-    test_scm_run["unit"] = "kg SF5CF3 / yr"
-    test_scm_run["variable"] = "SF5CF3"
-    test_scm_run["unit_context"] = "AR4GWP100"
+    scm_run["unit"] = "kg SF5CF3 / yr"
+    scm_run["variable"] = "SF5CF3"
+    scm_run["unit_context"] = "AR4GWP100"
 
-    obs = test_scm_run.convert_unit("kg CO2 / yr", context="AR4GWP100")
+    obs = scm_run.convert_unit("kg CO2 / yr", context="AR4GWP100")
     factor = 17700
     expected = [1.0 * factor, 2.0 * factor]
     npt.assert_array_almost_equal(obs.filter(year=2005).values.squeeze(), expected)
     assert all(obs["unit_context"] == "AR4GWP100")
 
 
-def test_unit_context_not_added_if_context_is_none(test_scm_run):
-    start = test_scm_run.filter(variable="Primary Energy")
+def test_unit_context_not_added_if_context_is_none(scm_run):
+    start = scm_run.filter(variable="Primary Energy")
     start["unit"] = "EJ/yr"
 
     res = start.convert_unit("MJ/yr")
@@ -1779,8 +1746,8 @@ def test_unit_context_not_added_if_context_is_none(test_scm_run):
     assert "unit_context" not in res.meta_attributes
 
 
-def test_unit_context_added_if_context_is_not_none(test_scm_run):
-    start = test_scm_run.filter(variable="Primary Energy")
+def test_unit_context_added_if_context_is_not_none(scm_run):
+    start = scm_run.filter(variable="Primary Energy")
     start["unit"] = "EJ/yr"
 
     res = start.convert_unit("MJ/yr", context="AR4GWP100")
@@ -1789,9 +1756,9 @@ def test_unit_context_added_if_context_is_not_none(test_scm_run):
 
 
 @pytest.mark.parametrize("context", (None, "AR4GWP100"))
-def test_unit_context_no_existing_contexts(test_scm_run, context):
+def test_unit_context_no_existing_contexts(scm_run, context):
     to_convert = "*Coal"
-    res = test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+    res = scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
 
     if context is None:
         assert "unit_context" not in res.meta_attributes
@@ -1810,21 +1777,21 @@ def test_unit_context_no_existing_contexts(test_scm_run, context):
 @pytest.mark.parametrize("to_not_convert_matches", (True, False))
 @pytest.mark.parametrize("context", (None, "AR4GWP100"))
 def test_unit_context_both_have_existing_context(
-    test_scm_run, context, to_not_convert_matches
+    scm_run, context, to_not_convert_matches
 ):
     to_convert = "*Coal"
 
-    test_scm_run["unit_context"] = context
+    scm_run["unit_context"] = context
     if to_not_convert_matches:
         to_not_convert_context = context
     else:
         to_not_convert_context = "junk"
 
-    test_scm_run.filter(variable=to_convert, keep=False)[
+    scm_run.filter(variable=to_convert, keep=False)[
         "unit_context"
     ] = to_not_convert_context
 
-    res = test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+    res = scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
 
     assert (
         res.filter(variable=to_convert).get_unique_meta(
@@ -1843,26 +1810,26 @@ def test_unit_context_both_have_existing_context(
 @pytest.mark.parametrize("to_not_convert_matches", (True, False))
 @pytest.mark.parametrize("context", (None, "AR4GWP100"))
 def test_unit_context_both_have_existing_context_error(
-    test_scm_run, context, to_not_convert_matches
+    scm_run, context, to_not_convert_matches
 ):
     to_convert = "*Coal"
 
-    test_scm_run["unit_context"] = "junk"
+    scm_run["unit_context"] = "junk"
     if to_not_convert_matches:
-        test_scm_run.filter(variable=to_convert, keep=False)["unit_context"] = context
+        scm_run.filter(variable=to_convert, keep=False)["unit_context"] = context
 
     error_msg = re.escape(
         "Existing unit conversion context(s), `['junk']`, doesn't match input context, `{}`, drop "
         "`unit_context` metadata before doing conversion".format(context)
     )
     with pytest.raises(ValueError, match=error_msg):
-        test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+        scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
 
 
 @pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100"))
-def test_unit_context_to_convert_has_existing_context(test_scm_run, context):
+def test_unit_context_to_convert_has_existing_context(scm_run, context):
     to_convert = "*Coal"
-    start = test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+    start = scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
 
     assert (
         start.filter(variable=to_convert).get_unique_meta(
@@ -1902,9 +1869,9 @@ def test_unit_context_to_convert_has_existing_context(test_scm_run, context):
 
 
 @pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100"))
-def test_unit_context_to_convert_has_existing_context_error(test_scm_run, context):
+def test_unit_context_to_convert_has_existing_context_error(scm_run, context):
     to_convert = "*Coal"
-    start = test_scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
+    start = scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
 
     assert (
         start.filter(variable=to_convert).get_unique_meta(
@@ -1929,13 +1896,13 @@ def test_unit_context_to_convert_has_existing_context_error(test_scm_run, contex
 @pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100", None))
 @pytest.mark.parametrize("to_not_convert_context", ("AR5GWP100", "AR4GWP100"))
 def test_unit_context_to_not_convert_has_existing_context(
-    test_scm_run, context, to_not_convert_context
+    scm_run, context, to_not_convert_context
 ):
     to_convert = "*Coal"
-    to_not_convert = test_scm_run.filter(
-        variable=to_convert, keep=False
-    ).get_unique_meta("variable")
-    start = test_scm_run.convert_unit(
+    to_not_convert = scm_run.filter(variable=to_convert, keep=False).get_unique_meta(
+        "variable"
+    )
+    start = scm_run.convert_unit(
         "MJ/yr", variable=to_not_convert, context=to_not_convert_context
     )
     assert np.isnan(
@@ -1977,13 +1944,13 @@ def test_unit_context_to_not_convert_has_existing_context(
     )
 
 
-def test_convert_unit_does_not_warn(test_scm_run, caplog):
-    test_scm_run["unit"] = "GtC"
+def test_convert_unit_does_not_warn(scm_run, caplog):
+    scm_run["unit"] = "GtC"
 
-    res = test_scm_run.convert_unit("MtC")
+    res = scm_run.convert_unit("MtC")
 
     npt.assert_equal(len(caplog.records), 0)
-    npt.assert_array_equal(test_scm_run.values, res.values / 10 ** 3)
+    npt.assert_array_equal(scm_run.values, res.values / 10 ** 3)
 
 
 def test_resample():
@@ -2090,84 +2057,85 @@ def test_read_from_disk_incorrect_labels():
 
 
 @pytest.mark.parametrize("separator", ["|", "__", "/", "~", "_", "-"])
-def test_separator_changes(test_scm_run, separator):
-    variable = test_scm_run["variable"]
-    test_scm_run["variable"] = [v.replace("|", separator) for v in variable]
+def test_separator_changes(scm_run, separator):
+    variable = scm_run["variable"]
+    scm_run["variable"] = [v.replace("|", separator) for v in variable]
 
-    test_scm_run.data_hierarchy_separator = separator
+    scm_run.data_hierarchy_separator = separator
 
     pd.testing.assert_series_equal(
-        test_scm_run.filter(level=0)["variable"],
+        scm_run.filter(level=0)["variable"],
         pd.Series(["Primary Energy", "Primary Energy"], index=[0, 2], name="variable"),
     )
 
     pd.testing.assert_series_equal(
-        test_scm_run.filter(level=1)["variable"],
+        scm_run.filter(level=1)["variable"],
         pd.Series(
             ["Primary Energy{}Coal".format(separator)], index=[1], name="variable"
         ),
     )
 
 
-def test_get_meta(test_scm_run):
-    assert test_scm_run.get_unique_meta("climate_model") == ["a_model"]
-    assert test_scm_run.get_unique_meta("variable") == [
+def test_get_meta(scm_run):
+    assert scm_run.get_unique_meta("climate_model") == ["a_model"]
+    assert scm_run.get_unique_meta("variable") == [
         "Primary Energy",
         "Primary Energy|Coal",
     ]
 
 
 @pytest.mark.parametrize("no_duplicates", [True, False])
-def test_get_meta_no_duplicates(test_scm_run, no_duplicates):
+def test_get_meta_no_duplicates(scm_run, no_duplicates):
     if no_duplicates:
         assert (
-            test_scm_run.get_unique_meta("climate_model", no_duplicates=no_duplicates)
+            scm_run.get_unique_meta("climate_model", no_duplicates=no_duplicates)
             == "a_model"
         )
 
         error_msg = re.escape(
             "`variable` column is not unique (found values: {})".format(
-                test_scm_run["variable"].unique().tolist()
+                scm_run["variable"].unique().tolist()
             )
         )
         with pytest.raises(ValueError, match=error_msg):
-            test_scm_run.get_unique_meta("variable", no_duplicates=no_duplicates)
+            scm_run.get_unique_meta("variable", no_duplicates=no_duplicates)
     else:
-        assert test_scm_run.get_unique_meta(
+        assert scm_run.get_unique_meta(
             "climate_model", no_duplicates=no_duplicates
         ) == ["a_model"]
-        assert test_scm_run.get_unique_meta(
-            "variable", no_duplicates=no_duplicates
-        ) == ["Primary Energy", "Primary Energy|Coal",]
+        assert scm_run.get_unique_meta("variable", no_duplicates=no_duplicates) == [
+            "Primary Energy",
+            "Primary Energy|Coal",
+        ]
 
 
-def test_meta_filtered(test_scm_run):
-    test_scm_run.filter(scenario="a_scenario")["test"] = 1.0
+def test_meta_filtered(scm_run):
+    scm_run.filter(scenario="a_scenario")["test"] = 1.0
     pd.testing.assert_series_equal(
-        pd.Series([1.0, 1.0, np.nan], name="test"), test_scm_run["test"]
+        pd.Series([1.0, 1.0, np.nan], name="test"), scm_run["test"]
     )
 
 
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
-def test_drop_meta(test_scm_run, label, inplace):
+def test_drop_meta(scm_run, label, inplace):
     if type(label) == str:
-        test_scm_run[label] = 1.0
-        assert label in test_scm_run.meta.columns
+        scm_run[label] = 1.0
+        assert label in scm_run.meta.columns
     else:
         for lbl in label:
-            test_scm_run[lbl] = 1.0
-            assert lbl in test_scm_run.meta.columns
+            scm_run[lbl] = 1.0
+            assert lbl in scm_run.meta.columns
 
     # TODO: remove warning check in v0.7.0
     # Check that the deprecation warning isn't raised
     with warnings.catch_warnings(record=True) as warn:
         if inplace:
-            test_scm_run.drop_meta(label, inplace=True)
-            res = test_scm_run
+            scm_run.drop_meta(label, inplace=True)
+            res = scm_run
         else:
-            res = test_scm_run.drop_meta(label, inplace=False)
-            assert id(res) != id(test_scm_run)
+            res = scm_run.drop_meta(label, inplace=False)
+            assert id(res) != id(scm_run)
 
         assert len(warn) == 0
 
@@ -2183,50 +2151,50 @@ def test_drop_meta(test_scm_run, label, inplace):
 
 
 @pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
-def test_drop_meta_missing(test_scm_run, label):
+def test_drop_meta_missing(scm_run, label):
     with pytest.raises(KeyError):
-        test_scm_run.drop_meta(label)
+        scm_run.drop_meta(label)
 
-    assert "variable" in test_scm_run.meta.columns
+    assert "variable" in scm_run.meta.columns
 
 
-def test_drop_meta_missing_one(test_scm_run):
+def test_drop_meta_missing_one(scm_run):
     label = ["variable", "other"]
     with pytest.raises(KeyError):
-        test_scm_run.drop_meta(label)
+        scm_run.drop_meta(label)
 
-    assert "variable" in test_scm_run.meta.columns
+    assert "variable" in scm_run.meta.columns
 
 
-def test_drop_meta_not_inplace(test_scm_run):
+def test_drop_meta_not_inplace(scm_run):
     label = "extra"
 
-    test_scm_run[label] = "test"
+    scm_run[label] = "test"
 
-    res = test_scm_run.drop_meta(label, inplace=False)
+    res = scm_run.drop_meta(label, inplace=False)
 
-    assert label in test_scm_run.meta_attributes
+    assert label in scm_run.meta_attributes
     assert label not in res.meta_attributes
 
     res = res * 2
-    np.testing.assert_almost_equal(res.values, test_scm_run.values * 2)
+    np.testing.assert_almost_equal(res.values, scm_run.values * 2)
 
 
-def test_drop_meta_inplace_default(test_scm_run):
+def test_drop_meta_inplace_default(scm_run):
     label = "extra"
-    test_scm_run[label] = "test"
+    scm_run[label] = "test"
 
     msg = (
         "drop_meta default behaviour will change to not performing operation inplace in v0.7.0. "
         "Explicitly set inplace=True to retain current behaviour"
     )
     with pytest.warns(DeprecationWarning, match=msg):
-        res = test_scm_run.drop_meta(label)
+        res = scm_run.drop_meta(label)
 
     # Should default to inplace
     # To change in v0.7.0
     assert res is None
-    assert label not in test_scm_run.meta
+    assert label not in scm_run.meta
 
 
 time_axis_checks = pytest.mark.parametrize(
@@ -2245,28 +2213,28 @@ time_axis_checks = pytest.mark.parametrize(
 
 
 @time_axis_checks
-def test_timeseries_time_axis(test_scm_run, time_axis, mod_func):
-    res = test_scm_run.timeseries(time_axis=time_axis)
-    assert (res.columns == (test_scm_run["time"].apply(mod_func))).all()
+def test_timeseries_time_axis(scm_run, time_axis, mod_func):
+    res = scm_run.timeseries(time_axis=time_axis)
+    assert (res.columns == (scm_run["time"].apply(mod_func))).all()
 
 
 @time_axis_checks
-def test_long_data_time_axis(test_scm_run, time_axis, mod_func):
-    res = test_scm_run.long_data(time_axis=time_axis)
+def test_long_data_time_axis(scm_run, time_axis, mod_func):
+    res = scm_run.long_data(time_axis=time_axis)
 
-    assert (res["time"] == (test_scm_run.long_data()["time"].apply(mod_func))).all()
+    assert (res["time"] == (scm_run.long_data()["time"].apply(mod_func))).all()
 
 
 @time_axis_checks
 @patch("scmdata.plotting.sns.lineplot")
 @patch.object(ScmRun, "long_data")
 def test_lineplot_time_axis(
-    mock_long_data, mock_sns_lineplot, test_scm_run, time_axis, mod_func
+    mock_long_data, mock_sns_lineplot, scm_run, time_axis, mod_func
 ):
     mock_return = 4
     mock_long_data.return_value = mock_return
 
-    test_scm_run.lineplot(time_axis=time_axis, other_kwarg="value")
+    scm_run.lineplot(time_axis=time_axis, other_kwarg="value")
 
     mock_long_data.assert_called_once()
     mock_long_data.assert_called_with(time_axis=time_axis)
@@ -2360,32 +2328,32 @@ def test_timeseries_time_axis_non_unique_raises(
         getattr(start, method_to_call)(time_axis=time_axis)
 
 
-def test_timeseries_time_axis_junk_error(test_scm_run):
+def test_timeseries_time_axis_junk_error(scm_run):
     error_msg = re.escape("time_axis = 'junk")
     with pytest.raises(NotImplementedError, match=error_msg):
-        test_scm_run.timeseries(time_axis="junk")
+        scm_run.timeseries(time_axis="junk")
 
 
-def test_timeseries_check_duplicated(test_scm_run):
+def test_timeseries_check_duplicated(scm_run):
     with pytest.raises(NonUniqueMetadataError):
-        test_scm_run.timeseries(meta=["region", "unit"], check_duplicated=True)
+        scm_run.timeseries(meta=["region", "unit"], check_duplicated=True)
 
     # Default behaviour
     with pytest.raises(NonUniqueMetadataError):
-        test_scm_run.timeseries(meta=["region", "unit"])
+        scm_run.timeseries(meta=["region", "unit"])
 
 
-def test_long_data_time_axis_junk_error(test_scm_run):
+def test_long_data_time_axis_junk_error(scm_run):
     error_msg = re.escape("time_axis = 'junk")
     with pytest.raises(NotImplementedError, match=error_msg):
-        test_scm_run.long_data(time_axis="junk")
+        scm_run.long_data(time_axis="junk")
 
 
 @patch("scmdata.plotting.sns.lineplot")
-def test_lineplot_time_axis_junk_error(mock_sns_lineplot, test_scm_run):
+def test_lineplot_time_axis_junk_error(mock_sns_lineplot, scm_run):
     error_msg = re.escape("time_axis = 'junk")
     with pytest.raises(NotImplementedError, match=error_msg):
-        test_scm_run.lineplot(time_axis="junk")
+        scm_run.lineplot(time_axis="junk")
 
     assert not mock_sns_lineplot.called  # doesn't get to trying to plot
 
@@ -2465,12 +2433,12 @@ def test_append_long_run(tax1, tax2):
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("use_cls_method", [True, False])
 def test_append_metadata(
-    test_scm_run, metadata_1, metadata_2, metadata, expected, inplace, use_cls_method
+    scm_run, metadata_1, metadata_2, metadata, expected, inplace, use_cls_method
 ):
-    run1 = test_scm_run.copy()
+    run1 = scm_run.copy()
     run1["ensemble_member"] = 1
     run1.metadata = metadata_1
-    run2 = test_scm_run.copy()
+    run2 = scm_run.copy()
     run2["ensemble_member"] = 2
     run2.metadata = metadata_2
 
@@ -2485,9 +2453,9 @@ def test_append_metadata(
     assert res.metadata == expected
 
 
-def test_empty(test_scm_run):
-    assert not test_scm_run.empty
-    assert test_scm_run.filter(variable="junk nonsense").empty
+def test_empty(scm_run):
+    assert not scm_run.empty
+    assert scm_run.filter(variable="junk nonsense").empty
 
 
 def test_init_duplicate_metadata_issue_76():
@@ -2505,7 +2473,7 @@ def test_init_duplicate_metadata_issue_76():
         )
 
 
-def test_set_item_duplicate_meta_issue_76(test_scm_run):
+def test_set_item_duplicate_meta_issue_76(scm_run):
     run = ScmRun(
         data=np.arange(4).reshape(2, 2),
         index=[10, 20],
@@ -2551,9 +2519,9 @@ def test_non_unique_metadata_error_formatting():
 
 
 @pytest.mark.parametrize("copy_ts", [True, False])
-def test_copy(test_scm_run, copy_ts):
-    orig_run = test_scm_run
-    copy_run = test_scm_run.copy(copy_ts)
+def test_copy(scm_run, copy_ts):
+    orig_run = scm_run
+    copy_run = scm_run.copy(copy_ts)
 
     assert id(orig_run) != id(copy_run)
 

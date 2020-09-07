@@ -1843,29 +1843,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             return ScmRun(data, index=index, columns=meta)
 
 
-def df_append(*args, **kwargs):
-    """
-    Append together many objects.
-
-    When appending many objects, it may be more efficient to call this routine once with
-    a list of :class:`ScmRun`'s, than using :func:`ScmRun.append` multiple times.
-
-    If timeseries with duplicate metadata are found, the timeseries are appended and values
-    falling on the same timestep are averaged if :obj:`duplicate_msg` is not "return". If
-    :obj:`duplicate_msg` is "return", then the result will contain the duplicated timeseries
-    for further inspection.
-
-    .. deprecated:: 0.5.0
-        :func:`df_append` will be removed in scmdata v0.7.0, it is replaced by :func:`scmdata.run.run_append`.
-    """
-    warnings.warn(
-        "scmdata.run.df_append has been deprecated and will be removed in v0.7.0. Use the scmdata.run.run_append class instead",
-        DeprecationWarning,
-        2,
-    )
-    return run_append(*args, **kwargs)
-
-
 def _merge_metadata(metadata):
     res = metadata[0].copy()
 

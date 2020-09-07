@@ -252,7 +252,7 @@ def test_scm_df_mulitple(request):
 
 
 @pytest.fixture(scope="function")
-def test_scm_run():
+def scm_run():
     yield ScmRun(TEST_DF.copy())
 
 
@@ -279,6 +279,22 @@ TEST_DF_MONTHLY = pd.DataFrame(
 @pytest.fixture(scope="function")
 def test_scm_df_monthly():
     yield ScmRun(TEST_DF_MONTHLY)
+
+
+@pytest.fixture(scope="function")
+def test_scm_run_datetimes():
+    tdf = TEST_DF.copy()
+    tdf.rename(
+        {
+            2005: datetime(2005, 6, 17, 12),
+            2010: datetime(2010, 1, 3, 0),
+            2015: datetime(2015, 1, 4, 0),
+        },
+        axis="columns",
+        inplace=True,
+    )
+
+    yield ScmRun(tdf)
 
 
 @pytest.fixture(scope="function")

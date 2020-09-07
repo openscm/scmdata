@@ -6,19 +6,18 @@ import pytest
 from scmdata.run import ScmRun
 
 
-def test_plotting_injected_methods(test_scm_df, test_scm_run):
-    for obj in [test_scm_run, test_scm_df]:
-        assert hasattr(obj, "line_plot")
-        assert hasattr(obj, "lineplot")
+def test_plotting_injected_methods(scm_run):
+    assert hasattr(scm_run, "line_plot")
+    assert hasattr(scm_run, "lineplot")
 
 
-def test_plotting_long_data(test_scm_run):
-    long_data = test_scm_run.long_data()
+def test_plotting_long_data(scm_run):
+    long_data = scm_run.long_data()
 
     assert "value" in long_data.columns
-    assert len(long_data) == test_scm_run.shape[0] * test_scm_run.shape[1]
+    assert len(long_data) == scm_run.shape[0] * scm_run.shape[1]
 
-    exp = test_scm_run.filter(year=2005, scenario="a_scenario2").values.squeeze()
+    exp = scm_run.filter(year=2005, scenario="a_scenario2").values.squeeze()
     obs = long_data[
         (long_data.scenario == "a_scenario2") & (long_data.time.dt.year == 2005)
     ].value.squeeze()
@@ -27,20 +26,20 @@ def test_plotting_long_data(test_scm_run):
 
 
 @patch("scmdata.plotting.has_seaborn", False)
-def test_no_seaborn(test_scm_run):
+def test_no_seaborn(scm_run):
     with pytest.raises(
         ImportError, match="seaborn is not installed. Run 'pip install seaborn'"
     ):
-        test_scm_run.lineplot()
+        scm_run.lineplot()
 
 
 @patch("scmdata.plotting.sns.lineplot")
 @patch.object(ScmRun, "long_data")
-def test_lineplot(mock_long_data, mock_seaborn_lineplot, test_scm_run):
+def test_lineplot(mock_long_data, mock_seaborn_lineplot, scm_run):
     trv = "test long_data return value"
     mock_long_data.return_value = trv
 
-    test_scm_run.lineplot(time_axis="year")
+    scm_run.lineplot(time_axis="year")
 
     mock_long_data.assert_called_with(time_axis="year")
 
@@ -51,7 +50,7 @@ def test_lineplot(mock_long_data, mock_seaborn_lineplot, test_scm_run):
 
 @patch("scmdata.plotting.sns.lineplot")
 @patch.object(ScmRun, "long_data")
-def test_lineplot_kwargs(mock_long_data, mock_seaborn_lineplot, test_scm_run):
+def test_lineplot_kwargs(mock_long_data, mock_seaborn_lineplot, scm_run):
     tkwargs = {
         "x": "x",
         "y": "y",
@@ -62,7 +61,7 @@ def test_lineplot_kwargs(mock_long_data, mock_seaborn_lineplot, test_scm_run):
     trv = "test long_data return value"
     mock_long_data.return_value = trv
 
-    test_scm_run.lineplot(time_axis="time_axis", **tkwargs)
+    scm_run.lineplot(time_axis="time_axis", **tkwargs)
 
     mock_long_data.assert_called_with(time_axis="time_axis")
 
@@ -71,20 +70,20 @@ def test_lineplot_kwargs(mock_long_data, mock_seaborn_lineplot, test_scm_run):
 
 @pytest.mark.parametrize("single_unit", (True, False))
 @patch("scmdata.plotting.sns.lineplot")
-def test_lineplot_units(mock_seaborn_lineplot, single_unit, test_scm_run):
-    units = test_scm_run["unit"].values
+def test_lineplot_units(mock_seaborn_lineplot, single_unit, scm_run):
+    units = scm_run["unit"].values
 
     if single_unit:
         units[:] = "J/yr"
     else:
         units[-1] = "J/yr"
 
-    test_scm_run["unit"] = units
+    scm_run["unit"] = units
 
     mock_ax = MagicMock()
     mock_seaborn_lineplot.return_value = mock_ax
 
-    test_scm_run.lineplot(time_axis="year")
+    scm_run.lineplot(time_axis="year")
 
     mock_seaborn_lineplot.assert_called()
 
