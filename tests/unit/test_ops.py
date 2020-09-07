@@ -9,7 +9,7 @@ from openscm_units import unit_registry
 from pint.errors import DimensionalityError
 
 from scmdata.run import ScmRun
-from scmdata.testing import assert_scmdf_almost_equal, _check_pandas_less_110
+from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
 
 pint_pandas.PintType.ureg = unit_registry
 
