@@ -15,12 +15,12 @@ from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.errors import NonUniqueMetadataError
-from scmdata.run import ScmRun, TimeSeries, df_append, run_append
+from scmdata.run import ScmRun, TimeSeries, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
 
-def test_init_df_year_converted_to_datetime(test_pd_df, data_cls):
-    res = data_cls(test_pd_df)
+def test_init_df_year_converted_to_datetime(test_pd_df):
+    res = ScmRun(test_pd_df)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
         res["time"].unique()
@@ -41,7 +41,7 @@ def test_init_df_year_converted_to_datetime(test_pd_df, data_cls):
         "str_times",
     ],
 )
-def test_init_df_formats(test_pd_run_df, in_format, data_cls):
+def test_init_df_formats(test_pd_run_df, in_format):
     if in_format == "pd.Series":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year").set_index(
@@ -84,7 +84,7 @@ def test_init_df_formats(test_pd_run_df, in_format, data_cls):
             lambda x: "{}/1/1".format(x) if isinstance(x, int) else x
         )
 
-    res = data_cls(test_init)
+    res = ScmRun(test_init)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
         res["time"].unique()
@@ -100,16 +100,16 @@ def test_init_df_formats(test_pd_run_df, in_format, data_cls):
     )
 
 
-def test_init_df_missing_time_axis_error(test_pd_df, data_cls):
+def test_init_df_missing_time_axis_error(test_pd_df):
     idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
     test_init = test_pd_df.melt(id_vars=idx, var_name="year")
     test_init = test_init.drop("year", axis="columns")
     error_msg = re.escape("invalid time format, must have either `year` or `time`!")
     with pytest.raises(ValueError, match=error_msg):
-        data_cls(test_init)
+        ScmRun(test_init)
 
 
-def test_init_df_missing_time_columns_error(test_pd_df, data_cls):
+def test_init_df_missing_time_columns_error(test_pd_df):
     test_init = test_pd_df.copy()
     test_init = test_init.drop(
         test_init.columns[test_init.columns.map(lambda x: isinstance(x, int))],
@@ -119,20 +119,20 @@ def test_init_df_missing_time_columns_error(test_pd_df, data_cls):
         "invalid column format, must contain some time (int, float or datetime) columns!"
     )
     with pytest.raises(ValueError, match=error_msg):
-        data_cls(test_init)
+        ScmRun(test_init)
 
 
-def test_init_df_missing_col_error(test_pd_df, data_cls):
+def test_init_df_missing_col_error(test_pd_df):
     test_pd_df = test_pd_df.drop("model", axis="columns")
     error_msg = re.escape("missing required columns `['model']`!")
     with pytest.raises(ValueError, match=error_msg):
-        data_cls(test_pd_df)
+        ScmRun(test_pd_df)
 
 
-def test_init_ts_missing_col_error(test_ts, data_cls):
+def test_init_ts_missing_col_error(test_ts):
     error_msg = re.escape("missing required columns `['model']`!")
     with pytest.raises(ValueError, match=error_msg):
-        data_cls(
+        ScmRun(
             test_ts,
             columns={
                 "climate_model": ["a_model"],
@@ -154,17 +154,15 @@ def test_init_multiple_file_error():
         ScmRun(["file_1", "filepath_2"])
 
 
-def test_init_unrecognised_type_error(data_cls):
+def test_init_unrecognised_type_error():
     fail_type = {"dict": "key"}
-    error_msg = re.escape(
-        "Cannot load {} from {}".format(str(data_cls), type(fail_type))
-    )
+    error_msg = re.escape("Cannot load {} from {}".format(str(ScmRun), type(fail_type)))
     with pytest.raises(TypeError, match=error_msg):
-        data_cls(fail_type)
+        ScmRun(fail_type)
 
 
-def test_init_ts_col_string(test_ts, data_cls):
-    res = data_cls(
+def test_init_ts_col_string(test_ts):
+    res = ScmRun(
         test_ts,
         columns={
             "model": "an_iam",
@@ -183,7 +181,7 @@ def test_init_ts_col_string(test_ts, data_cls):
 
 
 @pytest.mark.parametrize("fail_setting", [["a_iam", "a_iam"]])
-def test_init_ts_col_wrong_length_error(test_ts, fail_setting, data_cls):
+def test_init_ts_col_wrong_length_error(test_ts, fail_setting):
     correct_scenarios = ["a_scenario", "a_scenario", "a_scenario2"]
     error_msg = re.escape(
         "Length of column 'model' is incorrect. It should be length 1 or {}".format(
@@ -191,7 +189,7 @@ def test_init_ts_col_wrong_length_error(test_ts, fail_setting, data_cls):
         )
     )
     with pytest.raises(ValueError, match=error_msg):
-        data_cls(
+        ScmRun(
             test_ts,
             columns={
                 "model": fail_setting,
@@ -216,8 +214,8 @@ def get_test_pd_df_with_datetime_columns(tpdf):
     )
 
 
-def test_init_with_ts(test_ts, test_pd_df, data_cls):
-    df = data_cls(
+def test_init_with_ts(test_ts, test_pd_df):
+    df = ScmRun(
         test_ts,
         columns={
             "model": ["a_iam"],
@@ -233,7 +231,7 @@ def test_init_with_ts(test_ts, test_pd_df, data_cls):
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
     pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
 
-    b = data_cls(test_pd_df)
+    b = ScmRun(test_pd_df)
 
     assert_scmdf_almost_equal(df, b, check_ts_names=False)
 
@@ -247,7 +245,7 @@ def test_init_with_scmdf(test_scm_datetime_df, test_scm_datetime_run):
 @pytest.mark.parametrize(
     "years", [["2005.0", "2010.0", "2015.0"], ["2005", "2010", "2015"]]
 )
-def test_init_with_years_as_str(test_pd_df, years, data_cls):
+def test_init_with_years_as_str(test_pd_df, years):
     df = copy.deepcopy(
         test_pd_df
     )  # This needs to be a deep copy so it doesn't break the other tests
@@ -255,7 +253,7 @@ def test_init_with_years_as_str(test_pd_df, years, data_cls):
     cols[-3:] = years
     df.columns = cols
 
-    df = data_cls(df)
+    df = ScmRun(df)
 
     obs = df.time_points.values
 
@@ -266,13 +264,13 @@ def test_init_with_years_as_str(test_pd_df, years, data_cls):
     assert (obs == exp).all()
 
 
-def test_init_with_year_columns(test_pd_df, data_cls):
-    df = data_cls(test_pd_df)
+def test_init_with_year_columns(test_pd_df):
+    df = ScmRun(test_pd_df)
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
     pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
 
 
-def test_init_with_decimal_years(data_cls):
+def test_init_with_decimal_years():
     inp_array = [2.0, 1.2, 7.9]
     d = pd.Series(inp_array, index=[1765.0, 1765.083, 1765.167])
     cols = {
@@ -283,7 +281,7 @@ def test_init_with_decimal_years(data_cls):
         "unit": ["EJ/yr"],
     }
 
-    res = data_cls(d, columns=cols)
+    res = ScmRun(d, columns=cols)
     assert (
         res["time"].unique()
         == [
@@ -295,20 +293,20 @@ def test_init_with_decimal_years(data_cls):
     npt.assert_array_equal(res.values[0], inp_array)
 
 
-def test_init_df_from_timeseries(test_scm_df_mulitple, data_cls):
-    df = data_cls(test_scm_df_mulitple.timeseries())
+def test_init_df_from_timeseries(test_scm_df_mulitple):
+    df = ScmRun(test_scm_df_mulitple.timeseries())
 
     assert_scmdf_almost_equal(df, test_scm_df_mulitple, check_ts_names=False)
 
 
-def test_init_df_with_extra_col(test_pd_df, data_cls):
+def test_init_df_with_extra_col(test_pd_df):
     tdf = test_pd_df.copy()
 
     extra_col = "test value"
     extra_value = "scm_model"
     tdf[extra_col] = extra_value
 
-    df = data_cls(tdf)
+    df = ScmRun(tdf)
 
     tdf = get_test_pd_df_with_datetime_columns(tdf)
     assert extra_col in df.meta
@@ -322,16 +320,16 @@ def test_init_df_without_required_arguments(test_run_ts):
         ScmRun(test_run_ts, index=None, columns={"variable": "test"})
 
 
-def test_init_iam(test_iam_df, test_pd_df, data_cls):
-    a = data_cls(test_iam_df)
-    b = data_cls(test_pd_df)
+def test_init_iam(test_iam_df, test_pd_df):
+    a = ScmRun(test_iam_df)
+    b = ScmRun(test_pd_df)
 
     assert_scmdf_almost_equal(a, b, check_ts_names=False)
 
 
-def test_init_self(test_iam_df, data_cls):
-    a = data_cls(test_iam_df)
-    b = data_cls(a)
+def test_init_self(test_iam_df):
+    a = ScmRun(test_iam_df)
+    b = ScmRun(a)
 
     assert_scmdf_almost_equal(a, b)
 
@@ -356,8 +354,8 @@ def test_init_self_with_metadata(test_scm_run):
     assert c.metadata == {"test": "other"}
 
 
-def test_as_iam(test_iam_df, test_pd_df, iamdf_type, data_cls):
-    df = data_cls(test_pd_df).to_iamdataframe()
+def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
+    df = ScmRun(test_pd_df).to_iamdataframe()
 
     # test is skipped by test_iam_df fixture if pyam isn't installed
     assert isinstance(df, iamdf_type)
@@ -422,8 +420,8 @@ def test_variable_depth_0(test_scm_run):
     assert obs == exp
 
 
-def test_variable_depth_0_with_base(data_cls):
-    tdf = data_cls(
+def test_variable_depth_0_with_base():
+    tdf = ScmRun(
         data=np.array([[1, 6.0, 7], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
         columns={
             "model": ["a_iam"],
@@ -766,8 +764,8 @@ def test_filter_timeseries_different_length():
 
 
 @pytest.mark.parametrize("has_nan", [True, False])
-def test_filter_timeseries_nan_meta(has_nan, data_cls):
-    df = data_cls(
+def test_filter_timeseries_nan_meta(has_nan):
+    df = ScmRun(
         pd.DataFrame(
             np.array([[1.0, 2.0], [4.0, 5.0], [7.0, 8.0]]).T, index=[2000, 2001]
         ),
@@ -1988,7 +1986,7 @@ def test_convert_unit_does_not_warn(test_scm_run, caplog):
     npt.assert_array_equal(test_scm_run.values, res.values / 10 ** 3)
 
 
-def test_resample(data_cls):
+def test_resample():
     df_dts = [
         dt.datetime(2000, 1, 1),
         dt.datetime(2000, 6, 1),
@@ -1998,7 +1996,7 @@ def test_resample(data_cls):
         dt.datetime(2002, 6, 1),
         dt.datetime(2003, 1, 1),
     ]
-    df = data_cls(
+    df = ScmRun(
         [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
         columns={
             "scenario": ["a_scenario"],
@@ -2016,9 +2014,9 @@ def test_resample(data_cls):
     npt.assert_almost_equal(obs, exp, decimal=1)
 
 
-def test_resample_long_datetimes(data_cls):
+def test_resample_long_datetimes():
     df_dts = [dt.datetime(year, 1, 1) for year in np.arange(1700, 2500 + 1, 100)]
-    df = data_cls(
+    df = ScmRun(
         np.arange(1700, 2500 + 1, 100),
         columns={
             "scenario": ["a_scenario"],
@@ -2036,11 +2034,11 @@ def test_resample_long_datetimes(data_cls):
     npt.assert_almost_equal(obs, exp, decimal=1)
 
 
-def test_init_no_file(data_cls):
+def test_init_no_file():
     fname = "/path/to/nowhere"
     error_msg = re.escape("no data file `{}` found!".format(fname))
     with pytest.raises(OSError, match=error_msg):
-        data_cls(fname)
+        ScmRun(fname)
 
 
 @pytest.mark.parametrize(
@@ -2063,11 +2061,8 @@ def test_init_no_file(data_cls):
         ("rcp26_emissions_multi_sheet_data.xlsx", {},),
     ],
 )
-def test_read_from_disk(test_file, test_kwargs, data_cls, test_data_path):
-    if data_cls != ScmRun and "lowercase_cols" in test_kwargs:
-        pytest.skip("Only ScmRun supports lowercase_cols")
-
-    loaded = data_cls(os.path.join(test_data_path, test_file), **test_kwargs)
+def test_read_from_disk(test_file, test_kwargs, test_data_path):
+    loaded = ScmRun(os.path.join(test_data_path, test_file), **test_kwargs)
     assert (
         loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
         == 0.010116813
