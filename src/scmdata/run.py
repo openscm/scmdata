@@ -611,6 +611,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             if isinstance(other, ScmRun):
                 return NotImplemented
 
+            ret = self.copy()
+
             is_number = isinstance(other, (numbers.Number, pint.Quantity))
             if not is_number:
                 other_ndim = len(other.shape)
@@ -625,11 +627,15 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                         "operations with {}d data are not supported".format(other_ndim)
                     )
 
-            ret = self.copy()
-            if not reflexive:
-                ret._df = f(ret._df, other[:, np.newaxis])
+                if not reflexive:
+                    ret._df = f(ret._df, other[:, np.newaxis])
+                else:
+                    ret._df = f(other[:, np.newaxis], ret._df)
             else:
-                ret._df = f(other[:, np.newaxis], ret._df)
+                if not reflexive:
+                    ret._df = f(ret._df, other)
+                else:
+                    ret._df = f(other, ret._df)
             return ret
 
         return func
