@@ -399,7 +399,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             Timeseries cannot be read from :obj:`data`
         """
         if isinstance(data, ScmRun):
-            self._ts = data._ts
+            self._df = data._df
+            self._meta = data._meta
             self._time_points = TimePoints(data.time_points.values)
             if metadata is None:
                 metadata = data.metadata.copy()
@@ -450,7 +451,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         self._df = _df
         self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
 
-    def copy(self, copy_ts=True):
+    def copy(self):
         """
         Return a :func:`copy.deepcopy` of self.
 
@@ -464,8 +465,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ret = copy.copy(self)
         ret._df = self._df.copy()
         ret._meta = self._meta.copy()
-        # if copy_ts:
-        #     ret._ts = [ts.copy() for ts in self._ts]
+
         return ret
 
     def __len__(self) -> int:
@@ -625,10 +625,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                         "operations with {}d data are not supported".format(other_ndim)
                     )
 
-            ret = self.copy(copy_ts=False)
-            ret._ts = [
-                (f(ts, other) if not reflexive else f(other, ts)) for ts in self._ts
-            ]
+            ret = self.copy()
+            if not reflexive:
+                ret._df = f(ret._df, other[:, np.newaxis])
+            else:
+                ret._df = f(other[:, np.newaxis], ret._df)
             return ret
 
         return func
@@ -805,7 +806,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             )
 
         df.columns = columns
-        df.index = pd.MultiIndex.from_frame(self.meta)
+        df.index = pd.MultiIndex.from_frame(_meta)
 
         if drop_all_nan_times:
             df = df.dropna(how="all", axis="columns")
@@ -853,7 +854,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         -------
         tuple of int
         """
-        return len(self._ts), len(self.time_points)
+        return self._df.shape[::-1]
 
     @property
     def values(self) -> np.ndarray:
@@ -1187,7 +1188,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             List of unique metadata values. If ``no_duplicates`` is ``True`` the
             metadata value will be returned (rather than a list).
         """
-        vals = self._meta.get_level_values(meta).categories.tolist()
+        vals = self._meta.get_level_values(meta).unique()
         if no_duplicates:
             if len(vals) != 1:
                 raise ValueError(
