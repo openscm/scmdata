@@ -1603,6 +1603,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         else:
             ret = self.copy()
 
+        # TODO: work out how to handle the case where the unit is the same but
+        # the context is different
+        assert False, "explosion"
         already_correct_unit = ret.filter(unit=unit, log_if_empty=False)
         not_correct_unit = ret.filter(unit=unit, keep=False, log_if_empty=False)
         if not_correct_unit.empty:
