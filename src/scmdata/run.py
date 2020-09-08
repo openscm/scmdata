@@ -1605,8 +1605,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         # TODO: work out how to handle the case where the unit is the same but
         # the context is different
-        assert False, "explosion"
         already_correct_unit = ret.filter(unit=unit, log_if_empty=False)
+        if "unit_context" in already_correct_unit.meta_attributes:
+            self._check_unit_context(already_correct_unit, context)
+
         not_correct_unit = ret.filter(unit=unit, keep=False, log_if_empty=False)
         if not_correct_unit.empty:
             to_convert = not_correct_unit
@@ -1621,19 +1623,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             )
 
         if "unit_context" in to_convert.meta_attributes:
-            unit_context = to_convert.get_unique_meta("unit_context")
-            # check if contexts don't match, unless the context is nan
-            non_matching_contexts = len(unit_context) > 1 or unit_context[0] != context
-            if isinstance(unit_context[0], float):
-                non_matching_contexts &= not np.isnan(unit_context[0])
-
-            if non_matching_contexts:
-                raise ValueError(
-                    "Existing unit conversion context(s), `{}`, doesn't match input "
-                    "context, `{}`, drop `unit_context` metadata before doing "
-                    "conversion".format(unit_context, context)
-                )
-
+            self._check_unit_context(to_convert, context)
             to_convert["unit_context"] = context
 
         elif context is not None:
@@ -1660,6 +1650,21 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ret = run_append([ret, to_not_convert], inplace=inplace)
         if not inplace:
             return ret
+
+    @staticmethod
+    def _check_unit_context(dat, context):
+        unit_context = dat.get_unique_meta("unit_context")
+        # check if contexts don't match, unless the context is nan
+        non_matching_contexts = len(unit_context) > 1 or unit_context[0] != context
+        if isinstance(unit_context[0], float):
+            non_matching_contexts &= not np.isnan(unit_context[0])
+
+        if non_matching_contexts:
+            raise ValueError(
+                "Existing unit conversion context(s), `{}`, doesn't match input "
+                "context, `{}`, drop `unit_context` metadata before doing "
+                "conversion".format(unit_context, context)
+            )
 
     def relative_to_ref_period_mean(self, append_str=None, **kwargs):
         """

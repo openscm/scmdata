@@ -2086,6 +2086,9 @@ def test_unit_context_to_convert_has_existing_context_error(test_scm_run, contex
     with pytest.raises(ValueError, match=error_msg):
         start.convert_unit("GJ/yr", variable=to_convert, context="junk")
 
+    with pytest.raises(ValueError, match=error_msg):
+        start.convert_unit("MJ/yr", variable=to_convert, context="junk")
+
 
 @pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100", None))
 @pytest.mark.parametrize("to_not_convert_context", ("AR5GWP100", "AR4GWP100"))
