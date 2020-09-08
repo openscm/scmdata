@@ -1174,7 +1174,7 @@ def test_append_duplicates(scm_run):
 def test_append_duplicates_order_doesnt_matter(scm_run):
     other = copy.deepcopy(scm_run)
     other["time"] = [2020, 2030, 2040]
-    other._ts[2][2] = 5.0
+    other._df.iloc[2, 2] = 5.0
 
     res = other.append(scm_run, duplicate_msg="warn")
 

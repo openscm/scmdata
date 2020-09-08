@@ -1185,7 +1185,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             List of unique metadata values. If ``no_duplicates`` is ``True`` the
             metadata value will be returned (rather than a list).
         """
-        vals = self._meta.get_level_values(meta).unique()
+        vals = self._meta.get_level_values(meta).unique().to_list()
         if no_duplicates:
             if len(vals) != 1:
                 raise ValueError(
