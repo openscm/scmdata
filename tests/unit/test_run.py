@@ -17,6 +17,7 @@ from pint.errors import DimensionalityError, UndefinedUnitError
 from scmdata.errors import NonUniqueMetadataError
 from scmdata.run import ScmRun, TimeSeries, df_append, run_append
 from scmdata.testing import assert_scmdf_almost_equal
+from scmdata.time import TimePoints
 
 
 def test_init_df_year_converted_to_datetime(test_pd_df, data_cls):
@@ -96,7 +97,7 @@ def test_init_df_formats(test_pd_run_df, in_format, data_cls):
     res_df = res_df.reset_index()
 
     pd.testing.assert_frame_equal(
-        res_df[test_pd_run_df.columns.tolist()], test_pd_run_df, rtol=1e-5
+        res_df[test_pd_run_df.columns.tolist()], test_pd_run_df, rtol=1e-5, check_names=False
     )
 
 
@@ -231,7 +232,7 @@ def test_init_with_ts(test_ts, test_pd_df, data_cls):
     )
 
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
-    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, rtol=1e-5)
+    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, rtol=1e-5, check_names=False)
 
     b = data_cls(test_pd_df)
 
@@ -269,7 +270,7 @@ def test_init_with_years_as_str(test_pd_df, years, data_cls):
 def test_init_with_year_columns(test_pd_df, data_cls):
     df = data_cls(test_pd_df)
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
-    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, rtol=1e-5)
+    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, rtol=1e-5, check_names=False)
 
 
 def test_init_with_decimal_years(data_cls):
@@ -312,7 +313,7 @@ def test_init_df_with_extra_col(test_pd_df, data_cls):
 
     tdf = get_test_pd_df_with_datetime_columns(tdf)
     assert extra_col in df.meta
-    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, rtol=1e-5)
+    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, rtol=1e-5, check_names=False)
 
 
 def test_init_df_without_required_arguments(test_run_ts):
@@ -895,7 +896,7 @@ def test_quantile_over_lower(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "quantile", q=0)
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5)
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5, check_names=False)
 
 
 def test_quantile_over_upper(test_processing_scm_df):
@@ -915,7 +916,7 @@ def test_quantile_over_upper(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over(["model", "scenario"], "quantile", q=1)
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5)
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5, check_names=False)
 
 
 def test_mean_over(test_processing_scm_df):
@@ -954,7 +955,7 @@ def test_mean_over(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "mean")
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5)
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5, check_names=False)
 
 
 def test_median_over(test_processing_scm_df):
@@ -984,7 +985,7 @@ def test_median_over(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "median")
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5)
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5, check_names=False)
 
 
 def test_process_over_unrecognised_operation_error(test_scm_run):
@@ -1515,9 +1516,9 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
         .mean()
         .T
     )
-    ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 1, 1))
+    ts_resampled.columns = TimePoints(ts_resampled.columns).to_index()
 
-    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, rtol=1e-5)
+    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, rtol=1e-5, check_names=False)
 
 
 def test_time_mean_year(test_scm_df_monthly):
@@ -1543,7 +1544,7 @@ def test_time_mean_year(test_scm_df_monthly):
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 7, 1))
 
-    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, rtol=1e-5)
+    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, rtol=1e-5, check_names=False)
 
 
 def test_time_mean_year_end_of_year(test_scm_df_monthly):
@@ -1574,7 +1575,7 @@ def test_time_mean_year_end_of_year(test_scm_df_monthly):
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 12, 31))
 
-    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, rtol=1e-5)
+    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, rtol=1e-5, check_names=False)
 
 
 def test_time_mean_unsupported_style(test_scm_df_monthly):
