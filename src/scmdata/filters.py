@@ -181,7 +181,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
 
                 error_msg = (
                     "String filtering cannot be performed on column '{}', which "
-                    "contains NaN's, unless `has_nan` is True".format(_meta_col.name)
+                    "contains NaN's, unless `has_nan` is True".format(meta_col.name)
                 )
                 raise TypeError(error_msg)
 

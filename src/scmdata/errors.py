@@ -11,7 +11,7 @@ class NonUniqueMetadataError(ValueError):
 
     def __init__(self, meta):
         # format table to show the metadata clash
-        dup = meta.groupby(meta.columns.tolist(), as_index=False).size()
+        dup = meta.astype(str).groupby(meta.columns.tolist(), as_index=False).size()
         if isinstance(dup, pd.Series):
             # pandas < 1.1 Groupby.size returns a series
             dup.name = "repeats"

@@ -15,7 +15,7 @@ from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.errors import NonUniqueMetadataError
-from scmdata.run import ScmRun, TimeSeries, run_append
+from scmdata.run import ScmRun, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -1255,7 +1255,10 @@ def get_append_col_order_time_dfs(base):
     base["runmodus"] = "co2_only"
     other = base.copy()
 
-    other._ts[1].meta["variable"] = "Primary Energy|Gas"
+    other_variable = other["variable"]
+    other_variable.iloc[1] = "Primary Energy|Gas"
+
+    other["variable"] = other_variable
     other["time"] = [
         dt.datetime(2002, 1, 1, 0, 0),
         dt.datetime(2008, 1, 1, 0, 0),

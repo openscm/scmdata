@@ -448,6 +448,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         _df = _df.astype(float)
         self._df = _df
+        self._df.index = self._time_points.to_index()
         self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
 
     def copy(self):
@@ -569,6 +570,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         meta = np.atleast_1d(value)
         if key == "time":
             self._time_points = TimePoints(meta)
+            self._df.index = self._time_points.to_index()
         else:
             if len(meta) == 1:
                 new_meta = self._meta.to_frame()
@@ -1930,7 +1932,7 @@ def run_append(
         to_join_dfs.append(run_to_join_df)
         to_join_metas.append(run_to_join_meta)
 
-    ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns")
+    ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns").sort_index()
     ret._meta = pd.MultiIndex.from_frame(
         pd.concat([ret._meta.to_frame().reset_index(drop=True)] + to_join_metas).astype(
             "category"
@@ -1943,8 +1945,31 @@ def run_append(
         if duplicate_msg:
             _handle_potential_duplicates_in_append(ret, duplicate_msg)
 
-        # average identical metadata
-        ret._ts = ret.groupby(ret.meta_attributes).mean(axis=0)._ts
+        ts = ret.timeseries(check_duplicated=False)
+        orig_ts_index = ts.index
+        nan_cols = pd.isna(orig_ts_index.to_frame()).any()
+        orig_dtypes = orig_ts_index.to_frame().dtypes
+
+        # Convert index to str
+        ts.index = pd.MultiIndex.from_frame(
+            ts.index.to_frame().astype(str).reset_index(drop=True)
+        )
+
+        deduped_ts = ts.groupby(ts.index, as_index=True).mean()
+
+        ret._df = deduped_ts.reset_index(drop=True).T
+
+        new_meta = pd.DataFrame.from_records(
+            deduped_ts.index.values, columns=ts.index.names
+        )
+
+        # Convert back from str
+        for c in nan_cols[nan_cols].index:
+            new_meta[c].replace("nan", np.nan, inplace=True)
+        for c, dtype in orig_dtypes.iteritems():
+            new_meta[c] = new_meta[c].astype(dtype)
+
+        ret._meta = pd.MultiIndex.from_frame(new_meta.astype("category"))
 
     if metadata is not None:
         ret.metadata = metadata
