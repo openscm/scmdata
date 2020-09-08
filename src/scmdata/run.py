@@ -1603,8 +1603,18 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         else:
             ret = self.copy()
 
-        to_convert = ret.filter(**kwargs)
-        to_not_convert = ret.filter(**kwargs, keep=False, log_if_empty=False)
+        already_correct_unit = ret.filter(unit=unit, log_if_empty=False)
+        not_correct_unit = ret.filter(unit=unit, keep=False, log_if_empty=False)
+        if not_correct_unit.empty:
+            to_convert = not_correct_unit
+            to_not_convert = already_correct_unit
+        else:
+            to_convert = not_correct_unit.filter(**kwargs)
+            to_not_convert = run_append([
+                not_correct_unit.filter(**kwargs, keep=False, log_if_empty=False),
+                already_correct_unit,
+            ])
+
 
         if "unit_context" in to_convert.meta_attributes:
             unit_context = to_convert.get_unique_meta("unit_context")
@@ -1639,7 +1649,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
             return group
 
-        ret = to_convert.groupby("unit").map(apply_units)
+        ret = to_convert
+        if not to_convert.empty:
+            ret = ret.groupby("unit").map(apply_units)
 
         ret = run_append([ret, to_not_convert], inplace=inplace)
         if not inplace:

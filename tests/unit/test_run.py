@@ -96,7 +96,7 @@ def test_init_df_formats(test_pd_run_df, in_format, data_cls):
     res_df = res_df.reset_index()
 
     pd.testing.assert_frame_equal(
-        res_df[test_pd_run_df.columns.tolist()], test_pd_run_df, check_like=True
+        res_df[test_pd_run_df.columns.tolist()], test_pd_run_df, rtol=1e-5
     )
 
 
@@ -231,7 +231,7 @@ def test_init_with_ts(test_ts, test_pd_df, data_cls):
     )
 
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
-    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
+    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, rtol=1e-5)
 
     b = data_cls(test_pd_df)
 
@@ -269,7 +269,7 @@ def test_init_with_years_as_str(test_pd_df, years, data_cls):
 def test_init_with_year_columns(test_pd_df, data_cls):
     df = data_cls(test_pd_df)
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
-    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
+    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, rtol=1e-5)
 
 
 def test_init_with_decimal_years(data_cls):
@@ -312,7 +312,7 @@ def test_init_df_with_extra_col(test_pd_df, data_cls):
 
     tdf = get_test_pd_df_with_datetime_columns(tdf)
     assert extra_col in df.meta
-    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
+    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, rtol=1e-5)
 
 
 def test_init_df_without_required_arguments(test_run_ts):
@@ -367,7 +367,7 @@ def test_as_iam(test_iam_df, test_pd_df, iamdf_type, data_cls):
     tdf = df.data.copy()
     tdf["year"] = tdf["time"].apply(lambda x: x.year)
     tdf.drop("time", axis="columns", inplace=True)
-    pd.testing.assert_frame_equal(test_iam_df.data, tdf, check_like=True)
+    pd.testing.assert_frame_equal(test_iam_df.data, tdf, rtol=1e-5)
 
 
 def test_get_item(test_scm_run):
@@ -895,7 +895,7 @@ def test_quantile_over_lower(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "quantile", q=0)
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5)
 
 
 def test_quantile_over_upper(test_processing_scm_df):
@@ -915,7 +915,7 @@ def test_quantile_over_upper(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over(["model", "scenario"], "quantile", q=1)
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5)
 
 
 def test_mean_over(test_processing_scm_df):
@@ -954,7 +954,7 @@ def test_mean_over(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "mean")
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5)
 
 
 def test_median_over(test_processing_scm_df):
@@ -984,7 +984,7 @@ def test_median_over(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "median")
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, rtol=1e-5)
 
 
 def test_process_over_unrecognised_operation_error(test_scm_run):
@@ -1104,7 +1104,7 @@ def test_relative_to_ref_period_mean(test_processing_scm_df, tfilter):
     exp_ts = exp.timeseries()
 
     pd.testing.assert_frame_equal(
-        exp_ts.reorder_levels(obs_ts.index.names), obs_ts, check_like=True
+        exp_ts.reorder_levels(obs_ts.index.names), obs_ts, rtol=1e-5
     )
 
 
@@ -1214,7 +1214,7 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
         assert not mock_warn_taking_average
 
     pd.testing.assert_frame_equal(
-        res.timeseries(), expected.timeseries(), check_like=True
+        res.timeseries(), expected.timeseries(), rtol=1e-5
     )
 
 
@@ -1326,7 +1326,7 @@ def test_append_column_order_time_interpolation(test_scm_run):
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
         exp.timeseries().reorder_levels(res.timeseries().index.names).sort_index(),
-        check_like=True,
+        rtol=1e-5,
     )
 
 
@@ -1347,7 +1347,7 @@ def test_df_append_deprecated(test_scm_run):
         pd.testing.assert_frame_equal(
             res.timeseries().sort_index(),
             exp.timeseries().reorder_levels(res.timeseries().index.names).sort_index(),
-            check_like=True,
+            rtol=1e-5,
         )
 
 
@@ -1361,7 +1361,7 @@ def test_append_chain_column_order_time_interpolation(test_scm_run):
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
         exp.timeseries().reorder_levels(res.timeseries().index.names).sort_index(),
-        check_like=True,
+        rtol=1e-5,
     )
 
 
@@ -1376,7 +1376,7 @@ def test_append_inplace_column_order_time_interpolation(test_scm_run):
         exp.timeseries()
         .reorder_levels(test_scm_run.timeseries().index.names)
         .sort_index(),
-        check_like=True,
+        rtol=1e-5,
     )
 
 
@@ -1398,7 +1398,7 @@ def test_append_inplace_preexisting_nan(test_scm_run):
     pd.testing.assert_frame_equal(
         res.timeseries().reorder_levels(exp.index.names).sort_index().reset_index(),
         exp.sort_index().reset_index(),
-        check_like=True,
+        rtol=1e-5,
         check_dtype=False,
     )
 
@@ -1519,7 +1519,7 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 1, 1))
 
-    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, check_like=True)
+    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, rtol=1e-5)
 
 
 def test_time_mean_year(test_scm_df_monthly):
@@ -1545,7 +1545,7 @@ def test_time_mean_year(test_scm_df_monthly):
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 7, 1))
 
-    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, check_like=True)
+    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, rtol=1e-5)
 
 
 def test_time_mean_year_end_of_year(test_scm_df_monthly):
@@ -1576,7 +1576,7 @@ def test_time_mean_year_end_of_year(test_scm_df_monthly):
     )
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 12, 31))
 
-    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, check_like=True)
+    pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, rtol=1e-5)
 
 
 def test_time_mean_unsupported_style(test_scm_df_monthly):
@@ -1705,7 +1705,7 @@ def test_convert_unit(
 
     exp_units = pd.Series(expected_units, name="unit")
 
-    pd.testing.assert_series_equal(obs["unit"], exp_units, check_less_precise=True)
+    pd.testing.assert_series_equal(obs["unit"], exp_units, rtol=1e-5)
     npt.assert_array_almost_equal(obs.filter(year=2005).values.squeeze(), expected)
     assert (test_scm_run["unit"] == input_units).all()
 
@@ -1741,13 +1741,13 @@ def test_convert_unit_inplace(test_scm_run):
 
 def test_convert_unit_target_unit_in_input():
     inp = pd.DataFrame([
+        {'climate_model': 'MAGICC6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'yr', 'ensemble_member': 0},
+        {'climate_model': 'MAGICC6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'yr', 'ensemble_member': 1},
         {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 0},
         {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 1},
         {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 10},
         {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 11},
         {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 12},
-        {'climate_model': 'MAGICC6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'yr', 'ensemble_member': 0},
-        {'climate_model': 'MAGICC6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'yr', 'ensemble_member': 1},
     ])
     inp[2010] = 12
     inp[2015] = 10
