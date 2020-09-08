@@ -1610,11 +1610,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             to_not_convert = already_correct_unit
         else:
             to_convert = not_correct_unit.filter(**kwargs)
-            to_not_convert = run_append([
-                not_correct_unit.filter(**kwargs, keep=False, log_if_empty=False),
-                already_correct_unit,
-            ])
-
+            to_not_convert = run_append(
+                [
+                    not_correct_unit.filter(**kwargs, keep=False, log_if_empty=False),
+                    already_correct_unit,
+                ]
+            )
 
         if "unit_context" in to_convert.meta_attributes:
             unit_context = to_convert.get_unique_meta("unit_context")

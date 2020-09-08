@@ -1213,9 +1213,7 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     else:
         assert not mock_warn_taking_average
 
-    pd.testing.assert_frame_equal(
-        res.timeseries(), expected.timeseries(), rtol=1e-5
-    )
+    pd.testing.assert_frame_equal(res.timeseries(), expected.timeseries(), rtol=1e-5)
 
 
 def test_append_doesnt_warn_if_continuous_times(test_append_scm_dfs):
@@ -1740,15 +1738,73 @@ def test_convert_unit_inplace(test_scm_run):
 
 
 def test_convert_unit_target_unit_in_input():
-    inp = pd.DataFrame([
-        {'climate_model': 'MAGICC6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'yr', 'ensemble_member': 0},
-        {'climate_model': 'MAGICC6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'yr', 'ensemble_member': 1},
-        {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 0},
-        {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 1},
-        {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 10},
-        {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 11},
-        {'climate_model': 'FaIR1.6', 'model': 'unspecified', 'scenario': 'historical', 'region': 'World', 'variable': 'Atmospheric Lifetime|CH4', 'unit': 'month', 'ensemble_member': 12},
-    ])
+    inp = pd.DataFrame(
+        [
+            {
+                "climate_model": "MAGICC6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "yr",
+                "ensemble_member": 0,
+            },
+            {
+                "climate_model": "MAGICC6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "yr",
+                "ensemble_member": 1,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 0,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 1,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 10,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 11,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 12,
+            },
+        ]
+    )
     inp[2010] = 12
     inp[2015] = 10
 
