@@ -2091,13 +2091,6 @@ def test_get_meta_no_duplicates(scm_run, no_duplicates):
         ]
 
 
-def test_meta_filtered(scm_run):
-    scm_run.filter(scenario="a_scenario")["test"] = 1.0
-    pd.testing.assert_series_equal(
-        pd.Series([1.0, 1.0, np.nan], name="test"), scm_run["test"]
-    )
-
-
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
 def test_drop_meta(scm_run, label, inplace):

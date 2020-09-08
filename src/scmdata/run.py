@@ -17,9 +17,9 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pint
-import xarray as xr
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops
+import openscm_units.unit_registry as ur
 
 from . import REQUIRED_COLS
 from .errors import NonUniqueMetadataError
@@ -614,10 +614,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             if isinstance(other, ScmRun):
                 return NotImplemented
 
-            ret = self.copy()
-
-            is_number = isinstance(other, (numbers.Number, pint.Quantity))
-            if not is_number:
+            is_scalar = isinstance(other, (numbers.Number, pint.Quantity))
+            if not is_scalar:
                 other_ndim = len(other.shape)
                 if other_ndim == 1:
                     if other.shape[0] != self.shape[1]:
@@ -630,16 +628,36 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                         "operations with {}d data are not supported".format(other_ndim)
                     )
 
-                if not reflexive:
-                    ret._df = f(ret._df, other[:, np.newaxis])
+            def _perform_op(df):
+                if isinstance(other, pint.Quantity):
+                    try:
+                        data = df.values * ur(df.get_unique_meta("unit", True))
+                        use_pint = True
+                    except KeyError:
+                        # let Pint assume dimensionless and raise an error as
+                        # necessary
+                        data = df.values
+                        use_pint = False
                 else:
-                    ret._df = f(other[:, np.newaxis], ret._df)
-            else:
-                if not reflexive:
-                    ret._df = f(ret._df, other)
+                    data = df.values
+                    use_pint = False
+
+                res = []
+                for v in data:
+                    if not reflexive:
+                        res.append(f(v, other))
+                    else:
+                        res.append(f(other, v))
+                res = np.vstack(res)
+
+                if use_pint:
+                    df._df.values[:] = res.magnitude.T
+                    df["unit"] = str(res.units)
                 else:
-                    ret._df = f(other, ret._df)
-            return ret
+                    df._df.values[:] = res.T
+                return df
+
+            return self.copy().groupby("unit").map(_perform_op)
 
         return func
 
