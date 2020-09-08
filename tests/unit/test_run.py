@@ -16,7 +16,7 @@ from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.errors import NonUniqueMetadataError
 from scmdata.run import ScmRun, TimeSeries, df_append, run_append
-from scmdata.testing import assert_scmdf_almost_equal
+from scmdata.testing import assert_scmdf_almost_equal, _check_pandas_less_110
 
 
 def test_init_df_year_converted_to_datetime(test_pd_df, data_cls):
@@ -28,6 +28,9 @@ def test_init_df_year_converted_to_datetime(test_pd_df, data_cls):
     ).all()
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 @pytest.mark.parametrize(
     "in_format",
     [
@@ -219,6 +222,9 @@ def get_test_pd_df_with_datetime_columns(tpdf):
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_init_with_ts(test_ts, test_pd_df, data_cls):
     df = data_cls(
         test_ts,
@@ -271,6 +277,9 @@ def test_init_with_years_as_str(test_pd_df, years, data_cls):
     assert (obs == exp).all()
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_init_with_year_columns(test_pd_df, data_cls):
     df = data_cls(test_pd_df)
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
@@ -308,6 +317,9 @@ def test_init_df_from_timeseries(test_scm_df_mulitple, data_cls):
     assert_scmdf_almost_equal(df, test_scm_df_mulitple, check_ts_names=False)
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_init_df_with_extra_col(test_pd_df, data_cls):
     tdf = test_pd_df.copy()
 
@@ -365,6 +377,9 @@ def test_init_self_with_metadata(test_scm_run):
     assert c.metadata == {"test": "other"}
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type, data_cls):
     df = data_cls(test_pd_df).to_iamdataframe()
 
@@ -877,6 +892,9 @@ def test_timeseries_drop_all_nan_times(drop_all_nan_times, time_axis):
         assert len(res.columns) == 4
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_quantile_over_lower(test_processing_scm_df):
     exp = pd.DataFrame(
         [
@@ -909,6 +927,9 @@ def test_quantile_over_lower(test_processing_scm_df):
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_quantile_over_upper(test_processing_scm_df):
     exp = pd.DataFrame(
         [
@@ -931,6 +952,9 @@ def test_quantile_over_upper(test_processing_scm_df):
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_mean_over(test_processing_scm_df):
     exp = pd.DataFrame(
         [
@@ -972,6 +996,9 @@ def test_mean_over(test_processing_scm_df):
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_median_over(test_processing_scm_df):
     exp = pd.DataFrame(
         [
@@ -1021,6 +1048,9 @@ def test_process_over_kwargs_error(scm_data):
         scm_data.process_over("scenario", "mean", junk=4)
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 @pytest.mark.parametrize(
     "tfilter",
     [
@@ -1205,6 +1235,9 @@ def test_append_duplicates_order_doesnt_matter(test_scm_run):
     npt.assert_almost_equal(obs, exp)
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 @pytest.mark.parametrize("duplicate_msg", ("warn", True, False))
 def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     base = test_append_scm_runs["base"]
@@ -1333,6 +1366,9 @@ def get_append_col_order_time_dfs(base):
     return base, other, other_2, exp
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_append_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
@@ -1352,6 +1388,9 @@ def test_run_append_inplace_wrong_base(test_scm_run):
             run_append([test_scm_run.timeseries(), test_scm_run], inplace=True)
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_df_append_deprecated(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
@@ -1366,6 +1405,9 @@ def test_df_append_deprecated(test_scm_run):
         )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_append_chain_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
@@ -1380,6 +1422,9 @@ def test_append_chain_column_order_time_interpolation(test_scm_run):
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_append_inplace_column_order_time_interpolation(test_scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(test_scm_run)
 
@@ -1395,6 +1440,9 @@ def test_append_inplace_column_order_time_interpolation(test_scm_run):
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_append_inplace_preexisting_nan(test_scm_run):
     other = test_scm_run * 2
     other["climate_model"] = "a_model2"
@@ -1506,6 +1554,9 @@ def test_interpolate_nan_constant():
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
     # should be annual mean centred on January 1st of each year
     res = test_scm_df_monthly.time_mean("AS")
@@ -1539,6 +1590,9 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_time_mean_year(test_scm_df_monthly):
     # should be annual mean (using all values in that year)
     res = test_scm_df_monthly.time_mean("AC")
@@ -1567,6 +1621,9 @@ def test_time_mean_year(test_scm_df_monthly):
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 def test_time_mean_year_end_of_year(test_scm_df_monthly):
     # should be annual mean centred on December 31st of each year
     res = test_scm_df_monthly.time_mean("A")
@@ -1682,6 +1739,9 @@ def test_filter_by_int(test_scm_run):
     assert obs["scenario"].unique() == "a_scenario"
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 @pytest.mark.parametrize(
     ("target_unit", "input_units", "filter_kwargs", "expected", "expected_units"),
     [
