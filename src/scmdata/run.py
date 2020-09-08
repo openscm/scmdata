@@ -1019,12 +1019,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         reduce_rows = (~_keep_rows).sum() > 0
 
         if not keep:
-            _keep_times = ~_keep_times
-            _keep_rows = ~_keep_rows
-
+            if reduce_times:
+                _keep_times = ~_keep_times
+            if reduce_rows:
+                _keep_rows = ~_keep_rows
             if not reduce_rows and not reduce_times:
-                # When nothing is filtered, drop everything
-                reduce_rows = True
+                _keep_times = _keep_times * False
+                _keep_rows = _keep_rows * False
 
         ret._df = ret._df.loc[_keep_times, _keep_rows]
         ret._meta = ret._meta[_keep_rows]
@@ -1934,19 +1935,27 @@ def run_append(
     else:
         ret = runs[0].copy()
 
-    new_min = ret._df.shape[1]
     to_join_dfs = []
     to_join_metas = []
+    existing_indices = set(ret._df.columns)
+
+    def get_unique_idx(idx):
+        if idx not in existing_indices:
+            existing_indices.add(idx)
+            return idx
+        return max(existing_indices) + 1
+
     for run in runs[1:]:
-        run_to_join_meta = run._meta.to_frame().reset_index(drop=True)
-        run_to_join_meta.index += new_min
         run_to_join_df = run._df
-        run_to_join_df.columns = run_to_join_meta.index
+        ind = [get_unique_idx(i) for i in run_to_join_df.columns]
+        run_to_join_df.columns = ind
+
+        run_to_join_meta = run._meta.to_frame().reset_index(drop=True)
+        run_to_join_meta.index = ind
 
         # check everything still makes sense
         npt.assert_array_equal(run_to_join_meta.index, run_to_join_df.columns)
 
-        new_min += run_to_join_df.shape[1]
         to_join_dfs.append(run_to_join_df)
         to_join_metas.append(run_to_join_meta)
 
@@ -1993,6 +2002,12 @@ def run_append(
         ret.metadata = metadata
     else:
         ret.metadata = _merge_metadata([r.metadata for r in runs])
+
+    # reorder indexes
+    order_idxs = np.argsort(ret._df.columns)
+
+    ret._df = ret._df.iloc[:, order_idxs]
+    ret._meta = ret._meta[order_idxs]
 
     if not inplace:
         return ret
