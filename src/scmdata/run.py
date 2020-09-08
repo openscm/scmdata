@@ -1852,7 +1852,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 m = self.meta
                 n_unique = m.nunique(axis=0)
                 m = m.drop(columns=n_unique[n_unique > 1].index).drop_duplicates()
-                assert len(m) == 1, m
+                if len(m) != 1:
+                    raise AssertionError(m)
 
                 meta = m.to_dict("list")
 
