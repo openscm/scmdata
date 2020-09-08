@@ -393,7 +393,11 @@ def test_set_item_not_in_meta(scm_run):
 
 
 def test_len(scm_run):
-    assert len(scm_run) == len(scm_run._ts)
+    assert len(scm_run) == len(scm_run.timeseries())
+
+
+def test_shape(scm_run):
+    assert scm_run.shape == scm_run.timeseries().shape
 
 
 def test_head(scm_run):
@@ -1368,31 +1372,6 @@ def test_append_inplace_preexisting_nan(scm_run):
         check_like=True,
         check_dtype=False,
     )
-
-
-@pytest.mark.parametrize("same_times", [True, False])
-def test_append_reindexing(scm_run, same_times):
-    other = copy.deepcopy(scm_run)
-    other["climate_model"] = "other"
-    if not same_times:
-        other["time"] = [2002, 2010, 2020]
-
-    with patch.object(
-        TimeSeries, "reindex", wraps=other._ts[0].reindex
-    ) as mock_reindex:
-        res = scm_run.append(other, duplicate_msg="warn")
-
-        expected_times = set(
-            np.concatenate([other.time_points.values, scm_run.time_points.values])
-        )
-        if same_times:
-            mock_reindex.assert_not_called()
-        else:
-            mock_reindex.assert_called()
-
-        npt.assert_array_equal(res.time_points.values, sorted(expected_times))
-        for t in res._ts:
-            npt.assert_array_equal(t.time_points.values, sorted(expected_times))
 
 
 def test_interpolate(combo_df):
@@ -2518,21 +2497,20 @@ def test_non_unique_metadata_error_formatting():
         raise NonUniqueMetadataError(meta)
 
 
-@pytest.mark.parametrize("copy_ts", [True, False])
-def test_copy(scm_run, copy_ts):
+def test_copy(scm_run):
     orig_run = scm_run
-    copy_run = scm_run.copy(copy_ts)
+    copy_run = scm_run.copy()
 
     assert id(orig_run) != id(copy_run)
 
     assert "test" not in orig_run.metadata
     assert id(orig_run.metadata) != id(copy_run.metadata)
+    assert id(orig_run._df) != id(copy_run._df)
+    assert id(orig_run._meta) != id(copy_run._meta)
 
-    for o, c in zip(orig_run._ts, copy_run._ts):
-        if copy_ts:
-            assert id(o) != id(c)
-        else:
-            assert id(o) == id(c)
+    orig_run["example"] = 1
+    assert "example" in orig_run.meta_attributes
+    assert "example" not in copy_run.meta_attributes
 
 
 @pytest.mark.parametrize("model", ["model_a", "model_b"])
@@ -2549,7 +2527,7 @@ def test_metadata_consistency(model):
         },
     )
     modified = start.copy()
-    modified.filter(model=model)["new_meta"] = "hi"
+    modified.sel(model=model)["new_meta"] = "hi"
 
     modified_dropped = modified.drop_meta("new_meta", inplace=False)
 

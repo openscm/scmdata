@@ -38,8 +38,7 @@ from .offsets import generate_range, to_offset
 from .ops import inject_ops_methods
 from .plotting import inject_plotting_methods
 from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
-from .time import _TARGET_DTYPE, TimePoints
-from .timeseries import TimeSeries
+from .time import _TARGET_DTYPE, TimePoints, TimeseriesConverter
 from .units import UnitConverter
 
 _logger = getLogger(__name__)
@@ -465,6 +464,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ret = copy.copy(self)
         ret._df = self._df.copy()
         ret._meta = self._meta.copy()
+        ret.metadata = copy.copy(self.metadata)
 
         return ret
 
@@ -575,8 +575,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 new_meta[key] = meta[0]
                 self._meta = pd.MultiIndex.from_frame(new_meta.astype("category"))
             elif len(meta) == len(self):
-                level_idx = self._meta.names.index(key)
-                self._meta = self._meta.set_levels(meta, level=level_idx)
+                new_meta_index = self._meta.to_frame(index=False)
+                new_meta_index[key] = pd.Series(meta, dtype="category")
+                self._meta = pd.MultiIndex.from_frame(new_meta_index)
             else:
                 raise ValueError(
                     "Invalid length for metadata, `{}`, must be 1 or equal to the number of timeseries, `{}`".format(
@@ -644,11 +645,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Drop meta columns out of the Run
 
-        Notes
-        -----
-        If this operation is not performed inplace, the current object is deep copied. Any changes to the :obj:`Timeseries` of
-        the returned object will not be reflected in the original object
-
         Parameters
         ----------
         columns
@@ -676,7 +672,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if inplace:
             ret = self
         else:
-            ret = self.copy(copy_ts=True)
+            ret = self.copy()
 
         if isinstance(columns, str):
             columns = [columns]
@@ -685,14 +681,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         for c in columns:
             if c not in existing_cols:
                 raise KeyError(c)
-
-        # pylint: disable=protected-access
-        for ts in ret._ts:
-            for c in columns:
-                try:
-                    del ts._data.attrs[c]
-                except KeyError:
-                    pass
+            ret._meta = ret._meta.droplevel(c)
 
         if ret._duplicated_meta():
             raise NonUniqueMetadataError(ret.meta)
@@ -811,7 +800,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 "Ambiguous time values with time_axis = '{}'".format(time_axis)
             )
 
-        df.columns = columns
+        df.columns = pd.Index(columns, name="time")
         df.index = pd.MultiIndex.from_frame(_meta)
 
         if drop_all_nan_times:
@@ -1233,17 +1222,27 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         target_times = np.asarray(target_times, dtype="datetime64[s]")
 
-        res = self.copy(copy_ts=False)
+        res = self.copy()
 
-        res._ts = [
-            ts.interpolate(
-                target_times,
-                interpolation_type=interpolation_type,
-                extrapolation_type=extrapolation_type,
+        target_times = TimePoints(target_times)
+
+        timeseries_converter = TimeseriesConverter(
+            self.time_points.values,
+            target_times.values,
+            interpolation_type=interpolation_type,
+            extrapolation_type=extrapolation_type,
+        )
+
+        target_data = np.zeros((len(target_times), len(res)))
+
+        for i in range(len(res)):
+            target_data[:, i] = timeseries_converter.convert_from(
+                res._df.iloc[:, i].values
             )
-            for ts in res._ts
-        ]
-        res._time_points = TimePoints(target_times)
+        res._df = pd.DataFrame(
+            target_data, columns=res._df.columns, index=target_times.to_index()
+        )
+        res._time_points = target_times
 
         return res
 
@@ -1919,11 +1918,10 @@ def run_append(
     to_join_dfs = []
     to_join_metas = []
     for run in runs[1:]:
-        # do we need a copy here?
-        run_to_join_df = run._df
-        run_to_join_df.columns += new_min
         run_to_join_meta = run._meta.to_frame().reset_index(drop=True)
         run_to_join_meta.index += new_min
+        run_to_join_df = run._df
+        run_to_join_df.columns = run_to_join_meta.index
 
         # check everything still makes sense
         npt.assert_array_equal(run_to_join_meta.index, run_to_join_df.columns)

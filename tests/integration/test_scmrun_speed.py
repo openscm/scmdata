@@ -138,3 +138,11 @@ def test_set_meta_reduce_uniqueness(benchmark, big_scmrun):
     original_set = big_scmrun.get_unique_meta("to_squash")
     res = benchmark.pedantic(set_meta, iterations=1, rounds=2)
     assert not any([v in original_set for v in res.get_unique_meta("to_squash")])
+
+
+def test_interpolate(benchmark, big_scmrun):
+    def interp():
+        return big_scmrun.interpolate(range(1500, 2500))
+
+    res = benchmark.pedantic(interp, iterations=1, rounds=1)
+    assert res.shape == (len(big_scmrun), 1000)
