@@ -372,6 +372,22 @@ def test_get_item(scm_run):
     assert scm_run["model"].unique() == ["a_iam"]
 
 
+@pytest.mark.parametrize(
+    "value,output",
+    (
+        (1, [np.nan, np.nan, 1.0]),
+        (1.0, (np.nan, np.nan, 1.0)),
+        ("test", ["nan", "nan", "test"]),
+    ),
+)
+def test_get_item_with_nans(scm_run, value, output):
+    expected_values = [np.nan, np.nan, value]
+    scm_run["extra"] = expected_values
+    exp = pd.Series(output, name="extra")
+
+    pd.testing.assert_series_equal(scm_run["extra"], exp, check_exact=True)
+
+
 def test_get_item_not_in_meta(scm_run):
     dud_key = 0
     error_msg = re.escape("[{}] is not in metadata".format(dud_key))
@@ -799,6 +815,88 @@ def test_filter_timeseries_nan_meta():
     with_nan_assertion(res, exp)
 
 
+def test_filter_index(scm_run):
+    pd.testing.assert_index_equal(scm_run.meta.index, pd.Int64Index([0, 1, 2]))
+
+    run = scm_run.filter(variable="Primary Energy")
+    exp_index = pd.Int64Index([0, 2])
+    pd.testing.assert_index_equal(run["variable"].index, exp_index)
+    pd.testing.assert_index_equal(run.meta.index, exp_index)
+    pd.testing.assert_index_equal(run._df.columns, exp_index)
+
+    run = scm_run.filter(variable="Primary Energy", keep=False)
+    exp_index = pd.Int64Index([1])
+    pd.testing.assert_index_equal(run["variable"].index, exp_index)
+    pd.testing.assert_index_equal(run.meta.index, exp_index)
+    pd.testing.assert_index_equal(run._df.columns, exp_index)
+
+
+def test_append_index(scm_run):
+    def _check(res):
+        exp_index = pd.Int64Index([0, 1, 2])
+        pd.testing.assert_index_equal(res.meta.index, exp_index)
+        pd.testing.assert_series_equal(
+            res["variable"],
+            pd.Series(
+                ["Primary Energy", "Primary Energy|Coal", "Primary Energy"],
+                index=exp_index,
+                name="variable",
+            ),
+        )
+        pd.testing.assert_frame_equal(scm_run.timeseries(), res.timeseries())
+
+    # Check that the result of append is sorted by index value
+    res = run_append(
+        [
+            scm_run.filter(variable="Primary Energy"),
+            scm_run.filter(variable="Primary Energy", keep=False),
+        ]
+    )
+    _check(res)
+
+    res = run_append(
+        [
+            scm_run.filter(variable="Primary Energy", keep=False),
+            scm_run.filter(variable="Primary Energy"),
+        ]
+    )
+    _check(res)
+
+
+def test_append_index_extra(scm_run):
+    runs = []
+    for i in range(3):
+        r = scm_run.filter(variable="Primary Energy")
+        r["run_id"] = i + 1
+
+        pd.testing.assert_index_equal(r.meta.index, pd.Int64Index([0, 2]))
+        runs.append(r)
+
+    res = run_append(runs)
+
+    # note that the indexes are reset for subsequent appends and then increment
+    exp_index = pd.Int64Index([0, 2, 3, 4, 5, 6])
+    pd.testing.assert_index_equal(res.meta.index, exp_index)
+    pd.testing.assert_series_equal(
+        res["run_id"], pd.Series([1, 1, 2, 2, 3, 3], index=exp_index, name="run_id",),
+    )
+
+
+@pytest.mark.parametrize("value", [1, 1.0, "test"])
+def test_append_nans(scm_run, value):
+    run_1 = scm_run.copy()
+    run_2 = scm_run.copy()
+    run_2["extra"] = value
+
+    res = run_append([run_1, run_2])
+
+    # note that the indexes are reset for subsequent appends and then increment
+    pd.testing.assert_series_equal(
+        res["extra"],
+        pd.Series([np.nan, np.nan, np.nan, value, value, value], name="extra",),
+    )
+
+
 def test_timeseries(scm_run):
     dct = {
         "model": ["a_model"] * 3,
@@ -1140,7 +1238,7 @@ def test_append_exact_duplicates(scm_run):
 
     assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
-    assert_scmdf_almost_equal(scm_run, other)
+    assert_scmdf_almost_equal(scm_run, other, check_ts_names=False)
 
 
 def test_append_duplicates(scm_run):

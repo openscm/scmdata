@@ -490,9 +490,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if key == "year":
             return pd.Series(self._time_points.years())
         if set(_key_check).issubset(self.meta_attributes):
-            return self._meta_column(key).astype(
-                self._meta_column(key).cat.categories.dtype
-            )
+            try:
+                return self._meta_column(key).astype(
+                    self._meta_column(key).cat.categories.dtype
+                )
+            except ValueError:
+                return self._meta_column(key).astype(float)
 
         raise KeyError("[{}] is not in metadata".format(key))
 
@@ -907,7 +910,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Metadata
         """
-        return pd.DataFrame(self._meta.to_list(), columns=self._meta.names)
+        return pd.DataFrame(
+            self._meta.to_list(), columns=self._meta.names, index=self._df.columns
+        )
 
     def _meta_column(self, col) -> pd.Series:
         out = self._meta.get_level_values(col)
@@ -922,6 +927,64 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     ):
         """
         Return a filtered ScmRun (i.e., a subset of the data).
+
+        .. code:: python
+
+            >>> df
+            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+                [3 rows x 7 columns]
+
+            >>> df.filter(scenario="a_scenario")
+            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                [2 rows x 7 columns]
+
+            >>> df.filter(scenario="a_scenario", keep=False)
+            <scmdata.ScmRun (timeseries: 1, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+                [1 rows x 7 columns]
+
+            >>> df.filter(level=1)
+            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+                [2 rows x 7 columns]
+
+            >>> df.filter(year=range(2000, 2011))
+            <scmdata.ScmRun (timeseries: 3, timepoints: 2)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2010-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+                [2 rows x 7 columns]
 
         Parameters
         ----------
@@ -1889,7 +1952,10 @@ def run_append(
         if idx not in existing_indices:
             existing_indices.add(idx)
             return idx
-        return max(existing_indices) + 1
+
+        new_idx = max(existing_indices) + 1
+        existing_indices.add(new_idx)
+        return new_idx
 
     for run in runs[1:]:
         run_to_join_df = run._df
