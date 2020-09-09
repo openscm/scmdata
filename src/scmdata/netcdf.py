@@ -16,7 +16,6 @@ from datetime import datetime
 from logging import getLogger
 
 import numpy as np
-import pandas as pd
 
 from . import REQUIRED_COLS, __version__
 
