@@ -385,7 +385,7 @@ def test_get_item_with_nans(scm_run, value, output):
     scm_run["extra"] = expected_values
     exp = pd.Series(output, name="extra")
 
-    pd.testing.assert_series_equal(scm_run["extra"], exp, check_exact=True)
+    pd.testing.assert_series_equal(scm_run["extra"], exp, check_exact=value != "test")
 
 
 def test_get_item_not_in_meta(scm_run):
