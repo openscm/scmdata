@@ -16,6 +16,7 @@ from datetime import datetime
 from logging import getLogger
 
 import numpy as np
+import pandas as pd
 
 from . import REQUIRED_COLS, __version__
 
@@ -258,6 +259,10 @@ def _read_nc(cls, ds):
                     )
                 }
                 df[col] = _merge_meta(df.meta, col, values[it.multi_index], **meta_vals)
+        try:
+            df[col] = df[col].astype(var.dtype)
+        except ValueError:
+            logger.exception("could not convert meta dtype")
     df.metadata.update({k: ds.getncattr(k) for k in ds.ncattrs()})
 
     return df

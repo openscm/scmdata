@@ -701,6 +701,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         for c in columns:
             if c not in existing_cols:
                 raise KeyError(c)
+        for c in columns:
             ret._meta = ret._meta.droplevel(c)
 
         if ret._duplicated_meta():
