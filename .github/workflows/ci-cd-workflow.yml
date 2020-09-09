@@ -105,7 +105,7 @@ jobs:
 
       - name: Test with pytest
         env:
-          MIN_COVERAGE: 95
+          MIN_COVERAGE: 90
         run: |
           pytest tests -r a --cov=scmdata --cov-report=xml
           if ! coverage report --fail-under=${MIN_COVERAGE} --show-missing
