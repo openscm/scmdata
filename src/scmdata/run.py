@@ -15,11 +15,11 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.testing as npt
+import openscm_units.unit_registry as ur
 import pandas as pd
 import pint
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops
-import openscm_units.unit_registry as ur
 
 from . import REQUIRED_COLS
 from .errors import NonUniqueMetadataError
