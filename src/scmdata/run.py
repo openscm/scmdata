@@ -923,39 +923,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Return a filtered ScmRun (i.e., a subset of the data).
 
-        Note that this this does not copy the underlying time-series data so any modifications will be reflected in the caller
-        :obj`ScmRun`. This allows for the updating a subset of the timeseries directly.
-
-        .. code:: python
-
-            >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-            Time:
-                Start: 2005-01-01T00:00:00
-                End: 2015-01-01T00:00:00
-            Meta:
-                   model     scenario region             variable   unit climate_model
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-
-            >>> df.filter(scenario="a_scenario")["extra_meta"] = "test"
-            >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-            Time:
-                Start: 2005-01-01T00:00:00
-                End: 2015-01-01T00:00:00
-            Meta:
-                   model     scenario region  ...   unit climate_model extra_meta
-                0  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
-                1  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
-                2  a_iam  a_scenario2  World  ...  EJ/yr       a_model        NaN
-
-                [3 rows x 7 columns]
-
-        If you do not want to change the parent `ScmRun` create a copy :func`ScmRun.copy()`. Any changes to this copy will not be
-        reflected in the parent.
-
         Parameters
         ----------
         keep
@@ -993,11 +960,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         -------
         :obj:`ScmRun`
             If not ``inplace``, return a new instance with the filtered data.
-
-        Raises
-        ------
-        AssertionError
-            Data and meta become unaligned
         """
         _keep_times, _keep_rows = self._apply_filters(kwargs)
         ret = copy.copy(self) if not inplace else self
