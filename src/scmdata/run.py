@@ -916,7 +916,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         self,
         keep: bool = True,
         inplace: bool = False,
-        has_nan: bool = True,
         log_if_empty: bool = True,
         **kwargs: Any,
     ):
@@ -965,13 +964,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         inplace
             If True, do operation inplace and return None
 
-        has_nan
-            If ``True``, convert all nan values in :obj:`meta_col` to empty string
-            before applying filters. This means that "" and "*" will match rows with
-            :class:`np.nan`. If ``False``, the conversion is not applied and so a search
-            in a string column which contains ;class:`np.nan` will result in a
-            :class:`TypeError`.
-
         log_if_empty
             If ``True``, log a warning level message if the result is empty.
 
@@ -1006,7 +998,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         AssertionError
             Data and meta become unaligned
         """
-        _keep_times, _keep_rows = self._apply_filters(kwargs, has_nan)
+        _keep_times, _keep_rows = self._apply_filters(kwargs)
         ret = copy.copy(self) if not inplace else self
 
         if not keep and sum(~_keep_rows) and sum(~_keep_times):
@@ -1041,7 +1033,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     # pylint doesn't recognise ',' in returns type definition
     def _apply_filters(  # pylint: disable=missing-return-doc
-        self, filters: Dict, has_nan: bool = True
+        self, filters: Dict
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Determine rows to keep in data for given set of filters.
@@ -1051,13 +1043,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         filters
             Dictionary of filters ``({col: values}})``; uses a pseudo-regexp syntax by
             default but if ``filters["regexp"]`` is ``True``, regexp is used directly.
-
-        has_nan
-            If `True``, convert all nan values in :obj:`meta_col` to empty string before
-            applying filters. This means that "" and "*" will match rows with
-            :class:`np.nan`. If ``False``, the conversion is not applied and so a search
-            in a string column which contains :class:`np.nan` will result in a
-            :class:`TypeError`.
 
         Returns
         -------
@@ -1088,7 +1073,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                     values,
                     level=level,
                     regexp=regexp,
-                    has_nan=has_nan,
                     separator=self.data_hierarchy_separator,
                 )
 
@@ -1099,7 +1083,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                         "*",
                         level=values,
                         regexp=regexp,
-                        has_nan=has_nan,
                         separator=self.data_hierarchy_separator,
                     )
                 # else do nothing as level handled in variable filtering
@@ -1622,7 +1605,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             to_convert["unit_context"] = context
 
         if "unit_context" not in to_not_convert.meta_attributes and context is not None:
-            to_not_convert["unit_context"] = np.nan
+            to_not_convert["unit_context"] = None
 
         def apply_units(group):
             orig_unit = group.get_unique_meta("unit", no_duplicates=True)

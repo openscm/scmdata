@@ -109,7 +109,6 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     values: Union[Iterable[str], str],
     level: Optional[Union[str, int]] = None,
     regexp: bool = False,
-    has_nan: bool = True,
     separator: str = HIERARCHY_SEPARATOR,
 ) -> pd.Series:
     """
@@ -158,44 +157,40 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     )
 
     for s in _values:
-        if isinstance(s, str) or np.isnan(s):
-            _regexp = (
-                str(s)
-                .replace("|", "\\|")
-                .replace(".", r"\.")  # `.` has to be replaced before `*`
-                .replace("*", ".*")
-                .replace("+", r"\+")
-                .replace("(", r"\(")
-                .replace(")", r"\)")
-                .replace("$", "\\$")
-                .replace("^", "\\^")
-            ) + "$"
-            pattern = re.compile(_regexp if not regexp else str(s))
-            try:
+        if isinstance(s, str) and s == "":
+            s = np.nan
+        if isinstance(s, str):
+            if s == "*" and level is None:
+                matches |= True
+            else:
+                _regexp = (
+                    str(s)
+                    .replace("|", "\\|")
+                    .replace(".", r"\.")  # `.` has to be replaced before `*`
+                    .replace("*", ".*")
+                    .replace("+", r"\+")
+                    .replace("(", r"\(")
+                    .replace(")", r"\)")
+                    .replace("$", "\\$")
+                    .replace("^", "\\^")
+                ) + "$"
+                pattern = re.compile(_regexp if not regexp else str(s))
+
                 subset = [m for m in meta_col.categories if pattern.match(m)]
-            except TypeError as e:
-                # if it's not the cryptic pandas message we expect, raise
-                msg = str(e)
-                if msg != "expected string or bytes-like object":
-                    raise e  # pragma: no cover # emergency valve
 
-                error_msg = (
-                    "String filtering cannot be performed on column '{}', which "
-                    "contains NaN's, unless `has_nan` is True".format(meta_col.name)
-                )
-                raise TypeError(error_msg)
+                if level is not None:
+                    depth = find_depth(meta_col, str(s), level, separator=separator)
+                    subset = set(subset).intersection(set(depth))
 
-            if level is not None:
-                depth = find_depth(meta_col, str(s), level, separator=separator)
-                subset = set(subset).intersection(set(depth))
-
-            matches |= meta_col.isin(subset)
+                matches |= meta_col.isin(subset)
         else:
             s = float(s)
             if np.isnan(s):
-                matches |= np.isnan(meta_col)
+                matches |= [
+                    c == -1 for c in meta_col.codes
+                ]  # nan's are missing from categoricals
             else:
-                matches |= np.isclose(s, meta_col)
+                matches |= np.isclose(s, meta_col.astype(float))
 
     return matches
 

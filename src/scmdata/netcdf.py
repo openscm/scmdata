@@ -227,8 +227,23 @@ def _read_nc(cls, ds):
     # Parse any extra metadata columns
     # Requires 1 filter per item
 
+    def _merge_meta(meta, col, value, **filters):
+        result = []
+        for i, r in meta.iterrows():
+            matches = True
+            val = r[col]
+            for k, v in filters.items():
+                if r[k] != v:
+                    matches = False
+                    break
+            if matches:
+                val = value
+            result.append(val)
+        return result
+
     for col in extra_cols:
         var = ds.variables[col]
+        df[col] = None
 
         values = var[:]
         meta_at_coord = np.asarray(
@@ -242,7 +257,7 @@ def _read_nc(cls, ds):
                         var.dimensions, meta_at_coord[(slice(None),) + it.multi_index]
                     )
                 }
-                df.filter(**meta_vals)[col] = values[it.multi_index]
+                df[col] = _merge_meta(df.meta, col, values[it.multi_index], **meta_vals)
     df.metadata.update({k: ds.getncattr(k) for k in ds.ncattrs()})
 
     return df
