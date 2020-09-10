@@ -20,7 +20,7 @@ Internally, :class:`ScmRun <scmdata.run.ScmRun>` stores the timeseries data in a
 :class:`pandas.MultiIndex` of type `pandas.Categorical`, for efficient indexing.
 
 This class is the primary way of handling timeseries data within the **scmdata** package.
-For example, the :class:`scmdata.timeseries.TimeSeries`'s can be filtered to only find the :class:`TimeSeries <scmdata.timeseries.TimeSeries>`  which have a ``"scenario"`` metadata label equal to ``"green"`` (see :meth:`scmdata.ScmRun.filter <scmdata.run.ScmRun.filter>` for full details).
+For example, the :class:`scmdata.run.ScmRun` can be filtered to only find the subset of data which have a ``"scenario"`` metadata label equal to ``"green"`` (see :meth:`scmdata.ScmRun.filter <scmdata.run.ScmRun.filter>` for full details).
 Other operations include grouping, setting and (basic) plotting.
 
 
