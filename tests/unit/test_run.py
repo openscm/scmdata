@@ -362,12 +362,11 @@ def _check_copy(a, b, copy_data):
 
 
 @pytest.mark.parametrize("copy_data", [True, False])
-def test_init_with_copy_run(copy_data, scm_run, with_columns):
+def test_init_with_copy_run(copy_data, scm_run):
     res = ScmRun(scm_run, copy_data=copy_data)
 
     assert id(res) != id(scm_run)
     _check_copy(res._df, scm_run._df, copy_data)
-    _check_copy(res._meta, scm_run._meta, copy_data)
 
 
 @pytest.mark.parametrize("copy_data", [True, False])

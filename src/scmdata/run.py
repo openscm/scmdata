@@ -404,7 +404,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         if isinstance(data, ScmRun):
             self._df = data._df.copy() if copy_data else data._df
-            self._meta = data._meta.copy() if copy_data else data._meta
+            self._meta = data._meta
             self._time_points = TimePoints(data.time_points.values)
             if metadata is None:
                 metadata = data.metadata.copy()
