@@ -753,6 +753,26 @@ def test_filter_by_regexp_caret(scm_run, regexp, exp_units):
         assert obs.get_unique_meta("unit") == exp_units
 
 
+def test_filter_asterisk_edgecase(scm_run):
+    scm_run["extra"] = ["*", "*", "other"]
+    obs = scm_run.filter(scenario="*")
+    assert len(obs) == len(scm_run)
+
+    obs = scm_run.filter(scenario="*", level=0)
+    assert len(obs) == 2
+
+    obs = scm_run.filter(scenario="a_scenario", level=0)
+    assert len(obs) == 1
+
+    # Weird case where "*" matches everything instead of "*" in
+    obs = scm_run.filter(extra="*", regexp=False)
+    assert len(obs) == len(scm_run)
+    assert (obs["extra"] == ["*", "*", "other"]).all()
+
+    # Not valid regex
+    pytest.raises(re.error, scm_run.filter, extra="*", regexp=True)
+
+
 def test_filter_timeseries_different_length():
     # This is different to how `ScmDataFrame` deals with nans
     # Nan and empty timeseries remain in the Run

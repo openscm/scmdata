@@ -160,7 +160,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         if isinstance(s, str) and s == "":
             s = np.nan
         if isinstance(s, str):
-            if s == "*" and level is None:
+            if not regexp and s == "*" and level is None:
                 matches |= True
             else:
                 _regexp = (
