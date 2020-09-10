@@ -752,15 +752,15 @@ def test_idelta_per_delta_time_multiple_ts():
     res = (
         start
         .delta_per_delta_time()
-        .convert_unit("Mt CO2 / yr", variable="Emissions|CO2")
-        .convert_unit("J / m^2 / yr", variable="Heat Uptake")
-        .convert_unit("K / yr", variable="Temperature")
+        .convert_unit("Mt CO2 / yr", variable="Delta Emissions|CO2")
+        .convert_unit("J / m^2 / yr", variable="Delta Heat Uptake")
+        .convert_unit("K / yr", variable="Delta Temperature")
     )
 
     exp = get_single_ts(
-        data=np.array([[0, 7.5, 45], [0, -7.5, -45], [0, 12.5, 125]]).T,
-        index=[2020, 2025, 2040],
-        variable=["Cumulative {}".format(v) for v in variables],
+        data=np.array([[1 / 5, 1 / 15], [-1 / 5, -1 / 15], [5 / 5, 5 / 15]]).T,
+        index=[2022.5, (2025 + 2040) / 2],
+        variable=["Delta {}".format(v) for v in variables],
         unit=["Mt CO2 / yr", "J / m^2 / yr", "K / yr"],
     )
 
