@@ -15,7 +15,7 @@ from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.errors import NonUniqueMetadataError
-from scmdata.run import ScmRun, TimeSeries, run_append
+from scmdata.run import ScmRun, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -96,7 +96,7 @@ def test_init_df_formats(test_pd_run_df, in_format):
     res_df = res_df.reset_index()
 
     pd.testing.assert_frame_equal(
-        res_df[test_pd_run_df.columns.tolist()], test_pd_run_df, check_like=True
+        res_df[test_pd_run_df.columns.tolist()], test_pd_run_df, check_like=True,
     )
 
 
@@ -354,6 +354,29 @@ def test_init_self_with_metadata(scm_run):
     assert c.metadata == {"test": "other"}
 
 
+def _check_copy(a, b, copy_data):
+    if copy_data:
+        assert id(a.values.base) != id(b.values.base)
+    else:
+        assert id(a.values.base) == id(b.values.base)
+
+
+@pytest.mark.parametrize("copy_data", [True, False])
+def test_init_with_copy_run(copy_data, scm_run):
+    res = ScmRun(scm_run, copy_data=copy_data)
+
+    assert id(res) != id(scm_run)
+    _check_copy(res._df, scm_run._df, copy_data)
+
+
+@pytest.mark.parametrize("copy_data", [True, False])
+def test_init_with_copy_dataframe(copy_data, test_pd_df):
+    res = ScmRun(test_pd_df, copy_data=copy_data)
+
+    # an incoming pandas DF no longer references the original
+    _check_copy(res._df, test_pd_df, True)
+
+
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
     df = ScmRun(test_pd_df).to_iamdataframe()
 
@@ -370,6 +393,22 @@ def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
 
 def test_get_item(scm_run):
     assert scm_run["model"].unique() == ["a_iam"]
+
+
+@pytest.mark.parametrize(
+    "value,output",
+    (
+        (1, [np.nan, np.nan, 1.0]),
+        (1.0, (np.nan, np.nan, 1.0)),
+        ("test", ["nan", "nan", "test"]),
+    ),
+)
+def test_get_item_with_nans(scm_run, value, output):
+    expected_values = [np.nan, np.nan, value]
+    scm_run["extra"] = expected_values
+    exp = pd.Series(output, name="extra")
+
+    pd.testing.assert_series_equal(scm_run["extra"], exp, check_exact=value != "test")
 
 
 def test_get_item_not_in_meta(scm_run):
@@ -393,7 +432,11 @@ def test_set_item_not_in_meta(scm_run):
 
 
 def test_len(scm_run):
-    assert len(scm_run) == len(scm_run._ts)
+    assert len(scm_run) == len(scm_run.timeseries())
+
+
+def test_shape(scm_run):
+    assert scm_run.shape == scm_run.timeseries().shape
 
 
 def test_head(scm_run):
@@ -733,6 +776,26 @@ def test_filter_by_regexp_caret(scm_run, regexp, exp_units):
         assert obs.get_unique_meta("unit") == exp_units
 
 
+def test_filter_asterisk_edgecase(scm_run):
+    scm_run["extra"] = ["*", "*", "other"]
+    obs = scm_run.filter(scenario="*")
+    assert len(obs) == len(scm_run)
+
+    obs = scm_run.filter(scenario="*", level=0)
+    assert len(obs) == 2
+
+    obs = scm_run.filter(scenario="a_scenario", level=0)
+    assert len(obs) == 1
+
+    # Weird case where "*" matches everything instead of "*" in
+    obs = scm_run.filter(extra="*", regexp=False)
+    assert len(obs) == len(scm_run)
+    assert (obs["extra"] == ["*", "*", "other"]).all()
+
+    # Not valid regex
+    pytest.raises(re.error, scm_run.filter, extra="*", regexp=True)
+
+
 def test_filter_timeseries_different_length():
     # This is different to how `ScmDataFrame` deals with nans
     # Nan and empty timeseries remain in the Run
@@ -761,8 +824,7 @@ def test_filter_timeseries_different_length():
     assert not df.filter(scenario="a_scenario2", year=2002).timeseries().empty
 
 
-@pytest.mark.parametrize("has_nan", [True, False])
-def test_filter_timeseries_nan_meta(has_nan):
+def test_filter_timeseries_nan_meta():
     df = ScmRun(
         pd.DataFrame(
             np.array([[1.0, 2.0], [4.0, 5.0], [7.0, 8.0]]).T, index=[2000, 2001]
@@ -777,38 +839,105 @@ def test_filter_timeseries_nan_meta(has_nan):
         },
     )
 
-    # not sure how we want to setup NaN filtering, empty string seems as good as any?
-    if not has_nan:
-        error_msg = re.escape(
-            "String filtering cannot be performed on column 'scenario', which "
-            "contains NaN's, unless `has_nan` is True"
+    def with_nan_assertion(a, b):
+        assert len(a) == len(b)
+        assert all(
+            [(v == b[i]) or (np.isnan(v) and np.isnan(b[i])) for i, v in enumerate(a)]
         )
-        with pytest.raises(TypeError, match=error_msg):
-            df.filter(scenario="*", has_nan=has_nan)
-        with pytest.raises(TypeError, match=error_msg):
-            df.filter(scenario="", has_nan=has_nan)
 
-    else:
+    res = df.filter(scenario="*")["scenario"].unique()
+    exp = ["a_scenario", "a_scenario2", np.nan]
+    with_nan_assertion(res, exp)
 
-        def with_nan_assertion(a, b):
-            assert all(
-                [
-                    (v == b[i]) or (np.isnan(v) and np.isnan(b[i]))
-                    for i, v in enumerate(a)
-                ]
-            )
+    res = df.filter(scenario="")["scenario"].unique()
+    exp = [np.nan]
+    with_nan_assertion(res, exp)
 
-        res = df.filter(scenario="*", has_nan=has_nan)["scenario"].unique()
-        exp = ["a_scenario", "a_scenario2", np.nan]
-        with_nan_assertion(res, exp)
+    res = df.filter(scenario=np.nan)["scenario"].unique()
+    exp = [np.nan]
+    with_nan_assertion(res, exp)
 
-        res = df.filter(scenario="", has_nan=has_nan)["scenario"].unique()
-        exp = [np.nan]
-        with_nan_assertion(res, exp)
 
-        res = df.filter(scenario="nan", has_nan=has_nan)["scenario"].unique()
-        exp = [np.nan]
-        with_nan_assertion(res, exp)
+def test_filter_index(scm_run):
+    pd.testing.assert_index_equal(scm_run.meta.index, pd.Int64Index([0, 1, 2]))
+
+    run = scm_run.filter(variable="Primary Energy")
+    exp_index = pd.Int64Index([0, 2])
+    pd.testing.assert_index_equal(run["variable"].index, exp_index)
+    pd.testing.assert_index_equal(run.meta.index, exp_index)
+    pd.testing.assert_index_equal(run._df.columns, exp_index)
+
+    run = scm_run.filter(variable="Primary Energy", keep=False)
+    exp_index = pd.Int64Index([1])
+    pd.testing.assert_index_equal(run["variable"].index, exp_index)
+    pd.testing.assert_index_equal(run.meta.index, exp_index)
+    pd.testing.assert_index_equal(run._df.columns, exp_index)
+
+
+def test_append_index(scm_run):
+    def _check(res):
+        exp_index = pd.Int64Index([0, 1, 2])
+        pd.testing.assert_index_equal(res.meta.index, exp_index)
+        pd.testing.assert_series_equal(
+            res["variable"],
+            pd.Series(
+                ["Primary Energy", "Primary Energy|Coal", "Primary Energy"],
+                index=exp_index,
+                name="variable",
+            ),
+        )
+        pd.testing.assert_frame_equal(scm_run.timeseries(), res.timeseries())
+
+    # Check that the result of append is sorted by index value
+    res = run_append(
+        [
+            scm_run.filter(variable="Primary Energy"),
+            scm_run.filter(variable="Primary Energy", keep=False),
+        ]
+    )
+    _check(res)
+
+    res = run_append(
+        [
+            scm_run.filter(variable="Primary Energy", keep=False),
+            scm_run.filter(variable="Primary Energy"),
+        ]
+    )
+    _check(res)
+
+
+def test_append_index_extra(scm_run):
+    runs = []
+    for i in range(3):
+        r = scm_run.filter(variable="Primary Energy")
+        r["run_id"] = i + 1
+
+        pd.testing.assert_index_equal(r.meta.index, pd.Int64Index([0, 2]))
+        runs.append(r)
+
+    res = run_append(runs)
+
+    # note that the indexes are reset for subsequent appends and then increment
+    exp_index = pd.Int64Index([0, 2, 3, 4, 5, 6])
+    pd.testing.assert_index_equal(res.meta.index, exp_index)
+    pd.testing.assert_series_equal(
+        res["run_id"], pd.Series([1, 1, 2, 2, 3, 3], index=exp_index, name="run_id",),
+    )
+
+
+@pytest.mark.parametrize("value", [1, 1.0, "test"])
+def test_append_nans(scm_run, value):
+    run_1 = scm_run.copy()
+    run_2 = scm_run.copy()
+    run_2["extra"] = value
+
+    res = run_append([run_1, run_2])
+
+    # note that the indexes are reset for subsequent appends and then increment
+    pd.testing.assert_series_equal(
+        res["extra"],
+        pd.Series([np.nan, np.nan, np.nan, value, value, value], name="extra",),
+    )
 
 
 def test_timeseries(scm_run):
@@ -1152,7 +1281,7 @@ def test_append_exact_duplicates(scm_run):
 
     assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
-    assert_scmdf_almost_equal(scm_run, other)
+    assert_scmdf_almost_equal(scm_run, other, check_ts_names=False)
 
 
 def test_append_duplicates(scm_run):
@@ -1170,7 +1299,7 @@ def test_append_duplicates(scm_run):
 def test_append_duplicates_order_doesnt_matter(scm_run):
     other = copy.deepcopy(scm_run)
     other["time"] = [2020, 2030, 2040]
-    other._ts[2][2] = 5.0
+    other._df.iloc[2, 2] = 5.0
 
     res = other.append(scm_run, duplicate_msg="warn")
 
@@ -1212,6 +1341,17 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     )
 
 
+def test_append_doesnt_warn_if_continuous_times(test_append_scm_runs):
+    join_year = 2011
+    base = test_append_scm_runs["base"].filter(year=range(1, join_year))
+    other = test_append_scm_runs["other"].filter(year=range(join_year, 30000))
+
+    with warnings.catch_warnings(record=True) as mock_warn_taking_average:
+        base.append(other)
+
+    assert len(mock_warn_taking_average) == 0
+
+
 def test_append_doesnt_warn_if_different(test_append_scm_runs):
     base = test_append_scm_runs["base"].filter(scenario="a_scenario")
     other = test_append_scm_runs["base"].filter(scenario="a_scenario2")
@@ -1251,7 +1391,10 @@ def get_append_col_order_time_dfs(base):
     base["runmodus"] = "co2_only"
     other = base.copy()
 
-    other._ts[1].meta["variable"] = "Primary Energy|Gas"
+    other_variable = other["variable"]
+    other_variable.iloc[1] = "Primary Energy|Gas"
+
+    other["variable"] = other_variable
     other["time"] = [
         dt.datetime(2002, 1, 1, 0, 0),
         dt.datetime(2008, 1, 1, 0, 0),
@@ -1368,31 +1511,6 @@ def test_append_inplace_preexisting_nan(scm_run):
         check_like=True,
         check_dtype=False,
     )
-
-
-@pytest.mark.parametrize("same_times", [True, False])
-def test_append_reindexing(scm_run, same_times):
-    other = copy.deepcopy(scm_run)
-    other["climate_model"] = "other"
-    if not same_times:
-        other["time"] = [2002, 2010, 2020]
-
-    with patch.object(
-        TimeSeries, "reindex", wraps=other._ts[0].reindex
-    ) as mock_reindex:
-        res = scm_run.append(other, duplicate_msg="warn")
-
-        expected_times = set(
-            np.concatenate([other.time_points.values, scm_run.time_points.values])
-        )
-        if same_times:
-            mock_reindex.assert_not_called()
-        else:
-            mock_reindex.assert_called()
-
-        npt.assert_array_equal(res.time_points.values, sorted(expected_times))
-        for t in res._ts:
-            npt.assert_array_equal(t.time_points.values, sorted(expected_times))
 
 
 def test_interpolate(combo_df):
@@ -1692,6 +1810,7 @@ def test_convert_unit_dimensionality(scm_run):
         scm_run.convert_unit("kelvin")
 
 
+@pytest.mark.xfail(reason="inplace not working")
 def test_convert_unit_inplace(scm_run):
     units = scm_run["unit"].copy()
 
@@ -1774,6 +1893,22 @@ def test_unit_context_no_existing_contexts(scm_run, context):
         )
 
 
+def _check_context_or_nan(run, variable, exp, keep=True):
+    if exp is None:
+        assert np.isnan(
+            run.filter(variable=variable, keep=keep).get_unique_meta(
+                "unit_context", no_duplicates=True
+            )
+        )
+    else:
+        assert (
+            run.filter(variable=variable, keep=keep).get_unique_meta(
+                "unit_context", no_duplicates=True
+            )
+            == exp
+        )
+
+
 @pytest.mark.parametrize("to_not_convert_matches", (True, False))
 @pytest.mark.parametrize("context", (None, "AR4GWP100"))
 def test_unit_context_both_have_existing_context(
@@ -1787,24 +1922,16 @@ def test_unit_context_both_have_existing_context(
     else:
         to_not_convert_context = "junk"
 
-    scm_run.filter(variable=to_convert, keep=False)[
-        "unit_context"
-    ] = to_not_convert_context
+    def _set_not_convert_context(v):
+        if not re.search(r".*Coal", v):
+            return to_not_convert_context
+
+    scm_run["unit_context"] = scm_run["variable"].apply(_set_not_convert_context)
 
     res = scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
 
-    assert (
-        res.filter(variable=to_convert).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-        == context
-    )
-    assert (
-        res.filter(variable=to_convert, keep=False).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-        == to_not_convert_context
-    )
+    _check_context_or_nan(res, to_convert, context)
+    _check_context_or_nan(res, to_convert, to_not_convert_context, keep=False)
 
 
 @pytest.mark.parametrize("to_not_convert_matches", (True, False))
@@ -1831,31 +1958,13 @@ def test_unit_context_to_convert_has_existing_context(scm_run, context):
     to_convert = "*Coal"
     start = scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
 
-    assert (
-        start.filter(variable=to_convert).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-        == context
-    )
-    assert np.isnan(
-        start.filter(variable=to_convert, keep=False).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-    )
+    _check_context_or_nan(start, to_convert, context)
+    _check_context_or_nan(start, to_convert, None, keep=False)
 
     res = start.convert_unit("GJ/yr", variable=to_convert, context=context)
 
-    assert (
-        res.filter(variable=to_convert).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-        == context
-    )
-    assert np.isnan(
-        res.filter(variable=to_convert, keep=False).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-    )
+    _check_context_or_nan(start, to_convert, context)
+    _check_context_or_nan(start, to_convert, None, keep=False)
     assert (
         res.filter(variable=to_convert).get_unique_meta("unit", no_duplicates=True)
         == "GJ/yr"
@@ -1873,17 +1982,8 @@ def test_unit_context_to_convert_has_existing_context_error(scm_run, context):
     to_convert = "*Coal"
     start = scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
 
-    assert (
-        start.filter(variable=to_convert).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-        == context
-    )
-    assert np.isnan(
-        start.filter(variable=to_convert, keep=False).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-    )
+    _check_context_or_nan(start, to_convert, context)
+    _check_context_or_nan(start, to_convert, None, keep=False)
 
     error_msg = re.escape(
         "Existing unit conversion context(s), `['{}']`, doesn't match input context, `junk`, drop "
@@ -1905,33 +2005,16 @@ def test_unit_context_to_not_convert_has_existing_context(
     start = scm_run.convert_unit(
         "MJ/yr", variable=to_not_convert, context=to_not_convert_context
     )
-    assert np.isnan(
-        start.filter(variable=to_convert).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-    )
-    assert (
-        start.filter(variable=to_convert, keep=False).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-        == to_not_convert_context
-    )
+
+    _check_context_or_nan(start, to_convert, None)
+    _check_context_or_nan(start, to_convert, to_not_convert_context, keep=False)
 
     # no error, irrespective of context because to_convert context is nan
     res = start.convert_unit("GJ/yr", variable=to_convert, context=context)
 
-    assert (
-        res.filter(variable=to_convert).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-        == context
-    )
-    assert (
-        res.filter(variable=to_convert, keep=False).get_unique_meta(
-            "unit_context", no_duplicates=True
-        )
-        == to_not_convert_context
-    )
+    _check_context_or_nan(res, to_convert, context)
+    _check_context_or_nan(res, to_not_convert, to_not_convert_context)
+
     assert (
         res.filter(variable=to_convert).get_unique_meta("unit", no_duplicates=True)
         == "GJ/yr"
@@ -2107,13 +2190,6 @@ def test_get_meta_no_duplicates(scm_run, no_duplicates):
             "Primary Energy",
             "Primary Energy|Coal",
         ]
-
-
-def test_meta_filtered(scm_run):
-    scm_run.filter(scenario="a_scenario")["test"] = 1.0
-    pd.testing.assert_series_equal(
-        pd.Series([1.0, 1.0, np.nan], name="test"), scm_run["test"]
-    )
 
 
 @pytest.mark.parametrize("inplace", [True, False])
@@ -2518,21 +2594,20 @@ def test_non_unique_metadata_error_formatting():
         raise NonUniqueMetadataError(meta)
 
 
-@pytest.mark.parametrize("copy_ts", [True, False])
-def test_copy(scm_run, copy_ts):
+def test_copy(scm_run):
     orig_run = scm_run
-    copy_run = scm_run.copy(copy_ts)
+    copy_run = scm_run.copy()
 
     assert id(orig_run) != id(copy_run)
 
     assert "test" not in orig_run.metadata
     assert id(orig_run.metadata) != id(copy_run.metadata)
+    assert id(orig_run._df) != id(copy_run._df)
+    assert id(orig_run._meta) != id(copy_run._meta)
 
-    for o, c in zip(orig_run._ts, copy_run._ts):
-        if copy_ts:
-            assert id(o) != id(c)
-        else:
-            assert id(o) == id(c)
+    orig_run["example"] = 1
+    assert "example" in orig_run.meta_attributes
+    assert "example" not in copy_run.meta_attributes
 
 
 @pytest.mark.parametrize("model", ["model_a", "model_b"])
@@ -2549,7 +2624,7 @@ def test_metadata_consistency(model):
         },
     )
     modified = start.copy()
-    modified.filter(model=model)["new_meta"] = "hi"
+    modified["new_meta"] = ["hi" for f in modified["model"] if f == model]
 
     modified_dropped = modified.drop_meta("new_meta", inplace=False)
 

@@ -6,8 +6,7 @@ import pytest
 import scmdata
 
 
-# @pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 4.5])
-@pytest.fixture(params=[10, 10 ** 2, 10 ** 3])
+@pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 4, 10 ** 4.5])
 def big_scmrun(request):
     length = int(request.param)
     t_steps = 750
@@ -50,7 +49,7 @@ def test_recreate_from_timeseries(benchmark, big_scmrun):
     def recreate():
         return scmdata.ScmRun(big_scmrun.timeseries())
 
-    benchmark.pedantic(recreate, iterations=1, rounds=2)
+    benchmark.pedantic(recreate, iterations=1, rounds=5)
 
 
 def test_filter(benchmark, big_scmrun):
@@ -139,3 +138,11 @@ def test_set_meta_reduce_uniqueness(benchmark, big_scmrun):
     original_set = big_scmrun.get_unique_meta("to_squash")
     res = benchmark.pedantic(set_meta, iterations=1, rounds=2)
     assert not any([v in original_set for v in res.get_unique_meta("to_squash")])
+
+
+def test_interpolate(benchmark, big_scmrun):
+    def interp():
+        return big_scmrun.interpolate(range(1500, 2500))
+
+    res = benchmark.pedantic(interp, iterations=1, rounds=1)
+    assert res.shape == (len(big_scmrun), 1000)

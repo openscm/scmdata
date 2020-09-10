@@ -14,9 +14,10 @@ from logging import getLogger
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
+import numpy.testing as npt
+import openscm_units.unit_registry as ur
 import pandas as pd
 import pint
-import xarray as xr
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
@@ -37,8 +38,7 @@ from .offsets import generate_range, to_offset
 from .ops import inject_ops_methods
 from .plotting import inject_plotting_methods
 from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
-from .time import _TARGET_DTYPE, TimePoints
-from .timeseries import TimeSeries
+from .time import _TARGET_DTYPE, TimePoints, TimeseriesConverter
 from .units import UnitConverter
 
 _logger = getLogger(__name__)
@@ -198,8 +198,6 @@ def _format_long_data(df):
 
 
 def _format_wide_data(df):
-    orig = df.copy()
-
     cols = set(df.columns) - set(REQUIRED_COLS)
     time_cols, extra_cols = False, []
     for i in cols:
@@ -226,11 +224,11 @@ def _format_wide_data(df):
         msg = "invalid column format, must contain some time (int, float or datetime) columns!"
         raise ValueError(msg)
 
-    df = df.drop(REQUIRED_COLS + extra_cols, axis="columns").T
-    df.index.name = "time"
-    meta = orig[REQUIRED_COLS + extra_cols].set_index(df.columns)
+    df_out = df.drop(REQUIRED_COLS + extra_cols, axis="columns").T
+    df_out.index.name = "time"
+    meta = df[REQUIRED_COLS + extra_cols].set_index(df_out.columns)
 
-    return df, meta
+    return df_out, meta
 
 
 def _from_ts(
@@ -308,6 +306,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         index: Any = None,
         columns: Optional[Union[Dict[str, list], Dict[str, str]]] = None,
         metadata: Optional[MetadataType] = None,
+        copy_data: bool = False,
         **kwargs: Any,
     ):
         """
@@ -383,6 +382,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
             Defaults to an empty :obj:`dict` if no default metadata are provided.
 
+        copy_data: bool
+            If True, an explicit copy of data is performed.
+
+            .. note::
+                The copy can be very expensive on large timeseries and should only be needed
+                in cases where the original data is manipulated.
+
         **kwargs:
             Additional parameters passed to :func:`_read_file` to read files
 
@@ -397,12 +403,15 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             Timeseries cannot be read from :obj:`data`
         """
         if isinstance(data, ScmRun):
-            self._ts = data._ts
+            self._df = data._df.copy() if copy_data else data._df
+            self._meta = data._meta
             self._time_points = TimePoints(data.time_points.values)
             if metadata is None:
                 metadata = data.metadata.copy()
         else:
-            self._init_timeseries(data, index, columns, **kwargs)
+            if copy_data and hasattr(data, "copy"):
+                data = data.copy()
+            self._init_timeseries(data, index, columns, copy_data=copy_data, **kwargs)
 
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)
@@ -414,6 +423,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         data,
         index: Any = None,
         columns: Optional[Dict[str, list]] = None,
+        copy_data=False,
         **kwargs: Any,
     ):
         if isinstance(data, np.ndarray):
@@ -425,9 +435,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
         elif isinstance(data, (pd.DataFrame, pd.Series)):
-            (_df, _meta) = _format_data(data.copy())
+            (_df, _meta) = _format_data(data)
         elif (IamDataFrame is not None) and isinstance(data, IamDataFrame):
-            (_df, _meta) = _format_data(data.data.copy())
+            (_df, _meta) = _format_data(data.data.copy() if copy_data else data.data)
         else:
             if not isinstance(data, str):
                 if isinstance(data, list) and isinstance(data[0], str):
@@ -441,15 +451,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             (_df, _meta) = _read_file(data, **kwargs)
 
         self._time_points = TimePoints(_df.index.values)
+
         _df = _df.astype(float)
+        self._df = _df
+        self._df.index = self._time_points.to_index()
+        self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
 
-        self._ts = []
-        time_variable = xr.Variable("time", self._time_points.as_cftime())
-        for name, attrs in _meta.iterrows():
-            ts = TimeSeries(data=_df[name], time=time_variable, attrs=attrs)
-            self._ts.append(ts)
-
-    def copy(self, copy_ts=True):
+    def copy(self):
         """
         Return a :func:`copy.deepcopy` of self.
 
@@ -461,16 +469,17 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             :func:`copy.deepcopy` of ``self``
         """
         ret = copy.copy(self)
-        ret.metadata = copy.deepcopy(self.metadata)
-        if copy_ts:
-            ret._ts = [ts.copy() for ts in self._ts]
+        ret._df = self._df.copy()
+        ret._meta = self._meta.copy()
+        ret.metadata = copy.copy(self.metadata)
+
         return ret
 
     def __len__(self) -> int:
         """
         Get the number of timeseries.
         """
-        return len(self._ts)
+        return self._df.shape[1]
 
     def __getitem__(self, key: Any) -> Any:
         """
@@ -487,7 +496,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if key == "year":
             return pd.Series(self._time_points.years())
         if set(_key_check).issubset(self.meta_attributes):
-            return self._meta_column(key)
+            try:
+                return self._meta_column(key).astype(
+                    self._meta_column(key).cat.categories.dtype
+                )
+            except ValueError:
+                return self._meta_column(key).astype(float)
 
         raise KeyError("[{}] is not in metadata".format(key))
 
@@ -565,21 +579,16 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         meta = np.atleast_1d(value)
         if key == "time":
             self._time_points = TimePoints(meta)
-            for ts in self._ts:
-                if len(meta) != len(ts):
-                    raise ValueError(
-                        "New time series is the incorrect length (expected: {}, got: {})".format(
-                            len(meta), len(ts)
-                        )
-                    )
-                ts["time"] = self._time_points.as_cftime()
+            self._df.index = self._time_points.to_index()
         else:
             if len(meta) == 1:
-                for ts in self._ts:
-                    ts.meta[key] = meta[0]
+                new_meta = self._meta.to_frame()
+                new_meta[key] = meta[0]
+                self._meta = pd.MultiIndex.from_frame(new_meta.astype("category"))
             elif len(meta) == len(self):
-                for i, ts in enumerate(self._ts):
-                    ts.meta[key] = meta[i]
+                new_meta_index = self._meta.to_frame(index=False)
+                new_meta_index[key] = pd.Series(meta, dtype="category")
+                self._meta = pd.MultiIndex.from_frame(new_meta_index)
             else:
                 raise ValueError(
                     "Invalid length for metadata, `{}`, must be 1 or equal to the number of timeseries, `{}`".format(
@@ -614,8 +623,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             if isinstance(other, ScmRun):
                 return NotImplemented
 
-            is_number = isinstance(other, (numbers.Number, pint.Quantity))
-            if not is_number:
+            is_scalar = isinstance(other, (numbers.Number, pint.Quantity))
+            if not is_scalar:
                 other_ndim = len(other.shape)
                 if other_ndim == 1:
                     if other.shape[0] != self.shape[1]:
@@ -628,22 +637,42 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                         "operations with {}d data are not supported".format(other_ndim)
                     )
 
-            ret = self.copy(copy_ts=False)
-            ret._ts = [
-                (f(ts, other) if not reflexive else f(other, ts)) for ts in self._ts
-            ]
-            return ret
+            def _perform_op(df):
+                if isinstance(other, pint.Quantity):
+                    try:
+                        data = df.values * ur(df.get_unique_meta("unit", True))
+                        use_pint = True
+                    except KeyError:
+                        # let Pint assume dimensionless and raise an error as
+                        # necessary
+                        data = df.values
+                        use_pint = False
+                else:
+                    data = df.values
+                    use_pint = False
+
+                res = []
+                for v in data:
+                    if not reflexive:
+                        res.append(f(v, other))
+                    else:
+                        res.append(f(other, v))
+                res = np.vstack(res)
+
+                if use_pint:
+                    df._df.values[:] = res.magnitude.T
+                    df["unit"] = str(res.units)
+                else:
+                    df._df.values[:] = res.T
+                return df
+
+            return self.copy().groupby("unit").map(_perform_op)
 
         return func
 
     def drop_meta(self, columns: Union[list, str], inplace: Optional[bool] = None):
         """
         Drop meta columns out of the Run
-
-        Notes
-        -----
-        If this operation is not performed inplace, the current object is deep copied. Any changes to the :obj:`Timeseries` of
-        the returned object will not be reflected in the original object
 
         Parameters
         ----------
@@ -672,7 +701,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if inplace:
             ret = self
         else:
-            ret = self.copy(copy_ts=True)
+            ret = self.copy()
 
         if isinstance(columns, str):
             columns = [columns]
@@ -681,14 +710,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         for c in columns:
             if c not in existing_cols:
                 raise KeyError(c)
-
-        # pylint: disable=protected-access
-        for ts in ret._ts:
-            for c in columns:
-                try:
-                    del ts._data.attrs[c]
-                except KeyError:
-                    pass
+        for c in columns:
+            ret._meta = ret._meta.droplevel(c)
 
         if ret._duplicated_meta():
             raise NonUniqueMetadataError(ret.meta)
@@ -706,10 +729,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         list
             Sorted list of meta keys
         """
-        meta = []
-        for ts in self._ts:
-            meta.extend(ts.meta.keys())
-        return sorted(list(set(meta)))
+        return sorted(list(self._meta.names))
 
     @property
     def time_points(self):
@@ -770,7 +790,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ValueError
             The value of `time_axis` would result in columns which aren't unique
         """
-        df = pd.DataFrame(self.values)
+        df = self._df.T
         _meta = self.meta if meta is None else self.meta[meta]
 
         if check_duplicated and self._duplicated_meta(meta=_meta):
@@ -810,10 +830,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 "Ambiguous time values with time_axis = '{}'".format(time_axis)
             )
 
-        df.columns = columns
-        df.columns.name = "time"
-
-        df.index = pd.MultiIndex.from_arrays(_meta.values.T, names=_meta.columns)
+        df.columns = pd.Index(columns, name="time")
+        df.index = pd.MultiIndex.from_frame(_meta)
 
         if drop_all_nan_times:
             df = df.dropna(how="all", axis="columns")
@@ -821,7 +839,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         return df
 
     def _duplicated_meta(self, meta=None):
-        _meta = self.meta if meta is None else meta
+        _meta = self._meta if meta is None else meta
 
         return _meta.duplicated().any()
 
@@ -861,7 +879,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         -------
         tuple of int
         """
-        return len(self._ts), len(self.time_points)
+        return self._df.T.shape
 
     @property
     def values(self) -> np.ndarray:
@@ -879,7 +897,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             The array in the same shape as :py:obj:`ScmRun.shape`, that is
             ``(num_timeseries, num_timesteps)``.
         """
-        return np.asarray([ts._data.values for ts in self._ts])
+        return self._df.values.T
 
     @property
     def empty(self) -> bool:
@@ -899,32 +917,22 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Metadata
         """
         return pd.DataFrame(
-            [ts.meta for ts in self._ts], index=[ts.name for ts in self._ts]
+            self._meta.to_list(), columns=self._meta.names, index=self._df.columns
         )
 
     def _meta_column(self, col) -> pd.Series:
-        vals = []
-        for ts in self._ts:
-            try:
-                vals.append(ts.meta[col])
-            except KeyError:
-                vals.append(np.nan)
-
-        return pd.Series(vals, name=col, index=[ts.name for ts in self._ts])
+        out = self._meta.get_level_values(col)
+        return pd.Series(out, name=col, index=self._df.columns)
 
     def filter(
         self,
         keep: bool = True,
         inplace: bool = False,
-        has_nan: bool = True,
         log_if_empty: bool = True,
         **kwargs: Any,
     ):
         """
         Return a filtered ScmRun (i.e., a subset of the data).
-
-        Note that this this does not copy the underlying time-series data so any modifications will be reflected in the caller
-        :obj`ScmRun`. This allows for the updating a subset of the timeseries directly.
 
         .. code:: python
 
@@ -938,23 +946,51 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
                 1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
                 2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+                [3 rows x 7 columns]
 
-            >>> df.filter(scenario="a_scenario")["extra_meta"] = "test"
-            >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            >>> df.filter(scenario="a_scenario")
+            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
             Time:
                 Start: 2005-01-01T00:00:00
                 End: 2015-01-01T00:00:00
             Meta:
-                   model     scenario region  ...   unit climate_model extra_meta
-                0  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
-                1  a_iam   a_scenario  World  ...  EJ/yr       a_model       test
-                2  a_iam  a_scenario2  World  ...  EJ/yr       a_model        NaN
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                [2 rows x 7 columns]
 
-                [3 rows x 7 columns]
+            >>> df.filter(scenario="a_scenario", keep=False)
+            <scmdata.ScmRun (timeseries: 1, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+                [1 rows x 7 columns]
 
-        If you do not want to change the parent `ScmRun` create a copy :func`ScmRun.copy()`. Any changes to this copy will not be
-        reflected in the parent.
+            >>> df.filter(level=1)
+            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2015-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+                [2 rows x 7 columns]
+
+            >>> df.filter(year=range(2000, 2011))
+            <scmdata.ScmRun (timeseries: 3, timepoints: 2)>
+            Time:
+                Start: 2005-01-01T00:00:00
+                End: 2010-01-01T00:00:00
+            Meta:
+                   model     scenario region             variable   unit climate_model
+                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
+                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
+                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
+                [2 rows x 7 columns]
 
         Parameters
         ----------
@@ -964,13 +1000,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         inplace
             If True, do operation inplace and return None
-
-        has_nan
-            If ``True``, convert all nan values in :obj:`meta_col` to empty string
-            before applying filters. This means that "" and "*" will match rows with
-            :class:`np.nan`. If ``False``, the conversion is not applied and so a search
-            in a string column which contains ;class:`np.nan` will result in a
-            :class:`TypeError`.
 
         log_if_empty
             If ``True``, log a warning level message if the result is empty.
@@ -1000,13 +1029,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         -------
         :obj:`ScmRun`
             If not ``inplace``, return a new instance with the filtered data.
-
-        Raises
-        ------
-        AssertionError
-            Data and meta become unaligned
         """
-        _keep_times, _keep_rows = self._apply_filters(kwargs, has_nan)
+        _keep_times, _keep_rows = self._apply_filters(kwargs)
         ret = copy.copy(self) if not inplace else self
 
         if not keep and sum(~_keep_rows) and sum(~_keep_times):
@@ -1019,22 +1043,17 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         reduce_rows = (~_keep_rows).sum() > 0
 
         if not keep:
-            _keep_times = ~_keep_times
-            _keep_rows = ~_keep_rows
-
+            if reduce_times:
+                _keep_times = ~_keep_times
+            if reduce_rows:
+                _keep_rows = ~_keep_rows
             if not reduce_rows and not reduce_times:
-                # When nothing is filtered, drop everything
-                reduce_rows = True
+                _keep_times = _keep_times * False
+                _keep_rows = _keep_rows * False
 
-        # Filter the timeseries first
-        # I wish lists had the same indexing interface as ndarrays
-        if reduce_rows:
-            ret._ts = [ret._ts[i] for i, v in enumerate(_keep_rows) if v]
-
-        # Then filter the times if needed
-        if reduce_times:
-            ret._ts = [ts[_keep_times] for ts in ret._ts]
-            ret["time"] = self.time_points.values[_keep_times]
+        ret._df = ret._df.loc[_keep_times, _keep_rows]
+        ret._meta = ret._meta[_keep_rows]
+        ret["time"] = self.time_points.values[_keep_times]
 
         if log_if_empty and ret.empty:
             _logger.warning("Filtered ScmRun is empty!")
@@ -1046,7 +1065,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     # pylint doesn't recognise ',' in returns type definition
     def _apply_filters(  # pylint: disable=missing-return-doc
-        self, filters: Dict, has_nan: bool = True
+        self, filters: Dict
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Determine rows to keep in data for given set of filters.
@@ -1056,13 +1075,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         filters
             Dictionary of filters ``({col: values}})``; uses a pseudo-regexp syntax by
             default but if ``filters["regexp"]`` is ``True``, regexp is used directly.
-
-        has_nan
-            If `True``, convert all nan values in :obj:`meta_col` to empty string before
-            applying filters. This means that "" and "*" will match rows with
-            :class:`np.nan`. If ``False``, the conversion is not applied and so a search
-            in a string column which contains :class:`np.nan` will result in a
-            :class:`TypeError`.
 
         Returns
         -------
@@ -1082,24 +1094,31 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         # filter by columns and list of values
         for col, values in filters.items():
-            if col == "variable":
-                level = filters["level"] if "level" in filters else None
+            if col in self._meta.names:
+                if col == "variable":
+                    level = filters["level"] if "level" in filters else None
+                else:
+                    level = None
+
                 keep_meta &= pattern_match(
-                    self._meta_column(col),
+                    self._meta.get_level_values(col),
                     values,
-                    level,
-                    regexp,
-                    has_nan=has_nan,
-                    separator=self.data_hierarchy_separator,
-                ).values
-            elif col in self.meta_attributes:
-                keep_meta &= pattern_match(
-                    self._meta_column(col),
-                    values,
+                    level=level,
                     regexp=regexp,
-                    has_nan=has_nan,
                     separator=self.data_hierarchy_separator,
-                ).values
+                )
+
+            elif col == "level":
+                if "variable" not in filters.keys():
+                    keep_meta &= pattern_match(
+                        self._meta.get_level_values("variable"),
+                        "*",
+                        level=values,
+                        regexp=regexp,
+                        separator=self.data_hierarchy_separator,
+                    )
+                # else do nothing as level handled in variable filtering
+
             elif col == "year":
                 keep_ts &= years_match(self._time_points.years(), values)
 
@@ -1114,18 +1133,6 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
             elif col == "time":
                 keep_ts &= datetime_match(self._time_points.values, values)
-
-            elif col == "level":
-                if "variable" not in filters.keys():
-                    keep_meta &= pattern_match(
-                        self._meta_column("variable"),
-                        "*",
-                        values,
-                        regexp=regexp,
-                        has_nan=has_nan,
-                        separator=self.data_hierarchy_separator,
-                    ).values
-                # else do nothing as level handled in variable filtering
 
             else:
                 raise ValueError("filter by `{}` not supported".format(col))
@@ -1212,7 +1219,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             List of unique metadata values. If ``no_duplicates`` is ``True`` the
             metadata value will be returned (rather than a list).
         """
-        vals = self[meta].unique().tolist()
+        vals = self._meta.get_level_values(meta).unique().to_list()
         if no_duplicates:
             if len(vals) != 1:
                 raise ValueError(
@@ -1251,17 +1258,27 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         target_times = np.asarray(target_times, dtype="datetime64[s]")
 
-        res = self.copy(copy_ts=False)
+        res = self.copy()
 
-        res._ts = [
-            ts.interpolate(
-                target_times,
-                interpolation_type=interpolation_type,
-                extrapolation_type=extrapolation_type,
+        target_times = TimePoints(target_times)
+
+        timeseries_converter = TimeseriesConverter(
+            self.time_points.values,
+            target_times.values,
+            interpolation_type=interpolation_type,
+            extrapolation_type=extrapolation_type,
+        )
+        target_data = np.zeros((len(target_times), len(res)))
+
+        # TODO: Extend TimeseriesConverter to handle 2d inputs
+        for i in range(len(res)):
+            target_data[:, i] = timeseries_converter.convert_from(
+                res._df.iloc[:, i].values
             )
-            for ts in res._ts
-        ]
-        res._time_points = TimePoints(target_times)
+        res._df = pd.DataFrame(
+            target_data, columns=res._df.columns, index=target_times.to_index()
+        )
+        res._time_points = target_times
 
         return res
 
@@ -1620,15 +1637,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             to_convert["unit_context"] = context
 
         if "unit_context" not in to_not_convert.meta_attributes and context is not None:
-            to_not_convert["unit_context"] = np.nan
+            to_not_convert["unit_context"] = None
 
         def apply_units(group):
             orig_unit = group.get_unique_meta("unit", no_duplicates=True)
             uc = UnitConverter(orig_unit, unit, context=context)
 
-            for ts in group._ts:  # todo: fix when we have an apply function
-                ts._data[:] = uc.convert_from(ts._data.values)
-
+            group._df.values[:] = uc.convert_from(group._df.values)
             group["unit"] = unit
 
             return group
@@ -1935,39 +1950,91 @@ def run_append(
     else:
         ret = runs[0].copy()
 
+    to_join_dfs = []
+    to_join_metas = []
+    existing_indices = set(ret._df.columns)
+    overlapping_times = False
+
+    def get_unique_idx(idx):
+        if idx not in existing_indices:
+            existing_indices.add(idx)
+            return idx
+
+        new_idx = max(existing_indices) + 1
+        existing_indices.add(new_idx)
+        return new_idx
+
     for run in runs[1:]:
-        ret._ts.extend(run._ts)
+        run_to_join_df = run._df
+        ind = [get_unique_idx(i) for i in run_to_join_df.columns]
+        run_to_join_df.columns = ind
 
-    # Determine the new common timebase
-    new_t = np.concatenate([r.time_points.values for r in runs])
-    new_t = np.unique(new_t)
-    new_t.sort()
+        run_to_join_meta = run._meta.to_frame().reset_index(drop=True)
+        run_to_join_meta.index = ind
 
-    # reindex if the timebase isn't the same
-    all_valid_times = True
-    for r in runs:
-        if not np.array_equal(new_t, r.time_points.values):
-            all_valid_times = False
+        # check everything still makes sense
+        npt.assert_array_equal(run_to_join_meta.index, run_to_join_df.columns)
 
-    if not all_valid_times:
-        # Time values are converted to cftime to avoid OutOfBoundsDatetime errors
-        ret._time_points = TimePoints(new_t)
-        new_t_cftime = ret._time_points.as_cftime()
-        ret._ts = [ts.reindex(new_t_cftime) for ts in ret._ts]
+        # check for overlap
+        idx_to_check = run_to_join_df.index
+        if not overlapping_times and (
+            idx_to_check.isin(ret._df.index).any()
+            or any([idx_to_check.isin(df.index).any() for df in to_join_dfs])
+        ):
+            overlapping_times = True
+
+        to_join_dfs.append(run_to_join_df)
+        to_join_metas.append(run_to_join_meta)
+
+    ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns").sort_index()
+    ret._meta = pd.MultiIndex.from_frame(
+        pd.concat([ret._meta.to_frame().reset_index(drop=True)] + to_join_metas).astype(
+            "category"
+        )
+    )
+
+    ret._time_points = TimePoints(ret._df.index.values)
 
     if ret._duplicated_meta():
-        if duplicate_msg:
+        if overlapping_times and duplicate_msg:
             _handle_potential_duplicates_in_append(ret, duplicate_msg)
 
-        # average identical metadata
-        ret._ts = ret.groupby(ret.meta_attributes).mean(axis=0)._ts
+        ts = ret.timeseries(check_duplicated=False)
+        orig_ts_index = ts.index
+        nan_cols = pd.isna(orig_ts_index.to_frame()).any()
+        orig_dtypes = orig_ts_index.to_frame().dtypes
 
-    ret._ts.sort(key=lambda a: a.name)
+        # Convert index to str
+        ts.index = pd.MultiIndex.from_frame(
+            ts.index.to_frame().astype(str).reset_index(drop=True)
+        )
+
+        deduped_ts = ts.groupby(ts.index, as_index=True).mean()
+
+        ret._df = deduped_ts.reset_index(drop=True).T
+
+        new_meta = pd.DataFrame.from_records(
+            deduped_ts.index.values, columns=ts.index.names
+        )
+
+        # Convert back from str
+        for c in nan_cols[nan_cols].index:
+            new_meta[c].replace("nan", np.nan, inplace=True)
+        for c, dtype in orig_dtypes.iteritems():
+            new_meta[c] = new_meta[c].astype(dtype)
+
+        ret._meta = pd.MultiIndex.from_frame(new_meta.astype("category"))
 
     if metadata is not None:
         ret.metadata = metadata
     else:
         ret.metadata = _merge_metadata([r.metadata for r in runs])
+
+    # reorder indexes
+    order_idxs = np.argsort(ret._df.columns)
+
+    ret._df = ret._df.iloc[:, order_idxs]
+    ret._meta = ret._meta[order_idxs]
 
     if not inplace:
         return ret

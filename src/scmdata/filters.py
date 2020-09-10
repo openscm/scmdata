@@ -101,7 +101,7 @@ def find_depth(
     def apply_test(val):
         return test(len(pipe.findall(val.replace(regexp, ""))))
 
-    return np.array([b for b in [apply_test(m) for m in meta_col]])
+    return [m for m in meta_col.categories if apply_test(m)]
 
 
 def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
@@ -109,7 +109,6 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     values: Union[Iterable[str], str],
     level: Optional[Union[str, int]] = None,
     regexp: bool = False,
-    has_nan: bool = True,
     separator: str = HIERARCHY_SEPARATOR,
 ) -> pd.Series:
     """
@@ -157,59 +156,43 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         else values
     )
 
-    _meta_col = meta_col.copy()
-    if has_nan:
-        _meta_col.loc[
-            [np.isnan(i) if not isinstance(i, str) else False for i in _meta_col]
-        ] = "nan"
-
-    handle_as_number = np.issubdtype(meta_col.dtype, np.number)
-
-    if not handle_as_number and "" in _values:
-        _values.append("nan")
-
     for s in _values:
-        if not handle_as_number and (isinstance(s, str) or np.isnan(s)):
-            _regexp = (
-                str(s)
-                .replace("|", "\\|")
-                .replace(".", r"\.")  # `.` has to be replaced before `*`
-                .replace("*", ".*")
-                .replace("+", r"\+")
-                .replace("(", r"\(")
-                .replace(")", r"\)")
-                .replace("$", "\\$")
-                .replace("^", "\\^")
-            ) + "$"
-            pattern = re.compile(_regexp if not regexp else str(s))
-            try:
-                subset = [m for m in _meta_col if pattern.match(m)]
-            except TypeError as e:
-                # if it's not the cryptic pandas message we expect, raise
-                msg = str(e)
-                if msg != "expected string or bytes-like object":
-                    raise e  # pragma: no cover # emergency valve
+        if isinstance(s, str) and s == "":
+            s = np.nan
+        if isinstance(s, str):
+            if not regexp and s == "*" and level is None:
+                matches |= True
+            else:
+                _regexp = (
+                    str(s)
+                    .replace("|", "\\|")
+                    .replace(".", r"\.")  # `.` has to be replaced before `*`
+                    .replace("*", ".*")
+                    .replace("+", r"\+")
+                    .replace("(", r"\(")
+                    .replace(")", r"\)")
+                    .replace("$", "\\$")
+                    .replace("^", "\\^")
+                ) + "$"
+                pattern = re.compile(_regexp if not regexp else str(s))
 
-                error_msg = (
-                    "String filtering cannot be performed on column '{}', which "
-                    "contains NaN's, unless `has_nan` is True".format(_meta_col.name)
-                )
-                raise TypeError(error_msg)
+                subset = [m for m in meta_col.categories if pattern.match(m)]
 
-            depth = (
-                True
-                if level is None
-                else find_depth(_meta_col, str(s), level, separator=separator)
-            )
-            matches |= _meta_col.isin(subset) & depth
+                if level is not None:
+                    depth = find_depth(meta_col, str(s), level, separator=separator)
+                    subset = set(subset).intersection(set(depth))
+
+                matches |= meta_col.isin(subset)
         else:
             s = float(s)
             if np.isnan(s):
-                matches |= np.isnan(meta_col)
+                matches |= [
+                    c == -1 for c in meta_col.codes
+                ]  # nan's are missing from categoricals
             else:
-                matches |= np.isclose(s, meta_col)
+                matches |= np.isclose(s, meta_col.astype(float))
 
-    return pd.Series(matches, index=_meta_col.index)
+    return matches
 
 
 def years_match(data: List, years: Union[List[int], int]) -> np.ndarray:
