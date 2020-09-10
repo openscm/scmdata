@@ -1298,6 +1298,17 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     )
 
 
+def test_append_doesnt_warn_if_continuous_times(test_append_scm_runs):
+    join_year = 2011
+    base = test_append_scm_runs["base"].filter(year=range(1, join_year))
+    other = test_append_scm_runs["other"].filter(year=range(join_year, 30000))
+
+    with warnings.catch_warnings(record=True) as mock_warn_taking_average:
+        base.append(other)
+
+    assert len(mock_warn_taking_average) == 0
+
+
 def test_append_doesnt_warn_if_different(test_append_scm_runs):
     base = test_append_scm_runs["base"].filter(scenario="a_scenario")
     other = test_append_scm_runs["base"].filter(scenario="a_scenario2")

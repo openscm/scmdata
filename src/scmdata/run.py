@@ -1947,6 +1947,7 @@ def run_append(
     to_join_dfs = []
     to_join_metas = []
     existing_indices = set(ret._df.columns)
+    overlapping_times = False
 
     def get_unique_idx(idx):
         if idx not in existing_indices:
@@ -1968,6 +1969,14 @@ def run_append(
         # check everything still makes sense
         npt.assert_array_equal(run_to_join_meta.index, run_to_join_df.columns)
 
+        # check for overlap
+        idx_to_check = run_to_join_df.index
+        if not overlapping_times and (
+            idx_to_check.isin(ret._df.index).any()
+            or any([idx_to_check.isin(df.index).any() for df in to_join_dfs])
+        ):
+            overlapping_times = True
+
         to_join_dfs.append(run_to_join_df)
         to_join_metas.append(run_to_join_meta)
 
@@ -1981,7 +1990,7 @@ def run_append(
     ret._time_points = TimePoints(ret._df.index.values)
 
     if ret._duplicated_meta():
-        if duplicate_msg:
+        if overlapping_times and duplicate_msg:
             _handle_potential_duplicates_in_append(ret, duplicate_msg)
 
         ts = ret.timeseries(check_duplicated=False)
