@@ -601,14 +601,17 @@ def integrate(self, out_var=None):
 
 def delta_per_delta_time(self, out_var=None):
     """
-    Calculate change in timeseries values for each timestep
+    Calculate change in timeseries values for each timestep, divided by the size of the timestep
+
+    The output is placed on the middle of each timestep and is one timestep
+    shorter than the input.
 
     Parameters
     ----------
     out_var : str
         If provided, the variable column of the output is set equal to
         ``out_var``. Otherwise, the output variables are equal to the input
-        variables, prefixed with "Cumulative " .
+        variables, prefixed with "Delta " .
 
     Returns
     -------
