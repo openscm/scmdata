@@ -1614,27 +1614,25 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         else:
             ret = self.copy()
 
-        already_correct_unit = ret.filter(unit=unit, log_if_empty=False)
+        to_convert_filtered = ret.filter(**kwargs, log_if_empty=False)
+        to_not_convert_filtered = ret.filter(**kwargs, keep=False, log_if_empty=False)
+
+        already_correct_unit = to_convert_filtered.filter(unit=unit, log_if_empty=False)
         if (
             "unit_context" in already_correct_unit.meta_attributes
             and not already_correct_unit.empty
         ):
             self._check_unit_context(already_correct_unit, context)
 
-        not_correct_unit = ret.filter(unit=unit, keep=False, log_if_empty=False)
-        if not_correct_unit.empty:
-            to_convert = not_correct_unit
-            to_not_convert = already_correct_unit
-        else:
-            to_convert = not_correct_unit.filter(**kwargs)
-            to_not_convert = run_append(
-                [
-                    not_correct_unit.filter(**kwargs, keep=False, log_if_empty=False),
-                    already_correct_unit,
-                ]
-            )
+        to_convert = to_convert_filtered.filter(unit=unit, keep=False, log_if_empty=False)
+        to_not_convert = run_append(
+            [
+                to_not_convert_filtered,
+                already_correct_unit,
+            ]
+        )
 
-        if "unit_context" in to_convert.meta_attributes:
+        if "unit_context" in to_convert.meta_attributes and not to_convert.empty:
             self._check_unit_context(to_convert, context)
 
         if context is not None:
@@ -1663,6 +1661,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
     @staticmethod
     def _check_unit_context(dat, context):
         unit_context = dat.get_unique_meta("unit_context")
+
         # check if contexts don't match, unless the context is nan
         non_matching_contexts = len(unit_context) > 1 or unit_context[0] != context
         if isinstance(unit_context[0], float):
