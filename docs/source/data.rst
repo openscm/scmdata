@@ -17,7 +17,7 @@ The **ScmRun** class
 
 The :class:`scmdata.ScmRun` class represents a collection of timeseries data including metadata and provides methods for manipulating the data.
 Internally, :class:`ScmRun <scmdata.run.ScmRun>` stores the timeseries data in a single :class:`pandas.DataFrame` and the timeseries metadata
-in :class:`pandas.Categorial`, for efficient indexing.
+:class:`pandas.MultiIndex` of type `pandas.Categorical`, for efficient indexing.
 
 This class is the primary way of handling timeseries data within the **scmdata** package.
 For example, the :class:`scmdata.timeseries.TimeSeries`'s can be filtered to only find the :class:`TimeSeries <scmdata.timeseries.TimeSeries>`  which have a ``"scenario"`` metadata label equal to ``"green"`` (see :meth:`scmdata.ScmRun.filter <scmdata.run.ScmRun.filter>` for full details).
@@ -30,7 +30,7 @@ The complete set of manipulation features can be found in the documentation page
 
 * :attr:`values <scmdata.run.ScmRun.values>` returns all of the timeseries as a single :obj:`numpy.ndarray` without any metadata or indication of the time axis.
 * :attr:`meta <scmdata.run.ScmRun.meta>` returns all of the timeseries' metadata as a single :obj:`pandas.DataFrame`. This allows users to quickly have an overview of the timeseries held by :class:`scmdata.ScmRun` without having to also view the data itself.
-* :attr:`metadata <scmdata.run.ScmRun.metadata` stores run-specific metadata, metadata which isn't tied to any timeseries specifically.
+* :attr:`metadata <scmdata.run.ScmRun.metadata` stores run-specific metadata, i.e. metadata which isn't tied to any timeseries specifically.
 * :meth:`timeseries() <scmdata.run.ScmRun.timeseries>` combines :attr:`values <scmdata.run.ScmRun.values>` and :attr:`meta <scmdata.run.ScmRun.meta>` to form a :obj:`pandas.DataFrame` whose index is equal to :attr:`scmdata.ScmRun.meta <scmdata.run.ScmRun.meta>` and whose values are equal to :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>`. The columns of the output of :meth:`timeseries() <scmdata.run.ScmRun.timeseries>` are the time axis of the data.
 
 

@@ -1262,9 +1262,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             interpolation_type=interpolation_type,
             extrapolation_type=extrapolation_type,
         )
-
         target_data = np.zeros((len(target_times), len(res)))
 
+        # TODO: Extend TimeseriesConverter to handle 2d inputs
         for i in range(len(res)):
             target_data[:, i] = timeseries_converter.convert_from(
                 res._df.iloc[:, i].values
