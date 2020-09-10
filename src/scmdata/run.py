@@ -873,7 +873,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         -------
         tuple of int
         """
-        return self._df.shape[::-1]
+        return self._df.T.shape
 
     @property
     def values(self) -> np.ndarray:
