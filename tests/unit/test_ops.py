@@ -709,9 +709,7 @@ def test_delta_per_delta_time_handling_all_over_jumps():
 
     res = start.delta_per_delta_time().convert_unit("GtC / yr")
 
-    npt.assert_allclose(
-        res.values.squeeze(), [10, 1 / 0.9, 0, -1.2 / 30], rtol=1e-3
-    )
+    npt.assert_allclose(res.values.squeeze(), [10, 1 / 0.9, 0, -1.2 / 30], rtol=1e-3)
 
 
 def test_delta_per_delta_time_nan_handling():
@@ -750,8 +748,7 @@ def test_idelta_per_delta_time_multiple_ts():
     )
 
     res = (
-        start
-        .delta_per_delta_time()
+        start.delta_per_delta_time()
         .convert_unit("Mt CO2 / yr", variable="Delta Emissions|CO2")
         .convert_unit("J / m^2 / yr", variable="Delta Heat Uptake")
         .convert_unit("K / yr", variable="Delta Temperature")
