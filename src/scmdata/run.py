@@ -198,9 +198,6 @@ def _format_long_data(df):
 
 
 def _format_wide_data(df):
-    # data already copied in _init_timeseries
-    # orig = df.copy()
-
     cols = set(df.columns) - set(REQUIRED_COLS)
     time_cols, extra_cols = False, []
     for i in cols:
@@ -309,6 +306,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         index: Any = None,
         columns: Optional[Union[Dict[str, list], Dict[str, str]]] = None,
         metadata: Optional[MetadataType] = None,
+        copy_data: bool = False,
         **kwargs: Any,
     ):
         """
@@ -384,6 +382,13 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
             Defaults to an empty :obj:`dict` if no default metadata are provided.
 
+        copy_data: bool
+            If True, an explicit copy of data is performed.
+
+            .. note::
+                The copy can be very expensive on large timeseries and should only be needed
+                in cases where the original data is manipulated.
+
         **kwargs:
             Additional parameters passed to :func:`_read_file` to read files
 
@@ -398,13 +403,15 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             Timeseries cannot be read from :obj:`data`
         """
         if isinstance(data, ScmRun):
-            self._df = data._df
-            self._meta = data._meta
+            self._df = data._df.copy() if copy_data else data._df
+            self._meta = data._meta.copy() if copy_data else data._meta
             self._time_points = TimePoints(data.time_points.values)
             if metadata is None:
                 metadata = data.metadata.copy()
         else:
-            self._init_timeseries(data, index, columns, **kwargs)
+            if copy_data and hasattr(data, "copy"):
+                data = data.copy()
+            self._init_timeseries(data, index, columns, copy_data=copy_data, **kwargs)
 
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)
@@ -416,6 +423,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         data,
         index: Any = None,
         columns: Optional[Dict[str, list]] = None,
+        copy_data=False,
         **kwargs: Any,
     ):
         if isinstance(data, np.ndarray):
@@ -427,11 +435,9 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         if columns is not None:
             (_df, _meta) = _from_ts(data, index=index, **columns)
         elif isinstance(data, (pd.DataFrame, pd.Series)):
-            # the copy here is really slow once the data becomes big, should we
-            # make it optional?
-            (_df, _meta) = _format_data(data.copy())
+            (_df, _meta) = _format_data(data)
         elif (IamDataFrame is not None) and isinstance(data, IamDataFrame):
-            (_df, _meta) = _format_data(data.data.copy())
+            (_df, _meta) = _format_data(data.data.copy() if copy_data else data.data)
         else:
             if not isinstance(data, str):
                 if isinstance(data, list) and isinstance(data[0], str):

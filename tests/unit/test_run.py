@@ -354,6 +354,30 @@ def test_init_self_with_metadata(scm_run):
     assert c.metadata == {"test": "other"}
 
 
+def _check_copy(a, b, copy_data):
+    if copy_data:
+        assert id(a.values.base) != id(b.values.base)
+    else:
+        assert id(a.values.base) == id(b.values.base)
+
+
+@pytest.mark.parametrize("copy_data", [True, False])
+def test_init_with_copy_run(copy_data, scm_run, with_columns):
+    res = ScmRun(scm_run, copy_data=copy_data)
+
+    assert id(res) != id(scm_run)
+    _check_copy(res._df, scm_run._df, copy_data)
+    _check_copy(res._meta, scm_run._meta, copy_data)
+
+
+@pytest.mark.parametrize("copy_data", [True, False])
+def test_init_with_copy_dataframe(copy_data, test_pd_df):
+    res = ScmRun(test_pd_df, copy_data=copy_data)
+
+    # an incoming pandas DF no longer references the original
+    _check_copy(res._df, test_pd_df, True)
+
+
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
     df = ScmRun(test_pd_df).to_iamdataframe()
 
