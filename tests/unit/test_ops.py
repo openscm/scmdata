@@ -499,6 +499,7 @@ def test_wrong_shape_ops(op, shape):
 @pytest.mark.parametrize(
     "vector", (np.arange(3).astype(int), np.arange(3).astype(float))
 )
+@pytest.mark.filterwarnings("ignore:divide by zero")
 def test_vector_ops_float_int(op, vector):
     start = get_multiple_ts(
         variable="Emissions|Gas",
@@ -674,8 +675,7 @@ def test_delta_per_delta_time(out_var):
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[1, 2, 3], unit="GtC / yr")
 
-    # what is the best name for this method...
-    res = start.delta_per_delta_time(out_var=out_var)
+    res = start.delta_per_delta_time(out_var=out_var).convert_unit("GtC / yr^2")
 
     if out_var is None:
         exp_var = ("Delta " + start["variable"]).values
@@ -683,7 +683,7 @@ def test_delta_per_delta_time(out_var):
         exp_var = out_var
 
     exp = get_single_ts(
-        data=np.array([1, 1]), index=[1.5, 2.5], variable=exp_var, unit="gigatC / yr"
+        data=np.array([1, 1]), index=[1.5, 2.5], variable=exp_var, unit="GtC / yr^2"
     )
     # rtol is because our calculation uses seconds, which doesn't work out
     # quite the same as assuming a regular year
