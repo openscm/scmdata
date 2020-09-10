@@ -1624,13 +1624,10 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ):
             self._check_unit_context(already_correct_unit, context)
 
-        to_convert = to_convert_filtered.filter(unit=unit, keep=False, log_if_empty=False)
-        to_not_convert = run_append(
-            [
-                to_not_convert_filtered,
-                already_correct_unit,
-            ]
+        to_convert = to_convert_filtered.filter(
+            unit=unit, keep=False, log_if_empty=False
         )
+        to_not_convert = run_append([to_not_convert_filtered, already_correct_unit,])
 
         if "unit_context" in to_convert.meta_attributes and not to_convert.empty:
             self._check_unit_context(to_convert, context)
@@ -1868,7 +1865,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 m = self.meta
                 n_unique = m.nunique(axis=0)
                 m = m.drop(columns=n_unique[n_unique > 1].index).drop_duplicates()
-                assert len(m) == 1, m
+                if len(m) != 1:  # pragma: no cover
+                    raise AssertionError(m)
 
                 meta = m.to_dict("list")
 
