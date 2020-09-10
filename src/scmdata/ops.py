@@ -623,9 +623,7 @@ def delta_per_delta_time(self, out_var=None):
         contain nans.
     """
     time_unit = "s"
-    times_numpy = self.time_points.values.astype(
-        "datetime64[{}]".format(time_unit)
-    )
+    times_numpy = self.time_points.values.astype("datetime64[{}]".format(time_unit))
     times_deltas_numpy = times_numpy[1:] - times_numpy[:-1]
     times_in_s = times_numpy.astype("int")
     time_deltas_in_s = times_in_s[1:] - times_in_s[:-1]
