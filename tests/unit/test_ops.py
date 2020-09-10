@@ -664,3 +664,29 @@ def test_integration_multiple_ts():
         assert_scmdf_almost_equal(
             res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3
         )
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+@pytest.mark.parametrize("out_var", (None, "new out var"))
+def test_delta_per_delta_time(out_var):
+    dat = [1, 2, 3]
+    start = get_single_ts(data=dat, index=[1, 2, 3], unit="GtC / yr")
+
+    # what is the best name for this method...
+    res = start.delta_per_delta_time(out_var=out_var)
+
+    if out_var is None:
+        exp_var = ("Delta " + start["variable"]).values
+    else:
+        exp_var = out_var
+
+    exp = get_single_ts(
+        data=np.array([1, 1]), index=[1.5, 2.5], variable=exp_var, unit="gigatC / yr"
+    )
+    # rtol is because our calculation uses seconds, which doesn't work out
+    # quite the same as assuming a regular year
+    assert_scmdf_almost_equal(
+        res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
+    )
