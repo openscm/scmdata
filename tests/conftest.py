@@ -12,12 +12,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from scmdata.dataframe import ScmDataFrame
 from scmdata.pyam_compat import IamDataFrame
 from scmdata.run import ScmRun
 from scmdata.timeseries import get_default_name
-
-DATA_CLASSES = [ScmDataFrame, ScmRun]
 
 TEST_DATA = join(dirname(abspath(__file__)), "test_data")
 
@@ -199,22 +196,6 @@ def test_pd_run_df():
 
 
 @pytest.fixture(scope="function")
-def test_scm_datetime_df():
-    tdf = TEST_DF.copy()
-    tdf.rename(
-        {
-            2005: datetime(2005, 6, 17, 12),
-            2010: datetime(2010, 1, 3, 0),
-            2015: datetime(2015, 1, 4, 0),
-        },
-        axis="columns",
-        inplace=True,
-    )
-
-    yield ScmDataFrame(tdf)
-
-
-@pytest.fixture(scope="function")
 def test_scm_datetime_run():
     tdf = TEST_DF.copy()
     tdf.rename(
@@ -247,16 +228,11 @@ def test_iam_df():
     yield IamDataFrame(TEST_DF.copy())
 
 
-@pytest.fixture(params=DATA_CLASSES)
-def data_cls(request):
-    yield request.param
-
-
 @pytest.fixture(
     scope="function",
     params=[
         {"data": TEST_DF.copy()},
-        {"data": ScmDataFrame(TEST_DF).timeseries()},
+        {"data": ScmRun(TEST_DF).timeseries()},
         {
             "data": TEST_TS.copy(),
             "columns": {
@@ -276,18 +252,8 @@ def test_scm_df_mulitple(request):
 
 
 @pytest.fixture(scope="function")
-def test_scm_run():
+def scm_run():
     yield ScmRun(TEST_DF.copy())
-
-
-@pytest.fixture(scope="function")
-def test_scm_df():
-    yield ScmDataFrame(TEST_DF.copy())
-
-
-@pytest.fixture(scope="function")
-def scm_data(data_cls):
-    yield data_cls(TEST_DF.copy())
 
 
 _misru = [
@@ -311,13 +277,29 @@ TEST_DF_MONTHLY = pd.DataFrame(
 
 
 @pytest.fixture(scope="function")
-def test_scm_df_monthly(data_cls):
-    yield data_cls(TEST_DF_MONTHLY)
+def test_scm_df_monthly():
+    yield ScmRun(TEST_DF_MONTHLY)
 
 
 @pytest.fixture(scope="function")
-def test_processing_scm_df(data_cls):
-    yield data_cls(
+def test_scm_run_datetimes():
+    tdf = TEST_DF.copy()
+    tdf.rename(
+        {
+            2005: datetime(2005, 6, 17, 12),
+            2010: datetime(2010, 1, 3, 0),
+            2015: datetime(2015, 1, 4, 0),
+        },
+        axis="columns",
+        inplace=True,
+    )
+
+    yield ScmRun(tdf)
+
+
+@pytest.fixture(scope="function")
+def test_processing_scm_df():
+    yield ScmRun(
         data=np.array([[1, 6.0, 7], [0.5, 3, 2], [2, 7, 0], [-1, -2, 3]]).T,
         columns={
             "model": ["a_iam"],
@@ -484,16 +466,6 @@ append_scm_df_pairs = [
         },
     },
 ]
-
-
-@pytest.fixture(params=append_scm_df_pairs)
-def test_append_scm_dfs(request):
-    return {
-        "base": ScmDataFrame(**request.param["base"]),
-        "other": ScmDataFrame(**request.param["other"]),
-        "expected": ScmDataFrame(**request.param["expected"]),
-        "duplicate_rows": request.param["duplicate_rows"],
-    }
 
 
 @pytest.fixture(params=append_scm_df_pairs)

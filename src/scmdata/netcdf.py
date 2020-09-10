@@ -227,13 +227,6 @@ def _read_nc(cls, ds):
     # Parse any extra metadata columns
     # Requires 1 filter per item
 
-    # stupid dataframes and their returning of copies
-    from .dataframe import ScmDataFrame
-
-    is_scmdf = isinstance(df, ScmDataFrame)
-    if is_scmdf:
-        df = df.timeseries().reset_index()
-
     for col in extra_cols:
         var = ds.variables[col]
 
@@ -249,20 +242,8 @@ def _read_nc(cls, ds):
                         var.dimensions, meta_at_coord[(slice(None),) + it.multi_index]
                     )
                 }
-                if is_scmdf:
-                    for c, v in meta_vals.items():
-                        df.loc[df[c] == v, col] = values[it.multi_index]
-
-                else:
-                    df.filter(**meta_vals)[col] = values[it.multi_index]
-
-        if is_scmdf:
-            df.loc[:, col] = df.loc[:, col].astype(values[0].dtype)
-
-    if is_scmdf:
-        df = ScmDataFrame(df)
-    else:
-        df.metadata.update({k: ds.getncattr(k) for k in ds.ncattrs()})
+                df.filter(**meta_vals)[col] = values[it.multi_index]
+    df.metadata.update({k: ds.getncattr(k) for k in ds.ncattrs()})
 
     return df
 

@@ -15,16 +15,16 @@ from scmdata.netcdf import nc_to_run, run_to_nc
 from scmdata.testing import assert_scmdf_almost_equal
 
 
-def test_run_to_nc(scm_data):
+def test_run_to_nc(scm_run):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        run_to_nc(scm_data, out_fname, dimensions=("scenario",))
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
         assert exists(out_fname)
 
         ds = nc.Dataset(out_fname)
 
-        assert ds.dimensions["time"].size == len(scm_data.time_points)
+        assert ds.dimensions["time"].size == len(scm_run.time_points)
         assert ds.dimensions["scenario"].size == 2
 
         assert ds.variables["scenario"][0] == "a_scenario"
@@ -32,17 +32,15 @@ def test_run_to_nc(scm_data):
 
         npt.assert_allclose(
             ds.variables["Primary_Energy"][0, :],
-            scm_data.filter(variable="Primary Energy", scenario="a_scenario").values[0],
+            scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
             ds.variables["Primary_Energy"][1, :],
-            scm_data.filter(variable="Primary Energy", scenario="a_scenario2").values[
-                0
-            ],
+            scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
             ds.variables["Primary_Energy__Coal"][0, :],
-            scm_data.filter(
+            scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
         )
@@ -51,20 +49,20 @@ def test_run_to_nc(scm_data):
 @pytest.mark.parametrize(
     "v", ["primary energy", "Primary Energy", "Primary Energy|Coal|Test",],
 )
-def test_run_to_nc_case(scm_data, v):
+def test_run_to_nc_case(scm_run, v):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        scm_data = scm_data.filter(variable="Primary Energy")
-        scm_data["variable"] = v
+        scm_run = scm_run.filter(variable="Primary Energy")
+        scm_run["variable"] = v
 
-        run_to_nc(scm_data, out_fname, dimensions=("scenario",))
-        res = nc_to_run(scm_data.__class__, out_fname)
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",))
+        res = nc_to_run(scm_run.__class__, out_fname)
 
         assert res.get_unique_meta("variable", True) == v
 
 
-def test_run_to_nc_4d(scm_data, tmpdir):
-    df = scm_data.timeseries().reset_index()
+def test_run_to_nc_4d(scm_run, tmpdir):
+    df = scm_run.timeseries().reset_index()
     df["climate_model"] = "base_m"
     df["run_id"] = 1
 
@@ -77,16 +75,16 @@ def test_run_to_nc_4d(scm_data, tmpdir):
 
             big_df.append(new_df)
 
-    scm_data = scm_data.__class__(pd.concat(big_df).reset_index(drop=True))
+    scm_run = scm_run.__class__(pd.concat(big_df).reset_index(drop=True))
 
     out_fname = join(tmpdir, "out.nc")
-    run_to_nc(scm_data, out_fname, dimensions=("scenario", "climate_model", "run_id"))
+    run_to_nc(scm_run, out_fname, dimensions=("scenario", "climate_model", "run_id"))
 
     assert exists(out_fname)
 
     ds = nc.Dataset(out_fname)
 
-    assert ds.dimensions["time"].size == len(scm_data.time_points)
+    assert ds.dimensions["time"].size == len(scm_run.time_points)
     assert ds.dimensions["scenario"].size == 2
     assert ds.dimensions["climate_model"].size == 4
     assert ds.dimensions["run_id"].size == 10
@@ -103,30 +101,30 @@ def test_run_to_nc_4d(scm_data, tmpdir):
     assert ds.variables["Primary_Energy__Coal"].shape == (2, 4, 10, 3)
 
 
-def test_run_to_nc_nan_dimension_error(scm_data, tmpdir):
-    scm_data["run_id"] = np.nan
+def test_run_to_nc_nan_dimension_error(scm_run, tmpdir):
+    scm_run["run_id"] = np.nan
 
     out_fname = join(tmpdir, "out.nc")
     with pytest.raises(AssertionError, match="nan in dimension: `run_id`"):
-        run_to_nc(scm_data, out_fname, dimensions=("scenario", "run_id"))
+        run_to_nc(scm_run, out_fname, dimensions=("scenario", "run_id"))
 
 
 @pytest.mark.parametrize("dimensions", (("scenario",), ("scenario", "time")))
-def test_nc_to_run(scm_data, dimensions):
+def test_nc_to_run(scm_run, dimensions):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        run_to_nc(scm_data, out_fname, dimensions=dimensions)
+        run_to_nc(scm_run, out_fname, dimensions=dimensions)
 
         assert exists(out_fname)
 
-        df = nc_to_run(scm_data.__class__, out_fname)
-        assert isinstance(df, scm_data.__class__)
+        df = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(df, scm_run.__class__)
 
-        assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
+        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
 
 
-def test_nc_to_run_4d(scm_data):
-    df = scm_data.timeseries()
+def test_nc_to_run_4d(scm_run):
+    df = scm_run.timeseries()
     val_cols = df.columns.tolist()
     df = df.reset_index()
 
@@ -144,33 +142,33 @@ def test_nc_to_run_4d(scm_data):
 
             big_df.append(new_df)
 
-    scm_data = scm_data.__class__(pd.concat(big_df).reset_index(drop=True))
+    scm_run = scm_run.__class__(pd.concat(big_df).reset_index(drop=True))
 
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
         run_to_nc(
-            scm_data, out_fname, dimensions=("scenario", "climate_model", "run_id")
+            scm_run, out_fname, dimensions=("scenario", "climate_model", "run_id")
         )
 
         assert exists(out_fname)
 
-        df = nc_to_run(scm_data.__class__, out_fname)
-        assert isinstance(df, scm_data.__class__)
+        df = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(df, scm_run.__class__)
 
-        assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
+        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
 
 
-def test_nc_to_run_non_unique_for_dimension(scm_data):
+def test_nc_to_run_non_unique_for_dimension(scm_run):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
         error_msg = "['region'] dimensions are not unique for variable Primary Energy"
         with pytest.raises(ValueError, match=re.escape(error_msg)):
-            run_to_nc(scm_data, out_fname, dimensions=("region",))
+            run_to_nc(scm_run, out_fname, dimensions=("region",))
 
 
-def test_nc_to_run_non_unique_meta(scm_data):
-    scm_data["climate_model"] = ["b_model", "a_model", "a_model"]
+def test_nc_to_run_non_unique_meta(scm_run):
+    scm_run["climate_model"] = ["b_model", "a_model", "a_model"]
 
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
@@ -179,30 +177,28 @@ def test_nc_to_run_non_unique_meta(scm_data):
             "metadata for climate_model is not unique for variable Primary Energy"
         )
         with pytest.raises(ValueError, match=error_msg):
-            run_to_nc(scm_data, out_fname, dimensions=("scenario",))
+            run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
 
 @pytest.mark.parametrize("dtype", (int, float, str))
-def test_run_to_nc_with_extras(scm_data, dtype):
+def test_run_to_nc_with_extras(scm_run, dtype):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
         # make an extra column which maps 1:1 with scenario
-        unique_scenarios = scm_data["scenario"].unique().tolist()
+        unique_scenarios = scm_run["scenario"].unique().tolist()
         run_id = (
-            scm_data["scenario"]
-            .apply(lambda x: unique_scenarios.index(x))
-            .astype(dtype)
+            scm_run["scenario"].apply(lambda x: unique_scenarios.index(x)).astype(dtype)
         )
 
-        scm_data["run_id"] = run_id
-        run_to_nc(scm_data, out_fname, dimensions=("scenario",), extras=("run_id",))
+        scm_run["run_id"] = run_id
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",), extras=("run_id",))
 
         assert exists(out_fname)
 
         ds = nc.Dataset(out_fname)
 
-        assert ds.dimensions["time"].size == len(scm_data.time_points)
+        assert ds.dimensions["time"].size == len(scm_run.time_points)
         assert ds.dimensions["scenario"].size == 2
 
         assert ds.variables["scenario"][0] == "a_scenario"
@@ -215,82 +211,80 @@ def test_run_to_nc_with_extras(scm_data, dtype):
 
         npt.assert_allclose(
             ds.variables["Primary_Energy"][0, :],
-            scm_data.filter(variable="Primary Energy", scenario="a_scenario").values[0],
+            scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         assert not ds.variables["Primary_Energy"]._is_metadata
         npt.assert_allclose(
             ds.variables["Primary_Energy"][1, :],
-            scm_data.filter(variable="Primary Energy", scenario="a_scenario2").values[
-                0
-            ],
+            scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
             ds.variables["Primary_Energy__Coal"][0, :],
-            scm_data.filter(
+            scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
         )
         assert not ds.variables["Primary_Energy__Coal"]._is_metadata
 
 
-def test_nc_to_run_with_extras(scm_data):
+def test_nc_to_run_with_extras(scm_run):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        scm_data["run_id"] = [1, 1, 2]
-        run_to_nc(scm_data, out_fname, dimensions=("scenario",), extras=("run_id",))
+        scm_run["run_id"] = [1, 1, 2]
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",), extras=("run_id",))
 
         assert exists(out_fname)
 
-        df = nc_to_run(scm_data.__class__, out_fname)
-        assert isinstance(df, scm_data.__class__)
+        df = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(df, scm_run.__class__)
 
-        assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
+        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
 
 
-def test_nc_to_run_with_extras_non_unique_for_dimension(scm_data):
+def test_nc_to_run_with_extras_non_unique_for_dimension(scm_run):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        scm_data["run_id"] = [1, 2, 1]
+        scm_run["run_id"] = [1, 2, 1]
 
         error_msg = "metadata for run_id is not unique for requested dimensions"
         with pytest.raises(ValueError, match=error_msg):
-            run_to_nc(scm_data, out_fname, dimensions=("scenario",), extras=("run_id",))
+            run_to_nc(scm_run, out_fname, dimensions=("scenario",), extras=("run_id",))
 
 
-def test_nc_methods(scm_data):
+def test_nc_methods(scm_run):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        scm_data.to_nc(out_fname, dimensions=("scenario",))
+        scm_run.to_nc(out_fname, dimensions=("scenario",))
 
         assert exists(out_fname)
 
         # Same as ScmRun.from_nc(out_fname)
-        df = scm_data.__class__.from_nc(out_fname)
+        df = scm_run.__class__.from_nc(out_fname)
 
-        assert isinstance(df, scm_data.__class__)
-        assert_scmdf_almost_equal(scm_data, df, check_ts_names=False)
+        assert isinstance(df, scm_run.__class__)
+        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
 
 
 @patch("scmdata.netcdf.has_netcdf", False)
-def test_no_netcdf(scm_data):
+def test_no_netcdf(scm_run):
     with pytest.raises(
         ImportError, match="netcdf4 is not installed. Run 'pip install netcdf4'"
     ):
-        run_to_nc(scm_data.__class__, "ignored")
+        run_to_nc(scm_run.__class__, "ignored")
 
     with pytest.raises(
         ImportError, match="netcdf4 is not installed. Run 'pip install netcdf4'"
     ):
-        nc_to_run(scm_data, "ignored")
+        nc_to_run(scm_run, "ignored")
 
 
-def test_nc_read_failure(scm_data, test_data_path, caplog):
+def test_nc_read_failure(scm_run, test_data_path, caplog):
     test_fname = join(
         test_data_path, "netcdf-scm_tas_Amon_bcc-csm1-1_rcp26_r1i1p1_209001-211012.nc"
     )
 
     with pytest.raises(Exception):
-        nc_to_run(scm_data.__class__, test_fname)
+        nc_to_run(scm_run.__class__, test_fname)
 
     assert caplog.record_tuples[0][0] == "scmdata.netcdf"
     assert caplog.record_tuples[0][1] == logging.ERROR
@@ -312,18 +306,18 @@ def test_nc_read_failure(scm_data, test_data_path, caplog):
         },
     ),
 )
-def test_nc_with_metadata(test_scm_run, mdata):
+def test_nc_with_metadata(scm_run, mdata):
     def _cmp(a, b):
         if isinstance(a, (list, np.ndarray)):
             return (a == b).all()
         else:
             return a == b
 
-    test_scm_run.metadata = mdata.copy()
+    scm_run.metadata = mdata.copy()
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
-        run_to_nc(test_scm_run, out_fname, dimensions=("scenario",))
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
         ds = nc.Dataset(out_fname)
 
@@ -333,7 +327,7 @@ def test_nc_with_metadata(test_scm_run, mdata):
             assert _cmp(nc_attrs[k], v)
         assert "created_at" in nc_attrs
 
-        df = nc_to_run(test_scm_run.__class__, out_fname)
+        df = nc_to_run(scm_run.__class__, out_fname)
 
         for k, v in mdata.items():
             assert k in df.metadata
@@ -344,14 +338,14 @@ def test_nc_with_metadata(test_scm_run, mdata):
 @pytest.mark.parametrize(
     "mdata", ({"test_fails": {"something": "else"},}, {"test_fails": {1, 2, 3}},),
 )
-def test_nc_with_metadata_fails(test_scm_run, mdata):
-    test_scm_run.metadata = mdata.copy()
+def test_nc_with_metadata_fails(scm_run, mdata):
+    scm_run.metadata = mdata.copy()
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
         msg = "illegal data type for attribute b'test_fails'"
         with pytest.raises(TypeError, match=msg):
-            run_to_nc(test_scm_run, out_fname, dimensions=("scenario",))
+            run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
 
 def test_run_to_nc_required_cols_in_extras():
