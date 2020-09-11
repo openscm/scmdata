@@ -738,7 +738,7 @@ def test_delta_per_delta_time_nan_handling():
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )
-def test_idelta_per_delta_time_multiple_ts():
+def test_delta_per_delta_time_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
     start = get_multiple_ts(
         data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10]]).T,
@@ -781,3 +781,54 @@ def test_idelta_per_delta_time_multiple_ts():
         assert_scmdf_almost_equal(
             res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3
         )
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+def test_linear_regression():
+    dat = [1, 2, 3]
+    start = get_single_ts(data=dat, index=[1970, 1971, 1972], unit="GtC / yr")
+
+    res = start.linear_regression()
+
+    assert len(res) == 1
+    assert res[0]["variable"] == "Emissions|CO2"
+    assert res[0]["scenario"] == "scen"
+    assert res[0]["model"] == "mod"
+    assert res[0]["region"] == "World"
+    npt.assert_allclose(res[0]["gradient"].to("GtC / yr / yr").magnitude, 1, rtol=1e-3)
+    npt.assert_allclose(res[0]["intercept"].to("GtC / yr").magnitude, 1, rtol=1e-3)
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+def test_linear_regression_multiple_ts():
+    variables = ["Emissions|CO2", "Heat Uptake", "Temperature", "Temperature Ocean"]
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10], [1, 4, 8]]).T,
+        index=[2020, 2021, 2022],
+        variable=variables,
+        unit=["Mt CO2", "J / m^2", "K", "K"],
+    )
+
+    res = start.linear_regression()
+
+    assert len(res) == 4
+    for r in res:
+        if r["variable"] == "Emissions|CO2":
+            npt.assert_allclose(r["gradient"].to("Mt CO2 / yr").magnitude, 1, rtol=1e-3)
+        elif r["variable"] == "Heat Uptake":
+            npt.assert_allclose(r["gradient"].to("J / m^2 / yr").magnitude, -1, rtol=1e-3)
+        elif r["variable"] == "Temperature":
+            npt.assert_allclose(r["gradient"].to("K / yr").magnitude, 5, rtol=1e-3)
+        elif r["variable"] == "Temperature Ocean":
+            npt.assert_allclose(r["gradient"].to("K / yr").magnitude, 3.5, rtol=1e-3)
+        else:
+            raise NotImplementedError(r["variable"])
+
+# - base returns list of dictionaries
+# - what happens with nans
+# - method to just get gradient (with specified unit)
+# - method to just get intercept (with specified unit)
