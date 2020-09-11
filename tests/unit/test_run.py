@@ -1560,13 +1560,14 @@ def test_append_inplace_preexisting_nan(scm_run):
     # make sure underlying hasn't changed when not appending inplace
     pd.testing.assert_frame_equal(original_ts, scm_run.timeseries())
 
-    exp = pd.concat([scm_run.timeseries(), other.timeseries()])
+    exp = pd.concat(
+        [scm_run.timeseries().reset_index(), other.timeseries().reset_index()]
+    )
     exp["junk"] = np.nan
-    exp.set_index("junk", append=True, inplace=True)
-    assert_scmdf_almost_equal(res, ScmRun(exp))
+    exp = exp.set_index(res.meta_attributes)
 
     pd.testing.assert_frame_equal(
-        res.timeseries().sort_index().reset_index(),
+        res.timeseries().reset_index(),
         exp.sort_index().reset_index(),
         check_like=True,
         check_dtype=False,
