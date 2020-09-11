@@ -2376,7 +2376,8 @@ def test_drop_meta_inplace_default(scm_run):
     res = scm_run.drop_meta(label)
 
     assert res is not None
-    assert label not in scm_run.meta
+    assert label in scm_run.meta
+    assert label not in res.meta
 
 
 time_axis_checks = pytest.mark.parametrize(
