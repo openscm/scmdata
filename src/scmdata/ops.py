@@ -12,6 +12,8 @@ import pint_pandas
 import scipy
 from openscm_units import unit_registry
 
+from .time import TimePoints
+
 
 def prep_for_op(inp, op_cols, meta, ur=unit_registry):
     """
@@ -597,6 +599,78 @@ def integrate(self, out_var=None):
     return out
 
 
+def delta_per_delta_time(self, out_var=None):
+    """
+    Calculate change in timeseries values for each timestep, divided by the size of the timestep
+
+    The output is placed on the middle of each timestep and is one timestep
+    shorter than the input.
+
+    Parameters
+    ----------
+    out_var : str
+        If provided, the variable column of the output is set equal to
+        ``out_var``. Otherwise, the output variables are equal to the input
+        variables, prefixed with "Delta " .
+
+    Returns
+    -------
+    :obj:`scmdata.ScmRun`
+        :obj:`scmdata.ScmRun` containing the changes in values of ``self``,
+        normalised by the change in time
+
+    Warns
+    -----
+    UserWarning
+        The data contains nans. If this happens, the output data will also
+        contain nans.
+    """
+    time_unit = "s"
+    times_numpy = self.time_points.values.astype("datetime64[{}]".format(time_unit))
+    times_deltas_numpy = times_numpy[1:] - times_numpy[:-1]
+    times_in_s = times_numpy.astype("int")
+    time_deltas_in_s = times_in_s[1:] - times_in_s[:-1]
+
+    ts = self.timeseries()
+    if ts.isnull().sum().sum() > 0:
+        warnings.warn(
+            "You are calculating deltas of data which contains nans so your "
+            "result will also contain nans. Perhaps you want to remove the "
+            "nans before calculating the deltas using a combination of "
+            ":meth:`filter` and :meth:`interpolate`?"
+        )
+
+    out = ts.diff(periods=1, axis="columns")
+    if not out.iloc[:, 0].isnull().all():  # pragma: no cover
+        raise AssertionError(
+            "Did pandas change their API? The first timestep is not all nan."
+        )
+
+    out = out.iloc[:, 1:] / time_deltas_in_s
+
+    new_times = times_numpy[:-1] + times_deltas_numpy / 2
+    out.columns = TimePoints(new_times).to_index()
+
+    out = type(self)(out)
+    out /= unit_registry(time_unit)
+
+    try:
+        out_unit = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
+        out_unit = str(unit_registry(out_unit).to_reduced_units().units)
+        out = out.convert_unit(out_unit)
+
+    except ValueError:
+        # more than one unit, don't try to clean up
+        pass
+
+    if out_var is None:
+        out["variable"] = "Delta " + out["variable"]
+    else:
+        out["variable"] = out_var
+
+    return out
+
+
 def inject_ops_methods(cls):
     """
     Inject the operation methods
@@ -612,6 +686,7 @@ def inject_ops_methods(cls):
         ("multiply", multiply),
         ("divide", divide),
         ("integrate", integrate),
+        ("delta_per_delta_time", delta_per_delta_time),
     ]
 
     for name, f in methods:

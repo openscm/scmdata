@@ -499,6 +499,7 @@ def test_wrong_shape_ops(op, shape):
 @pytest.mark.parametrize(
     "vector", (np.arange(3).astype(int), np.arange(3).astype(float))
 )
+@pytest.mark.filterwarnings("ignore:divide by zero")
 def test_vector_ops_float_int(op, vector):
     start = get_multiple_ts(
         variable="Emissions|Gas",
@@ -656,6 +657,122 @@ def test_integration_multiple_ts():
 
     for v in variables:
         cv = "Cumulative {}".format(v)
+        exp_comp = exp.filter(variable=cv)
+        res_comp = res.filter(variable=cv).convert_unit(
+            exp_comp.get_unique_meta("unit", no_duplicates=True),
+        )
+
+        assert_scmdf_almost_equal(
+            res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3
+        )
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+@pytest.mark.parametrize("out_var", (None, "new out var"))
+def test_delta_per_delta_time(out_var):
+    dat = [1, 2, 3]
+    start = get_single_ts(data=dat, index=[1, 2, 3], unit="GtC / yr")
+
+    res = start.delta_per_delta_time(out_var=out_var).convert_unit("GtC / yr^2")
+
+    if out_var is None:
+        exp_var = ("Delta " + start["variable"]).values
+    else:
+        exp_var = out_var
+
+    exp = get_single_ts(
+        data=np.array([1, 1]), index=[1.5, 2.5], variable=exp_var, unit="GtC / yr^2"
+    )
+    # rtol is because our calculation uses seconds, which doesn't work out
+    # quite the same as assuming a regular year
+    assert_scmdf_almost_equal(
+        res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
+    )
+
+
+def test_delta_per_delta_time_handling_big_jumps():
+    start = get_single_ts(data=[1, 2, 3], index=[10, 20, 50], unit="GtC")
+
+    res = start.delta_per_delta_time().convert_unit("GtC / yr")
+
+    npt.assert_allclose(
+        res.values.squeeze(), [1 / 10, 1 / 30], rtol=1e-3,
+    )
+
+
+def test_delta_per_delta_time_handling_all_over_jumps():
+    start = get_single_ts(
+        data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC"
+    )
+
+    res = start.delta_per_delta_time().convert_unit("GtC / yr")
+
+    npt.assert_allclose(res.values.squeeze(), [10, 1 / 0.9, 0, -1.2 / 30], rtol=1e-3)
+
+
+def test_delta_per_delta_time_nan_handling():
+    start = get_single_ts(
+        data=[1, 2, 3, np.nan, 12, np.nan, 30, 40],
+        index=[10, 20, 50, 60, 70, 80, 90, 100],
+        unit="GtC",
+    )
+
+    warn_msg = re.escape(
+        "You are calculating deltas of data which contains nans so your result "
+        "will also contain nans. Perhaps you want to remove the nans before "
+        "calculating the deltas using a combination of :meth:`filter` and "
+        ":meth:`interpolate`?"
+    )
+    with pytest.warns(UserWarning, match=warn_msg):
+        res = start.delta_per_delta_time().convert_unit("GtC / yr")
+
+    npt.assert_allclose(
+        res.values.squeeze(),
+        [1 / 10, 1 / 30, np.nan, np.nan, np.nan, np.nan, 1],
+        rtol=1e-3,
+    )
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+def test_idelta_per_delta_time_multiple_ts():
+    variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10]]).T,
+        index=[2020, 2025, 2040],
+        variable=variables,
+        unit=["Mt CO2", "J / m^2", "K"],
+    )
+
+    res = start.delta_per_delta_time()
+
+    assert (
+        res["unit"]
+        == [
+            "CO2 * megametric_ton / second",
+            "joule / meter ** 2 / second",
+            "kelvin / second",
+        ]
+    ).all()
+
+    res = (
+        res.convert_unit("Mt CO2 / yr", variable="Delta Emissions|CO2")
+        .convert_unit("J / m^2 / yr", variable="Delta Heat Uptake")
+        .convert_unit("K / yr", variable="Delta Temperature")
+    )
+
+    exp = get_single_ts(
+        data=np.array([[1 / 5, 1 / 15], [-1 / 5, -1 / 15], [5 / 5, 5 / 15]]).T,
+        index=[2022.5, (2025 + 2040) / 2],
+        variable=["Delta {}".format(v) for v in variables],
+        unit=["Mt CO2 / yr", "J / m^2 / yr", "K / yr"],
+    )
+
+    for v in variables:
+        cv = "Delta {}".format(v)
         exp_comp = exp.filter(variable=cv)
         res_comp = res.filter(variable=cv).convert_unit(
             exp_comp.get_unique_meta("unit", no_duplicates=True),
