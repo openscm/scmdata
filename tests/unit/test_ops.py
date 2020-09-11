@@ -3,6 +3,7 @@ import re
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
+import pandas.testing as pdt
 import pint_pandas
 import pytest
 from openscm_units import unit_registry
@@ -866,7 +867,28 @@ def test_linear_regression_multiple_ts():
         else:
             raise NotImplementedError(r["variable"])
 
-# - base returns list of dictionaries
-# - what happens with nans
-# - method to just get gradient (with specified unit)
-# - method to just get intercept (with specified unit)
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+@pytest.mark.parametrize("unit,exp_values", (
+    ("Mt CO2 / yr", [1, -1, 5, 5 * 10 ** 3 * 44 / 12]),
+    ("Mt CO2 / day", np.array([1, -1, 5, 5 * 10 ** 3 * 44 / 12]) / 365.25),
+    (None, np.array([1, -1, 5, 5]) / (365.25 * 24 * 60 * 60)),
+))
+def test_linear_regression_gradient(unit, exp_values):
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10], [0, 5, 10]]).T,
+        index=[2020, 2021, 2022],
+        variable="Emissions|CO2",
+        unit=["Mt CO2", "Mt CO2", "Mt CO2", "GtC"],
+        scenario=["a", "b", "c", "d"]
+    )
+
+    res = start.linear_regression_gradient(unit=unit)
+
+    exp = start.meta
+    exp["gradient"] = exp_values
+    exp["unit"] = unit if unit is not None else ["CO2 * megametric_ton / second", "CO2 * megametric_ton / second", "CO2 * megametric_ton / second", "gigatC / second"]
+
+    pdt.assert_frame_equal(res, exp, rtol=1e-3, check_like=True)

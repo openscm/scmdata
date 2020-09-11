@@ -719,6 +719,39 @@ def linear_regression(self):
     return out
 
 
+def linear_regression_gradient(self, unit=None):
+    """
+    Calculate gradients of a linear regression of each timeseries
+
+    Parameters
+    ----------
+    unit : str
+        Output unit for gradients. If not supplied, the gradients' units will
+        not be converted to a common unit.
+
+    Returns
+    -------
+    :obj:`pd.DataFrame`
+        ``self.meta`` plus a column with the value of the gradient for each
+        timeseries. The ``"unit"`` column is updated to show the unit of the
+        gradient.
+    """
+    raw = self.linear_regression()
+
+    pdf_dicts = []
+    for r in raw:
+        transformed = {k: v for k, v in r.items() if k not in ["gradient", "intercept", "unit"]}
+        if unit is None:
+            transformed["gradient"] = r["gradient"].magnitude
+            transformed["unit"] = str(r["gradient"].units)
+        else:
+            transformed["gradient"] = r["gradient"].to(unit).magnitude
+            transformed["unit"] = unit
+
+        pdf_dicts.append(transformed)
+
+    return pd.DataFrame(pdf_dicts)
+
 def inject_ops_methods(cls):
     """
     Inject the operation methods
@@ -736,8 +769,7 @@ def inject_ops_methods(cls):
         ("integrate", integrate),
         ("delta_per_delta_time", delta_per_delta_time),
         ("linear_regression", linear_regression),
-        # ("linear_regression_gradient", linear_regression_gradient),
-        # ("linear_regression_intercept", linear_regression_intercept),
+        ("linear_regression_gradient", linear_regression_gradient),
     ]
 
     for name, f in methods:
