@@ -991,6 +991,27 @@ def test_timeseries_drop_all_nan_times(drop_all_nan_times, time_axis):
         assert len(res.columns) == 4
 
 
+def test_timeseries_index_ordered(scm_run):
+    def _is_sorted(arr):
+        arr = np.asarray(list(arr))
+        return np.all(arr[:-1] <= arr[1:])
+
+    def _check_order(r):
+        assert _is_sorted(r.timeseries().index.names)
+        assert not _is_sorted(r.timeseries(["variable", "scenario"]).index.names)
+
+        assert _is_sorted(r.meta.columns.names)
+
+    _check_order(scm_run)
+
+    new_ts = scm_run.timeseries()
+    new_order = list(new_ts.index.names)[::-1]
+    assert not _is_sorted(new_order)
+    new_ts.index = new_ts.index.reorder_levels(new_order)
+
+    _check_order(ScmRun(new_ts))
+
+
 def test_quantile_over_lower(test_processing_scm_df):
     exp = pd.DataFrame(
         [
