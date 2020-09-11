@@ -1614,26 +1614,25 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         else:
             ret = self.copy()
 
-        to_convert = ret.filter(**kwargs)
-        to_not_convert = ret.filter(**kwargs, keep=False, log_if_empty=False)
+        to_convert_filtered = ret.filter(**kwargs, log_if_empty=False)
+        to_not_convert_filtered = ret.filter(**kwargs, keep=False, log_if_empty=False)
 
-        if "unit_context" in to_convert.meta_attributes:
-            unit_context = to_convert.get_unique_meta("unit_context")
-            # check if contexts don't match, unless the context is nan
-            non_matching_contexts = len(unit_context) > 1 or unit_context[0] != context
-            if isinstance(unit_context[0], float):
-                non_matching_contexts &= not np.isnan(unit_context[0])
+        already_correct_unit = to_convert_filtered.filter(unit=unit, log_if_empty=False)
+        if (
+            "unit_context" in already_correct_unit.meta_attributes
+            and not already_correct_unit.empty
+        ):
+            self._check_unit_context(already_correct_unit, context)
 
-            if non_matching_contexts:
-                raise ValueError(
-                    "Existing unit conversion context(s), `{}`, doesn't match input "
-                    "context, `{}`, drop `unit_context` metadata before doing "
-                    "conversion".format(unit_context, context)
-                )
+        to_convert = to_convert_filtered.filter(
+            unit=unit, keep=False, log_if_empty=False
+        )
+        to_not_convert = run_append([to_not_convert_filtered, already_correct_unit,])
 
-            to_convert["unit_context"] = context
+        if "unit_context" in to_convert.meta_attributes and not to_convert.empty:
+            self._check_unit_context(to_convert, context)
 
-        elif context is not None:
+        if context is not None:
             to_convert["unit_context"] = context
 
         if "unit_context" not in to_not_convert.meta_attributes and context is not None:
@@ -1648,11 +1647,29 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
             return group
 
-        ret = to_convert.groupby("unit").map(apply_units)
+        ret = to_convert
+        if not to_convert.empty:
+            ret = ret.groupby("unit").map(apply_units)
 
         ret = run_append([ret, to_not_convert], inplace=inplace)
         if not inplace:
             return ret
+
+    @staticmethod
+    def _check_unit_context(dat, context):
+        unit_context = dat.get_unique_meta("unit_context")
+
+        # check if contexts don't match, unless the context is nan
+        non_matching_contexts = len(unit_context) > 1 or unit_context[0] != context
+        if isinstance(unit_context[0], float):
+            non_matching_contexts &= not np.isnan(unit_context[0])
+
+        if non_matching_contexts:
+            raise ValueError(
+                "Existing unit conversion context(s), `{}`, doesn't match input "
+                "context, `{}`, drop `unit_context` metadata before doing "
+                "conversion".format(unit_context, context)
+            )
 
     def relative_to_ref_period_mean(self, append_str=None, **kwargs):
         """
@@ -1848,7 +1865,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 m = self.meta
                 n_unique = m.nunique(axis=0)
                 m = m.drop(columns=n_unique[n_unique > 1].index).drop_duplicates()
-                assert len(m) == 1, m
+                if len(m) != 1:  # pragma: no cover
+                    raise AssertionError(m)
 
                 meta = m.to_dict("list")
 

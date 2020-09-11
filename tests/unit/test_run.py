@@ -1823,6 +1823,84 @@ def test_convert_unit_inplace(scm_run):
     )
 
 
+def test_convert_unit_target_unit_in_input():
+    inp = pd.DataFrame(
+        [
+            {
+                "climate_model": "MAGICC6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "yr",
+                "ensemble_member": 0,
+            },
+            {
+                "climate_model": "MAGICC6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "yr",
+                "ensemble_member": 1,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 0,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 1,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 10,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 11,
+            },
+            {
+                "climate_model": "FaIR1.6",
+                "model": "unspecified",
+                "scenario": "historical",
+                "region": "World",
+                "variable": "Atmospheric Lifetime|CH4",
+                "unit": "month",
+                "ensemble_member": 12,
+            },
+        ]
+    )
+    inp[2010] = 12
+    inp[2015] = 10
+
+    inp = ScmRun(inp)
+
+    res = inp.convert_unit("yr")
+
+    assert res.get_unique_meta("unit", no_duplicates=True) == "yr"
+
+
 def test_convert_unit_context(scm_run):
     scm_run = scm_run.filter(
         variable="Primary Energy"
@@ -1991,6 +2069,9 @@ def test_unit_context_to_convert_has_existing_context_error(scm_run, context):
     )
     with pytest.raises(ValueError, match=error_msg):
         start.convert_unit("GJ/yr", variable=to_convert, context="junk")
+
+    with pytest.raises(ValueError, match=error_msg):
+        start.convert_unit("MJ/yr", variable=to_convert, context="junk")
 
 
 @pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100", None))
