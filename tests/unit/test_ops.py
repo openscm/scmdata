@@ -801,6 +801,44 @@ def test_linear_regression():
     npt.assert_allclose(res[0]["intercept"].to("GtC / yr").magnitude, 1, rtol=1e-3)
 
 
+def test_linear_regression_handling_big_jumps():
+    start = get_single_ts(data=[1, 2, 3], index=[10, 20, 50], unit="GtC")
+
+    res = start.linear_regression()
+
+    npt.assert_allclose(res[0]["gradient"].to("GtC / yr").magnitude, 0.04615, rtol=1e-3)
+
+
+def test_linear_regression_handling_all_over_jumps():
+    start = get_single_ts(
+        data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC"
+    )
+
+    res = start.linear_regression()
+
+    npt.assert_allclose(res[0]["gradient"].to("GtC / yr").magnitude, -0.00439, rtol=1e-3)
+
+
+def test_linear_regression_nan_handling():
+    start = get_single_ts(
+        data=[1, 2, 3, np.nan, 12, np.nan, 30, 40],
+        index=[10, 20, 50, 60, 70, 80, 90, 100],
+        unit="GtC",
+    )
+
+    warn_msg = re.escape(
+        "You are calculating a linear regression of data which contains nans so your result "
+        "will also contain nans. Perhaps you want to remove the nans before "
+        "calculating the regression using a combination of :meth:`filter` and "
+        ":meth:`interpolate`?"
+    )
+    with pytest.warns(UserWarning, match=warn_msg):
+        res = start.linear_regression()
+
+    assert np.isnan(res[0]["gradient"])
+    assert np.isnan(res[0]["intercept"])
+
+
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )

@@ -7,6 +7,7 @@ to handle unit conversions automatically
 """
 import warnings
 
+import numpy as np
 import pandas as pd
 import pint_pandas
 import scipy
@@ -671,6 +672,53 @@ def delta_per_delta_time(self, out_var=None):
     return out
 
 
+def linear_regression(self):
+    """
+    Calculate linear regression of each timeseries
+
+    Times in seconds since 1970-01-01 are used as the x-axis for the
+    regressions. Such values can be accessed with
+    ``self.time_points.values.astype("datetime64[s]").astype("int")``. This
+    decision does not matter for the gradients, but is important for the
+    intercept values.
+
+    Returns
+    -------
+    list of dict[str : Any]
+        List of dictionaries. Each dictionary contains the metadata for the
+        timeseries plus the gradient (with key ``"gradient"``) and intercept (
+        with key ``"intercept"``). The gradient and intercept are stored as
+        :obj:`pint.Quantity`.
+    """
+    time_unit = "s"
+    times_numpy = self.time_points.values.astype("datetime64[{}]".format(time_unit))
+    times_in_s = times_numpy.astype("int")
+
+    ts = self.timeseries()
+    if ts.isnull().sum().sum() > 0:
+        warnings.warn(
+            "You are calculating a linear regression of data which contains "
+            "nans so your result will also contain nans. Perhaps you want to "
+            "remove the nans before calculating the regression using a "
+            "combination of :meth:`filter` and :meth:`interpolate`?"
+        )
+
+    res = np.polyfit(times_in_s, ts.T, 1)
+    gradients = res[0, :]
+    intercepts = res[1, :]
+
+    out = []
+    for row_meta, gradient, intercept in zip(ts.index.to_frame().reset_index(drop=True).to_dict("records"), gradients, intercepts):
+        unit = row_meta.pop("unit")
+
+        row_meta["gradient"] = gradient * unit_registry("{} / {}".format(unit, time_unit))
+        row_meta["intercept"] = intercept * unit_registry(unit)
+
+        out.append(row_meta)
+
+    return out
+
+
 def inject_ops_methods(cls):
     """
     Inject the operation methods
@@ -687,6 +735,9 @@ def inject_ops_methods(cls):
         ("divide", divide),
         ("integrate", integrate),
         ("delta_per_delta_time", delta_per_delta_time),
+        ("linear_regression", linear_regression),
+        # ("linear_regression_gradient", linear_regression_gradient),
+        # ("linear_regression_intercept", linear_regression_intercept),
     ]
 
     for name, f in methods:
