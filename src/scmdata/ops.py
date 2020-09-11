@@ -708,10 +708,16 @@ def linear_regression(self):
     intercepts = res[1, :]
 
     out = []
-    for row_meta, gradient, intercept in zip(ts.index.to_frame().reset_index(drop=True).to_dict("records"), gradients, intercepts):
+    for row_meta, gradient, intercept in zip(
+        ts.index.to_frame().reset_index(drop=True).to_dict("records"),
+        gradients,
+        intercepts,
+    ):
         unit = row_meta.pop("unit")
 
-        row_meta["gradient"] = gradient * unit_registry("{} / {}".format(unit, time_unit))
+        row_meta["gradient"] = gradient * unit_registry(
+            "{} / {}".format(unit, time_unit)
+        )
         row_meta["intercept"] = intercept * unit_registry(unit)
 
         out.append(row_meta)
@@ -740,7 +746,9 @@ def linear_regression_gradient(self, unit=None):
 
     pdf_dicts = []
     for r in raw:
-        transformed = {k: v for k, v in r.items() if k not in ["gradient", "intercept", "unit"]}
+        transformed = {
+            k: v for k, v in r.items() if k not in ["gradient", "intercept", "unit"]
+        }
         if unit is None:
             transformed["gradient"] = r["gradient"].magnitude
             transformed["unit"] = str(r["gradient"].units)
@@ -751,6 +759,7 @@ def linear_regression_gradient(self, unit=None):
         pdf_dicts.append(transformed)
 
     return pd.DataFrame(pdf_dicts)
+
 
 def inject_ops_methods(cls):
     """

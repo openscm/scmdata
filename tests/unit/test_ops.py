@@ -817,7 +817,9 @@ def test_linear_regression_handling_all_over_jumps():
 
     res = start.linear_regression()
 
-    npt.assert_allclose(res[0]["gradient"].to("GtC / yr").magnitude, -0.00439, rtol=1e-3)
+    npt.assert_allclose(
+        res[0]["gradient"].to("GtC / yr").magnitude, -0.00439, rtol=1e-3
+    )
 
 
 def test_linear_regression_nan_handling():
@@ -859,7 +861,9 @@ def test_linear_regression_multiple_ts():
         if r["variable"] == "Emissions|CO2":
             npt.assert_allclose(r["gradient"].to("Mt CO2 / yr").magnitude, 1, rtol=1e-3)
         elif r["variable"] == "Heat Uptake":
-            npt.assert_allclose(r["gradient"].to("J / m^2 / yr").magnitude, -1, rtol=1e-3)
+            npt.assert_allclose(
+                r["gradient"].to("J / m^2 / yr").magnitude, -1, rtol=1e-3
+            )
         elif r["variable"] == "Temperature":
             npt.assert_allclose(r["gradient"].to("K / yr").magnitude, 5, rtol=1e-3)
         elif r["variable"] == "Temperature Ocean":
@@ -871,24 +875,36 @@ def test_linear_regression_multiple_ts():
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )
-@pytest.mark.parametrize("unit,exp_values", (
-    ("Mt CO2 / yr", [1, -1, 5, 5 * 10 ** 3 * 44 / 12]),
-    ("Mt CO2 / day", np.array([1, -1, 5, 5 * 10 ** 3 * 44 / 12]) / 365.25),
-    (None, np.array([1, -1, 5, 5]) / (365.25 * 24 * 60 * 60)),
-))
+@pytest.mark.parametrize(
+    "unit,exp_values",
+    (
+        ("Mt CO2 / yr", [1, -1, 5, 5 * 10 ** 3 * 44 / 12]),
+        ("Mt CO2 / day", np.array([1, -1, 5, 5 * 10 ** 3 * 44 / 12]) / 365.25),
+        (None, np.array([1, -1, 5, 5]) / (365.25 * 24 * 60 * 60)),
+    ),
+)
 def test_linear_regression_gradient(unit, exp_values):
     start = get_multiple_ts(
         data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10], [0, 5, 10]]).T,
         index=[2020, 2021, 2022],
         variable="Emissions|CO2",
         unit=["Mt CO2", "Mt CO2", "Mt CO2", "GtC"],
-        scenario=["a", "b", "c", "d"]
+        scenario=["a", "b", "c", "d"],
     )
 
     res = start.linear_regression_gradient(unit=unit)
 
     exp = start.meta
     exp["gradient"] = exp_values
-    exp["unit"] = unit if unit is not None else ["CO2 * megametric_ton / second", "CO2 * megametric_ton / second", "CO2 * megametric_ton / second", "gigatC / second"]
+    exp["unit"] = (
+        unit
+        if unit is not None
+        else [
+            "CO2 * megametric_ton / second",
+            "CO2 * megametric_ton / second",
+            "CO2 * megametric_ton / second",
+            "gigatC / second",
+        ]
+    )
 
     pdt.assert_frame_equal(res, exp, rtol=1e-3, check_like=True)
