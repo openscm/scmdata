@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#115 <https://github.com/openscm/scmdata/pull/115>`_) Add `na_override` argument to :meth:`scmdata.ScmRun.process_over` for handling nan metadata
 - (`#114 <https://github.com/openscm/scmdata/pull/114>`_) Add operations: :meth:`scmdata.ScmRun.linear_regression`, :meth:`scmdata.ScmRun.linear_regression_gradient`, :meth:`scmdata.ScmRun.linear_regression_intercept` and :meth:`scmdata.ScmRun.linear_regression_scmrun`
 - (`#111 <https://github.com/openscm/scmdata/pull/111>`_) Add operation: :meth:`scmdata.ScmRun.delta_per_delta_time`
 - (`#112 <https://github.com/openscm/scmdata/pull/112>`_) Ensure unit conversion doesn't fall over when the target unit is in the input
