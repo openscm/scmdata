@@ -670,7 +670,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         return func
 
-    def drop_meta(self, columns: Union[list, str], inplace: Optional[bool] = None):
+    def drop_meta(self, columns: Union[list, str], inplace: Optional[bool] = False):
         """
         Drop meta columns out of the Run
 
@@ -681,23 +681,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         inplace
             If True, do operation inplace and return None.
 
-            The default behaviour of dropping metadata inplace will change in v0.7.0. The new behaviour in v0.7.0 will be to not
-            perform this operation in place, instead returning a copy with modified meta.
-
-
         Raises
         ------
         KeyError
             If any of the columns do not exist in the meta :class:`DataFrame`
         """
-        if inplace is None:
-            warnings.warn(
-                "drop_meta default behaviour will change to not performing operation inplace in v0.7.0. Explicitly set inplace=True to retain current behaviour",
-                DeprecationWarning,
-                2,
-            )
-            inplace = True
-
         if inplace:
             ret = self
         else:

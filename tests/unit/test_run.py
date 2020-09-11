@@ -2321,17 +2321,12 @@ def test_drop_meta(scm_run, label, inplace):
             scm_run[lbl] = 1.0
             assert lbl in scm_run.meta.columns
 
-    # TODO: remove warning check in v0.7.0
-    # Check that the deprecation warning isn't raised
-    with warnings.catch_warnings(record=True) as warn:
-        if inplace:
-            scm_run.drop_meta(label, inplace=True)
-            res = scm_run
-        else:
-            res = scm_run.drop_meta(label, inplace=False)
-            assert id(res) != id(scm_run)
-
-        assert len(warn) == 0
+    if inplace:
+        scm_run.drop_meta(label, inplace=True)
+        res = scm_run
+    else:
+        res = scm_run.drop_meta(label, inplace=False)
+        assert id(res) != id(scm_run)
 
     if type(label) == str:
         assert label not in res.meta.columns
@@ -2378,16 +2373,9 @@ def test_drop_meta_inplace_default(scm_run):
     label = "extra"
     scm_run[label] = "test"
 
-    msg = (
-        "drop_meta default behaviour will change to not performing operation inplace in v0.7.0. "
-        "Explicitly set inplace=True to retain current behaviour"
-    )
-    with pytest.warns(DeprecationWarning, match=msg):
-        res = scm_run.drop_meta(label)
+    res = scm_run.drop_meta(label)
 
-    # Should default to inplace
-    # To change in v0.7.0
-    assert res is None
+    assert res is not None
     assert label not in scm_run.meta
 
 
