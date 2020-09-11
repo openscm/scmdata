@@ -3,6 +3,7 @@ import re
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
+import pandas.testing as pdt
 import pint_pandas
 import pytest
 from openscm_units import unit_registry
@@ -738,7 +739,7 @@ def test_delta_per_delta_time_nan_handling():
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )
-def test_idelta_per_delta_time_multiple_ts():
+def test_delta_per_delta_time_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
     start = get_multiple_ts(
         data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10]]).T,
@@ -781,3 +782,202 @@ def test_idelta_per_delta_time_multiple_ts():
         assert_scmdf_almost_equal(
             res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3
         )
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+def test_linear_regression():
+    dat = [1, 2, 3]
+    start = get_single_ts(data=dat, index=[1970, 1971, 1972], unit="GtC / yr")
+
+    res = start.linear_regression()
+
+    assert len(res) == 1
+    assert res[0]["variable"] == "Emissions|CO2"
+    assert res[0]["scenario"] == "scen"
+    assert res[0]["model"] == "mod"
+    assert res[0]["region"] == "World"
+    npt.assert_allclose(res[0]["gradient"].to("GtC / yr / yr").magnitude, 1, rtol=1e-3)
+    npt.assert_allclose(res[0]["intercept"].to("GtC / yr").magnitude, 1, rtol=1e-3)
+
+
+def test_linear_regression_handling_big_jumps():
+    start = get_single_ts(data=[1, 2, 3], index=[10, 20, 50], unit="GtC")
+
+    res = start.linear_regression()
+
+    npt.assert_allclose(res[0]["gradient"].to("GtC / yr").magnitude, 0.04615, rtol=1e-3)
+
+
+def test_linear_regression_handling_all_over_jumps():
+    start = get_single_ts(
+        data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC"
+    )
+
+    res = start.linear_regression()
+
+    npt.assert_allclose(
+        res[0]["gradient"].to("GtC / yr").magnitude, -0.00439, rtol=1e-3
+    )
+
+
+def test_linear_regression_nan_handling():
+    start = get_single_ts(
+        data=[1, 2, 3, np.nan, 12, np.nan, 30, 40],
+        index=[10, 20, 50, 60, 70, 80, 90, 100],
+        unit="GtC",
+    )
+
+    warn_msg = re.escape(
+        "You are calculating a linear regression of data which contains nans so your result "
+        "will also contain nans. Perhaps you want to remove the nans before "
+        "calculating the regression using a combination of :meth:`filter` and "
+        ":meth:`interpolate`?"
+    )
+    with pytest.warns(UserWarning, match=warn_msg):
+        res = start.linear_regression()
+
+    assert np.isnan(res[0]["gradient"])
+    assert np.isnan(res[0]["intercept"])
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+def test_linear_regression_multiple_ts():
+    variables = ["Emissions|CO2", "Heat Uptake", "Temperature", "Temperature Ocean"]
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10], [1, 4, 8]]).T,
+        index=[2020, 2021, 2022],
+        variable=variables,
+        unit=["Mt CO2", "J / m^2", "K", "K"],
+    )
+
+    res = start.linear_regression()
+
+    assert len(res) == 4
+    for r in res:
+        if r["variable"] == "Emissions|CO2":
+            npt.assert_allclose(r["gradient"].to("Mt CO2 / yr").magnitude, 1, rtol=1e-3)
+        elif r["variable"] == "Heat Uptake":
+            npt.assert_allclose(
+                r["gradient"].to("J / m^2 / yr").magnitude, -1, rtol=1e-3
+            )
+        elif r["variable"] == "Temperature":
+            npt.assert_allclose(r["gradient"].to("K / yr").magnitude, 5, rtol=1e-3)
+        elif r["variable"] == "Temperature Ocean":
+            npt.assert_allclose(r["gradient"].to("K / yr").magnitude, 3.5, rtol=1e-3)
+        else:
+            raise NotImplementedError(r["variable"])
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+@pytest.mark.parametrize(
+    "unit,exp_values",
+    (
+        ("Mt CO2 / yr", [1, -1, 5, 5 * 10 ** 3 * 44 / 12]),
+        ("Mt CO2 / day", np.array([1, -1, 5, 5 * 10 ** 3 * 44 / 12]) / 365.25),
+        (None, np.array([1, -1, 5, 5]) / (365.25 * 24 * 60 * 60)),
+    ),
+)
+def test_linear_regression_gradient(unit, exp_values):
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10], [0, 5, 10]]).T,
+        index=[2020, 2021, 2022],
+        variable="Emissions|CO2",
+        unit=["Mt CO2", "Mt CO2", "Mt CO2", "GtC"],
+        scenario=["a", "b", "c", "d"],
+    )
+
+    res = start.linear_regression_gradient(unit=unit)
+
+    exp = start.meta
+    exp["gradient"] = exp_values
+    exp["unit"] = (
+        unit
+        if unit is not None
+        else [
+            "CO2 * megametric_ton / second",
+            "CO2 * megametric_ton / second",
+            "CO2 * megametric_ton / second",
+            "gigatC / second",
+        ]
+    )
+
+    pdt.assert_frame_equal(res, exp, rtol=1e-3, check_like=True)
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+@pytest.mark.parametrize(
+    "unit,exp_values",
+    (
+        ("Mt CO2", [2, -2, 6, 5 * 10 ** 3 * 44 / 12]),
+        (
+            "GtC",
+            [
+                2 / (10 ** 3) * 12 / 44,
+                -2 / (10 ** 3) * 12 / 44,
+                6 / (10 ** 3) * 12 / 44,
+                5,
+            ],
+        ),
+        (None, [2, -2, 6, 5]),
+    ),
+)
+def test_linear_regression_intercept(unit, exp_values):
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 8, 10], [0, 5, 10]]).T,
+        index=[1969, 1970, 1971],
+        variable="Emissions|CO2",
+        unit=["Mt CO2", "Mt CO2", "Mt CO2", "GtC"],
+        scenario=["a", "b", "c", "d"],
+    )
+
+    res = start.linear_regression_intercept(unit=unit)
+
+    exp = start.meta
+    exp["intercept"] = np.array(exp_values).astype(float)
+    exp["unit"] = (
+        unit
+        if unit is not None
+        else [
+            "CO2 * megametric_ton / second",
+            "CO2 * megametric_ton / second",
+            "CO2 * megametric_ton / second",
+            "gigatC / second",
+        ]
+    )
+
+    pdt.assert_frame_equal(res, exp, rtol=1e-3, check_like=True)
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+def test_linear_regression_scmrun():
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 8, 10], [0, 5, 10]]).T,
+        index=[1969, 1970, 1971],
+        variable="Emissions|CO2",
+        unit=["Mt CO2 / yr", "Mt CO2 / yr", "Mt CO2 / yr", "GtC / yr"],
+        scenario=["a", "b", "c", "d"],
+    )
+
+    res = start.linear_regression_scmrun()
+
+    exp = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [1, 6, 11], [0, 5, 10]]).T,
+        index=[1969, 1970, 1971],
+        variable="Emissions|CO2",
+        unit=["Mt CO2 / yr", "Mt CO2 / yr", "Mt CO2 / yr", "GtC / yr"],
+        scenario=["a", "b", "c", "d"],
+    )
+
+    assert_scmdf_almost_equal(
+        res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
+    )
