@@ -173,7 +173,7 @@ def test_missing_series_error():
 
     error_msg = re.escape(
         "No equivalent in `other` for "
-        "[('scenario', 'scen'), ('model', 'mod'), ('region', 'World|R5REF')]"
+        "[('model', 'mod'), ('region', 'World|R5REF'), ('scenario', 'scen')]"
     )
     with pytest.raises(KeyError, match=error_msg):
         base.add(other, op_cols={"variable": "Warming plus Cumulative emissions CO2"})
