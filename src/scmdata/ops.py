@@ -692,26 +692,12 @@ def linear_regression(self):
         with key ``"intercept"``). The gradient and intercept are stored as
         :obj:`pint.Quantity`.
     """
-    time_unit = "s"
-    times_numpy = self.time_points.values.astype("datetime64[{}]".format(time_unit))
-    times_in_s = times_numpy.astype("int")
-
-    ts = self.timeseries()
-    if ts.isnull().sum().sum() > 0:
-        warnings.warn(
-            "You are calculating a linear regression of data which contains "
-            "nans so your result will also contain nans. Perhaps you want to "
-            "remove the nans before calculating the regression using a "
-            "combination of :meth:`filter` and :meth:`interpolate`?"
-        )
-
-    res = np.polyfit(times_in_s, ts.T, 1)
-    gradients = res[0, :]
-    intercepts = res[1, :]
+    _, _, time_unit, gradients, intercepts, meta = _calculate_linear_regression(self)
 
     out = []
     for row_meta, gradient, intercept in zip(
-        ts.index.to_frame().reset_index(drop=True).to_dict("records"),
+        meta.to_dict("records"),
+        # ts.index.to_frame().reset_index(drop=True).to_dict("records"),
         gradients,
         intercepts,
     ):
@@ -797,6 +783,54 @@ def linear_regression_intercept(self, unit=None):
     return _convert_linear_regression_raw_to_pdf(raw, "intercept", unit)
 
 
+def linear_regression_scmrun(self):
+    """
+    Re-calculate the timeseries based on a linear regression
+
+    Returns
+    -------
+    :obj:`scmdata.ScmRun`
+        The timeseries, re-calculated based on a linear regression
+    """
+    times_numpy, times_in_s, time_unit, gradients, intercepts, meta = _calculate_linear_regression(self)
+
+    out_shape = (meta.shape[0], len(times_in_s))
+    regression_timeseries = (
+        np.broadcast_to(gradients, out_shape[::-1]).T * times_in_s
+        + intercepts[:, np.newaxis]
+    )
+
+    out = type(self)(
+        data=regression_timeseries.T,
+        index=times_numpy,
+        columns=meta.to_dict(orient="list"),
+    )
+
+    return out
+
+
+def _calculate_linear_regression(in_scmrun):
+    time_unit = "s"
+    times_numpy = in_scmrun.time_points.values.astype("datetime64[{}]".format(time_unit))
+    times_in_s = times_numpy.astype("int")
+
+    ts = in_scmrun.timeseries()
+    if ts.isnull().sum().sum() > 0:
+        warnings.warn(
+            "You are calculating a linear regression of data which contains "
+            "nans so your result will also contain nans. Perhaps you want to "
+            "remove the nans before calculating the regression using a "
+            "combination of :meth:`filter` and :meth:`interpolate`?"
+        )
+
+    res = np.polyfit(times_in_s, ts.T, 1)
+    gradients = res[0, :]
+    intercepts = res[1, :]
+
+    meta = ts.index.to_frame().reset_index(drop=True)
+
+    return times_numpy, times_in_s, time_unit, gradients, intercepts, meta
+
 def inject_ops_methods(cls):
     """
     Inject the operation methods
@@ -816,6 +850,7 @@ def inject_ops_methods(cls):
         ("linear_regression", linear_regression),
         ("linear_regression_gradient", linear_regression_gradient),
         ("linear_regression_intercept", linear_regression_intercept),
+        ("linear_regression_scmrun", linear_regression_scmrun),
     ]
 
     for name, f in methods:

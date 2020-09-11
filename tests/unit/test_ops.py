@@ -946,3 +946,30 @@ def test_linear_regression_intercept(unit, exp_values):
     )
 
     pdt.assert_frame_equal(res, exp, rtol=1e-3, check_like=True)
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+def test_linear_regression_scmrun():
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 8, 10], [0, 5, 10]]).T,
+        index=[1969, 1970, 1971],
+        variable="Emissions|CO2",
+        unit=["Mt CO2 / yr", "Mt CO2 / yr", "Mt CO2 / yr", "GtC / yr"],
+        scenario=["a", "b", "c", "d"],
+    )
+
+    res = start.linear_regression_scmrun()
+
+    exp = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [1, 6, 11], [0, 5, 10]]).T,
+        index=[1969, 1970, 1971],
+        variable="Emissions|CO2",
+        unit=["Mt CO2 / yr", "Mt CO2 / yr", "Mt CO2 / yr", "GtC / yr"],
+        scenario=["a", "b", "c", "d"],
+    )
+
+    assert_scmdf_almost_equal(
+        res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
+    )
