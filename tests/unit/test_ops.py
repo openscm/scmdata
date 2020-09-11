@@ -908,3 +908,41 @@ def test_linear_regression_gradient(unit, exp_values):
     )
 
     pdt.assert_frame_equal(res, exp, rtol=1e-3, check_like=True)
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+@pytest.mark.parametrize(
+    "unit,exp_values",
+    (
+        ("Mt CO2", [2, -2, 6, 5 * 10 ** 3 * 44 / 12]),
+        ("GtC", [2 / (10 ** 3) * 12 / 44, -2 / (10 ** 3) * 12 / 44, 6 / (10 ** 3) * 12 / 44, 5]),
+        (None, [2, -2, 6, 5]),
+    ),
+)
+def test_linear_regression_intercept(unit, exp_values):
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 8, 10], [0, 5, 10]]).T,
+        index=[1969, 1970, 1971],
+        variable="Emissions|CO2",
+        unit=["Mt CO2", "Mt CO2", "Mt CO2", "GtC"],
+        scenario=["a", "b", "c", "d"],
+    )
+
+    res = start.linear_regression_intercept(unit=unit)
+
+    exp = start.meta
+    exp["intercept"] = np.array(exp_values).astype(float)
+    exp["unit"] = (
+        unit
+        if unit is not None
+        else [
+            "CO2 * megametric_ton / second",
+            "CO2 * megametric_ton / second",
+            "CO2 * megametric_ton / second",
+            "gigatC / second",
+        ]
+    )
+
+    pdt.assert_frame_equal(res, exp, rtol=1e-3, check_like=True)

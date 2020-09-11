@@ -676,6 +676,8 @@ def linear_regression(self):
     """
     Calculate linear regression of each timeseries
 
+    Note
+    ----
     Times in seconds since 1970-01-01 are used as the x-axis for the
     regressions. Such values can be accessed with
     ``self.time_points.values.astype("datetime64[s]").astype("int")``. This
@@ -725,6 +727,24 @@ def linear_regression(self):
     return out
 
 
+def _convert_linear_regression_raw_to_pdf(raw, key_to_keep, unit):
+    pdf_dicts = []
+    for r in raw:
+        transformed = {
+            k: v for k, v in r.items() if k not in ["gradient", "intercept", "unit"]
+        }
+        if unit is None:
+            transformed[key_to_keep] = r[key_to_keep].magnitude
+            transformed["unit"] = str(r["gradient"].units)
+        else:
+            transformed[key_to_keep] = r[key_to_keep].to(unit).magnitude
+            transformed["unit"] = unit
+
+        pdf_dicts.append(transformed)
+
+    return pd.DataFrame(pdf_dicts)
+
+
 def linear_regression_gradient(self, unit=None):
     """
     Calculate gradients of a linear regression of each timeseries
@@ -744,21 +764,37 @@ def linear_regression_gradient(self, unit=None):
     """
     raw = self.linear_regression()
 
-    pdf_dicts = []
-    for r in raw:
-        transformed = {
-            k: v for k, v in r.items() if k not in ["gradient", "intercept", "unit"]
-        }
-        if unit is None:
-            transformed["gradient"] = r["gradient"].magnitude
-            transformed["unit"] = str(r["gradient"].units)
-        else:
-            transformed["gradient"] = r["gradient"].to(unit).magnitude
-            transformed["unit"] = unit
+    return _convert_linear_regression_raw_to_pdf(raw, "gradient", unit)
 
-        pdf_dicts.append(transformed)
 
-    return pd.DataFrame(pdf_dicts)
+def linear_regression_intercept(self, unit=None):
+    """
+    Calculate intercepts of a linear regression of each timeseries
+
+    Note
+    ----
+    Times in seconds since 1970-01-01 are used as the x-axis for the
+    regressions. Such values can be accessed with
+    ``self.time_points.values.astype("datetime64[s]").astype("int")``. This
+    decision does not matter for the gradients, but is important for the
+    intercept values.
+
+    Parameters
+    ----------
+    unit : str
+        Output unit for gradients. If not supplied, the gradients' units will
+        not be converted to a common unit.
+
+    Returns
+    -------
+    :obj:`pd.DataFrame`
+        ``self.meta`` plus a column with the value of the gradient for each
+        timeseries. The ``"unit"`` column is updated to show the unit of the
+        gradient.
+    """
+    raw = self.linear_regression()
+
+    return _convert_linear_regression_raw_to_pdf(raw, "intercept", unit)
 
 
 def inject_ops_methods(cls):
@@ -779,6 +815,7 @@ def inject_ops_methods(cls):
         ("delta_per_delta_time", delta_per_delta_time),
         ("linear_regression", linear_regression),
         ("linear_regression_gradient", linear_regression_gradient),
+        ("linear_regression_intercept", linear_regression_intercept),
     ]
 
     for name, f in methods:
