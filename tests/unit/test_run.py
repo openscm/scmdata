@@ -1127,6 +1127,43 @@ def test_process_over_kwargs_error(scm_run):
         scm_run.process_over("scenario", "mean", junk=4)
 
 
+@pytest.mark.parametrize("na_override", [10000, -9999, 1.0e6])
+def test_process_over_with_nans(scm_run, na_override):
+    scm_run["nan_meta"] = np.nan
+    res = scm_run.process_over(("variable",), "median", na_override=na_override)
+    assert len(res) == 2
+
+    npt.assert_array_equal(res.values[0, :], [0.75, 4.5, 4.5])
+    npt.assert_array_equal(
+        res.values[1, :], scm_run.filter(scenario="a_scenario2"),
+    )
+
+
+@pytest.mark.parametrize("na_override", [10000, -9999, 1.0e6])
+def test_process_over_with_nans_raises(scm_run, na_override):
+    scm_run["nan_meta"] = na_override
+
+    with pytest.raises(
+        ValueError,
+        match="na_override clashes with existing meta: {}".format(na_override),
+    ):
+        scm_run.process_over(("variable",), "median", na_override=na_override)
+
+
+def test_process_over_without_na_override(scm_run):
+    res = scm_run.process_over(("variable",), "median", na_override=None)
+    assert len(res) == 2
+
+    npt.assert_array_equal(res.values[0, :], [0.75, 4.5, 4.5])
+    npt.assert_array_equal(
+        res.values[1, :], scm_run.filter(scenario="a_scenario2"),
+    )
+
+    scm_run["nan_meta"] = np.nan
+    res = scm_run.process_over(("variable",), "median", na_override=None)
+    assert len(res) == 0  # This result is incorrect due to the disabling na_override
+
+
 @pytest.mark.parametrize(
     "tfilter",
     [

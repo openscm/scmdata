@@ -1472,7 +1472,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         raise ValueError("`rule` = `{}` is not supported".format(rule))
 
     def process_over(
-        self, cols: Union[str, List[str]], operation: str, **kwargs: Any
+        self,
+        cols: Union[str, List[str]],
+        operation: str,
+        na_override=-1e6,
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         Process the data over the input columns.
@@ -1490,6 +1494,15 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             once the groupby is applied. As a result, using ``q=0.5`` is is the same as
             taking the median and not the same as taking the mean/average.
 
+        na_override: [int, float]
+            Convert any nan value in the timeseries meta to this value during processsing.
+            The meta values converted back to nan's before the dataframe is returned. This
+            should not need to be changed unless the existing metadata clashes with the
+            default na_override value.
+
+            This functionality is disabled if na_override is None, but may result incorrect
+            results if the timeseries meta includes any nan's.
+
         **kwargs
             Keyword arguments to pass to the pandas operation
 
@@ -1503,20 +1516,35 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         ------
         ValueError
             If the operation is not one of ['median', 'mean', 'quantile']
+
+            If the value of na_override clashes with any existing metadata
         """
         cols = [cols] if isinstance(cols, str) else cols
         ts = self.timeseries()
+        if na_override is not None:
+            ts_idx = ts.index.to_frame()
+            if ts_idx[ts_idx == na_override].any().any():
+                raise ValueError(
+                    "na_override clashes with existing meta: {}".format(na_override)
+                )
+            ts.index = pd.MultiIndex.from_frame(ts_idx.fillna(na_override))
         group_cols = list(set(ts.index.names) - set(cols))
         grouper = ts.groupby(group_cols)
 
         if operation == "median":
-            return grouper.median(**kwargs)
-        if operation == "mean":
-            return grouper.mean(**kwargs)
-        if operation == "quantile":
-            return grouper.quantile(**kwargs)
+            res = grouper.median(**kwargs)
+        elif operation == "mean":
+            res = grouper.mean(**kwargs)
+        elif operation == "quantile":
+            res = grouper.quantile(**kwargs)
+        else:
+            raise ValueError("operation must be one of ['median', 'mean', 'quantile']")
 
-        raise ValueError("operation must be one of ['median', 'mean', 'quantile']")
+        if na_override is not None:
+            idx_df = res.index.to_frame()
+            idx_df[idx_df == na_override] = np.nan
+            res.index = pd.MultiIndex.from_frame(idx_df)
+        return res
 
     def groupby(self, *group):
         """
