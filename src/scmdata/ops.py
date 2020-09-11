@@ -696,10 +696,7 @@ def linear_regression(self):
 
     out = []
     for row_meta, gradient, intercept in zip(
-        meta.to_dict("records"),
-        # ts.index.to_frame().reset_index(drop=True).to_dict("records"),
-        gradients,
-        intercepts,
+        meta.to_dict("records"), gradients, intercepts,
     ):
         unit = row_meta.pop("unit")
 
