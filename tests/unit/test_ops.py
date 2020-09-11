@@ -747,8 +747,12 @@ def test_idelta_per_delta_time_multiple_ts():
         unit=["Mt CO2", "J / m^2", "K"],
     )
 
+    res = start.delta_per_delta_time()
+
+    assert (res["unit"] == ["CO2 * megametric_ton / second", "joule / meter ** 2 / second", "kelvin / second"]).all()
+
     res = (
-        start.delta_per_delta_time()
+        res
         .convert_unit("Mt CO2 / yr", variable="Delta Emissions|CO2")
         .convert_unit("J / m^2 / yr", variable="Delta Heat Uptake")
         .convert_unit("K / yr", variable="Delta Temperature")
