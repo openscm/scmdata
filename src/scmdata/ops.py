@@ -792,7 +792,14 @@ def linear_regression_scmrun(self):
     :obj:`scmdata.ScmRun`
         The timeseries, re-calculated based on a linear regression
     """
-    times_numpy, times_in_s, time_unit, gradients, intercepts, meta = _calculate_linear_regression(self)
+    (
+        times_numpy,
+        times_in_s,
+        time_unit,
+        gradients,
+        intercepts,
+        meta,
+    ) = _calculate_linear_regression(self)
 
     out_shape = (meta.shape[0], len(times_in_s))
     regression_timeseries = (
@@ -811,7 +818,9 @@ def linear_regression_scmrun(self):
 
 def _calculate_linear_regression(in_scmrun):
     time_unit = "s"
-    times_numpy = in_scmrun.time_points.values.astype("datetime64[{}]".format(time_unit))
+    times_numpy = in_scmrun.time_points.values.astype(
+        "datetime64[{}]".format(time_unit)
+    )
     times_in_s = times_numpy.astype("int")
 
     ts = in_scmrun.timeseries()
@@ -830,6 +839,7 @@ def _calculate_linear_regression(in_scmrun):
     meta = ts.index.to_frame().reset_index(drop=True)
 
     return times_numpy, times_in_s, time_unit, gradients, intercepts, meta
+
 
 def inject_ops_methods(cls):
     """
