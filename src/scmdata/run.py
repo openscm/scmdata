@@ -904,9 +904,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Metadata
         """
-        return pd.DataFrame(
+        df = pd.DataFrame(
             self._meta.to_list(), columns=self._meta.names, index=self._df.columns
         )
+
+        return df[sorted(df.columns)]
 
     def _meta_column(self, col) -> pd.Series:
         out = self._meta.get_level_values(col)

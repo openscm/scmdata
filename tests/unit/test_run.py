@@ -991,6 +991,28 @@ def test_timeseries_drop_all_nan_times(drop_all_nan_times, time_axis):
         assert len(res.columns) == 4
 
 
+def test_timeseries_index_ordered(scm_run):
+    def _is_sorted(arr):
+        arr = np.asarray(list(arr))
+        return np.all(arr[:-1] <= arr[1:])
+
+    def _check_order(r):
+        assert _is_sorted(r.timeseries().index.names)
+        assert not _is_sorted(r.timeseries(["variable", "scenario"]).index.names)
+        assert _is_sorted(r.timeseries(["scenario", "variable"]).index.names)
+
+        assert _is_sorted(r.meta.columns.names)
+
+    _check_order(scm_run)
+
+    new_ts = scm_run.timeseries()
+    new_order = list(new_ts.index.names)[::-1]
+    assert not _is_sorted(new_order)
+    new_ts.index = new_ts.index.reorder_levels(new_order)
+
+    _check_order(ScmRun(new_ts))
+
+
 def test_quantile_over_lower(test_processing_scm_df):
     exp = pd.DataFrame(
         [
@@ -1293,19 +1315,19 @@ def test_append(scm_run):
 
     # assert that appending data works as expected
     ts = df.timeseries().sort_index()
-    npt.assert_array_equal(ts.iloc[2], ts.iloc[3])
+    npt.assert_array_equal(ts.iloc[0], ts.iloc[3])
     pd.testing.assert_index_equal(
         df.meta.columns,
         pd.Index(
             [
-                "model",
-                "scenario",
-                "region",
-                "variable",
-                "unit",
                 "climate_model",
                 "col1",
                 "col2",
+                "model",
+                "region",
+                "scenario",
+                "unit",
+                "variable",
             ]
         ),
     )
@@ -1538,12 +1560,14 @@ def test_append_inplace_preexisting_nan(scm_run):
     # make sure underlying hasn't changed when not appending inplace
     pd.testing.assert_frame_equal(original_ts, scm_run.timeseries())
 
-    exp = pd.concat([scm_run.timeseries(), other.timeseries()])
+    exp = pd.concat(
+        [scm_run.timeseries().reset_index(), other.timeseries().reset_index()]
+    )
     exp["junk"] = np.nan
-    exp.set_index("junk", append=True, inplace=True)
+    exp = exp.set_index(res.meta_attributes)
 
     pd.testing.assert_frame_equal(
-        res.timeseries().reorder_levels(exp.index.names).sort_index().reset_index(),
+        res.timeseries().reset_index(),
         exp.sort_index().reset_index(),
         check_like=True,
         check_dtype=False,
@@ -1724,13 +1748,13 @@ def test_set_meta_as_float(scm_run):
         scm_run.meta.columns,
         pd.Index(
             [
-                "model",
-                "scenario",
-                "region",
-                "variable",
-                "unit",
                 "climate_model",
                 "meta_int",
+                "model",
+                "region",
+                "scenario",
+                "unit",
+                "variable",
             ]
         ),
     )
@@ -1747,17 +1771,18 @@ def test_set_meta_as_str(scm_run):
 
     obs = scm_run["meta_str"]
     pd.testing.assert_series_equal(obs, exp)
+
     pd.testing.assert_index_equal(
         scm_run.meta.columns,
         pd.Index(
             [
-                "model",
-                "scenario",
-                "region",
-                "variable",
-                "unit",
                 "climate_model",
                 "meta_str",
+                "model",
+                "region",
+                "scenario",
+                "unit",
+                "variable",
             ]
         ),
     )
