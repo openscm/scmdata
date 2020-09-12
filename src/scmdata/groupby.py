@@ -2,6 +2,7 @@
 Functionality for grouping and filtering ScmRun objects
 """
 import warnings
+from collections.abc import Iterable
 
 import numpy as np
 from xarray.core import ops
@@ -48,7 +49,9 @@ class _GroupBy(ImplementsArrayReduce):
             return v
 
         for indices in self._grouper.groups:
-            indices = np.atleast_1d(indices)
+            if not isinstance(indices, Iterable) or isinstance(indices, str):
+                indices = [indices]
+
             indices = [_try_fill_value(v) for v in indices]
             res = self.run.filter(**{k: v for k, v in zip(self.group_keys, indices)})
             if not len(res):

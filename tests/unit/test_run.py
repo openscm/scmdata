@@ -940,6 +940,70 @@ def test_append_nans(scm_run, value):
     )
 
 
+times_to_check = (
+    np.arange(1, 1000),
+    np.arange(1750, 2100),
+    np.arange(1850, 2100),
+    np.arange(1850, 2300),
+    np.arange(3000, 4000),
+)
+
+
+@pytest.mark.parametrize("time_1", times_to_check)
+@pytest.mark.parametrize("time_2", times_to_check)
+@pytest.mark.parametrize("try_start_1_from_df_with_datetime_index", (True, False))
+@pytest.mark.parametrize("try_start_2_from_df_with_datetime_index", (True, False))
+def test_append_long_times(
+    time_1,
+    time_2,
+    try_start_1_from_df_with_datetime_index,
+    try_start_2_from_df_with_datetime_index,
+):
+    scmrun_1 = ScmRun(
+        data=np.arange(len(time_1)),
+        index=time_1,
+        columns={
+            "model": "model_1",
+            "scenario": "scenario_1",
+            "variable": "variable_1",
+            "region": "region_1",
+            "unit": "unit_1",
+        },
+    )
+    if try_start_1_from_df_with_datetime_index:
+        scmrun_1_ts = scmrun_1.timeseries()
+        try:
+            scmrun_1_ts.columns = pd.DatetimeIndex(scmrun_1_ts.columns.values)
+        except pd.errors.OutOfBoundsDatetime:
+            pytest.skip("pandas datetime error")
+
+    scmrun_2 = ScmRun(
+        data=np.arange(len(time_2)),
+        index=time_2,
+        columns={
+            "model": "model_2",
+            "scenario": "scenario_2",
+            "variable": "variable_2",
+            "region": "region_2",
+            "unit": "unit_2",
+        },
+    )
+    if try_start_2_from_df_with_datetime_index:
+        scmrun_2_ts = scmrun_2.timeseries()
+        try:
+            scmrun_2_ts.columns = pd.DatetimeIndex(scmrun_2_ts.columns.values)
+            scmrun_2 = ScmRun(scmrun_2_ts)
+
+        except pd.errors.OutOfBoundsDatetime:
+            pytest.skip("pandas datetime error")
+
+    res = scmrun_1.append(scmrun_2)
+
+    assert not isinstance(res._df.index, pd.DatetimeIndex)
+    exp_years = set(time_1).union(set(time_2))
+    assert set(res["year"]) == exp_years
+
+
 def test_timeseries(scm_run):
     dct = {
         "model": ["a_model"] * 3,
