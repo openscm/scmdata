@@ -1,5 +1,6 @@
 import pytest
 
+from scmdata import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -38,3 +39,25 @@ def test_groupby_return_none_all(scm_run):
         return None
 
     assert scm_run.groupby("variable").map(func) is None
+
+
+def test_groupby_integer_metadata():
+    def increment_ensemble_member(scmrun):
+        scmrun["ensemble_member"] += 10
+
+    start = ScmRun(
+        data=[[1, 2], [0, 1]],
+        index=[2010, 2020],
+        columns={
+            "model": "model",
+            "scenario": "scenario",
+            "variable": "variable",
+            "unit": "unit",
+            "region": "region",
+            "ensemble_member": [0, 1],
+        }
+    )
+
+    res = start.groupby(["variable", "region", "scenario", "ensemble_member"]).map(increment_ensemble_member)
+
+    assert (res["ensemble_member"] == start["ensemble_member"] + 10).all()
