@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.7.0
+------
+
 - (`#118 <https://github.com/openscm/scmdata/pull/118>`_) Make scipy an optional dependency
 - (`#117 <https://github.com/openscm/scmdata/pull/117>`_) Sort timeseries index ordering (closes `#97 <https://github.com/openscm/scmdata/issues/97>`_)
 - (`#116 <https://github.com/openscm/scmdata/pull/116>`_) Update :meth:`scmdata.ScmRun.drop_meta` inplace behaviour
