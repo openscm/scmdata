@@ -947,6 +947,8 @@ times_to_check = (
     np.arange(1850, 2300),
     np.arange(3000, 4000),
 )
+
+
 @pytest.mark.parametrize("time_1", times_to_check)
 @pytest.mark.parametrize("time_2", times_to_check)
 @pytest.mark.parametrize("try_start_1_from_df_with_datetime_index", (True, False))
@@ -966,7 +968,7 @@ def test_append_long_times(
             "variable": "variable_1",
             "region": "region_1",
             "unit": "unit_1",
-        }
+        },
     )
     if try_start_1_from_df_with_datetime_index:
         scmrun_1_ts = scmrun_1.timeseries()
@@ -984,7 +986,7 @@ def test_append_long_times(
             "variable": "variable_2",
             "region": "region_2",
             "unit": "unit_2",
-        }
+        },
     )
     if try_start_2_from_df_with_datetime_index:
         scmrun_2_ts = scmrun_2.timeseries()

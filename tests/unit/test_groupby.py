@@ -57,9 +57,11 @@ def test_groupby_integer_metadata():
             "unit": "unit",
             "region": "region",
             "ensemble_member": [0, 1],
-        }
+        },
     )
 
-    res = start.groupby(["variable", "region", "scenario", "ensemble_member"]).map(increment_ensemble_member)
+    res = start.groupby(["variable", "region", "scenario", "ensemble_member"]).map(
+        increment_ensemble_member
+    )
 
     assert (res["ensemble_member"] == start["ensemble_member"] + 10).all()

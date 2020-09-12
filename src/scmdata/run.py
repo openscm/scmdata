@@ -2031,8 +2031,6 @@ def run_append(
         )
     )
 
-
-
     if ret._duplicated_meta():
         if overlapping_times and duplicate_msg:
             _handle_potential_duplicates_in_append(ret, duplicate_msg)
