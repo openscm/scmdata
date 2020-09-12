@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.7.1
+------
+
 - (`#119 <https://github.com/openscm/scmdata/pull/119>`_) Make groupby support grouping by metadata with integer values
 - (`#119 <https://github.com/openscm/scmdata/pull/119>`_) Ensure using :func:`scmdata.run.run_append` does not mangle the index to :obj:`pd.DatetimeIndex`
 
