@@ -1,4 +1,5 @@
 import re
+from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
@@ -113,6 +114,14 @@ def perform_op(base, other, op, reset_index):
         raise NotImplementedError(op)
 
     return exp_ts.reset_index()
+
+
+@patch("scmdata.ops.has_scipy", False)
+def test_no_scipy(scm_run):
+    with pytest.raises(
+        ImportError, match="scipy is not installed. Run 'pip install scipy'"
+    ):
+        scm_run.integrate()
 
 
 @OPS_MARK

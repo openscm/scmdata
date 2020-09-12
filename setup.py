@@ -38,7 +38,7 @@ REQUIREMENTS = [
     "python-dateutil",
     "xarray",
 ]
-REQUIREMENTS_OPTIONAL = ["netCDF4", "xlrd"]
+REQUIREMENTS_OPTIONAL = ["netCDF4", "scipy", "xlrd"]
 REQUIREMENTS_PLOTTING = ["seaborn"]
 REQUIREMENTS_NOTEBOOKS = ["notebook",] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
 REQUIREMENTS_TESTS = (
@@ -60,7 +60,6 @@ REQUIREMENTS_DEV = [
         "notebook",
         "pydocstyle",
         "pylint",
-        "scipy",
     ],
     *REQUIREMENTS_OPTIONAL,
     *REQUIREMENTS_PLOTTING,

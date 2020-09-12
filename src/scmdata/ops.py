@@ -10,10 +10,17 @@ import warnings
 import numpy as np
 import pandas as pd
 import pint_pandas
-import scipy
 from openscm_units import unit_registry
 
 from .time import TimePoints
+
+try:
+    import scipy
+
+    has_scipy = True
+except ImportError:  # pragma: no cover
+    scipy = None
+    has_scipy = False
 
 
 def prep_for_op(inp, op_cols, meta, ur=unit_registry):
@@ -558,6 +565,9 @@ def integrate(self, out_var=None):
         The data being integrated contains nans. If this happens, the output
         data will also contain nans.
     """
+    if not has_scipy:
+        raise ImportError("scipy is not installed. Run 'pip install scipy'")
+
     time_unit = "s"
     times_in_s = self.time_points.values.astype(
         "datetime64[{}]".format(time_unit)

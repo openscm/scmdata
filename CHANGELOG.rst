@@ -4,7 +4,8 @@ Changelog
 master
 ------
 
-- (`#117 <https://github.com/openscm/scmdata/pull/117>`_) Sort timeseries index ordering (closes `#97 <https://github.com/openscm/scmdata/issues/97>`_).
+- (`#118 <https://github.com/openscm/scmdata/pull/118>`_) Make scipy an optional dependency
+- (`#117 <https://github.com/openscm/scmdata/pull/117>`_) Sort timeseries index ordering (closes `#97 <https://github.com/openscm/scmdata/issues/97>`_)
 - (`#116 <https://github.com/openscm/scmdata/pull/116>`_) Update :meth:`scmdata.ScmRun.drop_meta` inplace behaviour
 - (`#115 <https://github.com/openscm/scmdata/pull/115>`_) Add `na_override` argument to :meth:`scmdata.ScmRun.process_over` for handling nan metadata (closes `#113 <https://github.com/openscm/scmdata/issues/113>`_)
 - (`#114 <https://github.com/openscm/scmdata/pull/114>`_) Add operations: :meth:`scmdata.ScmRun.linear_regression`, :meth:`scmdata.ScmRun.linear_regression_gradient`, :meth:`scmdata.ScmRun.linear_regression_intercept` and :meth:`scmdata.ScmRun.linear_regression_scmrun`
