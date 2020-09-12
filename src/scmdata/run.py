@@ -2023,13 +2023,15 @@ def run_append(
         to_join_metas.append(run_to_join_meta)
 
     ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns").sort_index()
+    ret._time_points = TimePoints(ret._df.index.values)
+    ret._df.index = ret._time_points.to_index()
     ret._meta = pd.MultiIndex.from_frame(
         pd.concat([ret._meta.to_frame().reset_index(drop=True)] + to_join_metas).astype(
             "category"
         )
     )
 
-    ret._time_points = TimePoints(ret._df.index.values)
+
 
     if ret._duplicated_meta():
         if overlapping_times and duplicate_msg:
