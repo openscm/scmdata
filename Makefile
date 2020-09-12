@@ -98,7 +98,7 @@ test-pypi-install: $(VENV_DIR)  ## test whether installing from PyPI works
 test-install: $(VENV_DIR)  ## test whether installing locally in a fresh env works
 	$(eval TEMPVENV := $(shell mktemp -d))
 	python3 -m venv $(TEMPVENV)
-	$(TEMPVENV)/bin/pip install pip --upgrade
+	$(TEMPVENV)/bin/pip install wheel pip --upgrade
 	$(TEMPVENV)/bin/pip install .
 	$(TEMPVENV)/bin/python scripts/test_install.py
 
