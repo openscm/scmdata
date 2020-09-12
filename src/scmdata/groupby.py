@@ -48,7 +48,9 @@ class _GroupBy(ImplementsArrayReduce):
             return v
 
         for indices in self._grouper.groups:
-            indices = np.atleast_1d(indices)
+            if isinstance(indices, str):
+                indices = [indices]
+
             indices = [_try_fill_value(v) for v in indices]
             res = self.run.filter(**{k: v for k, v in zip(self.group_keys, indices)})
             if not len(res):

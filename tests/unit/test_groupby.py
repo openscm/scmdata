@@ -45,6 +45,8 @@ def test_groupby_integer_metadata():
     def increment_ensemble_member(scmrun):
         scmrun["ensemble_member"] += 10
 
+        return scmrun
+
     start = ScmRun(
         data=[[1, 2], [0, 1]],
         index=[2010, 2020],
