@@ -41,6 +41,19 @@ def test_groupby_return_none_all(scm_run):
     assert scm_run.groupby("variable").map(func) is None
 
 
+def test_groupby_integer_metadata_single_grouper(scm_run):
+    def increment_ensemble_member(scmrun):
+        scmrun["ensemble_member"] += 10
+
+        return scmrun
+
+    scm_run["ensemble_member"] = range(scm_run.shape[0])
+
+    res = scm_run.groupby("ensemble_member").map(increment_ensemble_member)
+
+    assert (res["ensemble_member"] == scm_run["ensemble_member"] + 10).all()
+
+
 def test_groupby_integer_metadata():
     def increment_ensemble_member(scmrun):
         scmrun["ensemble_member"] += 10
