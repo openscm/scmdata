@@ -940,6 +940,39 @@ def test_append_nans(scm_run, value):
     )
 
 
+@pytest.mark.parametrize("time_1", (np.arange(1, 1000), np.arange(1750, 2100), np.arange(1850, 2300), np.arange(3000, 4000)))
+@pytest.mark.parametrize("time_2", (np.arange(1, 1000), np.arange(1750, 2100), np.arange(1850, 2300), np.arange(3000, 4000)))
+def test_append_long_times(time_1, time_2):
+    scmrun_1 = ScmRun(
+        data=np.arange(len(time_1)),
+        index=time_1,
+        columns={
+            "model": "model_1",
+            "scenario": "scenario_1",
+            "variable": "variable_1",
+            "region": "region_1",
+            "unit": "unit_1",
+        }
+    )
+    scmrun_2 = ScmRun(
+        data=np.arange(len(time_2)),
+        index=time_2,
+        columns={
+            "model": "model_2",
+            "scenario": "scenario_2",
+            "variable": "variable_2",
+            "region": "region_2",
+            "unit": "unit_2",
+        }
+    )
+
+    res = run_append([scmrun_1, scmrun_2])
+
+    exp_years = set(time_1).union(set(time_2))
+
+    assert set(res["year"]) == exp_years
+
+
 def test_timeseries(scm_run):
     dct = {
         "model": ["a_model"] * 3,
