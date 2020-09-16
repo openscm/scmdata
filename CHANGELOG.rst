@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#120 <https://github.com/openscm/scmdata/pull/120>`_) Check the type and length of the runs argument in :func:`scmdata.run.run_append` (closes `#101 <https://github.com/openscm/scmdata/issues/101>`_)
+
 v0.7.1
 ------
 
