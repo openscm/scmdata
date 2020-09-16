@@ -2727,7 +2727,7 @@ def test_append_metadata(
 
 def test_append_invalid(scm_run):
     for runs in [None, scm_run]:
-        with pytest.raises(TypeError, match="runs argument is not a list"):
+        with pytest.raises(TypeError, match="runs is not a list"):
             run_append(runs)
 
     with pytest.raises(ValueError, match="No runs to append"):
