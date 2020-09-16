@@ -1999,7 +1999,11 @@ def run_append(
     to_join_metas = []
     overlapping_times = False
 
-    min_idx = 0
+    ind = range(ret._df.shape[1])
+    ret._df.columns = ind
+    ret._meta.index = ind
+
+    min_idx = ret._df.shape[1]
     for run in runs[1:]:
         run_to_join_df = run._df
 
@@ -2066,12 +2070,6 @@ def run_append(
         ret.metadata = metadata
     else:
         ret.metadata = _merge_metadata([r.metadata for r in runs])
-
-    # reorder indexes
-    order_idxs = np.argsort(ret._df.columns)
-
-    ret._df = ret._df.iloc[:, order_idxs]
-    ret._meta = ret._meta[order_idxs]
 
     if not inplace:
         return ret

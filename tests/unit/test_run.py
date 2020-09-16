@@ -875,27 +875,24 @@ def test_filter_index(scm_run):
 
 
 def test_append_index(scm_run):
-    def _check(res):
+    def _check(res, reversed):
         exp_index = pd.Int64Index([0, 1, 2])
         pd.testing.assert_index_equal(res.meta.index, exp_index)
+
+        exp_order = ["Primary Energy", "Primary Energy", "Primary Energy|Coal"]
+        if reversed:
+            exp_order = exp_order[::-1]
         pd.testing.assert_series_equal(
-            res["variable"],
-            pd.Series(
-                ["Primary Energy", "Primary Energy|Coal", "Primary Energy"],
-                index=exp_index,
-                name="variable",
-            ),
+            res["variable"], pd.Series(exp_order, index=exp_index, name="variable",),
         )
-        pd.testing.assert_frame_equal(scm_run.timeseries(), res.timeseries())
 
-    # Check that the result of append is sorted by index value
     res = run_append(
         [
             scm_run.filter(variable="Primary Energy"),
             scm_run.filter(variable="Primary Energy", keep=False),
         ]
     )
-    _check(res)
+    _check(res, False)
 
     res = run_append(
         [
@@ -903,7 +900,7 @@ def test_append_index(scm_run):
             scm_run.filter(variable="Primary Energy"),
         ]
     )
-    _check(res)
+    _check(res, True)
 
 
 def test_append_index_extra(scm_run):
@@ -918,7 +915,7 @@ def test_append_index_extra(scm_run):
     res = run_append(runs)
 
     # note that the indexes are reset for subsequent appends and then increment
-    exp_index = pd.Int64Index([0, 2, 3, 4, 5, 6])
+    exp_index = pd.Int64Index([0, 1, 2, 3, 4, 5])
     pd.testing.assert_index_equal(res.meta.index, exp_index)
     pd.testing.assert_series_equal(
         res["run_id"], pd.Series([1, 1, 2, 2, 3, 3], index=exp_index, name="run_id",),
@@ -1878,7 +1875,7 @@ def test_filter_by_int(scm_run):
             "EJ/yr",
             "EJ/yr",
             {"variable": "Primary Energy"},
-            [1.0, 0.5, 2.0],
+            [0.5, 1.0, 2.0],
             ["EJ/yr", "EJ/yr", "EJ/yr"],
         ),
         ("PJ/yr", "EJ/yr", {}, [1000.0, 500.0, 2000.0], ["PJ/yr", "PJ/yr", "PJ/yr"]),
@@ -1886,15 +1883,15 @@ def test_filter_by_int(scm_run):
             "PJ/yr",
             "EJ/yr",
             {"scenario": "a_scenario2"},
-            [1.0, 0.5, 2000.0],
-            ["EJ/yr", "EJ/yr", "PJ/yr"],
+            [2000.0, 1.0, 0.5,],
+            ["PJ/yr", "EJ/yr", "EJ/yr"],
         ),
         (
             "PJ/yr",
             ["EJ/yr", "TJ/yr", "Gt C / yr"],
             {"variable": "Primary Energy|Coal"},
-            [1.0, 0.5 * 1e-3, 2.0],
-            ["EJ/yr", "PJ/yr", "Gt C / yr"],
+            [0.5 * 1e-3, 1.0, 2.0],
+            ["PJ/yr", "EJ/yr", "Gt C / yr"],
         ),
         ("W/m^2", "W/m^2", {}, [1.0, 0.5, 2.0], ["W/m^2", "W/m^2", "W/m^2"]),
         (
