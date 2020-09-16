@@ -151,7 +151,7 @@ def test_interpolate(benchmark, big_scmrun):
 @pytest.mark.parametrize("n_to_append", (10, 10 ** 2, 10 ** 3, 10 ** 4))
 def test_append_multiple_same_time(benchmark, big_scmrun, n_to_append):
     total_size = n_to_append * big_scmrun.shape[0]
-    if total_size > 10 ** 5:
+    if total_size >= 10 ** 4:
         pytest.skip("this could be very slow...")
 
     to_append = []
