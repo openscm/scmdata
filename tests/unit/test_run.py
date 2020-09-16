@@ -2725,6 +2725,15 @@ def test_append_metadata(
     assert res.metadata == expected
 
 
+def test_append_invalid(scm_run):
+    for runs in [None, scm_run]:
+        with pytest.raises(TypeError, match="runs is not a list"):
+            run_append(runs)
+
+    with pytest.raises(ValueError, match="No runs to append"):
+        run_append([])
+
+
 def test_empty(scm_run):
     assert not scm_run.empty
     assert scm_run.filter(variable="junk nonsense").empty
