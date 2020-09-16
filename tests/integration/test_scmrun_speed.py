@@ -6,7 +6,7 @@ import pytest
 import scmdata
 
 
-@pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 4, 10 ** 4.5])
+@pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 4.5])
 def big_scmrun(request):
     length = int(request.param)
     t_steps = 750
@@ -146,3 +146,26 @@ def test_interpolate(benchmark, big_scmrun):
 
     res = benchmark.pedantic(interp, iterations=1, rounds=1)
     assert res.shape == (len(big_scmrun), 1000)
+
+
+@pytest.mark.parametrize("n_to_append", (10, 10 ** 2, 10 ** 3, 10 ** 4))
+def test_append_multiple_same_time(benchmark, big_scmrun, n_to_append):
+    total_size = n_to_append * big_scmrun.shape[0]
+    if total_size > 10 ** 5:
+        pytest.skip("this could be very slow...")
+
+
+    to_append = []
+    for i in range(n_to_append):
+        tmp = big_scmrun.copy()
+        tmp["ensemble_member"] = range(i * big_scmrun.shape[0], (i + 1) * big_scmrun.shape[0])
+        to_append.append(tmp)
+
+
+    def append():
+        return scmdata.run_append(to_append)
+
+    res = benchmark.pedantic(append, iterations=1, rounds=1)
+
+    assert res.shape[0] == big_scmrun.shape[0] * n_to_append
+    assert res.shape[1] == big_scmrun.shape[1]
