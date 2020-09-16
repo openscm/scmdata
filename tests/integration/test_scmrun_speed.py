@@ -154,13 +154,13 @@ def test_append_multiple_same_time(benchmark, big_scmrun, n_to_append):
     if total_size > 10 ** 5:
         pytest.skip("this could be very slow...")
 
-
     to_append = []
     for i in range(n_to_append):
         tmp = big_scmrun.copy()
-        tmp["ensemble_member"] = range(i * big_scmrun.shape[0], (i + 1) * big_scmrun.shape[0])
+        tmp["ensemble_member"] = range(
+            i * big_scmrun.shape[0], (i + 1) * big_scmrun.shape[0]
+        )
         to_append.append(tmp)
-
 
     def append():
         return scmdata.run_append(to_append)

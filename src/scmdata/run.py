@@ -1997,24 +1997,18 @@ def run_append(
 
     to_join_dfs = []
     to_join_metas = []
-    existing_indices = set(ret._df.columns)
     overlapping_times = False
 
-    def get_unique_idx(idx):
-        if idx not in existing_indices:
-            existing_indices.add(idx)
-            return idx
-
-        new_idx = max(existing_indices) + 1
-        existing_indices.add(new_idx)
-        return new_idx
-
+    min_idx = 0
     for run in runs[1:]:
         run_to_join_df = run._df
-        ind = [get_unique_idx(i) for i in run_to_join_df.columns]
-        run_to_join_df.columns = ind
 
-        run_to_join_meta = run._meta.to_frame().reset_index(drop=True)
+        max_idx = min_idx + run_to_join_df.shape[1]
+        ind = range(min_idx, max_idx)
+        min_idx = max_idx
+
+        run_to_join_df.columns = ind
+        run_to_join_meta = run._meta.to_frame()
         run_to_join_meta.index = ind
 
         # check everything still makes sense
@@ -2035,9 +2029,7 @@ def run_append(
     ret._time_points = TimePoints(ret._df.index.values)
     ret._df.index = ret._time_points.to_index()
     ret._meta = pd.MultiIndex.from_frame(
-        pd.concat([ret._meta.to_frame().reset_index(drop=True)] + to_join_metas).astype(
-            "category"
-        )
+        pd.concat([ret._meta.to_frame()] + to_join_metas).astype("category")
     )
 
     if ret._duplicated_meta():
