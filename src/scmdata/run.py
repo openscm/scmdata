@@ -1945,9 +1945,8 @@ def run_append(
 
     Parameters
     ----------
-    runs:
-        The dataframes to append. Values will be attempted to be cast to
-        :class:`ScmRun`.
+    runs: list of :class:`ScmRun`
+        The runs to append. Values will be attempted to be cast to :class:`ScmRun`.
 
     inplace
         If ``True``, then the operation updates the first item in :obj:`runs` and returns
@@ -1976,9 +1975,19 @@ def run_append(
         If :obj:`inplace` is ``True`` but the first element in :obj:`dfs` is not an
         instance of :class:`ScmRun`
 
+        ``runs`` argument is not a list
+
     ValueError
         :obj:`duplicate_msg` option is not recognised.
+
+        No runs are provided to be appended
     """
+    if not isinstance(runs, list):
+        raise TypeError("runs is not a list")
+
+    if not len(runs):
+        raise ValueError("No runs to append")
+
     if inplace:
         if not isinstance(runs[0], ScmRun):
             raise TypeError("Can only append inplace to an ScmRun")
