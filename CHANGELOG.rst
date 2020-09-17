@@ -4,7 +4,10 @@ Changelog
 master
 ------
 
-- (`#121 <https://github.com/openscm/scmdata/pull/121>`_) Faster implementation of `run_append`. The original timeseries indexes and order are no longer maintained after an append.
+v0.7.2
+------
+
+- (`#121 <https://github.com/openscm/scmdata/pull/121>`_) Faster implementation of :func:`scmdata.run.run_append`. The original timeseries indexes and order are no longer maintained after an append.
 - (`#120 <https://github.com/openscm/scmdata/pull/120>`_) Check the type and length of the runs argument in :func:`scmdata.run.run_append` (closes `#101 <https://github.com/openscm/scmdata/issues/101>`_)
 
 v0.7.1
