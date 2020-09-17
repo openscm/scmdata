@@ -759,14 +759,13 @@ def test_delta_per_delta_time_multiple_ts():
 
     res = start.delta_per_delta_time()
 
-    assert (
-        res["unit"]
-        == [
+    assert sorted(res["unit"]) == sorted(
+        [
             "CO2 * megametric_ton / second",
             "joule / meter ** 2 / second",
             "kelvin / second",
         ]
-    ).all()
+    )
 
     res = (
         res.convert_unit("Mt CO2 / yr", variable="Delta Emissions|CO2")
