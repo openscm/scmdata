@@ -35,7 +35,7 @@ class ScmDatabase:
 
     Data is split into groups as specified by :attr:`levels`. This allows for fast
     reading and writing of new subsets of data when a single output file is no longer
-    performant.
+    performant or data cannot all fit in memory.
     """
 
     def __init__(
@@ -66,6 +66,10 @@ class ScmDatabase:
 
     def __repr__(self):
         return "<scmdata.database.SCMDatabase (root_dir: {})>".format(self._root_dir)
+
+    @property
+    def root_dir(self):
+        return self._root_dir
 
     @staticmethod
     def _get_disk_filename(inp):
