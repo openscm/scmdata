@@ -402,7 +402,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.run_append` instead.
             * Not specifying :obj:`index` and :obj:`columns` if :obj:`data` is a :obj:`numpy.ndarray`
 
-        MissingRequiredColumn
+        :obj:`scmdata.errors.MissingRequiredColumn`
             If metadata for :attr:`required_cols` is not found
 
         TypeError
@@ -708,6 +708,8 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         for c in columns:
             if c not in existing_cols:
                 raise KeyError(c)
+            if c in self.required_cols:
+                raise MissingRequiredColumn([c])
         for c in columns:
             ret._meta = ret._meta.droplevel(c)
 

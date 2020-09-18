@@ -2499,6 +2499,11 @@ def test_drop_meta_inplace_default(scm_run):
     assert label not in res.meta
 
 
+def test_drop_meta_required(scm_run):
+    with pytest.raises(MissingRequiredColumn, match=re.escape("['model']")):
+        scm_run.drop_meta(["climate_model", "model"])
+
+
 time_axis_checks = pytest.mark.parametrize(
     "time_axis,mod_func",
     (

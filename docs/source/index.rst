@@ -27,6 +27,7 @@ SCMData
    :caption: API reference
 
    scmdata.database
+   scmdata.errors
    scmdata.filters
    scmdata.groupby
    scmdata.netcdf
