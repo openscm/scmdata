@@ -241,6 +241,21 @@ def test_nc_to_run_with_extras(scm_run):
         assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
 
 
+def test_nc_to_run_without_dimensions(scm_run):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        scm_run = scm_run.filter(scenario="a_scenario2")
+        scm_run["run_id"] = [2]
+        run_to_nc(scm_run, out_fname, dimensions=(), extras=("run_id",))
+
+        assert exists(out_fname)
+
+        df = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(df, scm_run.__class__)
+
+        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
+
+
 def test_nc_to_run_with_extras_non_unique_for_dimension(scm_run):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
