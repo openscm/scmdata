@@ -48,7 +48,7 @@ MetadataType = Dict[str, Union[str, int, float]]
 
 
 def _read_file(  # pylint: disable=missing-return-doc
-    fnames: str, *args: Any, **kwargs: Any
+    fnames: str, required_cols: List[str], *args: Any, **kwargs: Any
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from a file.
@@ -67,7 +67,7 @@ def _read_file(  # pylint: disable=missing-return-doc
     """
     _logger.info("Reading %s", fnames)
 
-    return _format_data(_read_pandas(fnames, *args, **kwargs))
+    return _format_data(_read_pandas(fnames, *args, **kwargs), required_cols)
 
 
 def _read_pandas(
@@ -131,7 +131,7 @@ def _read_pandas(
 
 # pylint doesn't recognise return statements if they include ','
 def _format_data(  # pylint: disable=missing-return-doc
-    df: Union[pd.DataFrame, pd.Series]
+    df: Union[pd.DataFrame, pd.Series], required_cols: List[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from :class:`pd.DataFrame` or
@@ -162,15 +162,15 @@ def _format_data(  # pylint: disable=missing-return-doc
     if list(df.index.names) != [None]:
         df.reset_index(inplace=True)
 
-    if not set(REQUIRED_COLS).issubset(set(df.columns)):
-        missing = list(set(REQUIRED_COLS) - set(df.columns))
+    if not set(required_cols).issubset(set(df.columns)):
+        missing = list(set(required_cols) - set(df.columns))
         raise ValueError("missing required columns `{}`!".format(missing))
 
     # check whether data in wide or long format
     if "value" in df.columns:
-        df, meta = _format_long_data(df)
+        df, meta = _format_long_data(df, required_cols)
     else:
-        df, meta = _format_wide_data(df)
+        df, meta = _format_wide_data(df, required_cols)
 
     # sort data
     df.sort_index(inplace=True)
@@ -178,7 +178,7 @@ def _format_data(  # pylint: disable=missing-return-doc
     return df, meta
 
 
-def _format_long_data(df):
+def _format_long_data(df, required_cols):
     # check if time column is given as `year` (int) or `time` (datetime)
     cols = set(df.columns)
     if "year" in cols and "time" not in cols:
@@ -189,16 +189,16 @@ def _format_long_data(df):
         msg = "invalid time format, must have either `year` or `time`!"
         raise ValueError(msg)
 
-    extra_cols = list(set(cols) - set(REQUIRED_COLS + [time_col, "value"]))
-    df = df.pivot_table(columns=REQUIRED_COLS + extra_cols, index=time_col).value
+    extra_cols = list(set(cols) - set(required_cols + [time_col, "value"]))
+    df = df.pivot_table(columns=required_cols + extra_cols, index=time_col).value
     meta = df.columns.to_frame(index=None)
     df.columns = meta.index
 
     return df, meta
 
 
-def _format_wide_data(df):
-    cols = set(df.columns) - set(REQUIRED_COLS)
+def _format_wide_data(df, required_cols):
+    cols = set(df.columns) - set(required_cols)
     time_cols, extra_cols = False, []
     for i in cols:
         # if in wide format, check if columns are years (int) or datetime
@@ -224,15 +224,18 @@ def _format_wide_data(df):
         msg = "invalid column format, must contain some time (int, float or datetime) columns!"
         raise ValueError(msg)
 
-    df_out = df.drop(REQUIRED_COLS + extra_cols, axis="columns").T
+    df_out = df.drop(required_cols + extra_cols, axis="columns").T
     df_out.index.name = "time"
-    meta = df[REQUIRED_COLS + extra_cols].set_index(df_out.columns)
+    meta = df[required_cols + extra_cols].set_index(df_out.columns)
 
     return df_out, meta
 
 
 def _from_ts(
-    df: Any, index: Any = None, **columns: Union[str, bool, float, int, List]
+    df: Any,
+    required_cols: List[str],
+    index: Any = None,
+    **columns: Union[str, bool, float, int, List],
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from wide timeseries.
@@ -260,8 +263,8 @@ def _from_ts(
             df.index = index
 
     # format columns to lower-case and check that all required columns exist
-    if not set(REQUIRED_COLS).issubset(columns.keys()):
-        missing = list(set(REQUIRED_COLS) - set(columns.keys()))
+    if not set(required_cols).issubset(columns.keys()):
+        missing = list(set(required_cols) - set(columns.keys()))
         raise ValueError("missing required columns `{}`!".format(missing))
 
     df.index.name = "time"
@@ -287,17 +290,12 @@ def _from_ts(
     return df, meta
 
 
-class ScmRun:  # pylint: disable=too-many-public-methods
+class BaseScmRun:  # pylint: disable=too-many-public-methods
+    required_cols = ["variable", "unit"]
     """
-    Data container for holding one or many time-series of SCM data.
-    """
-
-    data_hierarchy_separator = HIERARCHY_SEPARATOR
-    """
-    str: String used to define different levels in our data hierarchies.
-
-    By default we follow pyam and use "|". In such a case, emissions of |CO2| for
-    energy from coal would be "Emissions|CO2|Energy|Coal".
+    List of required columns
+    
+    Attempting to create a run without these metadata columns will raise a ValueError
     """
 
     def __init__(
@@ -395,7 +393,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Raises
         ------
         ValueError
-            * If metadata for ['model', 'scenario', 'region', 'variable', 'unit'] is not found.
+            * If metadata for :attr:`required_cols` is not found.
             * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.run_append` instead.
             * Not specifying :obj`index` and :obj`columns` if :obj`data` is a :obj`numpy.ndarray`
 
@@ -433,11 +431,15 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 raise ValueError("`index` argument is required")
 
         if columns is not None:
-            (_df, _meta) = _from_ts(data, index=index, **columns)
+            (_df, _meta) = _from_ts(
+                data, index=index, required_cols=self.required_cols, **columns
+            )
         elif isinstance(data, (pd.DataFrame, pd.Series)):
-            (_df, _meta) = _format_data(data)
+            (_df, _meta) = _format_data(data, self.required_cols)
         elif (IamDataFrame is not None) and isinstance(data, IamDataFrame):
-            (_df, _meta) = _format_data(data.data.copy() if copy_data else data.data)
+            (_df, _meta) = _format_data(
+                data.data.copy() if copy_data else data.data, self.required_cols
+            )
         else:
             if not isinstance(data, str):
                 if isinstance(data, list) and isinstance(data[0], str):
@@ -448,7 +450,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 error_msg = "Cannot load {} from {}".format(type(self), type(data))
                 raise TypeError(error_msg)
 
-            (_df, _meta) = _read_file(data, **kwargs)
+            (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
 
         self._time_points = TimePoints(_df.index.values)
 
@@ -2091,7 +2093,23 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
     raise ValueError("Unrecognised value for duplicate_msg")
 
 
-inject_binary_ops(ScmRun)
-inject_nc_methods(ScmRun)
-inject_plotting_methods(ScmRun)
-inject_ops_methods(ScmRun)
+inject_binary_ops(BaseScmRun)
+inject_nc_methods(BaseScmRun)
+inject_plotting_methods(BaseScmRun)
+inject_ops_methods(BaseScmRun)
+
+
+class ScmRun(BaseScmRun):
+    """
+    Data container for holding one or many time-series of SCM data.
+    """
+
+    data_hierarchy_separator = HIERARCHY_SEPARATOR
+    """
+    str: String used to define different levels in our data hierarchies.
+
+    By default we follow pyam and use "|". In such a case, emissions of |CO2| for
+    energy from coal would be "Emissions|CO2|Energy|Coal".
+    """
+
+    required_cols = REQUIRED_COLS
