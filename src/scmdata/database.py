@@ -173,6 +173,7 @@ class SCMDatabase:
             Filters for the data to load.
 
             Defaults to loading all values for a level if it isn't specified.
+
         Returns
         -------
         :obj: `scmdata.ScmRun`
