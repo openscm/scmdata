@@ -35,7 +35,7 @@ def tdb():
     return SCMDatabase(MOCK_ROOT_DIR_NAME)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def tdb_with_data(tmpdir, start_scmrun):
     db = SCMDatabase(tmpdir, levels=["climate_model", "variable"])
     db.save_to_database(start_scmrun)
@@ -158,10 +158,39 @@ def test_save_to_database_single_file(
     mock_ensure_dir_exists.assert_called_with(tout_file)
 
     mock_to_nc.assert_called_once()
-    mock_to_nc.assert_called_with(tout_file)
+    mock_to_nc.assert_called_with(tout_file, dimensions=[])
 
 
-def test_save_to_database_single_file_non_unique_meta(tdb, start_scmrun):
+@patch("scmdata.database.ensure_dir_exists")
+@patch.object(SCMDatabase, "get_out_filepath")
+@patch.object(ScmRun, "to_nc")
+def test_save_to_database_single_file_non_unique_meta(
+    mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
+):
+    tout_file = "test_out.nc"
+    mock_get_out_filepath.return_value = tout_file
+    inp_scmrun = start_scmrun
+    inp_scmrun["ensemble_member"] = [0, 1]
+    inp_scmrun["climate_model"] = "cmodel_a"
+
+    tdb._save_to_database_single_file(inp_scmrun)
+
+    mock_get_out_filepath.assert_called_once()
+    mock_get_out_filepath.assert_called_with(
+        climate_model=inp_scmrun.get_unique_meta("climate_model", no_duplicates=True),
+        variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
+        region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
+        scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
+    )
+
+    mock_ensure_dir_exists.assert_called_once()
+    mock_ensure_dir_exists.assert_called_with(tout_file)
+
+    mock_to_nc.assert_called_once()
+    mock_to_nc.assert_called_with(tout_file, dimensions=["ensemble_member"])
+
+
+def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
     with pytest.raises(
         ValueError,
         match=re.escape(
@@ -237,17 +266,19 @@ def test_database_load_data_missing(tdb_with_data, filter):
         tdb_with_data.load_data(**filter)
 
 
-def test_database_integration_overwriting(tmpdir, start_scmrun):
-    database = SCMDatabase(tmpdir, levels=["climate_model", "variable"])
-    database.save_to_database(start_scmrun)
-
+def test_database_overwriting(tdb_with_data, start_scmrun):
     start_scmrun_2 = start_scmrun.copy()
     start_scmrun_2["ensemble_member"] = 1
 
     # The target file will already exist so should merge files
-    database.save_to_database(start_scmrun_2)
+    tdb_with_data.save_to_database(start_scmrun_2)
 
-    loaded_ts = database.load_data(climate_model="cmodel_a")
+    out_names = glob(
+        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+    )
+    assert len(out_names) == 2
+
+    loaded_ts = tdb_with_data.load_data(climate_model="cmodel_a")
     assert_scmdf_almost_equal(
         loaded_ts,
         run_append(
@@ -259,5 +290,7 @@ def test_database_integration_overwriting(tmpdir, start_scmrun):
         check_ts_names=False,
     )
 
-    loaded_ts = database.load_data()
-    assert_scmdf_almost_equal(loaded_ts, start_scmrun, check_ts_names=False)
+    loaded_ts = tdb_with_data.load_data()
+    assert_scmdf_almost_equal(
+        loaded_ts, run_append([start_scmrun, start_scmrun_2]), check_ts_names=False
+    )

@@ -153,8 +153,15 @@ class SCMDatabase:
         out_file = self.get_out_filepath(**levels)
 
         ensure_dir_exists(out_file)
+        if os.path.exists(out_file):
+            existing_run = ScmRun.from_nc(out_file)
 
-        scmrun.to_nc(out_file)
+            scmrun = run_append([existing_run, scmrun])
+
+        # Check for required extra dimensions
+        nunique_meta_vals = scmrun.meta.nunique()
+        dimensions = nunique_meta_vals[nunique_meta_vals > 1].index.tolist()
+        scmrun.to_nc(out_file, dimensions=dimensions)
 
     def load_data(self, **filters):
         """
