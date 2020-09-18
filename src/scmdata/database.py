@@ -5,8 +5,8 @@ import glob
 import os
 import os.path
 
-import pandas as pd
 import tqdm.autonotebook as tqdman
+
 from scmdata import ScmRun, run_append
 
 
@@ -32,18 +32,37 @@ def ensure_dir_exists(fp):
 class SCMDatabase:
     """
     On-disk database handler for outputs from SCMs
+
+    Data is split into groups as specified by :attr:`levels`. This allows for fast
+    reading and writing of new subsets of data when a single output file is no longer
+    performant.
     """
 
-    def __init__(self, root_dir):
+    def __init__(
+        self, root_dir, levels=("climate_model", "variable", "region", "scenario"),
+    ):
         """
-        Initialise the database handler
+        Initialise the database
 
         Parameters
         ----------
         root_dir : str
             The root directory of the database
+        levels : tuple of str
+            Specifies how the runs should be stored on disk.
+
+            The data will be grouped by ``levels``. These levels should be adapted to
+            best match the input data and desired access pattern. If there are any additional
+            varying dimensions, they will be stored as dimensions.
+
+        .. note::
+
+            Creating a new :class:`ScmDatabase` does not modify any existing data on disk. To
+            load an existing database ensure that the :attr:`root_dir` and :attr:`levels` are
+            the same as the previous instance.
         """
         self._root_dir = root_dir
+        self.levels = levels
 
     def __repr__(self):
         return "<scmdata.database.SCMDatabase (root_dir: {})>".format(self._root_dir)
@@ -56,9 +75,8 @@ class SCMDatabase:
         """
         Save a set of results to the database
 
-        The results are saved with one file for each
-        ``["climate_model", "variable", "region", "scenario", "ensemble_member"]``
-        combination.
+        The results are saved with one file for each unique combination of
+        :attr:`levels`.
 
         Parameters
         ----------
@@ -66,17 +84,11 @@ class SCMDatabase:
             Results to save
         """
         for r in tqdman.tqdm(
-            scmrun.groupby(
-                ["climate_model", "variable", "region", "scenario", "ensemble_member"]
-            ),
-            leave=False,
-            desc="Saving to database",
+            scmrun.groupby(self.levels), leave=False, desc="Saving to database",
         ):
             self._save_to_database_single_file(r)
 
-    def get_out_filepath(
-        self, climate_model, variable, region, scenario, ensemble_member=None
-    ):
+    def get_out_filepath(self, **levels):
         """
         Get filepath in which data has been saved
 
@@ -85,40 +97,29 @@ class SCMDatabase:
 
         Parameters
         ----------
-        climate_model : str
-            Climate model to retrieve data for
-
-        variable : str
-            Variable to retrieve data for
-
-        region : str
-            Region to retrieve data for
-
-        scenario : str
-            Scenario to retrieve data for
-
-        ensemble_member : str or None
-            Ensemble member to retrieve data for
+        levels: dict of str
+            The unique value for each level in :attr:`levels'
 
         Returns
         -------
         str
-            Path in which to save the data. If ``ensemble_member`` is ``None`` then it is not
-            included in the filename.
-        """
-        out_dir = os.path.join(
-            self._root_dir, climate_model, variable, region, scenario
-        )
-        if ensemble_member is None:
-            out_fname = "{}_{}_{}_{}.nc".format(
-                climate_model, variable, region, scenario
-            )
-        else:
-            out_fname = "{}_{}_{}_{}_{}.nc".format(
-                climate_model, variable, region, scenario, ensemble_member
-            )
+            Path in which to save the data without spaces or special characters.
 
-        return self._get_disk_filename(os.path.join(out_dir, out_fname))
+        Raises
+        ------
+        ValueError
+            If no value is provided for level in :attr:`levels'
+        """
+        out_levels = []
+        for l in self.levels:
+            if l not in levels:
+                raise ValueError("expected value for level: {}".format(l))
+            out_levels.append(str(levels[l]))
+
+        out_path = os.path.join(self._root_dir, *out_levels)
+
+        out_fname = "_".join(out_levels) + ".nc"
+        return self._get_disk_filename(os.path.join(out_path, out_fname))
 
     def save_condensed_file(self, scmrun):
         """
@@ -148,40 +149,41 @@ class SCMDatabase:
         scmrun.to_nc(out_file, dimensions=("ensemble_member",))
 
     def _save_to_database_single_file(self, scmrun):
-        climate_model = scmrun.get_unique_meta("climate_model", no_duplicates=True)
-        variable = scmrun.get_unique_meta("variable", no_duplicates=True)
-        region = scmrun.get_unique_meta("region", no_duplicates=True)
-        scenario = scmrun.get_unique_meta("scenario", no_duplicates=True)
-        ensemble_member = scmrun.get_unique_meta("ensemble_member", no_duplicates=True)
-        out_file = self.get_out_filepath(
-            climate_model, variable, region, scenario, ensemble_member
-        )
+        levels = {l: scmrun.get_unique_meta(l, no_duplicates=True) for l in self.levels}
+        out_file = self.get_out_filepath(**levels)
 
         ensure_dir_exists(out_file)
 
         scmrun.to_nc(out_file)
 
-    def load_data(self, variable, region, scenario):
+    def load_data(self, **filters):
         """
         Load data from the database
 
         Parameters
         ----------
-        variable : str
-            Variable to load
+        filters: dict of str
+            Filters for the data to load.
 
-        region : str
-            Region to load
-
-        scenario : str
-            Scenario to load
-
+            Defaults to loading all values for a level if it isn't specified.
         Returns
         -------
         :obj: `scmdata.ScmRun`
             Loaded data
+
+        Raises
+        ------
+        ValueError
+            If a filter for a level not in :attr:`levels` is specified
+
+            If no data matching ``filters`` is found
         """
-        load_path = os.path.join(self._root_dir, "*", variable, region, scenario)
+        for k in filters:
+            if k not in self.levels:
+                raise ValueError("Unknown level: {}".format(k))
+
+        paths_to_load = [filters.get(l, "*") for l in self.levels]
+        load_path = os.path.join(self._root_dir, *paths_to_load)
         glob_to_use = self._get_disk_filename(os.path.join(load_path, "**", "*.nc"))
         load_files = glob.glob(glob_to_use, recursive=True)
 

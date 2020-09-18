@@ -1,12 +1,14 @@
 import os.path
 import re
+from glob import glob
 from unittest.mock import patch
 
 import numpy as np
 import pytest
-from scmdata import ScmRun
 
+from scmdata import ScmRun, run_append
 from scmdata.database import SCMDatabase
+from scmdata.testing import assert_scmdf_almost_equal
 
 MOCK_ROOT_DIR_NAME = os.path.join("/mock", "root", "dir")
 
@@ -33,6 +35,14 @@ def tdb():
     return SCMDatabase(MOCK_ROOT_DIR_NAME)
 
 
+@pytest.fixture()
+def tdb_with_data(tmpdir, start_scmrun):
+    db = SCMDatabase(tmpdir, levels=["climate_model", "variable"])
+    db.save_to_database(start_scmrun)
+
+    return db
+
+
 def test_database_init_and_repr():
     tdb = SCMDatabase("root_dir")
     assert tdb._root_dir == "root_dir"
@@ -40,9 +50,10 @@ def test_database_init_and_repr():
 
 
 @pytest.mark.parametrize(
-    "inp,exp_tail",
+    "levels,inp,exp_tail",
     (
         (
+            ["climate_model", "variable", "region", "scenario"],
             {
                 "climate_model": "cm",
                 "variable": "v",
@@ -50,13 +61,37 @@ def test_database_init_and_repr():
                 "scenario": "s",
                 "ensemble_member": "em",
             },
-            os.path.join("cm", "v", "r", "s", "cm_v_r_s_em.nc"),
+            os.path.join("cm", "v", "r", "s", "cm_v_r_s.nc"),
         ),
         (
+            ["climate_model", "variable", "region", "scenario", "ensemble_member"],
+            {
+                "climate_model": "cm",
+                "variable": "v",
+                "region": "r",
+                "scenario": "s",
+                "ensemble_member": "em",
+            },
+            os.path.join("cm", "v", "r", "s", "em", "cm_v_r_s_em.nc"),
+        ),
+        (
+            ["climate_model", "ensemble_member"],
+            {
+                "climate_model": "cm",
+                "variable": "v",
+                "region": "r",
+                "scenario": "s",
+                "ensemble_member": 1,
+            },
+            os.path.join("cm", "1", "cm_1.nc"),
+        ),
+        (
+            ["climate_model", "variable", "region", "scenario"],
             {"climate_model": "cm", "variable": "v", "region": "r", "scenario": "s"},
             os.path.join("cm", "v", "r", "s", "cm_v_r_s.nc"),
         ),
         (
+            ["climate_model", "variable", "region", "scenario", "ensemble_member"],
             {
                 "climate_model": "MAGICC 7.1.0",
                 "variable": "Emissions|CO2",
@@ -69,10 +104,12 @@ def test_database_init_and_repr():
                 "Emissions-CO2",
                 "World-R5.2OECD90",
                 "1pctCO2-bgc",
+                "001",
                 "MAGICC-7.1.0_Emissions-CO2_World-R5.2OECD90_1pctCO2-bgc_001.nc",
             ),
         ),
         (
+            ["climate_model", "variable", "region", "scenario"],
             {
                 "climate_model": "MAGICC7.1.0",
                 "variable": "Emissions|CO2",
@@ -89,7 +126,8 @@ def test_database_init_and_repr():
         ),
     ),
 )
-def test_get_out_filepath(inp, exp_tail, tdb):
+def test_get_out_filepath(levels, inp, exp_tail, tdb):
+    tdb.levels = levels
     res = tdb.get_out_filepath(**inp)
     exp = os.path.join(tdb._root_dir, exp_tail)
 
@@ -110,11 +148,10 @@ def test_save_to_database_single_file(
 
     mock_get_out_filepath.assert_called_once()
     mock_get_out_filepath.assert_called_with(
-        inp_scmrun.get_unique_meta("climate_model", no_duplicates=True),
-        inp_scmrun.get_unique_meta("variable", no_duplicates=True),
-        inp_scmrun.get_unique_meta("region", no_duplicates=True),
-        inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
-        inp_scmrun.get_unique_meta("ensemble_member", no_duplicates=True),
+        climate_model=inp_scmrun.get_unique_meta("climate_model", no_duplicates=True),
+        variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
+        region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
+        scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
     )
 
     mock_ensure_dir_exists.assert_called_once()
@@ -134,15 +171,6 @@ def test_save_to_database_single_file_non_unique_meta(tdb, start_scmrun):
         tdb._save_to_database_single_file(start_scmrun)
 
 
-def test_save_to_database_single_file_no_ensemble_member(tdb, start_scmrun):
-    with pytest.raises(KeyError, match=re.escape("Level ensemble_member not found")):
-        tdb._save_to_database_single_file(
-            start_scmrun.filter(climate_model="cmodel_a").drop_meta(
-                "ensemble_member", inplace=False
-            )
-        )
-
-
 @patch.object(SCMDatabase, "_save_to_database_single_file")
 def test_save_to_database(mock_save_to_database_single_file, tdb, start_scmrun):
     tdb.save_to_database(start_scmrun)
@@ -155,3 +183,81 @@ def test_save_to_database(mock_save_to_database_single_file, tdb, start_scmrun):
         )
     )
     assert mock_save_to_database_single_file.call_count == expected_calls
+
+
+def test_database_loaded(tdb_with_data):
+    assert os.path.exists(
+        os.path.join(
+            tdb_with_data._root_dir, "cmodel_a", "variable", "cmodel_a_variable.nc"
+        )
+    )
+    assert os.path.exists(
+        os.path.join(
+            tdb_with_data._root_dir, "cmodel_b", "variable", "cmodel_b_variable.nc"
+        )
+    )
+
+    out_names = glob(
+        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+    )
+    assert len(out_names) == 2
+
+
+@pytest.mark.parametrize(
+    "filter",
+    [
+        {},
+        {"climate_model": "cmodel_a"},
+        {"climate_model": "cmodel_b"},
+        {"climate_model": "cmodel_a", "variable": "variable"},
+    ],
+)
+def test_database_load_data(tdb_with_data, start_scmrun, filter):
+    loaded_ts = tdb_with_data.load_data(**filter)
+    assert_scmdf_almost_equal(
+        loaded_ts, start_scmrun.filter(**filter), check_ts_names=False
+    )
+
+
+def test_database_load_data_extras(tdb_with_data):
+    with pytest.raises(ValueError, match="Unknown level: extra"):
+        tdb_with_data.load_data(extra="other")
+
+
+@pytest.mark.parametrize(
+    "filter",
+    [
+        {"variable": "other"},
+        {"climate_model": "cmodel_c"},
+        {"climate_model": "cmodel_a", "variable": "other"},
+    ],
+)
+def test_database_load_data_missing(tdb_with_data, filter):
+    with pytest.raises(ValueError, match="No runs to append"):
+        tdb_with_data.load_data(**filter)
+
+
+def test_database_integration_overwriting(tmpdir, start_scmrun):
+    database = SCMDatabase(tmpdir, levels=["climate_model", "variable"])
+    database.save_to_database(start_scmrun)
+
+    start_scmrun_2 = start_scmrun.copy()
+    start_scmrun_2["ensemble_member"] = 1
+
+    # The target file will already exist so should merge files
+    database.save_to_database(start_scmrun_2)
+
+    loaded_ts = database.load_data(climate_model="cmodel_a")
+    assert_scmdf_almost_equal(
+        loaded_ts,
+        run_append(
+            [
+                start_scmrun.filter(climate_model="cmodel_a"),
+                start_scmrun_2.filter(climate_model="cmodel_a"),
+            ]
+        ),
+        check_ts_names=False,
+    )
+
+    loaded_ts = database.load_data()
+    assert_scmdf_almost_equal(loaded_ts, start_scmrun, check_ts_names=False)
