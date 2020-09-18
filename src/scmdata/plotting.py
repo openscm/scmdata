@@ -83,7 +83,7 @@ def _deprecated_line_plot(self, **kwargs):  # pragma: no cover
     """
     Make a line plot via `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
 
-    Deprecated: use :func`lineplot` instead
+    Deprecated: use :func:`lineplot` instead
 
     Parameters
     ----------

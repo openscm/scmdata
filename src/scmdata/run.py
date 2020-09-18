@@ -318,11 +318,11 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         Parameters
         ----------
         data: Union[ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str]
-            If a :class`ScmRun` object is provided, then a new
-            :obj`ScmRun` is created with a copy of the values and metadata from :obj`data`.
+            If a :class:`ScmRun` object is provided, then a new
+            :obj:`ScmRun` is created with a copy of the values and metadata from :obj:`data`.
 
-            A :class`pd.DataFrame with IAMC-format data columns (the result
-            from :func`ScmRun.timeseries()`) can be provided without any additional
+            A :class:`pd.DataFrame` with IAMC-format data columns (the result
+            from :func:`ScmRun.timeseries()`) can be provided without any additional
             :obj:`columns` and :obj:`index` information.
 
             If a numpy array of timeseries data is provided, :obj:`columns` and :obj:`index`
@@ -334,18 +334,19 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             reading from CSV, gzipped CSV and Excel formatted files is supported.
 
         index: np.ndarray
-            If :obj:`index` is not ``None``, then the :obj`index` is used as the timesteps
+            If :obj:`index` is not ``None``, then the :obj:`index` is used as the timesteps
             for run. All timeseries in the run use the same set of timesteps.
 
-            The values will be attempted to be converted to :class`np.datetime[s]` values.
+            The values will be attempted to be converted to :class:`np.datetime[s]` values.
             Possible input formats include :
-            * :obj`datetime.datetime`
-            * :obj`int` Start of year
-            * :obj`float` Decimal year
-            * :obj`str` Uses :func`dateutil.parser`. Slow and should be avoided if possible
+
+            * :obj:`datetime.datetime`
+            * :obj:`int` Start of year
+            * :obj:`float` Decimal year
+            * :obj:`str` Uses :func:`dateutil.parser`. Slow and should be avoided if possible
 
             If :obj:`index` is ``None``, than the time index will be obtained from the
-            :obj`data` if possible.
+            :obj:`data` if possible.
 
         columns
             If None, ScmRun will attempt to infer the values from the source.
@@ -399,7 +400,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         ------
         ValueError
             * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.run_append` instead.
-            * Not specifying :obj`index` and :obj`columns` if :obj`data` is a :obj`numpy.ndarray`
+            * Not specifying :obj:`index` and :obj:`columns` if :obj:`data` is a :obj:`numpy.ndarray`
 
         MissingRequiredColumn
             If metadata for :attr:`required_cols` is not found
@@ -1441,7 +1442,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 1, 1)
             )
-            return ScmRun(ts_resampled)
+            return type(self)(ts_resampled)
 
         if rule == "AC":
 
@@ -1452,7 +1453,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 7, 1)
             )
-            return ScmRun(ts_resampled)
+            return type(self)(ts_resampled)
 
         if rule == "A":
 
@@ -1467,7 +1468,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 12, 31)
             )
-            return ScmRun(ts_resampled)
+            return type(self)(ts_resampled)
 
         raise ValueError("`rule` = `{}` is not supported".format(rule))
 
@@ -1579,8 +1580,8 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj`RunGroupBy`
-            See the documentation for :class`RunGroupBy` for more information
+        :obj:`RunGroupBy`
+            See the documentation for :class:`RunGroupBy` for more information
 
         """
         if len(group) == 1 and not isinstance(group[0], str):
@@ -1835,7 +1836,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         """
         Apply a function along a given axis
 
-        This is to provide the GroupBy functionality in :func`ScmRun.groupby` and is not generally called directly.
+        This is to provide the GroupBy functionality in :func:`ScmRun.groupby` and is not generally called directly.
 
         This implementation is very bare-bones - no reduction along the time time dimension is allowed and only the `dim`
         parameter is used.
@@ -1881,7 +1882,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             data = func(input_data, **kwargs)
 
         if getattr(data, "shape", ()) == self.shape:
-            return ScmRun(
+            return type(self)(
                 data, index=self.time_points, columns=self.meta.to_dict("list")
             )
         else:
@@ -1901,7 +1902,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             if 1 in removed_axes:
                 raise NotImplementedError  # pragma: no cover
 
-            return ScmRun(data, index=index, columns=meta)
+            return type(self)(data, index=index, columns=meta)
 
 
 def _merge_metadata(metadata):

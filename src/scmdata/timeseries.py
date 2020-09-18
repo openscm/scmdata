@@ -186,7 +186,7 @@ class TimeSeries:
 
         Returns
         -------
-        :obj`np.ndarray`
+        :obj:`np.ndarray`
         """
         return self._data.values
 

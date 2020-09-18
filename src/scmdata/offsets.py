@@ -43,7 +43,7 @@ def generate_range(
     Raises
     ------
     ValueError
-        Offset does not result in increasing :class`cftime.datetime`s
+        Offset does not result in increasing :class:`cftime.datetime`'s
 
     Examples
     --------

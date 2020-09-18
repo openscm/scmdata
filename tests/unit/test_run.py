@@ -1944,7 +1944,7 @@ def test_convert_unit(
 
     exp_units = pd.Series(expected_units, name="unit")
 
-    pd.testing.assert_series_equal(obs["unit"], exp_units, check_less_precise=True)
+    pd.testing.assert_series_equal(obs["unit"], exp_units, rtol=1e-3)
     npt.assert_array_almost_equal(obs.filter(year=2005).values.squeeze(), expected)
     assert (scm_run["unit"] == input_units).all()
 
