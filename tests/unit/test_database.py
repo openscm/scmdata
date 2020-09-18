@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from scmdata import ScmRun, run_append
-from scmdata.database import SCMDatabase
+from scmdata.database import ScmDatabase
 from scmdata.testing import assert_scmdf_almost_equal
 
 MOCK_ROOT_DIR_NAME = os.path.join("/mock", "root", "dir")
@@ -32,19 +32,19 @@ def start_scmrun():
 
 @pytest.fixture()
 def tdb():
-    return SCMDatabase(MOCK_ROOT_DIR_NAME)
+    return ScmDatabase(MOCK_ROOT_DIR_NAME)
 
 
 @pytest.fixture(scope="function")
 def tdb_with_data(tmpdir, start_scmrun):
-    db = SCMDatabase(tmpdir, levels=["climate_model", "variable"])
+    db = ScmDatabase(tmpdir, levels=["climate_model", "variable"])
     db.save_to_database(start_scmrun)
 
     return db
 
 
 def test_database_init_and_repr():
-    tdb = SCMDatabase("root_dir")
+    tdb = ScmDatabase("root_dir")
     assert tdb._root_dir == "root_dir"
     assert "root_dir: root_dir" in str(tdb)
 
@@ -135,7 +135,7 @@ def test_get_out_filepath(levels, inp, exp_tail, tdb):
 
 
 @patch("scmdata.database.ensure_dir_exists")
-@patch.object(SCMDatabase, "get_out_filepath")
+@patch.object(ScmDatabase, "get_out_filepath")
 @patch.object(ScmRun, "to_nc")
 def test_save_to_database_single_file(
     mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
@@ -162,7 +162,7 @@ def test_save_to_database_single_file(
 
 
 @patch("scmdata.database.ensure_dir_exists")
-@patch.object(SCMDatabase, "get_out_filepath")
+@patch.object(ScmDatabase, "get_out_filepath")
 @patch.object(ScmRun, "to_nc")
 def test_save_to_database_single_file_non_unique_meta(
     mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
@@ -200,7 +200,7 @@ def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
         tdb._save_to_database_single_file(start_scmrun)
 
 
-@patch.object(SCMDatabase, "_save_to_database_single_file")
+@patch.object(ScmDatabase, "_save_to_database_single_file")
 def test_save_to_database(mock_save_to_database_single_file, tdb, start_scmrun):
     tdb.save_to_database(start_scmrun)
 

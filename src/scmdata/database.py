@@ -29,7 +29,7 @@ def ensure_dir_exists(fp):
                 raise
 
 
-class SCMDatabase:
+class ScmDatabase:
     """
     On-disk database handler for outputs from SCMs
 
