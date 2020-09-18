@@ -121,33 +121,6 @@ class ScmDatabase:
         out_fname = "_".join(out_levels) + ".nc"
         return self._get_disk_filename(os.path.join(out_path, out_fname))
 
-    def save_condensed_file(self, scmrun):
-        """
-        Save results which have multiple ensemble members
-
-        Parameters
-        ----------
-        scmrun : :obj:`scmdata.ScmRun`
-            Results to save in the database
-
-        Raises
-        ------
-        AssertionError
-            ``ensemble_member`` is not included in ``scmrun``'s metadata
-        """
-        climate_model = scmrun.get_unique_meta("climate_model", no_duplicates=True)
-        variable = scmrun.get_unique_meta("variable", no_duplicates=True)
-        region = scmrun.get_unique_meta("region", no_duplicates=True)
-        scenario = scmrun.get_unique_meta("scenario", no_duplicates=True)
-
-        if "ensemble_member" not in scmrun.meta:
-            raise AssertionError("`scmrun` must contain ensemble_member metadata")
-        out_file = self.get_out_filepath(
-            climate_model, variable, region, scenario, ensemble_member=None
-        )
-        ensure_dir_exists(out_file)
-        scmrun.to_nc(out_file, dimensions=("ensemble_member",))
-
     def _save_to_database_single_file(self, scmrun):
         levels = {l: scmrun.get_unique_meta(l, no_duplicates=True) for l in self.levels}
         out_file = self.get_out_filepath(**levels)

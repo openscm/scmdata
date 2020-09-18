@@ -40,7 +40,9 @@ REQUIREMENTS = [
 ]
 REQUIREMENTS_OPTIONAL = ["netCDF4", "scipy", "xlrd"]
 REQUIREMENTS_PLOTTING = ["seaborn"]
-REQUIREMENTS_NOTEBOOKS = ["notebook",] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
+REQUIREMENTS_NOTEBOOKS = (
+    ["notebook", "ipywidgets"] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
+)
 REQUIREMENTS_TESTS = (
     ["codecov", "nbval", "pytest>=5.0.0, <6", "pytest-benchmark", "pytest-cov"]
     + REQUIREMENTS_PLOTTING
@@ -58,6 +60,7 @@ REQUIREMENTS_DEV = [
         "isort>=5",
         "nbdime",
         "notebook",
+        "ipywidgets",
         "pydocstyle",
         "pylint",
     ],
