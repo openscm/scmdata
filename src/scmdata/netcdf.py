@@ -306,6 +306,8 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
     dimensions = list(dimensions)
     if "time" in dimensions:
         dimensions.remove("time")
+    if "variable" in dimensions:
+        dimensions.remove("variable")
 
     with nc.Dataset(fname, "w", diskless=True, persist=True) as ds:
         ds.created_at = datetime.utcnow().isoformat()

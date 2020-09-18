@@ -4,9 +4,10 @@ Database of results handling
 import glob
 import os
 import os.path
+import pathlib
+import shutil
 
 import tqdm.autonotebook as tqdman
-
 from scmdata import ScmRun, run_append
 
 
@@ -27,6 +28,16 @@ def ensure_dir_exists(fp):
             # Prevent race conditions if multiple threads attempt to create dir at same time
             if not os.path.exists(dir_to_check):
                 raise
+
+
+def _check_is_subdir(root, d):
+    root_path = pathlib.Path(root).resolve()
+    out_path = pathlib.Path(d).resolve()
+
+    is_subdir = root_path in out_path.parents
+    # Sanity check that we never mangle anything outside of the root dir
+    if not is_subdir:  # pragma: no cover
+        raise AssertionError("{} not in {}".format(d, root))
 
 
 class ScmDatabase:
@@ -121,9 +132,12 @@ class ScmDatabase:
             out_levels.append(str(levels[l]))
 
         out_path = os.path.join(self._root_dir, *out_levels)
-
         out_fname = "_".join(out_levels) + ".nc"
-        return self._get_disk_filename(os.path.join(out_path, out_fname))
+        out_fname = os.path.join(out_path, out_fname)
+
+        _check_is_subdir(self._root_dir, out_fname)
+
+        return self._get_disk_filename(out_fname)
 
     def _save_to_database_single_file(self, scmrun):
         levels = {l: scmrun.get_unique_meta(l, no_duplicates=True) for l in self.levels}
@@ -169,7 +183,7 @@ class ScmDatabase:
 
         paths_to_load = [filters.get(l, "*") for l in self.levels]
         load_path = os.path.join(self._root_dir, *paths_to_load)
-        glob_to_use = self._get_disk_filename(os.path.join(load_path, "**", "*.nc"))
+        glob_to_use = self._get_disk_filename(os.path.join(load_path, "*.nc"))
         load_files = glob.glob(glob_to_use, recursive=True)
 
         return run_append(
@@ -178,3 +192,32 @@ class ScmDatabase:
                 for f in tqdman.tqdm(load_files, desc="Loading files", leave=False)
             ]
         )
+
+    def delete(self, **filters):
+        """
+        Delete data from the database
+
+        Parameters
+        ----------
+        filters: dict of str
+            Filters for the data to load.
+
+            Defaults to deleting all data if nothing is specified.
+
+        Raises
+        ------
+        ValueError
+            If a filter for a level not in :attr:`levels` is specified
+        """
+        for k in filters:
+            if k not in self.levels:
+                raise ValueError("Unknown level: {}".format(k))
+
+        paths_to_load = [filters.get(l, "*") for l in self.levels]
+        load_path = os.path.join(self._root_dir, *paths_to_load)
+        glob_to_use = self._get_disk_filename(load_path)
+        load_dirs = glob.glob(glob_to_use, recursive=True)
+
+        for d in load_dirs:
+            _check_is_subdir(self._root_dir, d)
+            shutil.rmtree(d)

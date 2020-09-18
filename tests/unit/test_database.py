@@ -294,3 +294,22 @@ def test_database_overwriting(tdb_with_data, start_scmrun):
     assert_scmdf_almost_equal(
         loaded_ts, run_append([start_scmrun, start_scmrun_2]), check_ts_names=False
     )
+
+
+def test_database_delete(tdb_with_data):
+    out_names = glob(
+        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+    )
+    assert len(out_names) == 2
+
+    tdb_with_data.delete(climate_model="cmodel_a")
+    out_names = glob(
+        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+    )
+    assert len(out_names) == 1
+    assert out_names[0].endswith("cmodel_b_variable.nc")
+
+
+def test_database_delete_unknown(tdb_with_data):
+    with pytest.raises(ValueError, match="Unknown level: extra"):
+        tdb_with_data.delete(extra="other")
