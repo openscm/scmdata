@@ -22,7 +22,7 @@ from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
 from . import REQUIRED_COLS
-from .errors import NonUniqueMetadataError
+from .errors import NonUniqueMetadataError, MissingRequiredColumn
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,
@@ -48,7 +48,7 @@ MetadataType = Dict[str, Union[str, int, float]]
 
 
 def _read_file(  # pylint: disable=missing-return-doc
-    fnames: str, required_cols: List[str], *args: Any, **kwargs: Any
+    fnames: str, required_cols: Tuple[str], *args: Any, **kwargs: Any
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from a file.
@@ -131,7 +131,7 @@ def _read_pandas(
 
 # pylint doesn't recognise return statements if they include ','
 def _format_data(  # pylint: disable=missing-return-doc
-    df: Union[pd.DataFrame, pd.Series], required_cols: List[str]
+    df: Union[pd.DataFrame, pd.Series], required_cols: Tuple[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from :class:`pd.DataFrame` or
@@ -164,7 +164,7 @@ def _format_data(  # pylint: disable=missing-return-doc
 
     if not set(required_cols).issubset(set(df.columns)):
         missing = list(set(required_cols) - set(df.columns))
-        raise ValueError("missing required columns `{}`!".format(missing))
+        raise MissingRequiredColumn(missing)
 
     # check whether data in wide or long format
     if "value" in df.columns:
@@ -189,6 +189,7 @@ def _format_long_data(df, required_cols):
         msg = "invalid time format, must have either `year` or `time`!"
         raise ValueError(msg)
 
+    required_cols = list(required_cols)
     extra_cols = list(set(cols) - set(required_cols + [time_col, "value"]))
     df = df.pivot_table(columns=required_cols + extra_cols, index=time_col).value
     meta = df.columns.to_frame(index=None)
@@ -224,16 +225,19 @@ def _format_wide_data(df, required_cols):
         msg = "invalid column format, must contain some time (int, float or datetime) columns!"
         raise ValueError(msg)
 
-    df_out = df.drop(required_cols + extra_cols, axis="columns").T
+    all_cols = set(tuple(required_cols) + tuple(extra_cols))
+    all_cols = list(all_cols)
+
+    df_out = df.drop(all_cols, axis="columns").T
     df_out.index.name = "time"
-    meta = df[required_cols + extra_cols].set_index(df_out.columns)
+    meta = df[all_cols].set_index(df_out.columns)
 
     return df_out, meta
 
 
 def _from_ts(
     df: Any,
-    required_cols: List[str],
+    required_cols: Tuple[str],
     index: Any = None,
     **columns: Union[str, bool, float, int, List],
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -265,7 +269,7 @@ def _from_ts(
     # format columns to lower-case and check that all required columns exist
     if not set(required_cols).issubset(columns.keys()):
         missing = list(set(required_cols) - set(columns.keys()))
-        raise ValueError("missing required columns `{}`!".format(missing))
+        raise MissingRequiredColumn(missing)
 
     df.index.name = "time"
 
@@ -291,16 +295,17 @@ def _from_ts(
 
 
 class BaseScmRun:  # pylint: disable=too-many-public-methods
-    required_cols = ["variable", "unit"]
+    required_cols = ("variable", "unit")
     """
-    List of required columns
+    Required metadata columns
     
-    Attempting to create a run without these metadata columns will raise a ValueError
+    This is the bare minimum columns which are expected. Attempting to create a run 
+    without the metadata columns specified by :attr:`required_cols` will raise a ValueError
     """
 
     def __init__(
         self,
-        data,
+        data: Any,
         index: Any = None,
         columns: Optional[Union[Dict[str, list], Dict[str, str]]] = None,
         metadata: Optional[MetadataType] = None,
@@ -393,9 +398,11 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         Raises
         ------
         ValueError
-            * If metadata for :attr:`required_cols` is not found.
             * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.run_append` instead.
             * Not specifying :obj`index` and :obj`columns` if :obj`data` is a :obj`numpy.ndarray`
+
+        MissingRequiredColumn
+            If metadata for :attr:`required_cols` is not found
 
         TypeError
             Timeseries cannot be read from :obj:`data`

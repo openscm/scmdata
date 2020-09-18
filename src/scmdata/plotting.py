@@ -63,7 +63,8 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     plt_df = self.long_data(time_axis=time_axis)
     kwargs.setdefault("x", "time")
     kwargs.setdefault("y", "value")
-    kwargs.setdefault("hue", "scenario")
+    if "scenario" in self.meta_attributes:
+        kwargs.setdefault("hue", "scenario")
     kwargs.setdefault("ci", "sd")
     kwargs.setdefault("estimator", np.median)
 

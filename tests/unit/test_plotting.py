@@ -91,3 +91,19 @@ def test_lineplot_units(mock_seaborn_lineplot, single_unit, scm_run):
         mock_ax.set_ylabel.assert_called_with(units[0])
     else:
         mock_ax.set_ylabel.assert_not_called()
+
+
+@patch("scmdata.plotting.sns.lineplot")
+def test_lineplot_base(mock_seaborn_lineplot, base_scm_run, scm_run):
+    mock_ax = MagicMock()
+    mock_seaborn_lineplot.return_value = mock_ax
+
+    base_scm_run.lineplot(time_axis="year")
+    mock_seaborn_lineplot.assert_called()
+    call_kwargs = mock_seaborn_lineplot.mock_calls[0].kwargs
+    assert "hue" not in call_kwargs
+
+    mock_seaborn_lineplot.reset_mock()
+    scm_run.lineplot(time_axis="year")
+    call_kwargs = mock_seaborn_lineplot.mock_calls[0].kwargs
+    assert "hue" in call_kwargs

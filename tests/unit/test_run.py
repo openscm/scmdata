@@ -14,8 +14,8 @@ from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.errors import NonUniqueMetadataError
-from scmdata.run import ScmRun, run_append
+from scmdata.errors import NonUniqueMetadataError, MissingRequiredColumn
+from scmdata.run import ScmRun, run_append, BaseScmRun
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -125,13 +125,13 @@ def test_init_df_missing_time_columns_error(test_pd_df):
 def test_init_df_missing_col_error(test_pd_df):
     test_pd_df = test_pd_df.drop("model", axis="columns")
     error_msg = re.escape("missing required columns `['model']`!")
-    with pytest.raises(ValueError, match=error_msg):
+    with pytest.raises(MissingRequiredColumn, match=error_msg):
         ScmRun(test_pd_df)
 
 
 def test_init_ts_missing_col_error(test_ts):
     error_msg = re.escape("missing required columns `['model']`!")
-    with pytest.raises(ValueError, match=error_msg):
+    with pytest.raises(MissingRequiredColumn, match=error_msg):
         ScmRun(
             test_ts,
             columns={
@@ -143,6 +143,25 @@ def test_init_ts_missing_col_error(test_ts):
             },
             index=[2005, 2010, 2015],
         )
+
+
+def test_init_required_cols(test_pd_df):
+    class MyRun(BaseScmRun):
+        required_cols = ("climate_model", "variable", "unit")
+
+    del test_pd_df["model"]
+
+    assert all([c in test_pd_df.columns for c in MyRun.required_cols])
+    MyRun(test_pd_df)
+
+    del test_pd_df["climate_model"]
+
+    assert not all([c in test_pd_df.columns for c in MyRun.required_cols])
+    error_msg = re.escape("missing required columns `['climate_model']`!")
+    with pytest.raises(
+        MissingRequiredColumn, match=error_msg,
+    ):
+        MyRun(test_pd_df)
 
 
 def test_init_multiple_file_error():
@@ -2347,14 +2366,14 @@ def test_read_from_disk_incorrect_labels():
 
     exp_msg = "missing required columns"
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(MissingRequiredColumn) as exc_info:
         ScmRun(fname)
 
     error_msg = exc_info.value.args[0]
     assert error_msg.startswith(exp_msg)
-    assert "scenario" in error_msg
-    assert "variable" in error_msg
-    assert "unit" not in error_msg
+    assert "scenario" in exc_info.value.columns
+    assert "variable" in exc_info.value.columns
+    assert "unit" not in exc_info.value.columns
 
 
 @pytest.mark.parametrize("separator", ["|", "__", "/", "~", "_", "-"])

@@ -25,3 +25,15 @@ class NonUniqueMetadataError(ValueError):
         )
 
         super().__init__(msg)
+
+
+class MissingRequiredColumn(ValueError):
+    """
+    Error raised when an operation produces missing metadata columns
+    """
+
+    def __init__(self, columns):
+        self.columns = columns
+        msg = "missing required columns `{}`!".format(columns)
+
+        super().__init__(msg)
