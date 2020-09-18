@@ -29,7 +29,7 @@ def ensure_dir_exists(fp):
                 raise
 
 
-class Database:
+class SCMDatabase:
     """
     On-disk database handler for outputs from SCMs
     """
@@ -46,7 +46,7 @@ class Database:
         self._root_dir = root_dir
 
     def __repr__(self):
-        return "<utils.scmdata.Database (root_dir: {})>".format(self._root_dir)
+        return "<scmdata.database.SCMDatabase (root_dir: {})>".format(self._root_dir)
 
     @staticmethod
     def _get_disk_filename(inp):
@@ -191,129 +191,3 @@ class Database:
                 for f in tqdman.tqdm(load_files, desc="Loading files", leave=False)
             ]
         )
-
-    def save_model_reported(self, res, key="all"):
-        """
-        Save model reported data into the database
-
-        Parameters
-        ----------
-        res : :obj:`pd.DataFrame`
-            Model reported results to save
-
-        key : str
-            Identifier to use in the filename
-
-        Raises
-        ------
-        AssertionError
-            The columns of res are not as expected (i.e.
-            ``{"value", "ensemble_member", "RCMIP name", "unit", "climate_model"}``)
-            or more than one climate model is included in ``res``.
-        """
-        expected_columns = {
-            "value",
-            "ensemble_member",
-            "RCMIP name",
-            "unit",
-            "climate_model",
-        }
-        correct_columns = set(res.columns) == expected_columns
-        if not correct_columns:
-            raise AssertionError(
-                "Input columns: {}. Expected columns: {}.".format(
-                    set(res.columns), expected_columns
-                )
-            )
-
-        climate_model = res["climate_model"].unique().tolist()
-        if len(climate_model) != 1:
-            raise AssertionError(
-                "More than one climate model: {}".format(climate_model)
-            )
-        climate_model = climate_model[0]
-
-        outfile = self._get_disk_filename(
-            os.path.join(
-                self._root_dir,
-                climate_model,
-                "model_reported_metrics_{}.csv".format(key),
-            )
-        )
-        ensure_dir_exists(outfile)
-        res.to_csv(outfile, index=False)
-
-    def load_model_reported(self):
-        """
-        Load all model reported results
-
-        Returns
-        -------
-        :obj:`pd.DataFrame`
-            All model reported results
-        """
-        glob_path = self._get_disk_filename(
-            os.path.join(self._root_dir, "**", "model_reported_metrics*.csv")
-        )
-        to_load = glob.glob(glob_path, recursive=True)
-
-        return pd.concat([pd.read_csv(f) for f in to_load])
-
-    def save_summary_table(self, res, file_id):
-        """
-        Save summary table
-
-        Parameters
-        ----------
-        res : :obj:`pd.DataFrame`
-            Summary table to save
-
-        file_id : str
-            Identifier to use in the filename
-
-        Raises
-        ------
-        AssertionError
-            Columns of ``res`` are not as expected (i.e. not equal to
-            ``{"assessed_range_label", "assessed_range_value", "climate_model", "climate_model_value", "metric", "percentage_difference", "unit"}``)
-        """
-        expected_columns = {
-            "assessed_range_label",
-            "assessed_range_value",
-            "climate_model",
-            "climate_model_value",
-            "metric",
-            "percentage_difference",
-            "unit",
-        }
-        if set(res.columns) != expected_columns:
-            raise AssertionError(
-                "Input columns: {}. Expected columns: {}.".format(
-                    set(res.columns), expected_columns
-                )
-            )
-
-        outfile = self._get_disk_filename(
-            os.path.join(
-                self._root_dir,
-                "climate_model_assessed_ranges_summary_table_{}.csv".format(file_id),
-            )
-        )
-
-        res.to_csv(outfile, index=False)
-
-    def load_summary_tables(self):
-        """
-        Load all summary tables
-
-        Returns
-        -------
-        :obj:`pd.DataFrame`
-            All summary tables
-        """
-        load_path = os.path.join(
-            self._root_dir, "climate_model_assessed_ranges_summary_table_*.csv",
-        )
-        load_files = glob.glob(load_path)
-
-        return pd.concat([pd.read_csv(f) for f in load_files])

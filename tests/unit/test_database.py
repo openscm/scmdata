@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from scmdata import ScmRun
 
-from scmdata.database import Database
+from scmdata.database import SCMDatabase
 
 MOCK_ROOT_DIR_NAME = os.path.join("/mock", "root", "dir")
 
@@ -30,11 +30,11 @@ def start_scmrun():
 
 @pytest.fixture()
 def tdb():
-    return Database(MOCK_ROOT_DIR_NAME)
+    return SCMDatabase(MOCK_ROOT_DIR_NAME)
 
 
 def test_database_init_and_repr():
-    tdb = Database("root_dir")
+    tdb = SCMDatabase("root_dir")
     assert tdb._root_dir == "root_dir"
     assert "root_dir: root_dir" in str(tdb)
 
@@ -96,8 +96,8 @@ def test_get_out_filepath(inp, exp_tail, tdb):
     assert res == exp
 
 
-@patch("pyrcmip.database.ensure_dir_exists")
-@patch.object(Database, "get_out_filepath")
+@patch("scmdata.database.ensure_dir_exists")
+@patch.object(SCMDatabase, "get_out_filepath")
 @patch.object(ScmRun, "to_nc")
 def test_save_to_database_single_file(
     mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
@@ -135,9 +135,7 @@ def test_save_to_database_single_file_non_unique_meta(tdb, start_scmrun):
 
 
 def test_save_to_database_single_file_no_ensemble_member(tdb, start_scmrun):
-    with pytest.raises(
-        KeyError, match=re.escape("[ensemble_member] is not in metadata")
-    ):
+    with pytest.raises(KeyError, match=re.escape("Level ensemble_member not found")):
         tdb._save_to_database_single_file(
             start_scmrun.filter(climate_model="cmodel_a").drop_meta(
                 "ensemble_member", inplace=False
@@ -145,7 +143,7 @@ def test_save_to_database_single_file_no_ensemble_member(tdb, start_scmrun):
         )
 
 
-@patch.object(Database, "_save_to_database_single_file")
+@patch.object(SCMDatabase, "_save_to_database_single_file")
 def test_save_to_database(mock_save_to_database_single_file, tdb, start_scmrun):
     tdb.save_to_database(start_scmrun)
 
