@@ -12,8 +12,6 @@ from scmdata.database import ScmDatabase
 from scmdata.errors import NonUniqueMetadataError
 from scmdata.testing import assert_scmdf_almost_equal
 
-MOCK_ROOT_DIR_NAME = os.path.join("/mock", "root", "dir")
-
 
 @pytest.fixture()
 def start_scmrun():
@@ -33,8 +31,8 @@ def start_scmrun():
 
 
 @pytest.fixture()
-def tdb():
-    return ScmDatabase(MOCK_ROOT_DIR_NAME)
+def tdb(tmpdir):
+    return ScmDatabase(tmpdir)
 
 
 @pytest.fixture(scope="function")
@@ -63,7 +61,18 @@ def test_database_init_and_repr():
                 "scenario": "s",
                 "ensemble_member": "em",
             },
-            os.path.join("cm", "v", "r", "s", "cm_v_r_s.nc"),
+            os.path.join("cm", "v", "r", "s", "cm__v__r__s.nc"),
+        ),
+        (
+            ["climate_model", "variable", "region", "scenario"],
+            {
+                "climate_model": "cm_a",
+                "variable": "v",
+                "region": "r",
+                "scenario": "s",
+                "ensemble_member": "em",
+            },
+            os.path.join("cm_a", "v", "r", "s", "cm_a__v__r__s.nc"),
         ),
         (
             ["climate_model", "variable", "region", "scenario", "ensemble_member"],
@@ -74,7 +83,7 @@ def test_database_init_and_repr():
                 "scenario": "s",
                 "ensemble_member": "em",
             },
-            os.path.join("cm", "v", "r", "s", "em", "cm_v_r_s_em.nc"),
+            os.path.join("cm", "v", "r", "s", "em", "cm__v__r__s__em.nc"),
         ),
         (
             ["climate_model", "ensemble_member"],
@@ -85,12 +94,12 @@ def test_database_init_and_repr():
                 "scenario": "s",
                 "ensemble_member": 1,
             },
-            os.path.join("cm", "1", "cm_1.nc"),
+            os.path.join("cm", "1", "cm__1.nc"),
         ),
         (
             ["climate_model", "variable", "region", "scenario"],
             {"climate_model": "cm", "variable": "v", "region": "r", "scenario": "s"},
-            os.path.join("cm", "v", "r", "s", "cm_v_r_s.nc"),
+            os.path.join("cm", "v", "r", "s", "cm__v__r__s.nc"),
         ),
         (
             ["climate_model", "variable", "region", "scenario", "ensemble_member"],
@@ -107,7 +116,7 @@ def test_database_init_and_repr():
                 "World-R5.2OECD90",
                 "1pctCO2-bgc",
                 "001",
-                "MAGICC-7.1.0_Emissions-CO2_World-R5.2OECD90_1pctCO2-bgc_001.nc",
+                "MAGICC-7.1.0__Emissions-CO2__World-R5.2OECD90__1pctCO2-bgc__001.nc",
             ),
         ),
         (
@@ -123,7 +132,7 @@ def test_database_init_and_repr():
                 "Emissions-CO2",
                 "World-R5.2OECD90",
                 "1pctCO2-bgc",
-                "MAGICC7.1.0_Emissions-CO2_World-R5.2OECD90_1pctCO2-bgc.nc",
+                "MAGICC7.1.0__Emissions-CO2__World-R5.2OECD90__1pctCO2-bgc.nc",
             ),
         ),
     ),
@@ -214,6 +223,37 @@ def test_database_save(mock_save_to_database_single_file, tdb, start_scmrun):
         )
     )
     assert mock_save_to_database_single_file.call_count == expected_calls
+
+
+@pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\" .")
+def test_database_save_weird(tdb, start_scmrun, ch):
+    weird_var_name = "variable" + ch
+    start_scmrun["variable"] = [weird_var_name, "other"]
+    tdb.save(start_scmrun)
+
+    assert len(start_scmrun.filter(variable=weird_var_name))
+    assert_scmdf_almost_equal(
+        tdb.load(variable=weird_var_name), start_scmrun.filter(variable=weird_var_name)
+    )
+
+    replace_ch = "-" if ch not in ".*" else ch
+    exp = pd.DataFrame(
+        [
+            ["cmodel_a", "variable" + replace_ch, "region", "scenario"],
+            ["cmodel_b", "other", "region", "scenario"],
+        ],
+        columns=tdb.levels,
+    )
+
+    pd.testing.assert_frame_equal(tdb.available_data(), exp)
+
+
+@pytest.mark.parametrize("ch", "[?/")
+def test_database_save_weird_unsupported(tdb, start_scmrun, ch):
+    weird_var_name = "variable" + ch
+    start_scmrun["variable"] = [weird_var_name, "other"]
+    with pytest.raises(Exception):
+        tdb.save(start_scmrun)
 
 
 def test_database_loaded(tdb_with_data):

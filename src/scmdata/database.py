@@ -101,7 +101,13 @@ class ScmDatabase:
 
     @staticmethod
     def _get_disk_filename(inp):
-        return inp.replace("|", "-").replace(" ", "-")
+        def safe_char(c):
+            if c.isalnum() or c in "-/*_.":
+                return c
+            else:
+                return "-"
+
+        return "".join(safe_char(c) for c in inp)
 
     def save(self, scmrun):
         """
@@ -155,7 +161,7 @@ class ScmDatabase:
             out_levels.append(str(levels[level]))
 
         out_path = os.path.join(self._root_dir, *out_levels)
-        out_fname = "_".join(out_levels) + ".nc"
+        out_fname = "__".join(out_levels) + ".nc"
         out_fname = os.path.join(out_path, out_fname)
 
         _check_is_subdir(self._root_dir, out_fname)
@@ -206,6 +212,8 @@ class ScmDatabase:
         for level in filters:
             if level not in self.levels:
                 raise ValueError("Unknown level: {}".format(level))
+            if "/" in level:
+                filters["level"] = level.replace("/", "_")
 
         paths_to_load = [filters.get(level, "*") for level in self.levels]
         load_path = os.path.join(self._root_dir, *paths_to_load)
@@ -238,6 +246,8 @@ class ScmDatabase:
         for level in filters:
             if level not in self.levels:
                 raise ValueError("Unknown level: {}".format(level))
+            if "/" in level:
+                filters["level"] = level.replace("/", "_")
 
         paths_to_load = [filters.get(level, "*") for level in self.levels]
         load_path = os.path.join(self._root_dir, *paths_to_load)
@@ -251,6 +261,10 @@ class ScmDatabase:
     def available_data(self):
         """
         Get all the data which is available to be loaded
+
+        If metadata includes non-alphanumeric characters then it
+        might appear modified in the returned table. The original
+        metadata values can still be used to filter data.
 
         Returns
         -------
