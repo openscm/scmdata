@@ -2466,8 +2466,10 @@ def test_drop_meta_missing(scm_run, label):
     assert "variable" in scm_run.meta.columns
 
 
-def test_drop_meta_missing_one(scm_run):
-    label = ["variable", "other"]
+@pytest.mark.parametrize(
+    "label", [["other", "climate_model"], ["climate_model", "other"]]
+)
+def test_drop_meta_missing_one(scm_run, label):
     with pytest.raises(KeyError):
         scm_run.drop_meta(label)
 
