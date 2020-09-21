@@ -2245,6 +2245,54 @@ def test_unit_context_to_not_convert_has_existing_context(
     )
 
 
+@pytest.mark.parametrize(
+    "start_units,target_unit",
+    (
+        (["W/m^2", "W / m^2", "W/m ^ 2", "W / m ** 2"], "W/m^2"),
+        (["W/m^2", "W/m ^ 2", "W / m^2", "W / m ** 2"], "W/m^2"),
+        (["W / m^2", "W /m^2", "W / m ** 2", "W/m^2"], "W/m^2"),
+        (
+            ["GtC/yr/m^2", "GtC / yr / m^2", "GtC/ yr /m ^  2", "GtC/yr/m ^ 2"],
+            "GtC / yr / m^2",
+        ),
+        (["MtCH4 / yr", "Mt CH4/yr", "Mt CH4 / yr", "Mt CH4/ yr"], "MtCH4/yr"),
+    ),
+)
+@pytest.mark.parametrize("duplicated_meta_once_converted", [True, False])
+def test_convert_unit_multiple_units(
+    start_units, target_unit, duplicated_meta_once_converted
+):
+    if duplicated_meta_once_converted:
+        climate_model = "climate_model"
+    else:
+        climate_model = ["cma", "cmb", "cmc", "cmd"]
+
+    tdf = ScmRun(
+        data=np.arange(12).reshape(3, 4),
+        index=range(2010, 2031, 10),
+        columns={
+            "variable": "Effective Radiative Forcing",
+            "unit": start_units,
+            "region": "World",
+            "scenario": "idealised",
+            "model": "idealised",
+            "climate_model": climate_model,
+        },
+    )
+
+    if duplicated_meta_once_converted:
+        with pytest.raises(NonUniqueMetadataError):
+            tdf.convert_unit(target_unit)
+
+    else:
+        res = tdf.convert_unit(target_unit)
+        assert res.get_unique_meta("unit", no_duplicates=True) == target_unit
+        npt.assert_allclose(
+            res.timeseries().sort_index().values,
+            tdf.timeseries().sort_index().values,
+        )
+
+
 def test_convert_unit_does_not_warn(scm_run, caplog):
     scm_run["unit"] = "GtC"
 
