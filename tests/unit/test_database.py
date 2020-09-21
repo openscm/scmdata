@@ -259,12 +259,12 @@ def test_database_save_weird_unsupported(tdb, start_scmrun, ch):
 def test_database_loaded(tdb_with_data):
     assert os.path.exists(
         os.path.join(
-            tdb_with_data._root_dir, "cmodel_a", "variable", "cmodel_a_variable.nc"
+            tdb_with_data._root_dir, "cmodel_a", "variable", "cmodel_a__variable.nc"
         )
     )
     assert os.path.exists(
         os.path.join(
-            tdb_with_data._root_dir, "cmodel_b", "variable", "cmodel_b_variable.nc"
+            tdb_with_data._root_dir, "cmodel_b", "variable", "cmodel_b__variable.nc"
         )
     )
 
@@ -354,7 +354,7 @@ def test_database_delete(tdb_with_data):
         os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
     )
     assert len(out_names) == 1
-    assert out_names[0].endswith("cmodel_b_variable.nc")
+    assert out_names[0].endswith("cmodel_b__variable.nc")
 
 
 def test_database_delete_unknown(tdb_with_data):
