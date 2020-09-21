@@ -45,7 +45,7 @@ def tdb_with_data(tmpdir, start_scmrun):
 
 def test_database_init_and_repr():
     tdb = ScmDatabase("root_dir")
-    assert tdb._root_dir == "root_dir"
+    assert tdb.root_dir == "root_dir"
     assert "root_dir: root_dir" in str(tdb)
 
 

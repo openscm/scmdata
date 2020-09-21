@@ -34,7 +34,7 @@ def ensure_dir_exists(fp):
     if not os.path.isdir(dir_to_check):
         try:
             os.makedirs(dir_to_check)
-        except OSError:
+        except OSError:  # pragma: no cover
             # Prevent race conditions if multiple threads attempt to create dir at same time
             if not os.path.exists(dir_to_check):
                 raise
