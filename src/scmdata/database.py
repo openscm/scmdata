@@ -69,6 +69,7 @@ class ScmDatabase:
         ----------
         root_dir : str
             The root directory of the database
+
         levels : tuple of str
             Specifies how the runs should be stored on disk.
 
@@ -83,10 +84,12 @@ class ScmDatabase:
             the same as the previous instance.
         """
         self._root_dir = root_dir
-        self.levels = levels
+        self.levels = tuple(levels)
 
     def __repr__(self):
-        return "<scmdata.database.SCMDatabase (root_dir: {})>".format(self._root_dir)
+        return "<scmdata.database.SCMDatabase (root_dir: {}, levels: {})>".format(
+            self._root_dir, self.levels
+        )
 
     @property
     def root_dir(self):
