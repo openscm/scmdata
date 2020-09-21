@@ -9,6 +9,7 @@ import pytest
 
 from scmdata import ScmRun, run_append
 from scmdata.database import ScmDatabase
+from scmdata.errors import NonUniqueMetadataError
 from scmdata.testing import assert_scmdf_almost_equal
 
 MOCK_ROOT_DIR_NAME = os.path.join("/mock", "root", "dir")
@@ -295,6 +296,11 @@ def test_database_overwriting(tdb_with_data, start_scmrun):
     assert_scmdf_almost_equal(
         loaded_ts, run_append([start_scmrun, start_scmrun_2]), check_ts_names=False
     )
+
+
+def test_database_save_duplicates(tdb_with_data, start_scmrun):
+    with pytest.raises(NonUniqueMetadataError):
+        tdb_with_data.save(start_scmrun.filter(climate_model="cmodel_a"))
 
 
 def test_database_delete(tdb_with_data):
