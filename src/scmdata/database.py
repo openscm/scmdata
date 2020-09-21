@@ -8,8 +8,8 @@ import pathlib
 import shutil
 
 import pandas as pd
-
 import tqdm.autonotebook as tqdman
+
 from scmdata import ScmRun, run_append
 
 

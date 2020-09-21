@@ -3,8 +3,8 @@ import re
 from glob import glob
 from unittest.mock import patch
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 
 from scmdata import ScmRun, run_append
