@@ -22,7 +22,7 @@ from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
 from . import REQUIRED_COLS
-from .errors import NonUniqueMetadataError, MissingRequiredColumn
+from .errors import MissingRequiredColumn, NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,

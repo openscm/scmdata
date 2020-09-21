@@ -13,7 +13,7 @@ import pandas as pd
 import pytest
 
 from scmdata.pyam_compat import IamDataFrame
-from scmdata.run import ScmRun, BaseScmRun
+from scmdata.run import BaseScmRun, ScmRun
 from scmdata.timeseries import get_default_name
 
 TEST_DATA = join(dirname(abspath(__file__)), "test_data")

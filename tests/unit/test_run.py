@@ -14,8 +14,8 @@ from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.errors import NonUniqueMetadataError, MissingRequiredColumn
-from scmdata.run import ScmRun, run_append, BaseScmRun
+from scmdata.errors import MissingRequiredColumn, NonUniqueMetadataError
+from scmdata.run import BaseScmRun, ScmRun, run_append
 from scmdata.testing import assert_scmdf_almost_equal
 
 
