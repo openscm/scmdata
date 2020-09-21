@@ -59,5 +59,5 @@ database creation making it easy to add new data to the database. Often no exist
 serialized as new files.
 
 Filtering using the metadata columns of interest is also very simple as the contents of a given file can be determined from the
-directory structure without having to load the file. Each file can then be loaded as the data is needed, minimising the amount
+directory structure without having to load the file. Each file can then be loaded as the data is needed, minimising the need for reading data which will then immediately be filtered away
 of extra data that is needed to be unnecessarily read and then filtered away.

@@ -6,7 +6,7 @@ database to expand as new data is added without having to change any of the
 existing data.
 
 Subsets of data are also able to be read without having to load all the data
-and then filter. For example, one save model results from a number of different
+and then filter. For example, one could save model results from a number of different
 climate models and then load just the ``Surface Temperature`` data for all models.
 """
 import glob
@@ -111,7 +111,7 @@ class ScmDatabase:
         :attr:`levels` in a directory structure underneath ``root_dir``.
 
         Use :meth:`available_data` to see what data is available. Subsets of
-        # data can then be loaded as an :class:`scmdata.ScmRun` using :meth:`load`.
+        data can then be loaded as an :class:`scmdata.ScmRun` using :meth:`load`.
 
         Parameters
         ----------
@@ -135,7 +135,7 @@ class ScmDatabase:
 
         Parameters
         ----------
-        levels: dict of str
+        levels: dict of str : str
             The unique value for each level in :attr:`levels'
 
         Returns
@@ -183,7 +183,7 @@ class ScmDatabase:
 
         Parameters
         ----------
-        filters: dict of str
+        filters: dict of str : str
             Filters for the data to load.
 
             Defaults to loading all values for a level if it isn't specified.
