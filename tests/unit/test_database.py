@@ -256,6 +256,20 @@ def test_database_save_weird_unsupported(tdb, start_scmrun, ch):
         tdb.save(start_scmrun)
 
 
+# / cannot be in variable metadata, but work otherwise
+def test_database_save_weird_slash(tdb, start_scmrun):
+    weird_name = "cmodel/test"
+    start_scmrun["climate_model"] = [weird_name, "other"]
+
+    tdb.save(start_scmrun)
+
+    assert len(start_scmrun.filter(climate_model=weird_name))
+    assert_scmdf_almost_equal(
+        tdb.load(climate_model=weird_name),
+        start_scmrun.filter(climate_model=weird_name),
+    )
+
+
 def test_database_loaded(tdb_with_data):
     assert os.path.exists(
         os.path.join(

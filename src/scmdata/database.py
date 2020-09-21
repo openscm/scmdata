@@ -173,7 +173,7 @@ class ScmDatabase:
 
     def _save_to_database_single_file(self, scmrun):
         levels = {
-            level: scmrun.get_unique_meta(level, no_duplicates=True)
+            level: scmrun.get_unique_meta(level, no_duplicates=True).replace("/", "_")
             for level in self.levels
         }
         out_file = self._get_out_filepath(**levels)
@@ -215,8 +215,8 @@ class ScmDatabase:
         for level in filters:
             if level not in self.levels:
                 raise ValueError("Unknown level: {}".format(level))
-            if "/" in level:
-                filters["level"] = level.replace("/", "_")
+            if "/" in filters[level]:
+                filters[level] = filters[level].replace("/", "_")
 
         paths_to_load = [filters.get(level, "*") for level in self.levels]
         load_path = os.path.join(self._root_dir, *paths_to_load)
@@ -249,8 +249,8 @@ class ScmDatabase:
         for level in filters:
             if level not in self.levels:
                 raise ValueError("Unknown level: {}".format(level))
-            if "/" in level:
-                filters["level"] = level.replace("/", "_")
+            if "/" in filters[level]:
+                filters[level] = filters[level].replace("/", "_")
 
         paths_to_load = [filters.get(level, "*") for level in self.levels]
         load_path = os.path.join(self._root_dir, *paths_to_load)
