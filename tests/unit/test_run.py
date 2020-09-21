@@ -2288,8 +2288,7 @@ def test_convert_unit_multiple_units(
         res = tdf.convert_unit(target_unit)
         assert res.get_unique_meta("unit", no_duplicates=True) == target_unit
         npt.assert_allclose(
-            res.timeseries().sort_index().values,
-            tdf.timeseries().sort_index().values,
+            res.timeseries().sort_index().values, tdf.timeseries().sort_index().values,
         )
 
 
