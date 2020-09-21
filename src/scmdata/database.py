@@ -1,5 +1,13 @@
 """
-Database for handling large datasets
+Database for handling large datasets in a performant, but flexible way
+
+Data is chunked using unique combinations of metadata. This allows for the
+database to expand as new data is added without having to change any of the
+existing data.
+
+Subsets of data are also able to be read without having to load all the data
+and then filter. For example, one save model results from a number of different
+climate models and then load just the ``Surface Temperature`` data for all models.
 """
 import glob
 import os
@@ -82,6 +90,13 @@ class ScmDatabase:
 
     @property
     def root_dir(self):
+        """
+        Root directory of the database.
+
+        Returns
+        -------
+        str
+        """
         return self._root_dir
 
     @staticmethod
@@ -90,15 +105,21 @@ class ScmDatabase:
 
     def save(self, scmrun):
         """
-        Save a set of results to the database
+        Save data to the database
 
         The results are saved with one file for each unique combination of
-        :attr:`levels`.
+        :attr:`levels` in a directory structure underneath ``root_dir``.
+
+        Use :meth:`available_data` to see what data is available. Subsets of
+        # data can then be loaded as an :class:`scmdata.ScmRun` using :meth:`load`.
 
         Parameters
         ----------
         scmrun : :obj:`scmdata.ScmRun`
-            Results to save
+            Data to save.
+
+            The timeseries in this run should have valid metadata for each
+            of the columns specified in ``levels``.
         """
         for r in tqdman.tqdm(
             scmrun.groupby(self.levels), leave=False, desc="Saving to database",
@@ -169,7 +190,7 @@ class ScmDatabase:
 
         Returns
         -------
-        :obj: `scmdata.ScmRun`
+        :class:`scmdata.ScmRun`
             Loaded data
 
         Raises
@@ -230,9 +251,8 @@ class ScmDatabase:
 
         Returns
         -------
-        pd.DataFrame
+        :class:`pd.DataFrame`
         """
-
         load_path = os.path.join(self._root_dir, "**", "*.nc")
         all_files = glob.glob(load_path, recursive=True)
 
