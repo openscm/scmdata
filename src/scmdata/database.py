@@ -149,10 +149,10 @@ class ScmDatabase:
             If no value is provided for level in :attr:`levels'
         """
         out_levels = []
-        for l in self.levels:
-            if l not in levels:
-                raise ValueError("expected value for level: {}".format(l))
-            out_levels.append(str(levels[l]))
+        for level in self.levels:
+            if level not in levels:
+                raise ValueError("expected value for level: {}".format(level))
+            out_levels.append(str(levels[level]))
 
         out_path = os.path.join(self._root_dir, *out_levels)
         out_fname = "_".join(out_levels) + ".nc"
@@ -163,7 +163,10 @@ class ScmDatabase:
         return self._get_disk_filename(out_fname)
 
     def _save_to_database_single_file(self, scmrun):
-        levels = {l: scmrun.get_unique_meta(l, no_duplicates=True) for l in self.levels}
+        levels = {
+            level: scmrun.get_unique_meta(level, no_duplicates=True)
+            for level in self.levels
+        }
         out_file = self._get_out_filepath(**levels)
 
         ensure_dir_exists(out_file)
@@ -200,11 +203,11 @@ class ScmDatabase:
 
             If no data matching ``filters`` is found
         """
-        for k in filters:
-            if k not in self.levels:
-                raise ValueError("Unknown level: {}".format(k))
+        for level in filters:
+            if level not in self.levels:
+                raise ValueError("Unknown level: {}".format(level))
 
-        paths_to_load = [filters.get(l, "*") for l in self.levels]
+        paths_to_load = [filters.get(level, "*") for level in self.levels]
         load_path = os.path.join(self._root_dir, *paths_to_load)
         glob_to_use = self._get_disk_filename(os.path.join(load_path, "*.nc"))
         load_files = glob.glob(glob_to_use, recursive=True)
@@ -232,11 +235,11 @@ class ScmDatabase:
         ValueError
             If a filter for a level not in :attr:`levels` is specified
         """
-        for k in filters:
-            if k not in self.levels:
-                raise ValueError("Unknown level: {}".format(k))
+        for level in filters:
+            if level not in self.levels:
+                raise ValueError("Unknown level: {}".format(level))
 
-        paths_to_load = [filters.get(l, "*") for l in self.levels]
+        paths_to_load = [filters.get(level, "*") for level in self.levels]
         load_path = os.path.join(self._root_dir, *paths_to_load)
         glob_to_use = self._get_disk_filename(load_path)
         load_dirs = glob.glob(glob_to_use, recursive=True)
