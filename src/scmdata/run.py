@@ -295,6 +295,10 @@ def _from_ts(
 
 
 class BaseScmRun:  # pylint: disable=too-many-public-methods
+    """
+    Base class of a data container for timeseries data
+    """
+
     required_cols = ("variable", "unit")
     """
     Required metadata columns

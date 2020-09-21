@@ -1288,7 +1288,7 @@ def test_relative_to_ref_period_mean(test_processing_scm_df, tfilter):
     else:
         raise NotImplementedError(tfilter)
 
-    exp = type(test_processing_scm_df)(
+    exp = ScmRun(
         pd.DataFrame(
             [
                 [
@@ -1361,6 +1361,8 @@ def test_relative_to_ref_period_mean(test_processing_scm_df, tfilter):
     )
 
     obs = test_processing_scm_df.relative_to_ref_period_mean(**tfilter)
+
+    assert isinstance(obs, ScmRun)
 
     obs_ts = obs.timeseries()
     exp_ts = exp.timeseries()
@@ -1721,6 +1723,8 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
     # should be annual mean centred on January 1st of each year
     res = test_scm_df_monthly.time_mean("AS")
 
+    assert isinstance(res, ScmRun)
+
     # test by hand
     npt.assert_allclose(
         res.filter(variable="Radiative Forcing", year=1992, month=1, day=1).values,
@@ -1752,6 +1756,8 @@ def test_time_mean_year(test_scm_df_monthly):
     # should be annual mean (using all values in that year)
     res = test_scm_df_monthly.time_mean("AC")
 
+    assert isinstance(res, ScmRun)
+
     # test by hand
     npt.assert_allclose(
         res.filter(variable="Radiative Forcing", year=1992, month=7, day=1).values,
@@ -1777,6 +1783,8 @@ def test_time_mean_year(test_scm_df_monthly):
 def test_time_mean_year_end_of_year(test_scm_df_monthly):
     # should be annual mean centred on December 31st of each year
     res = test_scm_df_monthly.time_mean("A")
+
+    assert isinstance(res, ScmRun)
 
     # test by hand
     npt.assert_allclose(

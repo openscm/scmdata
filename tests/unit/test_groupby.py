@@ -18,6 +18,7 @@ def test_groupby(scm_run, g):
 
     res = scm_run.groupby(*g).map(func)
 
+    assert isinstance(res, ScmRun)
     assert_scmdf_almost_equal(res, scm_run, check_ts_names=False)
 
 
