@@ -45,3 +45,17 @@ In particular, **scmdata** cannot hold metadata at a level finer than a complete
 For example, it couldn't handle a case where one point in a timeseries needed to be labelled with an 'erroneous' label.
 In such a case the entire timeseries would have to be labelled 'erroneous' (or a new timeseries made with just that data point, which may not be very performant).
 If behaviour of this type is required, we suggest trying another data handling approach.
+
+The **ScmDatabase** class
+-------------------------
+
+When handling large datasets which may not fit into memory, it is important to be able to query subsets of the dataset without having
+to iterate over the entire dataset. :class:`scmdata.database.ScmDatabase` helps with this issue by disaggregating a dataset into
+subsets according to unique combinations of metadata. The metadata of interest is specified by the user so that the database can be
+adapted to any use-case or access pattern. Rather than storing a single large file, each unique subset of metadata is stored as a
+netCDF file. Each file can then be loaded as the data is needed, minimising the amount of extra data that is needed to be unnecessarily read.
+
+One of the major benefits of :class:`scmdata.database.ScmDatabase` is that the taxonomy of metadata does not need to be known at
+database creation making it easy to add new data to the database. Often no existing data needs to be modified, the new data is
+serialized as new files. Filtering using the metadata columns of interest is also very simple as the contents of a given file can be determined from the
+directory structure without having to load the file.
