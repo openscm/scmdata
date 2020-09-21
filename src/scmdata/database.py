@@ -7,6 +7,8 @@ import os.path
 import pathlib
 import shutil
 
+import pandas as pd
+
 import tqdm.autonotebook as tqdman
 from scmdata import ScmRun, run_append
 
@@ -221,3 +223,24 @@ class ScmDatabase:
         for d in load_dirs:
             _check_is_subdir(self._root_dir, d)
             shutil.rmtree(d)
+
+    def available_data(self):
+        """
+        Get all the data which is available to be loaded
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+
+        load_path = os.path.join(self._root_dir, "**", "*.nc")
+        all_files = glob.glob(load_path, recursive=True)
+
+        file_meta = []
+        for f in all_files:
+            dirnames = f.split(os.sep)[:-1]
+            file_meta.append(dirnames[-len(self.levels) :])
+
+        data = pd.DataFrame(file_meta, columns=self.levels)
+
+        return data.sort_values(by=data.columns.to_list()).reset_index(drop=True)

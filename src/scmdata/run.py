@@ -1564,7 +1564,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Parameters
         ----------
-        group: str
+        group: str or list of str
             Columns to group by
 
         Returns

@@ -3,6 +3,7 @@ import re
 from glob import glob
 from unittest.mock import patch
 
+import pandas as pd
 import numpy as np
 import pytest
 
@@ -38,7 +39,7 @@ def tdb():
 @pytest.fixture(scope="function")
 def tdb_with_data(tmpdir, start_scmrun):
     db = ScmDatabase(tmpdir, levels=["climate_model", "variable"])
-    db.save_to_database(start_scmrun)
+    db.save(start_scmrun)
 
     return db
 
@@ -135,7 +136,7 @@ def test_get_out_filepath(levels, inp, exp_tail, tdb):
 
 
 @patch("scmdata.database.ensure_dir_exists")
-@patch.object(ScmDatabase, "get_out_filepath")
+@patch.object(ScmDatabase, "_get_out_filepath")
 @patch.object(ScmRun, "to_nc")
 def test_save_to_database_single_file(
     mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
@@ -162,7 +163,7 @@ def test_save_to_database_single_file(
 
 
 @patch("scmdata.database.ensure_dir_exists")
-@patch.object(ScmDatabase, "get_out_filepath")
+@patch.object(ScmDatabase, "_get_out_filepath")
 @patch.object(ScmRun, "to_nc")
 def test_save_to_database_single_file_non_unique_meta(
     mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
@@ -201,8 +202,8 @@ def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
 
 
 @patch.object(ScmDatabase, "_save_to_database_single_file")
-def test_save_to_database(mock_save_to_database_single_file, tdb, start_scmrun):
-    tdb.save_to_database(start_scmrun)
+def test_database_save(mock_save_to_database_single_file, tdb, start_scmrun):
+    tdb.save(start_scmrun)
 
     expected_calls = len(
         list(
@@ -271,7 +272,7 @@ def test_database_overwriting(tdb_with_data, start_scmrun):
     start_scmrun_2["ensemble_member"] = 1
 
     # The target file will already exist so should merge files
-    tdb_with_data.save_to_database(start_scmrun_2)
+    tdb_with_data.save(start_scmrun_2)
 
     out_names = glob(
         os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
@@ -313,3 +314,43 @@ def test_database_delete(tdb_with_data):
 def test_database_delete_unknown(tdb_with_data):
     with pytest.raises(ValueError, match="Unknown level: extra"):
         tdb_with_data.delete(extra="other")
+
+
+def test_database_available_data(tdb_with_data, start_scmrun):
+    res = tdb_with_data.available_data()
+    exp = pd.DataFrame(
+        [["cmodel_a", "variable"], ["cmodel_b", "variable"]],
+        columns=tdb_with_data.levels,
+    )
+
+    pd.testing.assert_frame_equal(res, exp)
+
+    start_scmrun["variable"] = "a_variable"
+    tdb_with_data.save(start_scmrun)
+
+    exp = pd.DataFrame(
+        [
+            ["cmodel_a", "a_variable"],
+            ["cmodel_a", "variable"],
+            ["cmodel_b", "a_variable"],
+            ["cmodel_b", "variable"],
+        ],
+        columns=tdb_with_data.levels,
+    )
+    pd.testing.assert_frame_equal(tdb_with_data.available_data(), exp)
+
+    start_scmrun["variable"] = "z_variable"
+    tdb_with_data.save(start_scmrun)
+
+    exp = pd.DataFrame(
+        [
+            ["cmodel_a", "a_variable"],
+            ["cmodel_a", "variable"],
+            ["cmodel_a", "z_variable"],
+            ["cmodel_b", "a_variable"],
+            ["cmodel_b", "variable"],
+            ["cmodel_b", "z_variable"],
+        ],
+        columns=tdb_with_data.levels,
+    )
+    pd.testing.assert_frame_equal(tdb_with_data.available_data(), exp)
