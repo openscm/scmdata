@@ -36,6 +36,7 @@ REQUIREMENTS = [
     "pandas>=1.0.4",
     "pint-pandas==0.1.0",
     "python-dateutil",
+    "tqdm",
     "xarray",
 ]
 REQUIREMENTS_OPTIONAL = ["netCDF4", "scipy", "xlrd"]
