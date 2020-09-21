@@ -26,6 +26,7 @@ SCMData
    :maxdepth: 2
    :caption: API reference
 
+   scmdata.database
    scmdata.filters
    scmdata.groupby
    scmdata.netcdf

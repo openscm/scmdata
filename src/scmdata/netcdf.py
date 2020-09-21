@@ -188,21 +188,26 @@ def _read_nc(cls, ds):
                 var_meta[v] = var.getncattr(v)
 
         # Iterate over all combinations of dimensions
-        meta_at_coord = np.asarray(
-            np.meshgrid(*[dims[d] for d in var.dimensions[:-1]], indexing="ij")
-        )
-        meta_at_coord = meta_at_coord[0]
+        if len(var.dimensions) > 1:
+            meta_at_coord = np.asarray(
+                np.meshgrid(*[dims[d] for d in var.dimensions[:-1]], indexing="ij")
+            )
+            meta_at_coord = meta_at_coord[0]
 
-        with np.nditer(meta_at_coord, ["refs_ok", "multi_index"], order="F") as it:
-            for _ in it:
-                if not valid_mask[it.multi_index]:
-                    continue
-                data.append(var_data[it.multi_index])
-                for i, v in enumerate(it.multi_index):
-                    dim_name = var.dimensions[i]
-                    columns[dim_name].append(dims[dim_name][v])
-                for v in var_meta:
-                    columns[v].append(var_meta[v])
+            with np.nditer(meta_at_coord, ["refs_ok", "multi_index"], order="F") as it:
+                for _ in it:
+                    if not valid_mask[it.multi_index]:
+                        continue
+                    data.append(var_data[it.multi_index])
+                    for i, v in enumerate(it.multi_index):
+                        dim_name = var.dimensions[i]
+                        columns[dim_name].append(dims[dim_name][v])
+                    for v in var_meta:
+                        columns[v].append(var_meta[v])
+        else:
+            data.append(var_data[:])
+            for v in var_meta:
+                columns[v].append(var_meta[v])
 
     extra_cols = []
     for var_name in ds.variables:
@@ -246,22 +251,31 @@ def _read_nc(cls, ds):
         df[col] = None
 
         values = var[:]
-        meta_at_coord = np.asarray(
-            np.meshgrid(*[dims[d] for d in var.dimensions], indexing="ij")
-        )
-        with np.nditer(meta_at_coord[0], ["refs_ok", "multi_index"], order="F") as it:
-            for _ in it:
-                meta_vals = {
-                    k: v
-                    for k, v in zip(
-                        var.dimensions, meta_at_coord[(slice(None),) + it.multi_index]
+        if len(var.dimensions):
+            meta_at_coord = np.asarray(
+                np.meshgrid(*[dims[d] for d in var.dimensions], indexing="ij")
+            )
+            with np.nditer(
+                meta_at_coord[0], ["refs_ok", "multi_index"], order="F"
+            ) as it:
+                for _ in it:
+                    meta_vals = {
+                        k: v
+                        for k, v in zip(
+                            var.dimensions,
+                            meta_at_coord[(slice(None),) + it.multi_index],
+                        )
+                    }
+                    df[col] = _merge_meta(
+                        df.meta, col, values[it.multi_index], **meta_vals
                     )
-                }
-                df[col] = _merge_meta(df.meta, col, values[it.multi_index], **meta_vals)
+        else:
+            df[col] = var[:]
         try:
             df[col] = df[col].astype(var.dtype)
         except ValueError:
             logger.exception("could not convert meta dtype")
+
     df.metadata.update({k: ds.getncattr(k) for k in ds.ncattrs()})
 
     return df
@@ -292,6 +306,8 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
     dimensions = list(dimensions)
     if "time" in dimensions:
         dimensions.remove("time")
+    if "variable" in dimensions:
+        dimensions.remove("variable")
 
     with nc.Dataset(fname, "w", diskless=True, persist=True) as ds:
         ds.created_at = datetime.utcnow().isoformat()
