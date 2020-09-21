@@ -145,6 +145,11 @@ def test_get_out_filepath(levels, inp, exp_tail, tdb):
     assert res == exp
 
 
+def test_get_out_filepath_not_all_values(tdb):
+    with pytest.raises(ValueError, match=": climate_model"):
+        tdb._get_out_filepath(other="test")
+
+
 @patch("scmdata.database.ensure_dir_exists")
 @patch.object(ScmDatabase, "_get_out_filepath")
 @patch.object(ScmRun, "to_nc")
