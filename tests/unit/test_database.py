@@ -128,7 +128,7 @@ def test_database_init_and_repr():
 )
 def test_get_out_filepath(levels, inp, exp_tail, tdb):
     tdb.levels = levels
-    res = tdb.get_out_filepath(**inp)
+    res = tdb._get_out_filepath(**inp)
     exp = os.path.join(tdb._root_dir, exp_tail)
 
     assert res == exp
@@ -242,7 +242,7 @@ def test_database_loaded(tdb_with_data):
     ],
 )
 def test_database_load_data(tdb_with_data, start_scmrun, filter):
-    loaded_ts = tdb_with_data.load_data(**filter)
+    loaded_ts = tdb_with_data.load(**filter)
     assert_scmdf_almost_equal(
         loaded_ts, start_scmrun.filter(**filter), check_ts_names=False
     )
@@ -250,7 +250,7 @@ def test_database_load_data(tdb_with_data, start_scmrun, filter):
 
 def test_database_load_data_extras(tdb_with_data):
     with pytest.raises(ValueError, match="Unknown level: extra"):
-        tdb_with_data.load_data(extra="other")
+        tdb_with_data.load(extra="other")
 
 
 @pytest.mark.parametrize(
@@ -263,7 +263,7 @@ def test_database_load_data_extras(tdb_with_data):
 )
 def test_database_load_data_missing(tdb_with_data, filter):
     with pytest.raises(ValueError, match="No runs to append"):
-        tdb_with_data.load_data(**filter)
+        tdb_with_data.load(**filter)
 
 
 def test_database_overwriting(tdb_with_data, start_scmrun):
@@ -278,7 +278,7 @@ def test_database_overwriting(tdb_with_data, start_scmrun):
     )
     assert len(out_names) == 2
 
-    loaded_ts = tdb_with_data.load_data(climate_model="cmodel_a")
+    loaded_ts = tdb_with_data.load(climate_model="cmodel_a")
     assert_scmdf_almost_equal(
         loaded_ts,
         run_append(
@@ -290,7 +290,7 @@ def test_database_overwriting(tdb_with_data, start_scmrun):
         check_ts_names=False,
     )
 
-    loaded_ts = tdb_with_data.load_data()
+    loaded_ts = tdb_with_data.load()
     assert_scmdf_almost_equal(
         loaded_ts, run_append([start_scmrun, start_scmrun_2]), check_ts_names=False
     )

@@ -1,5 +1,5 @@
 """
-Database of results handling
+Database for handling large datasets
 """
 import glob
 import os
@@ -86,7 +86,7 @@ class ScmDatabase:
     def _get_disk_filename(inp):
         return inp.replace("|", "-").replace(" ", "-")
 
-    def save_to_database(self, scmrun):
+    def save(self, scmrun):
         """
         Save a set of results to the database
 
@@ -103,7 +103,7 @@ class ScmDatabase:
         ):
             self._save_to_database_single_file(r)
 
-    def get_out_filepath(self, **levels):
+    def _get_out_filepath(self, **levels):
         """
         Get filepath in which data has been saved
 
@@ -141,7 +141,7 @@ class ScmDatabase:
 
     def _save_to_database_single_file(self, scmrun):
         levels = {l: scmrun.get_unique_meta(l, no_duplicates=True) for l in self.levels}
-        out_file = self.get_out_filepath(**levels)
+        out_file = self._get_out_filepath(**levels)
 
         ensure_dir_exists(out_file)
         if os.path.exists(out_file):
@@ -154,7 +154,7 @@ class ScmDatabase:
         dimensions = nunique_meta_vals[nunique_meta_vals > 1].index.tolist()
         scmrun.to_nc(out_file, dimensions=dimensions)
 
-    def load_data(self, **filters):
+    def load(self, **filters):
         """
         Load data from the database
 
