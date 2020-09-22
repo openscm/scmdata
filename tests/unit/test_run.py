@@ -1869,11 +1869,16 @@ def test_filter_by_int(scm_run):
 
 def test_filter_empty(scm_run):
     empty_run = scm_run.filter(variable="not a variable")
-    assert len(empty_run) == 0
+    assert empty_run.shape == (0, 3)
 
     # Filtering an empty run should result in an empty run
     res = empty_run.filter(variable="anything")
-    assert len(res) == 0
+    assert res.shape == (0, 3)
+
+    # Filtering for an empty run is a noop (the times aren't filtered)
+    res = empty_run.filter(year=range(2000, 2010))
+    assert res.shape == (0, 3)
+    assert id(res) != id(empty_run)
 
 
 @pytest.mark.parametrize(

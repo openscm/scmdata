@@ -110,7 +110,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     level: Optional[Union[str, int]] = None,
     regexp: bool = False,
     separator: str = HIERARCHY_SEPARATOR,
-) -> pd.Series:
+) -> np.ndarray:
     """
     Filter data by matching metadata columns to given patterns.
 
@@ -140,7 +140,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
 
     Returns
     -------
-    :obj:`np.array` of :obj:`bool`
+    :obj:`np.ndarray` of :obj:`bool`
         Array where ``True`` indicates a match
 
     Raises
@@ -149,7 +149,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         Filtering is performed on a string metadata column which contains
         :class:`np.nan` and :obj:`has_nan` is ``False``
     """
-    matches = np.array([False] * len(meta_col))
+    matches = np.array([False] * len(meta_col), dtype=bool)
     _values = (
         [values]
         if not isinstance(values, Iterable) or isinstance(values, str)
