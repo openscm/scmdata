@@ -4,7 +4,7 @@ Changelog
 master
 ------
 
-- (`#125 <https://github.com/openscm/scmdata/pull/125>`_) Fix edge cases for filtering an empty :class:`scmdata.ScmRun`
+- (`#125 <https://github.com/openscm/scmdata/pull/125>`_) Fix edge-case when filtering an empty :class:`scmdata.ScmRun`
 - (`#123 <https://github.com/openscm/scmdata/pull/123>`_) Add :class:`scmdata.database.ScmDatabase` to read/write data using multiple files. (closes `#103 <https://github.com/openscm/scmdata/issues/103>`_)
 
 v0.7.2
