@@ -1867,6 +1867,20 @@ def test_filter_by_int(scm_run):
     assert obs["scenario"].unique() == "a_scenario"
 
 
+def test_filter_empty(scm_run):
+    empty_run = scm_run.filter(variable="not a variable")
+    assert empty_run.shape == (0, 3)
+
+    # Filtering an empty run should result in an empty run
+    res = empty_run.filter(variable="anything")
+    assert res.shape == (0, 3)
+
+    # Filtering for an empty run is a noop (the times aren't filtered)
+    res = empty_run.filter(year=range(2000, 2010))
+    assert res.shape == (0, 3)
+    assert id(res) != id(empty_run)
+
+
 @pytest.mark.parametrize(
     ("target_unit", "input_units", "filter_kwargs", "expected", "expected_units"),
     [

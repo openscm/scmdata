@@ -1020,30 +1020,31 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         :obj:`ScmRun`
             If not ``inplace``, return a new instance with the filtered data.
         """
-        _keep_times, _keep_rows = self._apply_filters(kwargs)
         ret = copy.copy(self) if not inplace else self
 
-        if not keep and sum(~_keep_rows) and sum(~_keep_times):
-            raise ValueError(
-                "If keep==False, filtering cannot be performed on the temporal axis "
-                "and with metadata at the same time"
-            )
+        if len(ret):
+            _keep_times, _keep_rows = self._apply_filters(kwargs)
+            if not keep and sum(~_keep_rows) and sum(~_keep_times):
+                raise ValueError(
+                    "If keep==False, filtering cannot be performed on the temporal axis "
+                    "and with metadata at the same time"
+                )
 
-        reduce_times = (~_keep_times).sum() > 0
-        reduce_rows = (~_keep_rows).sum() > 0
+            reduce_times = (~_keep_times).sum() > 0
+            reduce_rows = (~_keep_rows).sum() > 0
 
-        if not keep:
-            if reduce_times:
-                _keep_times = ~_keep_times
-            if reduce_rows:
-                _keep_rows = ~_keep_rows
-            if not reduce_rows and not reduce_times:
-                _keep_times = _keep_times * False
-                _keep_rows = _keep_rows * False
+            if not keep:
+                if reduce_times:
+                    _keep_times = ~_keep_times
+                if reduce_rows:
+                    _keep_rows = ~_keep_rows
+                if not reduce_rows and not reduce_times:
+                    _keep_times = _keep_times * False
+                    _keep_rows = _keep_rows * False
 
-        ret._df = ret._df.loc[_keep_times, _keep_rows]
-        ret._meta = ret._meta[_keep_rows]
-        ret["time"] = self.time_points.values[_keep_times]
+            ret._df = ret._df.loc[_keep_times, _keep_rows]
+            ret._meta = ret._meta[_keep_rows]
+            ret["time"] = self.time_points.values[_keep_times]
 
         if log_if_empty and ret.empty:
             _logger.warning("Filtered ScmRun is empty!")
