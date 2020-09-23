@@ -1659,15 +1659,16 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         to_convert_filtered = ret.filter(**kwargs, log_if_empty=False)
         to_not_convert_filtered = ret.filter(**kwargs, keep=False, log_if_empty=False)
 
-        filter_kwargs = {self.unit_col: unit, "log_if_empty": False}
-        already_correct_unit = to_convert_filtered.filter(**filter_kwargs)
+        already_correct_unit = to_convert_filtered.filter(unit=unit, log_if_empty=False)
         if (
             "unit_context" in already_correct_unit.meta_attributes
             and not already_correct_unit.empty
         ):
             self._check_unit_context(already_correct_unit, context)
 
-        to_convert = to_convert_filtered.filter(**filter_kwargs, keep=False)
+        to_convert = to_convert_filtered.filter(
+            unit=unit, log_if_empty=False, keep=False
+        )
         to_not_convert = run_append([to_not_convert_filtered, already_correct_unit,])
 
         if "unit_context" in to_convert.meta_attributes and not to_convert.empty:
@@ -2137,5 +2138,5 @@ class ScmRun(BaseScmRun):
     If an application requires a different set of required metadata, this
     can be specified by overriding :attr:`required_cols` on a custom class
     inheriting :class:`scmdata.run.BaseScmRun`. Note that at a minimum,
-    ("variable", UNITS_COL) columns are required.
+    ("variable", "unit") columns are required.
     """
