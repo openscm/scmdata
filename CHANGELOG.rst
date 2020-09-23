@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#75 <https://github.com/openscm/scmdata/pull/75>`_) Add test to ensure that :meth:`scmdata.ScmRun.groupby` cannot pick up the same timeseries twice even if metadata is changed by the function being applied
 - (`#125 <https://github.com/openscm/scmdata/pull/125>`_) Fix edge-case when filtering an empty :class:`scmdata.ScmRun`
 - (`#123 <https://github.com/openscm/scmdata/pull/123>`_) Add :class:`scmdata.database.ScmDatabase` to read/write data using multiple files. (closes `#103 <https://github.com/openscm/scmdata/issues/103>`_)
 
