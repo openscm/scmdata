@@ -330,9 +330,9 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             :obj:`columns` and :obj:`index` information.
 
             If a numpy array of timeseries data is provided, :obj:`columns` and :obj:`index`
-            must also be specified.
-            The shape of the numpy array should be ```(n_times, n_series)``` where `n_times`
-             is the number of timesteps and `n_series` is the number of time series.
+            must also be specified. The shape of the numpy array should be
+            ``(n_times, n_series)`` where `n_times` is the number of timesteps and `n_series`
+            is the number of time series.
 
             If a string is passed, data will be attempted to be read from file. Currently,
             reading from CSV, gzipped CSV and Excel formatted files is supported.
@@ -784,7 +784,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
         Raises
         ------
-        NonUniqueMetadataError
+        :class:`NonUniqueMetadataError`
             If the metadata are not unique between timeseries and
             ``check_duplicated`` is ``True``
 
@@ -1772,7 +1772,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             new :class:`ScmRun` instance with the appended data.
 
         duplicate_msg
-            If ``True``, raise a ``NonUniqueMetadataError`` error so the user
+            If ``True``, raise a :class:`scmdata.errors.NonUniqueMetadataError` error so the user
             can see the duplicate timeseries. If ``False``, take the average
             and do not raise a warning or error. If ``"warn"``, raise a
             warning if duplicate data is detected.
@@ -1791,6 +1791,12 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         :obj:`ScmRun`
             If not :obj:`inplace`, return a new :class:`ScmRun` instance
             containing the result of the append.
+
+        Raises
+        ------
+        NonUniqueMetadataError
+            If the appending results in timeseries with duplicate metadata and :attr:`duplicate_msg` is ``True``
+
         """
         if not isinstance(other, ScmRun):
             other = self.__class__(other, **kwargs)
