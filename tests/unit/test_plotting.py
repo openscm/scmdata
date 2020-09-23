@@ -100,10 +100,10 @@ def test_lineplot_base(mock_seaborn_lineplot, base_scm_run, scm_run):
 
     base_scm_run.lineplot(time_axis="year")
     mock_seaborn_lineplot.assert_called()
-    call_kwargs = mock_seaborn_lineplot.mock_calls[0].kwargs
+    call_args, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
     assert "hue" not in call_kwargs
 
     mock_seaborn_lineplot.reset_mock()
     scm_run.lineplot(time_axis="year")
-    call_kwargs = mock_seaborn_lineplot.mock_calls[0].kwargs
+    call_args, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
     assert "hue" in call_kwargs

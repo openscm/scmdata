@@ -770,14 +770,14 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             duplicated metadata
 
         time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
-            Time axis to use for the output's columns. If `None`,
-            :class:`datetime.datetime` objects will be used. If `"year"`, the
-            year of each time point  will be used. If `"year-month", the year
+            Time axis to use for the output's columns. If ``None``,
+            :class:`datetime.datetime` objects will be used. If ``"year"``, the
+            year of each time point  will be used. If ``"year-month"``, the year
             plus (month - 0.5) / 12  will be used. If
-            `"days since 1970-01-01"`, the number of days  since 1st Jan 1970
-            will be used (calculated using the ``datetime``  module). If
-            `"seconds since 1970-01-01"`, the number of seconds  since 1st Jan
-            1970 will be used (calculated using the ``datetime`` module).
+            ``"days since 1970-01-01"``, the number of days since 1st Jan 1970
+            will be used (calculated using the :mod:`datetime` module). If
+            ``"seconds since 1970-01-01"``, the number of seconds  since 1st Jan
+            1970 will be used (calculated using the :mod:`datetime` module).
 
         drop_all_nan_times : bool
             Should time points which contain only nan values be dropped? This operation is applied
