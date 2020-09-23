@@ -302,8 +302,8 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
     required_cols = ("variable", "unit")
     """
     Required metadata columns
-    
-    This is the bare minimum columns which are expected. Attempting to create a run 
+
+    This is the bare minimum columns which are expected. Attempting to create a run
     without the metadata columns specified by :attr:`required_cols` will raise a ValueError
     """
 

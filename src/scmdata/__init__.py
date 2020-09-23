@@ -18,7 +18,7 @@ REQUIRED_COLS = ("model", "scenario", "region", "variable", UNITS_COL)
 Minimum metadata columns required by an ScmRun.
 
 If an application requires a different set of required metadata, this
-can be specified by overriding :attr:`required_cols` on a custom class 
+can be specified by overriding :attr:`required_cols` on a custom class
 inheriting :class:`scmdata.run.BaseScmRun`. Note that at a minimum,
 ("variable", UNITS_COL) columns are required.
 """
