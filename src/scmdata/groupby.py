@@ -9,9 +9,9 @@ from xarray.core import ops
 from xarray.core.common import ImplementsArrayReduce
 
 
-def maybe_wrap_array(original, new_array):
+def _maybe_wrap_array(original, new_array):
     """
-    Wrap a transformed array with __array_wrap__ if it can be done safely.
+    Wrap a transformed array with ``__array_wrap__`` if it can be done safely.
 
     This lets us treat arbitrary functions that take and return ndarray objects
     like ufuncs, as long as they return an array with the same shape.
@@ -88,12 +88,12 @@ class RunGroupBy(_GroupBy):
 
         Examples
         --------
-        ```
-        >>> def write_csv(arr):
-        ... variable = arr.get_unique_meta("variable")
-        ... arr.to_csv("out-{}.csv".format(variable)
-        >>> df.groupby("variable").map(write_csv)
-        ```
+        .. code:: python
+
+            >>> def write_csv(arr):
+            ...     variable = arr.get_unique_meta("variable")
+            ...     arr.to_csv("out-{}.csv".format(variable)
+            >>> df.groupby("variable").map(write_csv)
 
         Parameters
         ----------
@@ -112,7 +112,9 @@ class RunGroupBy(_GroupBy):
             The result of splitting, applying and combining this array.
         """
         grouped = self._iter_grouped()
-        applied = [maybe_wrap_array(arr, func(arr, *args, **kwargs)) for arr in grouped]
+        applied = [
+            _maybe_wrap_array(arr, func(arr, *args, **kwargs)) for arr in grouped
+        ]
         return self._combine(applied)
 
     def _combine(self, applied):
@@ -151,7 +153,7 @@ class RunGroupBy(_GroupBy):
 
         Returns
         -------
-        reduced : Array
+        reduced : :obj:`ScmRun`
             Array with summarized data and the indicated dimension(s)
             removed.
         """

@@ -299,6 +299,10 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
 
     extras : iterable of tuples or str
         Metadata attributes to write as variables in the netCDF file.
+
+    See Also
+    --------
+    :meth:`scmdata.run.ScmRun.to_nc`
     """
     if not has_netcdf:
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
@@ -327,6 +331,10 @@ def nc_to_run(cls, fname):
     ----------
     fname: str
         Filename to read
+
+    See Also
+    --------
+    :meth:`scmdata.run.ScmRun.from_nc`
     """
     if not has_netcdf:
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
