@@ -17,7 +17,7 @@ from logging import getLogger
 
 import numpy as np
 
-from . import REQUIRED_COLS, __version__
+from . import __version__
 
 logger = getLogger(__name__)
 
@@ -220,7 +220,7 @@ def _read_nc(cls, ds):
             extra_cols.append(var_name)
 
             # Intialise the required columns and load later
-            if var_name in REQUIRED_COLS:
+            if var_name in cls.required_cols:
                 columns[var_name] = ""
             continue
 
