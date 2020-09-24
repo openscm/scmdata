@@ -4,6 +4,10 @@ Changelog
 master
 ------
 
+v0.7.3
+------
+
+- (`#124 <https://github.com/openscm/scmdata/pull/124>`_) Add :class:`scmdata.run.BaseScmRun` and :attr:`scmdata.run.BaseScmRun.required_cols` so new sub-classes can be defined which use a different set of required columns from :class:`scmdata.run.ScmRun`. Also added :class:`scmdata.errors.MissingRequiredColumn` and tidied up the docs.
 - (`#75 <https://github.com/openscm/scmdata/pull/75>`_) Add test to ensure that :meth:`scmdata.ScmRun.groupby` cannot pick up the same timeseries twice even if metadata is changed by the function being applied
 - (`#125 <https://github.com/openscm/scmdata/pull/125>`_) Fix edge-case when filtering an empty :class:`scmdata.ScmRun`
 - (`#123 <https://github.com/openscm/scmdata/pull/123>`_) Add :class:`scmdata.database.ScmDatabase` to read/write data using multiple files. (closes `#103 <https://github.com/openscm/scmdata/issues/103>`_)
