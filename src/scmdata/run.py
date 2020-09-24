@@ -303,7 +303,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
     Required metadata columns
 
     This is the bare minimum columns which are expected. Attempting to create a run
-    without the metadata columns specified by :attr:`required_cols` will raise a 
+    without the metadata columns specified by :attr:`required_cols` will raise a
     MissingRequiredColumnError
     """
 
