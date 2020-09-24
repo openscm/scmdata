@@ -27,7 +27,7 @@ class NonUniqueMetadataError(ValueError):
         super().__init__(msg)
 
 
-class MissingRequiredColumn(ValueError):
+class MissingRequiredColumnError(ValueError):
     """
     Error raised when an operation produces missing metadata columns
     """

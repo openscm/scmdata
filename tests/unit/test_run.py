@@ -14,9 +14,9 @@ from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.errors import MissingRequiredColumn, NonUniqueMetadataError
+from scmdata.errors import MissingRequiredColumnError, NonUniqueMetadataError
 from scmdata.run import BaseScmRun, ScmRun, run_append
-from scmdata.testing import assert_scmdf_almost_equal
+from scmdata.testing import assert_scmdf_almost_equal, _check_pandas_less_110
 
 
 def test_init_df_year_converted_to_datetime(test_pd_df):
@@ -125,13 +125,13 @@ def test_init_df_missing_time_columns_error(test_pd_df):
 def test_init_df_missing_col_error(test_pd_df):
     test_pd_df = test_pd_df.drop("model", axis="columns")
     error_msg = re.escape("missing required columns `['model']`!")
-    with pytest.raises(MissingRequiredColumn, match=error_msg):
+    with pytest.raises(MissingRequiredColumnError, match=error_msg):
         ScmRun(test_pd_df)
 
 
 def test_init_ts_missing_col_error(test_ts):
     error_msg = re.escape("missing required columns `['model']`!")
-    with pytest.raises(MissingRequiredColumn, match=error_msg):
+    with pytest.raises(MissingRequiredColumnError, match=error_msg):
         ScmRun(
             test_ts,
             columns={
@@ -159,7 +159,7 @@ def test_init_required_cols(test_pd_df):
     assert not all([c in test_pd_df.columns for c in MyRun.required_cols])
     error_msg = re.escape("missing required columns `['climate_model']`!")
     with pytest.raises(
-        MissingRequiredColumn, match=error_msg,
+        MissingRequiredColumnError, match=error_msg,
     ):
         MyRun(test_pd_df)
 
@@ -1908,6 +1908,9 @@ def test_filter_empty(scm_run):
     assert id(res) != id(empty_run)
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 @pytest.mark.parametrize(
     ("target_unit", "input_units", "filter_kwargs", "expected", "expected_units"),
     [
@@ -2374,7 +2377,7 @@ def test_read_from_disk_incorrect_labels():
 
     exp_msg = "missing required columns"
 
-    with pytest.raises(MissingRequiredColumn) as exc_info:
+    with pytest.raises(MissingRequiredColumnError) as exc_info:
         ScmRun(fname)
 
     error_msg = exc_info.value.args[0]
@@ -2510,7 +2513,7 @@ def test_drop_meta_inplace_default(scm_run):
 
 
 def test_drop_meta_required(scm_run):
-    with pytest.raises(MissingRequiredColumn, match=re.escape("['model']")):
+    with pytest.raises(MissingRequiredColumnError, match=re.escape("['model']")):
         scm_run.drop_meta(["climate_model", "model"])
 
 

@@ -21,7 +21,7 @@ import pint
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
-from .errors import MissingRequiredColumn, NonUniqueMetadataError
+from .errors import MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,
@@ -163,7 +163,7 @@ def _format_data(  # pylint: disable=missing-return-doc
 
     if not set(required_cols).issubset(set(df.columns)):
         missing = list(set(required_cols) - set(df.columns))
-        raise MissingRequiredColumn(missing)
+        raise MissingRequiredColumnError(missing)
 
     # check whether data in wide or long format
     if "value" in df.columns:
@@ -268,7 +268,7 @@ def _from_ts(
     # format columns to lower-case and check that all required columns exist
     if not set(required_cols).issubset(columns.keys()):
         missing = list(set(required_cols) - set(columns.keys()))
-        raise MissingRequiredColumn(missing)
+        raise MissingRequiredColumnError(missing)
 
     df.index.name = "time"
 
@@ -303,7 +303,8 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
     Required metadata columns
 
     This is the bare minimum columns which are expected. Attempting to create a run
-    without the metadata columns specified by :attr:`required_cols` will raise a ValueError
+    without the metadata columns specified by :attr:`required_cols` will raise a 
+    MissingRequiredColumnError
     """
 
     data_hierarchy_separator = HIERARCHY_SEPARATOR
@@ -720,7 +721,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             if c not in existing_cols:
                 raise KeyError(c)
             if c in self.required_cols:
-                raise MissingRequiredColumn([c])
+                raise MissingRequiredColumnError([c])
         for c in columns:
             ret._meta = ret._meta.droplevel(c)
 
