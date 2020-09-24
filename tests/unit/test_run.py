@@ -16,7 +16,7 @@ from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.errors import MissingRequiredColumnError, NonUniqueMetadataError
 from scmdata.run import BaseScmRun, ScmRun, run_append
-from scmdata.testing import assert_scmdf_almost_equal, _check_pandas_less_110
+from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
 
 
 def test_init_df_year_converted_to_datetime(test_pd_df):
