@@ -21,8 +21,7 @@ import pint
 from dateutil import parser
 from xarray.core.ops import inject_binary_ops
 
-from . import REQUIRED_COLS
-from .errors import NonUniqueMetadataError
+from .errors import MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,
@@ -48,7 +47,7 @@ MetadataType = Dict[str, Union[str, int, float]]
 
 
 def _read_file(  # pylint: disable=missing-return-doc
-    fnames: str, *args: Any, **kwargs: Any
+    fnames: str, required_cols: Tuple[str], *args: Any, **kwargs: Any
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from a file.
@@ -67,7 +66,7 @@ def _read_file(  # pylint: disable=missing-return-doc
     """
     _logger.info("Reading %s", fnames)
 
-    return _format_data(_read_pandas(fnames, *args, **kwargs))
+    return _format_data(_read_pandas(fnames, *args, **kwargs), required_cols)
 
 
 def _read_pandas(
@@ -131,7 +130,7 @@ def _read_pandas(
 
 # pylint doesn't recognise return statements if they include ','
 def _format_data(  # pylint: disable=missing-return-doc
-    df: Union[pd.DataFrame, pd.Series]
+    df: Union[pd.DataFrame, pd.Series], required_cols: Tuple[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from :class:`pd.DataFrame` or
@@ -162,15 +161,15 @@ def _format_data(  # pylint: disable=missing-return-doc
     if list(df.index.names) != [None]:
         df.reset_index(inplace=True)
 
-    if not set(REQUIRED_COLS).issubset(set(df.columns)):
-        missing = list(set(REQUIRED_COLS) - set(df.columns))
-        raise ValueError("missing required columns `{}`!".format(missing))
+    if not set(required_cols).issubset(set(df.columns)):
+        missing = list(set(required_cols) - set(df.columns))
+        raise MissingRequiredColumnError(missing)
 
     # check whether data in wide or long format
     if "value" in df.columns:
-        df, meta = _format_long_data(df)
+        df, meta = _format_long_data(df, required_cols)
     else:
-        df, meta = _format_wide_data(df)
+        df, meta = _format_wide_data(df, required_cols)
 
     # sort data
     df.sort_index(inplace=True)
@@ -178,7 +177,7 @@ def _format_data(  # pylint: disable=missing-return-doc
     return df, meta
 
 
-def _format_long_data(df):
+def _format_long_data(df, required_cols):
     # check if time column is given as `year` (int) or `time` (datetime)
     cols = set(df.columns)
     if "year" in cols and "time" not in cols:
@@ -189,16 +188,17 @@ def _format_long_data(df):
         msg = "invalid time format, must have either `year` or `time`!"
         raise ValueError(msg)
 
-    extra_cols = list(set(cols) - set(REQUIRED_COLS + [time_col, "value"]))
-    df = df.pivot_table(columns=REQUIRED_COLS + extra_cols, index=time_col).value
+    required_cols = list(required_cols)
+    extra_cols = list(set(cols) - set(required_cols + [time_col, "value"]))
+    df = df.pivot_table(columns=required_cols + extra_cols, index=time_col).value
     meta = df.columns.to_frame(index=None)
     df.columns = meta.index
 
     return df, meta
 
 
-def _format_wide_data(df):
-    cols = set(df.columns) - set(REQUIRED_COLS)
+def _format_wide_data(df, required_cols):
+    cols = set(df.columns) - set(required_cols)
     time_cols, extra_cols = False, []
     for i in cols:
         # if in wide format, check if columns are years (int) or datetime
@@ -224,15 +224,21 @@ def _format_wide_data(df):
         msg = "invalid column format, must contain some time (int, float or datetime) columns!"
         raise ValueError(msg)
 
-    df_out = df.drop(REQUIRED_COLS + extra_cols, axis="columns").T
+    all_cols = set(tuple(required_cols) + tuple(extra_cols))
+    all_cols = list(all_cols)
+
+    df_out = df.drop(all_cols, axis="columns").T
     df_out.index.name = "time"
-    meta = df[REQUIRED_COLS + extra_cols].set_index(df_out.columns)
+    meta = df[all_cols].set_index(df_out.columns)
 
     return df_out, meta
 
 
 def _from_ts(
-    df: Any, index: Any = None, **columns: Union[str, bool, float, int, List]
+    df: Any,
+    required_cols: Tuple[str],
+    index: Any = None,
+    **columns: Union[str, bool, float, int, List],
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from wide timeseries.
@@ -260,9 +266,9 @@ def _from_ts(
             df.index = index
 
     # format columns to lower-case and check that all required columns exist
-    if not set(REQUIRED_COLS).issubset(columns.keys()):
-        missing = list(set(REQUIRED_COLS) - set(columns.keys()))
-        raise ValueError("missing required columns `{}`!".format(missing))
+    if not set(required_cols).issubset(columns.keys()):
+        missing = list(set(required_cols) - set(columns.keys()))
+        raise MissingRequiredColumnError(missing)
 
     df.index.name = "time"
 
@@ -287,9 +293,18 @@ def _from_ts(
     return df, meta
 
 
-class ScmRun:  # pylint: disable=too-many-public-methods
+class BaseScmRun:  # pylint: disable=too-many-public-methods
     """
-    Data container for holding one or many time-series of SCM data.
+    Base class of a data container for timeseries data
+    """
+
+    required_cols = ("variable", "unit")
+    """
+    Required metadata columns
+
+    This is the bare minimum columns which are expected. Attempting to create a run
+    without the metadata columns specified by :attr:`required_cols` will raise a
+    MissingRequiredColumnError
     """
 
     data_hierarchy_separator = HIERARCHY_SEPARATOR
@@ -302,7 +317,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
     def __init__(
         self,
-        data,
+        data: Any,
         index: Any = None,
         columns: Optional[Union[Dict[str, list], Dict[str, str]]] = None,
         metadata: Optional[MetadataType] = None,
@@ -315,34 +330,35 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Parameters
         ----------
         data: Union[ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str]
-            If a :class`ScmRun` object is provided, then a new
-            :obj`ScmRun` is created with a copy of the values and metadata from :obj`data`.
+            If a :class:`ScmRun` object is provided, then a new
+            :obj:`ScmRun` is created with a copy of the values and metadata from :obj:`data`.
 
-            A :class`pd.DataFrame with IAMC-format data columns (the result
-            from :func`ScmRun.timeseries()`) can be provided without any additional
+            A :class:`pd.DataFrame` with IAMC-format data columns (the result
+            from :func:`ScmRun.timeseries()`) can be provided without any additional
             :obj:`columns` and :obj:`index` information.
 
             If a numpy array of timeseries data is provided, :obj:`columns` and :obj:`index`
-            must also be specified.
-            The shape of the numpy array should be ```(n_times, n_series)``` where `n_times`
-             is the number of timesteps and `n_series` is the number of time series.
+            must also be specified. The shape of the numpy array should be
+            ``(n_times, n_series)`` where `n_times` is the number of timesteps and `n_series`
+            is the number of time series.
 
             If a string is passed, data will be attempted to be read from file. Currently,
             reading from CSV, gzipped CSV and Excel formatted files is supported.
 
         index: np.ndarray
-            If :obj:`index` is not ``None``, then the :obj`index` is used as the timesteps
+            If :obj:`index` is not ``None``, then the :obj:`index` is used as the timesteps
             for run. All timeseries in the run use the same set of timesteps.
 
-            The values will be attempted to be converted to :class`np.datetime[s]` values.
+            The values will be attempted to be converted to :class:`np.datetime[s]` values.
             Possible input formats include :
-            * :obj`datetime.datetime`
-            * :obj`int` Start of year
-            * :obj`float` Decimal year
-            * :obj`str` Uses :func`dateutil.parser`. Slow and should be avoided if possible
+
+            * :obj:`datetime.datetime`
+            * :obj:`int` Start of year
+            * :obj:`float` Decimal year
+            * :obj:`str` Uses :func:`dateutil.parser`. Slow and should be avoided if possible
 
             If :obj:`index` is ``None``, than the time index will be obtained from the
-            :obj`data` if possible.
+            :obj:`data` if possible.
 
         columns
             If None, ScmRun will attempt to infer the values from the source.
@@ -395,9 +411,11 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         Raises
         ------
         ValueError
-            * If metadata for ['model', 'scenario', 'region', 'variable', 'unit'] is not found.
             * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.run_append` instead.
-            * Not specifying :obj`index` and :obj`columns` if :obj`data` is a :obj`numpy.ndarray`
+            * Not specifying :obj:`index` and :obj:`columns` if :obj:`data` is a :obj:`numpy.ndarray`
+
+        :obj:`scmdata.errors.MissingRequiredColumn`
+            If metadata for :attr:`required_cols` is not found
 
         TypeError
             Timeseries cannot be read from :obj:`data`
@@ -433,11 +451,15 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 raise ValueError("`index` argument is required")
 
         if columns is not None:
-            (_df, _meta) = _from_ts(data, index=index, **columns)
+            (_df, _meta) = _from_ts(
+                data, index=index, required_cols=self.required_cols, **columns
+            )
         elif isinstance(data, (pd.DataFrame, pd.Series)):
-            (_df, _meta) = _format_data(data)
+            (_df, _meta) = _format_data(data, self.required_cols)
         elif (IamDataFrame is not None) and isinstance(data, IamDataFrame):
-            (_df, _meta) = _format_data(data.data.copy() if copy_data else data.data)
+            (_df, _meta) = _format_data(
+                data.data.copy() if copy_data else data.data, self.required_cols
+            )
         else:
             if not isinstance(data, str):
                 if isinstance(data, list) and isinstance(data[0], str):
@@ -448,7 +470,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
                 error_msg = "Cannot load {} from {}".format(type(self), type(data))
                 raise TypeError(error_msg)
 
-            (_df, _meta) = _read_file(data, **kwargs)
+            (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
 
         self._time_points = TimePoints(_df.index.values)
 
@@ -698,6 +720,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         for c in columns:
             if c not in existing_cols:
                 raise KeyError(c)
+            if c in self.required_cols:
+                raise MissingRequiredColumnError([c])
         for c in columns:
             ret._meta = ret._meta.droplevel(c)
 
@@ -747,14 +771,14 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             duplicated metadata
 
         time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
-            Time axis to use for the output's columns. If `None`,
-            :class:`datetime.datetime` objects will be used. If `"year"`, the
-            year of each time point  will be used. If `"year-month", the year
+            Time axis to use for the output's columns. If ``None``,
+            :class:`datetime.datetime` objects will be used. If ``"year"``, the
+            year of each time point  will be used. If ``"year-month"``, the year
             plus (month - 0.5) / 12  will be used. If
-            `"days since 1970-01-01"`, the number of days  since 1st Jan 1970
-            will be used (calculated using the ``datetime``  module). If
-            `"seconds since 1970-01-01"`, the number of seconds  since 1st Jan
-            1970 will be used (calculated using the ``datetime`` module).
+            ``"days since 1970-01-01"``, the number of days since 1st Jan 1970
+            will be used (calculated using the :mod:`datetime` module). If
+            ``"seconds since 1970-01-01"``, the number of seconds  since 1st Jan
+            1970 will be used (calculated using the :mod:`datetime` module).
 
         drop_all_nan_times : bool
             Should time points which contain only nan values be dropped? This operation is applied
@@ -768,7 +792,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Raises
         ------
-        NonUniqueMetadataError
+        :class:`NonUniqueMetadataError`
             If the metadata are not unique between timeseries and
             ``check_duplicated`` is ``True``
 
@@ -1432,7 +1456,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 1, 1)
             )
-            return ScmRun(ts_resampled)
+            return type(self)(ts_resampled)
 
         if rule == "AC":
 
@@ -1443,7 +1467,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 7, 1)
             )
-            return ScmRun(ts_resampled)
+            return type(self)(ts_resampled)
 
         if rule == "A":
 
@@ -1458,7 +1482,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             ts_resampled.columns = ts_resampled.columns.map(
                 lambda x: dt.datetime(x, 12, 31)
             )
-            return ScmRun(ts_resampled)
+            return type(self)(ts_resampled)
 
         raise ValueError("`rule` = `{}` is not supported".format(rule))
 
@@ -1570,8 +1594,8 @@ class ScmRun:  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj`RunGroupBy`
-            See the documentation for :class`RunGroupBy` for more information
+        :obj:`RunGroupBy`
+            See the documentation for :class:`RunGroupBy` for more information
 
         """
         if len(group) == 1 and not isinstance(group[0], str):
@@ -1644,7 +1668,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             self._check_unit_context(already_correct_unit, context)
 
         to_convert = to_convert_filtered.filter(
-            unit=unit, keep=False, log_if_empty=False
+            unit=unit, log_if_empty=False, keep=False
         )
         to_not_convert = run_append([to_not_convert_filtered, already_correct_unit,])
 
@@ -1756,7 +1780,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             new :class:`ScmRun` instance with the appended data.
 
         duplicate_msg
-            If ``True``, raise a ``NonUniqueMetadataError`` error so the user
+            If ``True``, raise a :class:`scmdata.errors.NonUniqueMetadataError` error so the user
             can see the duplicate timeseries. If ``False``, take the average
             and do not raise a warning or error. If ``"warn"``, raise a
             warning if duplicate data is detected.
@@ -1775,6 +1799,12 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         :obj:`ScmRun`
             If not :obj:`inplace`, return a new :class:`ScmRun` instance
             containing the result of the append.
+
+        Raises
+        ------
+        NonUniqueMetadataError
+            If the appending results in timeseries with duplicate metadata and :attr:`duplicate_msg` is ``True``
+
         """
         if not isinstance(other, ScmRun):
             other = self.__class__(other, **kwargs)
@@ -1826,7 +1856,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
         """
         Apply a function along a given axis
 
-        This is to provide the GroupBy functionality in :func`ScmRun.groupby` and is not generally called directly.
+        This is to provide the GroupBy functionality in :func:`ScmRun.groupby` and is not generally called directly.
 
         This implementation is very bare-bones - no reduction along the time time dimension is allowed and only the `dim`
         parameter is used.
@@ -1872,7 +1902,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             data = func(input_data, **kwargs)
 
         if getattr(data, "shape", ()) == self.shape:
-            return ScmRun(
+            return type(self)(
                 data, index=self.time_points, columns=self.meta.to_dict("list")
             )
         else:
@@ -1892,7 +1922,7 @@ class ScmRun:  # pylint: disable=too-many-public-methods
             if 1 in removed_axes:
                 raise NotImplementedError  # pragma: no cover
 
-            return ScmRun(data, index=index, columns=meta)
+            return type(self)(data, index=index, columns=meta)
 
 
 def _merge_metadata(metadata):
@@ -2091,7 +2121,23 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
     raise ValueError("Unrecognised value for duplicate_msg")
 
 
-inject_binary_ops(ScmRun)
-inject_nc_methods(ScmRun)
-inject_plotting_methods(ScmRun)
-inject_ops_methods(ScmRun)
+inject_binary_ops(BaseScmRun)
+inject_nc_methods(BaseScmRun)
+inject_plotting_methods(BaseScmRun)
+inject_ops_methods(BaseScmRun)
+
+
+class ScmRun(BaseScmRun):
+    """
+    Data container for holding one or many time-series of SCM data.
+    """
+
+    required_cols = ("model", "scenario", "region", "variable", "unit")
+    """
+    Minimum metadata columns required by an ScmRun.
+
+    If an application requires a different set of required metadata, this
+    can be specified by overriding :attr:`required_cols` on a custom class
+    inheriting :class:`scmdata.run.BaseScmRun`. Note that at a minimum,
+    ("variable", "unit") columns are required.
+    """

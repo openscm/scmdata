@@ -14,9 +14,9 @@ from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.errors import NonUniqueMetadataError
-from scmdata.run import ScmRun, run_append
-from scmdata.testing import assert_scmdf_almost_equal
+from scmdata.errors import MissingRequiredColumnError, NonUniqueMetadataError
+from scmdata.run import BaseScmRun, ScmRun, run_append
+from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
 
 
 def test_init_df_year_converted_to_datetime(test_pd_df):
@@ -125,13 +125,13 @@ def test_init_df_missing_time_columns_error(test_pd_df):
 def test_init_df_missing_col_error(test_pd_df):
     test_pd_df = test_pd_df.drop("model", axis="columns")
     error_msg = re.escape("missing required columns `['model']`!")
-    with pytest.raises(ValueError, match=error_msg):
+    with pytest.raises(MissingRequiredColumnError, match=error_msg):
         ScmRun(test_pd_df)
 
 
 def test_init_ts_missing_col_error(test_ts):
     error_msg = re.escape("missing required columns `['model']`!")
-    with pytest.raises(ValueError, match=error_msg):
+    with pytest.raises(MissingRequiredColumnError, match=error_msg):
         ScmRun(
             test_ts,
             columns={
@@ -143,6 +143,25 @@ def test_init_ts_missing_col_error(test_ts):
             },
             index=[2005, 2010, 2015],
         )
+
+
+def test_init_required_cols(test_pd_df):
+    class MyRun(BaseScmRun):
+        required_cols = ("climate_model", "variable", "unit")
+
+    del test_pd_df["model"]
+
+    assert all([c in test_pd_df.columns for c in MyRun.required_cols])
+    MyRun(test_pd_df)
+
+    del test_pd_df["climate_model"]
+
+    assert not all([c in test_pd_df.columns for c in MyRun.required_cols])
+    error_msg = re.escape("missing required columns `['climate_model']`!")
+    with pytest.raises(
+        MissingRequiredColumnError, match=error_msg,
+    ):
+        MyRun(test_pd_df)
 
 
 def test_init_multiple_file_error():
@@ -1269,7 +1288,7 @@ def test_relative_to_ref_period_mean(test_processing_scm_df, tfilter):
     else:
         raise NotImplementedError(tfilter)
 
-    exp = type(test_processing_scm_df)(
+    exp = ScmRun(
         pd.DataFrame(
             [
                 [
@@ -1342,6 +1361,8 @@ def test_relative_to_ref_period_mean(test_processing_scm_df, tfilter):
     )
 
     obs = test_processing_scm_df.relative_to_ref_period_mean(**tfilter)
+
+    assert isinstance(obs, ScmRun)
 
     obs_ts = obs.timeseries()
     exp_ts = exp.timeseries()
@@ -1702,6 +1723,8 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
     # should be annual mean centred on January 1st of each year
     res = test_scm_df_monthly.time_mean("AS")
 
+    assert isinstance(res, ScmRun)
+
     # test by hand
     npt.assert_allclose(
         res.filter(variable="Radiative Forcing", year=1992, month=1, day=1).values,
@@ -1733,6 +1756,8 @@ def test_time_mean_year(test_scm_df_monthly):
     # should be annual mean (using all values in that year)
     res = test_scm_df_monthly.time_mean("AC")
 
+    assert isinstance(res, ScmRun)
+
     # test by hand
     npt.assert_allclose(
         res.filter(variable="Radiative Forcing", year=1992, month=7, day=1).values,
@@ -1758,6 +1783,8 @@ def test_time_mean_year(test_scm_df_monthly):
 def test_time_mean_year_end_of_year(test_scm_df_monthly):
     # should be annual mean centred on December 31st of each year
     res = test_scm_df_monthly.time_mean("A")
+
+    assert isinstance(res, ScmRun)
 
     # test by hand
     npt.assert_allclose(
@@ -1881,6 +1908,9 @@ def test_filter_empty(scm_run):
     assert id(res) != id(empty_run)
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
 @pytest.mark.parametrize(
     ("target_unit", "input_units", "filter_kwargs", "expected", "expected_units"),
     [
@@ -1925,7 +1955,7 @@ def test_convert_unit(
 
     exp_units = pd.Series(expected_units, name="unit")
 
-    pd.testing.assert_series_equal(obs["unit"], exp_units, check_less_precise=True)
+    pd.testing.assert_series_equal(obs["unit"], exp_units, rtol=1e-3)
     npt.assert_array_almost_equal(obs.filter(year=2005).values.squeeze(), expected)
     assert (scm_run["unit"] == input_units).all()
 
@@ -2394,14 +2424,14 @@ def test_read_from_disk_incorrect_labels():
 
     exp_msg = "missing required columns"
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(MissingRequiredColumnError) as exc_info:
         ScmRun(fname)
 
     error_msg = exc_info.value.args[0]
     assert error_msg.startswith(exp_msg)
-    assert "scenario" in error_msg
-    assert "variable" in error_msg
-    assert "unit" not in error_msg
+    assert "scenario" in exc_info.value.columns
+    assert "variable" in exc_info.value.columns
+    assert "unit" not in exc_info.value.columns
 
 
 @pytest.mark.parametrize("separator", ["|", "__", "/", "~", "_", "-"])
@@ -2494,8 +2524,10 @@ def test_drop_meta_missing(scm_run, label):
     assert "variable" in scm_run.meta.columns
 
 
-def test_drop_meta_missing_one(scm_run):
-    label = ["variable", "other"]
+@pytest.mark.parametrize(
+    "label", [["other", "climate_model"], ["climate_model", "other"]]
+)
+def test_drop_meta_missing_one(scm_run, label):
     with pytest.raises(KeyError):
         scm_run.drop_meta(label)
 
@@ -2525,6 +2557,11 @@ def test_drop_meta_inplace_default(scm_run):
     assert res is not None
     assert label in scm_run.meta
     assert label not in res.meta
+
+
+def test_drop_meta_required(scm_run):
+    with pytest.raises(MissingRequiredColumnError, match=re.escape("['model']")):
+        scm_run.drop_meta(["climate_model", "model"])
 
 
 time_axis_checks = pytest.mark.parametrize(

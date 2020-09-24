@@ -17,7 +17,7 @@ from logging import getLogger
 
 import numpy as np
 
-from . import REQUIRED_COLS, __version__
+from . import __version__
 
 logger = getLogger(__name__)
 
@@ -220,7 +220,7 @@ def _read_nc(cls, ds):
             extra_cols.append(var_name)
 
             # Intialise the required columns and load later
-            if var_name in REQUIRED_COLS:
+            if var_name in cls.required_cols:
                 columns[var_name] = ""
             continue
 
@@ -299,6 +299,10 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
 
     extras : iterable of tuples or str
         Metadata attributes to write as variables in the netCDF file.
+
+    See Also
+    --------
+    :meth:`scmdata.run.ScmRun.to_nc`
     """
     if not has_netcdf:
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
@@ -327,6 +331,10 @@ def nc_to_run(cls, fname):
     ----------
     fname: str
         Filename to read
+
+    See Also
+    --------
+    :meth:`scmdata.run.ScmRun.from_nc`
     """
     if not has_netcdf:
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")

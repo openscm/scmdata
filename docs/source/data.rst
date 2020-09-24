@@ -15,12 +15,13 @@ As a result, **scmdata**'s approach to data handling focusses on efficient handl
 The **ScmRun** class
 --------------------
 
-The :class:`scmdata.ScmRun` class represents a collection of timeseries data including metadata and provides methods for manipulating the data.
+The :class:`scmdata.ScmRun <scmdata.run.ScmRun>` class represents a collection of timeseries data including metadata and provides methods for manipulating the data.
 Internally, :class:`ScmRun <scmdata.run.ScmRun>` stores the timeseries data in a single :class:`pandas.DataFrame` and the timeseries metadata
 :class:`pandas.MultiIndex` of type `pandas.Categorical`, for efficient indexing.
 
 This class is the primary way of handling timeseries data within the **scmdata** package.
-For example, the :class:`scmdata.run.ScmRun` can be filtered to only find the subset of data which have a ``"scenario"`` metadata label equal to ``"green"`` (see :meth:`scmdata.ScmRun.filter <scmdata.run.ScmRun.filter>` for full details).
+For example, the :class:`ScmRun <scmdata.run.ScmRun>` can be filtered to only find the subset of data which have a ``"scenario"`` metadata
+label equal to ``"green"`` (see :meth:`ScmRun.filter <scmdata.run.ScmRun.filter>` for full details).
 Other operations include grouping, setting and (basic) plotting.
 
 

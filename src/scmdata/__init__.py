@@ -6,7 +6,8 @@ from ._version import get_versions  # isort:skip
 __version__ = get_versions()["version"]
 del get_versions
 
-REQUIRED_COLS = ["model", "scenario", "region", "variable", "unit"]
-"""Minimum metadata columns required by an ScmRun"""
 
 from scmdata.run import ScmRun, run_append  # noqa: F401, E402
+
+# TODO: remove in next major release
+REQUIRED_COLS = ScmRun.required_cols  # noqa

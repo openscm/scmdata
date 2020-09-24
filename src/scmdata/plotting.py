@@ -63,7 +63,8 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     plt_df = self.long_data(time_axis=time_axis)
     kwargs.setdefault("x", "time")
     kwargs.setdefault("y", "value")
-    kwargs.setdefault("hue", "scenario")
+    if "scenario" in self.meta_attributes:
+        kwargs.setdefault("hue", "scenario")
     kwargs.setdefault("ci", "sd")
     kwargs.setdefault("estimator", np.median)
 
@@ -82,7 +83,7 @@ def _deprecated_line_plot(self, **kwargs):  # pragma: no cover
     """
     Make a line plot via `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
 
-    Deprecated: use :func`lineplot` instead
+    Deprecated: use :func:`lineplot` instead
 
     Parameters
     ----------

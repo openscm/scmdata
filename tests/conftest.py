@@ -13,7 +13,7 @@ import pandas as pd
 import pytest
 
 from scmdata.pyam_compat import IamDataFrame
-from scmdata.run import ScmRun
+from scmdata.run import BaseScmRun, ScmRun
 from scmdata.timeseries import get_default_name
 
 TEST_DATA = join(dirname(abspath(__file__)), "test_data")
@@ -254,6 +254,15 @@ def test_scm_df_mulitple(request):
 @pytest.fixture(scope="function")
 def scm_run():
     yield ScmRun(TEST_DF.copy())
+
+
+@pytest.fixture(scope="function")
+def base_scm_run():
+    yield BaseScmRun(
+        np.arange(6).reshape(3, 2),
+        index=[2000, 2010, 2020],
+        columns={"variable": ["vara", "varb"], "unit": "unspecified"},
+    )
 
 
 _misru = [
