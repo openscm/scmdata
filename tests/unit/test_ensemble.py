@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 
 import numpy as np
 import numpy.testing as npt
@@ -7,29 +8,29 @@ import pandas.testing as pdt
 import pytest
 
 from scmdata.ensemble import ScmEnsemble, ensemble_append
-
+from scmdata.run import ScmRun
 
 inplace_param = pytest.mark.parametrize("inplace", [True, False])
 
 
 @pytest.fixture(scope="function")
-def ensemble(test_scm_run):
+def ensemble(scm_run):
     return ScmEnsemble(
         [
-            test_scm_run,
-            test_scm_run.filter(variable="Primary Energy").interpolate(
+            scm_run,
+            scm_run.filter(variable="Primary Energy").interpolate(
                 [dt.datetime(y, 1, 1) for y in range(2010, 2026, 5)]
             ),
         ]
     )
 
 
-def test_ensemble(test_scm_run):
-    ensemble = ScmEnsemble([test_scm_run, test_scm_run])
+def test_ensemble(scm_run):
+    ensemble = ScmEnsemble([scm_run, scm_run])
 
-    assert len(ensemble) == 2
-
-    assert ensemble.num_timeseries == len(test_scm_run) * 2
+    assert len(ensemble) == len(scm_run) * 2
+    assert ensemble.num_timeseries == len(scm_run) * 2
+    assert ensemble.num_runs == 2
 
 
 def test_ensemble_num_timeseries(ensemble):
@@ -108,7 +109,7 @@ def test_ensemble_filter_basic(ensemble, inplace):
 
 
 @inplace_param
-def test_ensemble_append(ensemble, test_scm_run, inplace):
+def test_ensemble_append(ensemble, scm_run, inplace):
     orig = ensemble.copy()
     res = ensemble_append([ensemble, ensemble.copy()], inplace=inplace)
 
@@ -123,20 +124,103 @@ def test_ensemble_append(ensemble, test_scm_run, inplace):
     assert len(res) == len(orig) * 2
 
 
-def test_ensemble_append_wrong_first(ensemble, test_scm_run):
+def test_ensemble_append_wrong_first(ensemble, scm_run):
     with pytest.raises(TypeError, match="Can only append inplace to an ScmEnsemble"):
-        ensemble_append([test_scm_run, ensemble], inplace=True)
+        ensemble_append([scm_run, ensemble], inplace=True)
 
 
-def test_ensemble_append_mixed(ensemble, test_scm_run):
+def test_ensemble_append_mixed(ensemble, scm_run):
     res = ensemble_append([ensemble, ensemble])
     assert isinstance(res, ScmEnsemble)
-    assert len(res) == 4
+    assert res.num_runs == 4
 
-    res = ensemble_append([ensemble, test_scm_run])
+    res = ensemble_append([ensemble, scm_run])
     assert isinstance(res, ScmEnsemble)
-    assert len(res) == 3
+    assert res.num_runs == 3
 
-    res = ensemble_append([test_scm_run])
+    res = ensemble.append(scm_run)
     assert isinstance(res, ScmEnsemble)
-    assert len(res) == 1
+    assert res.num_runs == 3
+
+    res = ensemble_append([scm_run])
+    assert isinstance(res, ScmEnsemble)
+    assert res.num_runs == 1
+
+
+def test_ensemble_append_empty():
+    with pytest.raises(ValueError, match="Nothing to append"):
+        ensemble_append([])
+
+
+def test_ensemble_append_nonlist():
+    with pytest.raises(TypeError, match="ensemble_or_runs is not a list"):
+        ensemble_append(1)
+
+
+@pytest.mark.parametrize(
+    "obj", ["a", 1, np.asarray([1, 2, 3]), pd.DataFrame([[1, 2, 3]])]
+)
+def test_ensemble_append_unknown(ensemble, scm_run, obj):
+    with pytest.raises(TypeError, match="Cannot handle appending type"):
+        ensemble_append([obj])
+
+    with pytest.raises(TypeError, match="Cannot handle appending type"):
+        ensemble_append([scm_run, obj])
+
+
+def test_ensemble_append_custom_run(custom_scm_run):
+    res = ensemble_append([custom_scm_run, custom_scm_run])
+    assert len(res) == len(custom_scm_run) * 2
+
+    assert res.run_ids == [0, 1]
+
+    # TODO: fix inconcistency with columns type of timeseries
+    # pandas coerces this to a DataTimeIndex
+    exp_ts = custom_scm_run.timeseries()
+    exp_ts.columns = exp_ts.columns.astype(object)
+
+    pdt.assert_frame_equal(res.timeseries().xs(0, level="run_id"), exp_ts)
+    pdt.assert_frame_equal(res.timeseries().xs(1, level="run_id"), exp_ts)
+
+
+@pytest.fixture("function")
+def ensemble_unique_meta(scm_run):
+    other_run = ScmRun(
+        np.arange(3),
+        index=[1900, 1910, 1920],
+        columns={
+            "variable": "Example",
+            "unit": "unspecified",
+            "region": "World",
+            "model": "b_iam",
+            "scenario": "a_scenario",
+        },
+    )
+    return ScmEnsemble([scm_run, other_run])
+
+
+def test_ensemble_unique_meta(ensemble_unique_meta):
+    exp = ["Primary Energy", "Primary Energy|Coal", "Example"]
+    assert ensemble_unique_meta.get_unique_meta("variable") == exp
+
+    assert ensemble_unique_meta.get_unique_meta("model") == ["a_iam", "b_iam"]
+    assert ensemble_unique_meta.get_unique_meta("climate_model") == ["a_model"]
+
+
+def test_ensemble_unique_meta_missing(ensemble_unique_meta):
+    res = ensemble_unique_meta.get_unique_meta("climate_model")
+    assert res == ["a_model"]
+
+    with pytest.raises(KeyError, match=re.escape("[non_existent] is not in metadata")):
+        ensemble_unique_meta.get_unique_meta("non_existent")
+
+    # Empty Ensembles also raise KeyError
+    with pytest.raises(KeyError, match=re.escape("[test] is not in metadata")):
+        ScmEnsemble([]).get_unique_meta("test")
+
+
+def test_ensemble_unique_meta_no_duplicates(ensemble_unique_meta):
+    assert ensemble_unique_meta.get_unique_meta("region", no_duplicates=True) == "World"
+
+    with pytest.raises(ValueError, match="`variable` column is not unique"):
+        ensemble_unique_meta.get_unique_meta("variable", no_duplicates=True)

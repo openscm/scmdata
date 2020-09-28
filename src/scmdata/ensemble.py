@@ -7,7 +7,7 @@ import warnings
 import pandas as pd
 
 from scmdata.plotting import inject_plotting_methods
-from scmdata.run import ScmRun
+from scmdata.run import BaseScmRun
 from scmdata.timeseries import _Counter
 
 get_default_name = _Counter()
@@ -16,6 +16,8 @@ get_default_name = _Counter()
 class ScmEnsemble:
     """
     Container for holding multiple :obj:`ScmRun` objects
+
+    Each run in the ensemble is assigned a ``run_id``.
 
     """
 
@@ -35,6 +37,8 @@ class ScmEnsemble:
         runs : list of ScmRun
         """
 
+        self._counter = _Counter()
+
         if runs is None:
             runs = []
 
@@ -44,17 +48,24 @@ class ScmEnsemble:
                 raise ValueError("length of run_ids must equal the length of runs")
             self._run_ids = run_ids[:]
         else:
-            self._run_ids = [get_default_name() for _ in runs]
+            self._run_ids = [self._counter() for _ in runs]
 
     def __len__(self):
-        # Should this be sum (len(r) for r in runs)
-        return len(self._runs)
+        return self.num_timeseries
 
     @property
     def num_timeseries(self):
-        if not len(self):
+        if not self.num_runs:
             return 0
         return sum([len(r) for r in self._runs])
+
+    @property
+    def num_runs(self):
+        return len(self._runs)
+
+    @property
+    def run_ids(self):
+        return self._run_ids[:]
 
     def __repr__(self):
         return "<scmdata.ScmEnsemble (runs: {}, timeseries: {})>".format(
@@ -75,7 +86,16 @@ class ScmEnsemble:
                 .reset_index(drop=True)
             )
         else:
-            res = pd.concat([r[item] for r in self._runs])
+            items = []
+            for r in self._runs:
+                try:
+                    items.append(r[item])
+                except KeyError:
+                    continue
+            if not len(items):
+                raise KeyError("[{}] is not in metadata".format(item))
+
+            res = pd.concat(items)
 
         return res
 
@@ -115,8 +135,12 @@ class ScmEnsemble:
 
         return vals
 
-    def copy(self, deep=False):
-        return ScmEnsemble(self.runs, self._run_ids)
+    def copy(self, deep=True):
+        if deep:
+            runs = [r.copy() for r in self.runs]
+        else:
+            runs = self.runs
+        return ScmEnsemble(runs, self._run_ids)
 
     @property
     def runs(self):
@@ -156,6 +180,11 @@ class ScmEnsemble:
 
 
 def ensemble_append(ensemble_or_runs, inplace=False):
+    if not isinstance(ensemble_or_runs, list):
+        raise TypeError("ensemble_or_runs is not a list")
+
+    if not len(ensemble_or_runs):
+        raise ValueError("Nothing to append")
 
     first = ensemble_or_runs[0]
     if inplace:
@@ -165,7 +194,7 @@ def ensemble_append(ensemble_or_runs, inplace=False):
     else:
         if isinstance(first, ScmEnsemble):
             ret = first.copy()
-        elif isinstance(first, ScmRun):
+        elif isinstance(first, BaseScmRun):
             ret = ScmEnsemble([first])
         else:
             raise TypeError("Cannot handle appending type {}".format(type(first)))
@@ -174,10 +203,10 @@ def ensemble_append(ensemble_or_runs, inplace=False):
         if isinstance(run, ScmEnsemble):
             for r_id, r in run:
                 ret._runs.append(r)
-                ret._run_ids.append(r_id or get_default_name())
-        elif isinstance(run, ScmRun):
+                ret._run_ids.append(r_id or ret._counter())
+        elif isinstance(run, BaseScmRun):
             ret._runs.append(run)
-            ret._run_ids.append(get_default_name())
+            ret._run_ids.append(ret._counter())
         else:
             raise TypeError("Cannot handle appending type {}".format(type(run)))
 
