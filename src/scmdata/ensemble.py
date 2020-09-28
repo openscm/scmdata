@@ -4,21 +4,16 @@
 
 import warnings
 
+import numpy as np
 import pandas as pd
 
 from scmdata.plotting import inject_plotting_methods
 from scmdata.run import BaseScmRun
-from scmdata.timeseries import _Counter
-
-get_default_name = _Counter()
 
 
 class ScmEnsemble:
     """
     Container for holding multiple :obj:`ScmRun` objects
-
-    Each run in the ensemble is assigned a ``run_id``.
-
     """
 
     meta_col = "run_id"
@@ -29,7 +24,7 @@ class ScmEnsemble:
     has unique metadata
     """
 
-    def __init__(self, runs=None, run_ids=None):
+    def __init__(self, runs=None):
         """
 
         Parameters
@@ -37,18 +32,11 @@ class ScmEnsemble:
         runs : list of ScmRun
         """
 
-        self._counter = _Counter()
-
         if runs is None:
             runs = []
 
         self._runs = runs
-        if run_ids:
-            if len(run_ids) != len(runs):
-                raise ValueError("length of run_ids must equal the length of runs")
-            self._run_ids = run_ids[:]
-        else:
-            self._run_ids = [self._counter() for _ in runs]
+        self._run_ids = np.arange(len(runs))
 
     def __len__(self):
         return self.num_timeseries
@@ -65,11 +53,21 @@ class ScmEnsemble:
 
     @property
     def run_ids(self):
-        return self._run_ids[:]
+        """
+        Run identifier
+
+        Currently ranges from 0 -> num_runs - 1. These run ids are not preserved
+        when appending
+
+        Returns
+        -------
+        list of int
+        """
+        return self._run_ids.tolist()
 
     def __repr__(self):
-        return "<scmdata.ScmEnsemble (runs: {}, timeseries: {})>".format(
-            len(self), sum([len(r) for r in self._runs])
+        return "<scmdata.ensemble.ScmEnsemble (runs: {}, timeseries: {})>".format(
+            self.num_runs, self.num_timeseries
         )
 
     def __iter__(self):
@@ -140,7 +138,7 @@ class ScmEnsemble:
             runs = [r.copy() for r in self.runs]
         else:
             runs = self.runs
-        return ScmEnsemble(runs, self._run_ids)
+        return ScmEnsemble(runs)
 
     @property
     def runs(self):
@@ -160,15 +158,28 @@ class ScmEnsemble:
         if not len(self.runs):
             return pd.DataFrame()
 
+        unique_keys = set(
+            [l for r in self.runs for l in r.meta_attributes] + [self.meta_col]
+        )
+        unique_keys = sorted(unique_keys)
+
         def _get_timeseries(run_id, r):
             df = r.timeseries(**kwargs)
             if self.meta_col in df.index.names:
                 warnings.warn("Overriding {} meta column")
+                df = df.reset_index(self.meta_col)
+
             df[self.meta_col] = run_id
-            df = df.set_index("run_id", append=True)
+            df = df.set_index(self.meta_col, append=True)
+
+            # Add in missing levels as needed
+            for l in unique_keys:
+                if l not in df.index.names:
+                    df[l] = pd.NA
+                    df = df.set_index(l, append=True)
 
             # reorder columns so they are in alphabetical order
-            df.index = df.index.reorder_levels(sorted(df.index.names))
+            df.index = df.index.reorder_levels(unique_keys)
             return df
 
         return pd.concat([_get_timeseries(run_id, r) for run_id, r in self])
@@ -203,13 +214,11 @@ def ensemble_append(ensemble_or_runs, inplace=False):
         if isinstance(run, ScmEnsemble):
             for r_id, r in run:
                 ret._runs.append(r)
-                ret._run_ids.append(r_id or ret._counter())
         elif isinstance(run, BaseScmRun):
             ret._runs.append(run)
-            ret._run_ids.append(ret._counter())
         else:
             raise TypeError("Cannot handle appending type {}".format(type(run)))
-
+    ret._run_ids = np.arange(ret.num_runs)
     if not inplace:
         return ret
 

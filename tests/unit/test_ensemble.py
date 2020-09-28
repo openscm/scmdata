@@ -40,6 +40,28 @@ def test_ensemble_num_timeseries(ensemble):
     assert ensemble.num_timeseries > 0
 
 
+def test_ensemble_repr(ensemble):
+    res = repr(ensemble)
+
+    assert "scmdata.ensemble.ScmEnsemble" in res
+    assert "runs: {}".format(ensemble.num_runs) in res
+    assert "timeseries: {}".format(ensemble.num_timeseries) in res
+
+
+def test_ensemble_copy(ensemble):
+    ensemble_copy = ensemble.copy(deep=False)
+    assert id(ensemble) != id(ensemble_copy)
+
+    for l, r in zip(ensemble.runs, ensemble_copy.runs):
+        assert id(l) == id(r)
+
+    ensemble_copy = ensemble.copy(deep=True)
+    assert id(ensemble) != id(ensemble_copy)
+
+    for l, r in zip(ensemble.runs, ensemble_copy.runs):
+        assert id(l) != id(r)
+
+
 @pytest.mark.parametrize("item", ("time", "year", "scenario", "variable"))
 def test_ensemble_getitem(ensemble, item):
     if item == "year":
@@ -92,6 +114,30 @@ def test_ensemble_timeseries(ensemble):
 def test_ensemble_timeseries_empty():
     res = ScmEnsemble().timeseries()
     assert res.empty
+
+
+def test_ensemble_timeseries_overlapping(ensemble):
+    ensemble.runs[0]["run_id"] = 72
+    with pytest.warns(UserWarning,):
+        res = ensemble.timeseries()
+
+    run_ids = res.index.get_level_values(level="run_id")
+    pdt.assert_index_equal(run_ids, pd.Index([0, 0, 0, 1, 1], name="run_id"))
+
+    ensemble.meta_col = "ensemble_member"
+    with pytest.warns(None) as record:
+        res = ensemble.timeseries()
+    assert len(record) == 0
+
+    run_ids = res.index.get_level_values(level="run_id")
+    pdt.assert_index_equal(
+        run_ids,
+        pd.Index([72, 72, 72, pd.NA, pd.NA], name="run_id"),
+        exact=False,
+        check_exact=False,
+    )
+    run_ids = res.index.get_level_values(level="ensemble_member")
+    pdt.assert_index_equal(run_ids, pd.Index([0, 0, 0, 1, 1], name="ensemble_member"))
 
 
 @inplace_param
