@@ -37,7 +37,12 @@ from .offsets import generate_range, to_offset
 from .ops import inject_ops_methods
 from .plotting import inject_plotting_methods
 from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
-from .time import _TARGET_DTYPE, TimePoints, TimeseriesConverter
+from .time import (
+    _TARGET_DTYPE,
+    TimePoints,
+    TimeseriesConverter,
+    decode_datetimes_to_index,
+)
 from .units import UnitConverter
 
 _logger = getLogger(__name__)
@@ -258,12 +263,12 @@ def _from_ts(
     if not isinstance(df, pd.DataFrame):
         df = pd.DataFrame(df)
     if index is not None:
-        if isinstance(index, np.ndarray):
-            df.index = TimePoints(index).to_index()
-        elif isinstance(index, TimePoints):
-            df.index = index.to_index()
-        else:
+        if isinstance(index, (np.ndarray, list)):
+            df.index = decode_datetimes_to_index(index)
+        elif isinstance(index, pd.Index):
             df.index = index
+        else:
+            raise ValueError("Could not determine type of index")
 
     # format columns to lower-case and check that all required columns exist
     if not set(required_cols).issubset(columns.keys()):
@@ -2120,8 +2125,7 @@ def run_append(
         to_join_metas.append(run_to_join_meta)
 
     ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns").sort_index()
-    ret._time_points = TimePoints(ret._df.index.values)
-    ret._df.index = ret._time_points.to_index()
+    ret._df.index = decode_datetimes_to_index(ret._df.index.values)
     ret._meta = pd.MultiIndex.from_frame(
         pd.concat([ret._meta.to_frame()] + to_join_metas).astype("category")
     )
