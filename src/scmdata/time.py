@@ -9,10 +9,12 @@ from datetime import datetime
 import cftime
 import numpy as np
 import pandas as pd
-from dateutil import parser
+from pandas.errors import OutOfBoundsDatetime
+from xarray import CFTimeIndex
 
 _TARGET_TYPE = np.int64
 _TARGET_DTYPE = "datetime64[s]"
+_STANDARD_CALENDARS = {"standard", "gregorian", "proleptic_gregorian"}
 
 
 class InsufficientDataError(Exception):
@@ -38,7 +40,7 @@ def _float_year_to_datetime(inp: float) -> np.datetime64:
 
 
 _ufunc_float_year_to_datetime = np.frompyfunc(_float_year_to_datetime, 1, 1)
-_ufunc_str_to_datetime = np.frompyfunc(parser.parse, 1, 1)
+_ufunc_str_to_datetime = np.frompyfunc(np.datetime64, 1, 1)
 
 
 def _parse_datetime(inp: np.ndarray) -> np.ndarray:
@@ -48,18 +50,20 @@ def _parse_datetime(inp: np.ndarray) -> np.ndarray:
         return _ufunc_str_to_datetime(inp)
 
 
-def _format_datetime(dts: np.ndarray) -> np.ndarray:
+def _format_datetime(dts) -> np.ndarray:
     """
-    Convert an array to an array of :class:`np.datetime64`.
+    Convert a list of times to numpy datetimes
+
+    This truncates the datetimes to have second resolution
 
     Parameters
     ----------
-    dts
+    dts : np.array or list
         Input to attempt to convert
 
     Returns
     -------
-    :class:`np.ndarray` of :class:`np.datetime64`
+    :class:`np.ndarray` with dtype :class:`np.datetime64[s]`
         Converted array
 
     Raises
@@ -85,6 +89,48 @@ def _format_datetime(dts: np.ndarray) -> np.ndarray:
     if issubclass(dtype, str):
         return _parse_datetime(dts).astype(_TARGET_DTYPE)
     return np.asarray(dts, dtype=_TARGET_DTYPE)
+
+
+def _to_cftimes(np_dates, calendar):
+    return cftime.num2date(
+        np_dates.astype(int), "seconds since 1970-01-01", calendar=calendar
+    )
+
+
+def decode_datetimes_to_index(dates, calendar=None, use_cftime=None):
+    """
+    Decodes a list of dates to an index
+
+    Uses xarray.CFTimeIndex()
+    Parameters
+    ----------
+    dates
+    calendar
+    use_cftime
+
+    Returns
+    -------
+
+    """
+    dates = np.asarray(dates)
+    dates = _format_datetime(dates)
+
+    if calendar is None:
+        calendar = "standard"
+
+    if use_cftime is None:
+        try:
+            index = pd.DatetimeIndex(dates)
+        except (KeyError, OutOfBoundsDatetime, OverflowError):
+            index = CFTimeIndex(_to_cftimes(dates, calendar))
+    elif use_cftime:
+        # Force coercion to cftimes
+        index = CFTimeIndex(_to_cftimes(dates, calendar))
+    else:
+        index = pd.DatetimeIndex(dates)
+
+    index.name = "time"
+    return index
 
 
 class TimePoints:
@@ -126,7 +172,7 @@ class TimePoints:
             :class:`pd.Index` of :class:`np.dtype` :class:`object` with name ``"time"``
             made from the time points represented as :class:`datetime.datetime`.
         """
-        return pd.Index(self._values.astype(object), dtype=object, name="time")
+        return CFTimeIndex(self.as_cftime(), name="time")
 
     def as_cftime(self) -> list:
         """

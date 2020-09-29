@@ -5,6 +5,7 @@ import numpy as np
 
 from xarray import CFTimeIndex
 from pandas import DatetimeIndex
+import pandas.testing as pdt
 import cftime
 
 input_type = pytest.mark.parametrize(
@@ -65,33 +66,33 @@ def test_format_wide_range(input_type):
     np.testing.assert_array_equal(res, exp)
 
 
-def test_format_weird():
-    inp = np.asarray(["-1000"])
-    res = _format_datetime(inp)
-    exp = np.asarray(["-1000-01-01"]).astype("datetime64[s]")
+@pytest.mark.parametrize("use_cftime", [True, None])
+@input_type
+def test_to_cftime_index(input_type, use_cftime):
+    years = [-1000, 1000, 2000, 3000]
+    inp_dates = convert_input(years, input_type)
 
-    np.testing.assert_array_equal(res, exp)
+    res = decode_datetimes_to_index(inp_dates, use_cftime=use_cftime)
 
+    cftime_dts = [cftime.datetime(y, 1, 1) for y in years]
+    exp = CFTimeIndex(cftime_dts, name="time")
 
-def test_to_cftime_index():
-    inp = np.asarray(["-1000-01-01", "1000-01-01", "2000-01-01", "2000-01-01"]).astype(
-        "datetime64[s]"
-    )
-
-    res = decode_datetimes_to_index(
-        ["-1000-01-01", "1000-01-01", "2000-01-01", "2000-01-01"]
-    )
-
-    exp = CFTimeIndex(inp)
-
-    assert all(idx.year == [-1000, 1000, 2000, 3000])
+    assert isinstance(res, CFTimeIndex)
+    assert all(res.year == years)
+    pdt.assert_index_equal(res, exp)
 
 
-def test_to_pd_index():
-    inp = np.asarray(["-1000-01-01", "1000-01-01", "2000-01-01", "2000-01-01"]).astype(
-        "datetime64[s]"
-    )
+@pytest.mark.parametrize("use_cftime", [False, None])
+@input_type
+def test_to_pd_index(input_type, use_cftime):
+    years = [2000, 2050, 2100]
+    inp_dates = convert_input(years, input_type)
 
-    idx = CFTimeIndex(inp)
+    res = decode_datetimes_to_index(inp_dates, use_cftime=use_cftime)
 
-    assert all(idx.year == [-1000, 1000, 2000, 3000])
+    exp = DatetimeIndex([str(y) for y in years], name="time")
+
+    # Pandas datetimes are coerced to ns
+    assert res.values.dtype == "datetime64[ns]"
+    assert all(res.year == years)
+    pdt.assert_index_equal(res, exp)
