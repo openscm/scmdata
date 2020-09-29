@@ -23,7 +23,19 @@ except ImportError:  # pragma: no cover
 
 _TARGET_TYPE = np.int64
 _TARGET_DTYPE = "datetime64[s]"
-_STANDARD_CALENDARS = {"standard", "gregorian", "proleptic_gregorian"}
+STANDARD_CALENDARS = {"standard", "gregorian", "proleptic_gregorian"}
+"""
+Over the span of a ``datetime64[ns]`` these calendars are all equivalent
+"""
+
+_CFTIME_CALENDARS = {
+    "standard": cftime.datetime,
+    "360day": cftime.Datetime360Day,
+    "gregorian": cftime.DatetimeGregorian,
+    "proleptic_gregorian": cftime.DatetimeProlepticGregorian,
+    "noleap": cftime.DatetimeNoLeap,
+    "julian": cftime.DatetimeJulian,
+}
 
 
 class InsufficientDataError(Exception):
@@ -36,6 +48,10 @@ class InsufficientDataError(Exception):
 
 def _float_year_to_datetime(inp: float) -> np.datetime64:
     year = int(inp)
+
+    if year < 0:
+        raise OutOfBoundsDatetime("Cannot connect negative decimal year")
+
     fractional_part = inp - year
     return np.datetime64(  # pylint: disable=too-many-function-args
         year - 1970, "Y"
@@ -48,8 +64,31 @@ def _float_year_to_datetime(inp: float) -> np.datetime64:
     )
 
 
+def _str_to_cftime(inp: str, calendar: str):
+    cls = _CFTIME_CALENDARS[calendar]
+
+    negative_year = False
+    if inp.startswith("-"):
+        negative_year = True
+        inp = inp[1:]
+
+    assert len(inp) == 19
+
+    y = int(inp[:4])
+    if negative_year:
+        y = -y
+    mon = int(inp[5:7])
+    d = int(inp[8:10])
+    h = int(inp[11:13])
+    m = int(inp[14:16])
+    s = int(inp[17:])
+
+    return cls(y, mon, d, h, m, s)
+
+
 _ufunc_float_year_to_datetime = np.frompyfunc(_float_year_to_datetime, 1, 1)
 _ufunc_str_to_datetime = np.frompyfunc(np.datetime64, 1, 1)
+_ufunc_str_to_cftime = np.frompyfunc(_str_to_cftime, 2, 1)
 
 
 def _parse_datetime(inp: np.ndarray) -> np.ndarray:
@@ -101,25 +140,76 @@ def _format_datetime(dts) -> np.ndarray:
 
 
 def _to_cftimes(np_dates, calendar):
-    return cftime.num2date(
-        np_dates.astype(int), "seconds since 1970-01-01", calendar=calendar
-    )
+    # This would be faster, but results in calendar issues
+    # return cftime.num2date(
+    #     np_dates.astype(int), "seconds since 1970-01-01", calendar=calendar
+    # )
+
+    if calendar not in _CFTIME_CALENDARS:
+        raise ValueError("Unknown calendar: {}".format(calendar))
+
+    return _ufunc_str_to_cftime(np.datetime_as_string(np_dates), calendar)
 
 
 def decode_datetimes_to_index(dates, calendar=None, use_cftime=None):
     """
     Decodes a list of dates to an index
 
-    Uses xarray.CFTimeIndex()
+    Uses a :class:`pandas.DatetimeIndex` where possible. When a non-standard calendar is
+    used or for dates before year 1678 or after year 2262, a dates are converted
+    to :module:`cftime` datetimes and a :class:`xarray.CFTimeIndex()` is used.
+
+    A wide formats for dates is supported. The following are all equivalent:
+
+    * str ("2000" or "2000-01-01")
+    * int (2000)
+    * decimal years (2000.0)
+    * python datetimes (``datetime.datetime(2000, 1, 1)``)
+    * cftime datetimes (``cftime.datetime(2000, 1, 1)``)
+    * numpy datetimes (``np.datetime64("2000-01-01", "Y")``)
+
     Parameters
     ----------
     dates
-    calendar
-    use_cftime
+        Dates to be converted
+
+    calendar: str
+        Describes the calendar used by in the time calculations. All the values
+        currently defined in the [CF metadata convention](http://cfconventions.org)
+        and are implemented in [cftime](https://unidata.github.io/cftime)
+
+        Valid calendars ``'standard', 'gregorian', 'proleptic_gregorian', 'noleap', '360_day’, 'julian'``.
+        Default is ``'standard'``, which is a mixed Julian/Gregorian calendar.
+
+        If a calendar other than ``'standard', 'gregorian'`` or ``'proleptic_gregorian'``
+        is selected, then dates will be attempted to converted to ``cftime``'s
+
+    use_cftime: bool
+        If None (default), then try and determine the appropriate time index to use.
+        Attempts to use a :class:`pandas.DatetimeIndex`, but falls back to
+        :class:`xarray.CFTimeIndex` if the conversion fails.
+
+        If True, dates are explicitly converted to `cftime`'s and a
+        :class:`xarray.CFTimeIndex` is returned.
+
+        If False, a :class:`pandas.DatetimeIndex` will always be returned (if
+        possible). In this case a :class:`pandas.errors.OutOfBoundsDatetime`
+        is raised if a date falls before year 1678 or after year 2262.
 
     Returns
     -------
+    :class:`pandas.DatetimeIndex` or :class:`xarray.CFTimeIndex`
 
+        The return type depends on the value of calendar and the dates provided
+
+    Raises
+    ------
+    :class:`pandas.errors.OutOfBoundsDatetime`
+        ``use_cftime == False`` and date before year 1678 or after year 2262 is
+        provided
+
+    ValueError
+        ``use_cftime == False`` and a non-standard calendar is requested
     """
     dates = np.asarray(dates)
     dates = _format_datetime(dates)
@@ -129,13 +219,18 @@ def decode_datetimes_to_index(dates, calendar=None, use_cftime=None):
 
     if use_cftime is None:
         try:
+            if calendar not in STANDARD_CALENDARS:
+                raise ValueError(
+                    "Cannot use pandas indexes with a non-standard calendar"
+                )
             index = pd.DatetimeIndex(dates)
-        except (KeyError, OutOfBoundsDatetime, OverflowError):
+        except (OutOfBoundsDatetime, ValueError):
             index = CFTimeIndex(_to_cftimes(dates, calendar))
     elif use_cftime:
-        # Force coercion to cftimes
         index = CFTimeIndex(_to_cftimes(dates, calendar))
     else:
+        if calendar not in STANDARD_CALENDARS:
+            raise ValueError("Cannot use pandas indexes with a non-standard calendar")
         index = pd.DatetimeIndex(dates)
 
     index.name = "time"

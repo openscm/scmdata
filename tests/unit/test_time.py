@@ -1,10 +1,11 @@
 import pytest
-from scmdata.time import _format_datetime, decode_datetimes_to_index
+from scmdata.time import _format_datetime, decode_datetimes_to_index, _CFTIME_CALENDARS
 import datetime as dt
 import numpy as np
 
 from xarray import CFTimeIndex
 from pandas import DatetimeIndex
+from pandas.errors import OutOfBoundsDatetime
 import pandas.testing as pdt
 import cftime
 
@@ -26,6 +27,8 @@ def convert_input(dates_as_int, input_type):
     if input_type == "int-year":
         return [int(d) for d in dates_as_int]
     elif input_type == "decimal-year":
+        if min(dates_as_int) < 0:
+            pytest.skip("datetime out of range")
         return [float(d) for d in dates_as_int]
     elif input_type == "str-year":
         return [str(d) for d in dates_as_int]
@@ -82,6 +85,23 @@ def test_to_cftime_index(input_type, use_cftime):
     pdt.assert_index_equal(res, exp)
 
 
+@pytest.mark.parametrize("calendar", _CFTIME_CALENDARS.keys())
+@input_type
+def test_to_cftime_index(input_type, calendar):
+    years = [-1000, 1000, 2000, 3000]
+    inp_dates = convert_input(years, input_type)
+
+    res = decode_datetimes_to_index(inp_dates, calendar=calendar, use_cftime=True)
+
+    cls = _CFTIME_CALENDARS[calendar]
+    cftime_dts = [cls(y, 1, 1) for y in years]
+    exp = CFTimeIndex(cftime_dts, name="time")
+
+    assert isinstance(res, CFTimeIndex)
+    assert all(res.year == years)
+    pdt.assert_index_equal(res, exp)
+
+
 @pytest.mark.parametrize("use_cftime", [False, None])
 @input_type
 def test_to_pd_index(input_type, use_cftime):
@@ -96,3 +116,12 @@ def test_to_pd_index(input_type, use_cftime):
     assert res.values.dtype == "datetime64[ns]"
     assert all(res.year == years)
     pdt.assert_index_equal(res, exp)
+
+
+@input_type
+def test_to_pd_index_with_overflow(input_type):
+    years = [1500, 2050, 2100]
+    inp_dates = convert_input(years, input_type)
+
+    with pytest.raises(OutOfBoundsDatetime):
+        decode_datetimes_to_index(inp_dates, use_cftime=False)
