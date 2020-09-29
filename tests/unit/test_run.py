@@ -1446,9 +1446,7 @@ def test_append_duplicates_order_doesnt_matter(scm_run):
 
     obs = res.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2.0, 7.0, 7.0, 2.0, 7.0, 5.0]
-    npt.assert_array_equal(
-        res._time_points.years(), [2005, 2010, 2015, 2020, 2030, 2040]
-    )
+    npt.assert_array_equal(res["year"], [2005, 2010, 2015, 2020, 2030, 2040])
     npt.assert_almost_equal(obs, exp)
 
 
