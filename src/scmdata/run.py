@@ -463,7 +463,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
             (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
 
-        _df = _df.astype(float)
+        self._df = _df.astype(float)
         if index is not None:
             self._df.index = decode_datetimes_to_index(index)
         else:
