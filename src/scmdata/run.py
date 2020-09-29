@@ -18,7 +18,9 @@ import numpy.testing as npt
 import openscm_units.unit_registry as ur
 import pandas as pd
 import pint
+import xarray as xr
 from dateutil import parser
+from xarray import CFTimeIndex
 from xarray.core.ops import inject_binary_ops
 
 from .errors import MissingRequiredColumnError, NonUniqueMetadataError
@@ -472,12 +474,17 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
             (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
 
-        self._time_points = TimePoints(_df.index.values)
-
-        _df = _df.astype(float)
-        self._df = _df
-        self._df.index = self._time_points.to_index()
+        self._set_df_from_pandas(_df)
+        # self._df.index = self._time_points.to_index()
         self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
+
+    def _set_df_from_pandas(self, df):
+        self._time_points = TimePoints(df.index.values)
+
+        da = xr.DataArray(df)
+        da = da.rename({df.index.name: "time", "dim_1": "__scmrun_internal_id__"})
+        da = da.assign_coords({"time": (CFTimeIndex(self._time_points.as_cftime()))})
+        self._df = da
 
     def copy(self):
         """
@@ -601,7 +608,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         meta = np.atleast_1d(value)
         if key == "time":
             self._time_points = TimePoints(meta)
-            self._df.index = self._time_points.to_index()
+            self._df = self._df.assign_coords({"time": (CFTimeIndex(self.time_points.as_cftime()))})
         else:
             if len(meta) == 1:
                 new_meta = self._meta.to_frame()
@@ -802,7 +809,6 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         ValueError
             The value of `time_axis` would result in columns which aren't unique
         """
-        df = self._df.T
         _meta = self.meta if meta is None else self.meta[meta]
 
         if check_duplicated and self._duplicated_meta(meta=_meta):
@@ -842,8 +848,12 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
                 "Ambiguous time values with time_axis = '{}'".format(time_axis)
             )
 
-        df.columns = pd.Index(columns, name="time")
-        df.index = pd.MultiIndex.from_frame(_meta)
+        if not isinstance(columns, pd.Index):
+            columns = pd.Index(columns, name="time")
+        else:
+            columns.name = "time"
+
+        df = pd.DataFrame(self._df.values.T, index=pd.MultiIndex.from_frame(_meta), columns=columns)
 
         if drop_all_nan_times:
             df = df.dropna(how="all", axis="columns")
@@ -929,14 +939,14 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         Metadata
         """
         df = pd.DataFrame(
-            self._meta.to_list(), columns=self._meta.names, index=self._df.columns
+            self._meta.to_list(), columns=self._meta.names, index=self._df.coords["__scmrun_internal_id__"].values
         )
 
         return df[sorted(df.columns)]
 
     def _meta_column(self, col) -> pd.Series:
         out = self._meta.get_level_values(col)
-        return pd.Series(out, name=col, index=self._df.columns)
+        return pd.Series(out, name=col, index=self._df.coords["__scmrun_internal_id__"].values)
 
     def filter(
         self,
@@ -1288,11 +1298,14 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         # TODO: Extend TimeseriesConverter to handle 2d inputs
         for i in range(len(res)):
             target_data[:, i] = timeseries_converter.convert_from(
-                res._df.iloc[:, i].values
+                # res._df.iloc[:, i].values
+                res._df.values[:, i]
             )
-        res._df = pd.DataFrame(
-            target_data, columns=res._df.columns, index=target_times.to_index()
+
+        df = pd.DataFrame(
+            target_data, columns=res._df.coords["__scmrun_internal_id__"].values, index=target_times.to_index()
         )
+        res._set_df_from_pandas(df)
         res._time_points = target_times
 
         return res
@@ -2031,7 +2044,7 @@ def run_append(
     overlapping_times = False
 
     ind = range(ret._df.shape[1])
-    ret._df.columns = ind
+    ret._df = ret._df.assign_coords({"__scmrun_internal_id__": ind})
     ret._meta.index = ind
 
     min_idx = ret._df.shape[1]
@@ -2042,17 +2055,17 @@ def run_append(
         ind = range(min_idx, max_idx)
         min_idx = max_idx
 
-        run_to_join_df.columns = ind
+        run_to_join_df = run_to_join_df.assign_coords({"__scmrun_internal_id__": ind})
         run_to_join_meta = run._meta.to_frame()
         run_to_join_meta.index = ind
 
         # check everything still makes sense
-        npt.assert_array_equal(run_to_join_meta.index, run_to_join_df.columns)
+        npt.assert_array_equal(run_to_join_meta.index, run_to_join_df.coords["__scmrun_internal_id__"])
 
         # check for overlap
-        idx_to_check = run_to_join_df.index
+        idx_to_check = run_to_join_df.coords["time"]
         if not overlapping_times and (
-            idx_to_check.isin(ret._df.index).any()
+            idx_to_check.isin(ret._df.coords["time"]).any()
             or any([idx_to_check.isin(df.index).any() for df in to_join_dfs])
         ):
             overlapping_times = True
@@ -2060,9 +2073,9 @@ def run_append(
         to_join_dfs.append(run_to_join_df)
         to_join_metas.append(run_to_join_meta)
 
-    ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns").sort_index()
-    ret._time_points = TimePoints(ret._df.index.values)
-    ret._df.index = ret._time_points.to_index()
+    ret._df = xr.concat([ret._df] + to_join_dfs, dim="__scmrun_internal_id__")
+    ret._time_points = TimePoints(ret._df.coords["time"])
+    # ret._df.index = ret._time_points.to_index()
     ret._meta = pd.MultiIndex.from_frame(
         pd.concat([ret._meta.to_frame()] + to_join_metas).astype("category")
     )
@@ -2083,8 +2096,7 @@ def run_append(
 
         deduped_ts = ts.groupby(ts.index, as_index=True).mean()
 
-        ret._df = deduped_ts.reset_index(drop=True).T
-
+        ret._set_df_from_pandas(deduped_ts.reset_index(drop=True).T)
         new_meta = pd.DataFrame.from_records(
             deduped_ts.index.values, columns=ts.index.names
         )

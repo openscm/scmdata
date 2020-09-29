@@ -9,6 +9,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+import xarray as xr
 from numpy import testing as npt
 from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
@@ -47,25 +48,30 @@ def test_init_df_formats(test_pd_run_df, in_format):
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year").set_index(
             idx + ["year"]
         )["value"]
+
     elif in_format == "year_col":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
+
     elif in_format == "year_col_index":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year").set_index(
             idx + ["year"]
         )
+
     elif in_format == "time_col":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
         test_init["time"] = test_init["year"].apply(lambda x: dt.datetime(x, 1, 1))
         test_init = test_init.drop("year", axis="columns")
+
     elif in_format == "time_col_index":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
         test_init["time"] = test_init["year"].apply(lambda x: dt.datetime(x, 1, 1))
         test_init = test_init.drop("year", axis="columns")
         test_init = test_init.set_index(idx + ["time"])
+
     elif in_format == "time_col_str_simple":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
@@ -73,11 +79,13 @@ def test_init_df_formats(test_pd_run_df, in_format):
             lambda x: "{}-1-1 00:00:00".format(x)
         )
         test_init = test_init.drop("year", axis="columns")
+
     elif in_format == "time_col_str_complex":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
         test_init["time"] = test_init["year"].apply(lambda x: "{}/1/1".format(x))
         test_init = test_init.drop("year", axis="columns")
+
     elif in_format == "str_times":
         test_init = test_pd_run_df.copy()
         test_init.columns = test_init.columns.map(
@@ -85,6 +93,7 @@ def test_init_df_formats(test_pd_run_df, in_format):
         )
 
     res = ScmRun(test_init)
+
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
         res["time"].unique()
@@ -884,13 +893,13 @@ def test_filter_index(scm_run):
     exp_index = pd.Int64Index([0, 2])
     pd.testing.assert_index_equal(run["variable"].index, exp_index)
     pd.testing.assert_index_equal(run.meta.index, exp_index)
-    pd.testing.assert_index_equal(run._df.columns, exp_index)
+    pd.testing.assert_index_equal(pd.Index(run._df.coords["__scmrun_internal_id__"].values), exp_index)
 
     run = scm_run.filter(variable="Primary Energy", keep=False)
     exp_index = pd.Int64Index([1])
     pd.testing.assert_index_equal(run["variable"].index, exp_index)
     pd.testing.assert_index_equal(run.meta.index, exp_index)
-    pd.testing.assert_index_equal(run._df.columns, exp_index)
+    pd.testing.assert_index_equal(pd.Index(run._df.coords["__scmrun_internal_id__"].values), exp_index)
 
 
 def test_append_index(scm_run):
@@ -1015,7 +1024,7 @@ def test_append_long_times(
 
     res = scmrun_1.append(scmrun_2)
 
-    assert not isinstance(res._df.index, pd.DatetimeIndex)
+    assert isinstance(res._df, xr.DataArray)
     exp_years = set(time_1).union(set(time_2))
     assert set(res["year"]) == exp_years
 
@@ -1440,7 +1449,7 @@ def test_append_duplicates(scm_run):
 def test_append_duplicates_order_doesnt_matter(scm_run):
     other = copy.deepcopy(scm_run)
     other["time"] = [2020, 2030, 2040]
-    other._df.iloc[2, 2] = 5.0
+    other._df[2, 2] = 5.0
 
     res = other.append(scm_run, duplicate_msg="warn")
 
