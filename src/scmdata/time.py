@@ -67,6 +67,9 @@ def _format_datetime(dts: np.ndarray) -> np.ndarray:
     ValueError
         If one of the values in :obj:`dts` cannot be converted to :class:`np.datetime64`
     """
+
+    dts = np.asarray(dts)
+
     if len(dts) <= 0:  # pylint: disable=len-as-condition
         return np.array([], dtype=_TARGET_DTYPE)
 
