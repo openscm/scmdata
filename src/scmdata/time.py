@@ -30,7 +30,7 @@ Over the span of a ``datetime64[ns]`` these calendars are all equivalent
 
 _CFTIME_CALENDARS = {
     "standard": cftime.datetime,
-    "360day": cftime.Datetime360Day,
+    "360_day": cftime.Datetime360Day,
     "gregorian": cftime.DatetimeGregorian,
     "proleptic_gregorian": cftime.DatetimeProlepticGregorian,
     "noleap": cftime.DatetimeNoLeap,

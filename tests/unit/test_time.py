@@ -7,6 +7,7 @@ from xarray import CFTimeIndex
 from pandas import DatetimeIndex
 from pandas.errors import OutOfBoundsDatetime
 import pandas.testing as pdt
+import pandas as pd
 import cftime
 
 input_type = pytest.mark.parametrize(
@@ -16,7 +17,9 @@ input_type = pytest.mark.parametrize(
         "decimal-year",
         "str-year",
         "str-year-month-day",
-        "numpy",
+        "numpy-ns",
+        "numpy-s",
+        "numpy-y",
         "datetime",
         "cftime",
     ],
@@ -34,8 +37,26 @@ def convert_input(dates_as_int, input_type):
         return [str(d) for d in dates_as_int]
     elif input_type == "str-year-month-day":
         return [str(d) + "-01-01" for d in dates_as_int]
-    elif input_type == "numpy":
-        return [str(d) + "-01-01" for d in dates_as_int]
+    elif input_type == "numpy-ns":
+        if min(dates_as_int) <= 1678 or max(dates_as_int) >= 2262:
+            pytest.skip("datetime out of range")
+        return np.asarray([str(d) + "-01-01" for d in dates_as_int]).astype(
+            "datetime64[ns]"
+        )
+    elif input_type == "numpy-s":
+        return np.asarray([str(d) + "-01-01" for d in dates_as_int]).astype(
+            "datetime64[s]"
+        )
+    elif input_type == "numpy-y":
+        return np.asarray([str(d) + "-01-01" for d in dates_as_int]).astype(
+            "datetime64[Y]"
+        )
+    elif input_type == "pandas":
+        try:
+            return [pd.Timestamp(dt.datetime(d, 1, 1)) for d in dates_as_int]
+        except OutOfBoundsDatetime:
+            pytest.skip("datetime out of range")
+        return [np.datestr(d) + "-01-01" for d in dates_as_int]
     elif input_type == "datetime":
         try:
             return [dt.datetime(d, 1, 1) for d in dates_as_int]
@@ -86,12 +107,13 @@ def test_to_cftime_index(input_type, use_cftime):
 
 
 @pytest.mark.parametrize("calendar", _CFTIME_CALENDARS.keys())
+@pytest.mark.parametrize("use_cftime", [True, None])
 @input_type
-def test_to_cftime_index(input_type, calendar):
+def test_decode_index_with_calendar(input_type, calendar, use_cftime):
     years = [-1000, 1000, 2000, 3000]
     inp_dates = convert_input(years, input_type)
 
-    res = decode_datetimes_to_index(inp_dates, calendar=calendar, use_cftime=True)
+    res = decode_datetimes_to_index(inp_dates, calendar=calendar, use_cftime=use_cftime)
 
     cls = _CFTIME_CALENDARS[calendar]
     cftime_dts = [cls(y, 1, 1) for y in years]
@@ -100,6 +122,25 @@ def test_to_cftime_index(input_type, calendar):
     assert isinstance(res, CFTimeIndex)
     assert all(res.year == years)
     pdt.assert_index_equal(res, exp)
+
+
+def test_decode_index_with_invalid_calendar():
+    years = [-1000, 1000, 2000, 3000]
+
+    with pytest.raises(ValueError, match="Unknown calendar: not-a-cal"):
+        decode_datetimes_to_index(years, calendar="not-a-cal")
+
+
+def test_decode_index_with_nonstandard_calendar():
+    years = [-1000, 1000, 2000, 3000]
+
+    res = decode_datetimes_to_index(years, calendar="360_day")
+    assert isinstance(res, CFTimeIndex)
+
+    with pytest.raises(
+        ValueError, match="Cannot use pandas indexes with a non-standard calendar"
+    ):
+        decode_datetimes_to_index(years, calendar="360_day", use_cftime=False)
 
 
 @pytest.mark.parametrize("use_cftime", [False, None])
