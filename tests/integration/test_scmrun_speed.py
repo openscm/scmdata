@@ -6,9 +6,7 @@ import pytest
 import scmdata
 
 
-@pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 4.5])
-def big_scmrun(request):
-    length = int(request.param)
+def make_example_run(length):
     t_steps = 750
     variables = [
         "Surface Air Temperature Change",
@@ -43,6 +41,12 @@ def big_scmrun(request):
             "ensemble_member": range(length),
         },
     )
+
+
+@pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 4.5])
+def big_scmrun(request):
+    length = int(request.param)
+    return make_example_run(length)
 
 
 def test_recreate_from_timeseries(benchmark, big_scmrun):
@@ -169,3 +173,18 @@ def test_append_multiple_same_time(benchmark, big_scmrun, n_to_append):
 
     assert res.shape[0] == big_scmrun.shape[0] * n_to_append
     assert res.shape[1] == big_scmrun.shape[1]
+
+
+def test_append_example_magicc_ensemble(benchmark):
+    n_to_append = 600
+
+    to_append = []
+    for i in range(n_to_append):
+        tmp = make_example_run(20 * 5)  # 20 variable 5 scenarios
+        tmp["run_number"] = i
+        to_append.append(tmp)
+
+    def append():
+        return scmdata.run_append(to_append)
+
+    benchmark.pedantic(append, iterations=1, rounds=5)
