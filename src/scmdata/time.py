@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from pandas.errors import OutOfBoundsDatetime
 from xarray import CFTimeIndex
+from dateutil import parser
 
 try:
     import scipy.interpolate
@@ -88,6 +89,7 @@ def _str_to_cftime(inp: str, calendar: str):
 
 _ufunc_float_year_to_datetime = np.frompyfunc(_float_year_to_datetime, 1, 1)
 _ufunc_str_to_datetime = np.frompyfunc(np.datetime64, 1, 1)
+_ufunc_str_to_datetime_parser = np.frompyfunc(parser.parse, 1, 1)
 _ufunc_str_to_cftime = np.frompyfunc(_str_to_cftime, 2, 1)
 
 
@@ -95,7 +97,10 @@ def _parse_datetime(inp: np.ndarray) -> np.ndarray:
     try:
         return _ufunc_float_year_to_datetime(inp.astype(float))
     except (TypeError, ValueError):
-        return _ufunc_str_to_datetime(inp)
+        try:
+            return _ufunc_str_to_datetime(inp)
+        except ValueError:
+            return _ufunc_str_to_datetime_parser(inp)
 
 
 def _format_datetime(dts) -> np.ndarray:
