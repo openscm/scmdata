@@ -17,6 +17,7 @@ from pint.errors import DimensionalityError, UndefinedUnitError
 from scmdata.errors import MissingRequiredColumnError, NonUniqueMetadataError
 from scmdata.run import BaseScmRun, ScmRun, run_append
 from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
+from scmdata.time import decode_datetimes_to_index
 
 
 def test_init_df_year_converted_to_datetime(test_pd_df):
@@ -986,12 +987,6 @@ def test_append_long_times(
             "unit": "unit_1",
         },
     )
-    if try_start_1_from_df_with_datetime_index:
-        scmrun_1_ts = scmrun_1.timeseries()
-        try:
-            scmrun_1_ts.columns = pd.DatetimeIndex(scmrun_1_ts.columns.values)
-        except pd.errors.OutOfBoundsDatetime:
-            pytest.skip("pandas datetime error")
 
     scmrun_2 = ScmRun(
         data=np.arange(len(time_2)),
@@ -1004,18 +999,29 @@ def test_append_long_times(
             "unit": "unit_2",
         },
     )
-    if try_start_2_from_df_with_datetime_index:
-        scmrun_2_ts = scmrun_2.timeseries()
-        try:
-            scmrun_2_ts.columns = pd.DatetimeIndex(scmrun_2_ts.columns.values)
-            scmrun_2 = ScmRun(scmrun_2_ts)
 
-        except pd.errors.OutOfBoundsDatetime:
-            pytest.skip("pandas datetime error")
+    def _ensure_dateindex_type(run, ensure_datetime_index):
+        index = run.times
+
+        if ensure_datetime_index and not isinstance(index, pd.DatetimeIndex):
+            try:
+                scmrun_1._df.index = index.to_datetimeindex()
+            except ValueError:
+                pytest.skip("pandas datetime error")
+        elif not ensure_datetime_index and isinstance(index, pd.DatetimeIndex):
+            run._df.index = decode_datetimes_to_index(index, use_cftime=True)
+
+    _ensure_dateindex_type(scmrun_1, try_start_1_from_df_with_datetime_index)
+    _ensure_dateindex_type(scmrun_2, try_start_2_from_df_with_datetime_index)
 
     res = scmrun_1.append(scmrun_2)
 
-    assert not isinstance(res._df.index, pd.DatetimeIndex)
+    if isinstance(scmrun_1.times, pd.DatetimeIndex) and isinstance(
+        scmrun_2.times, pd.DatetimeIndex
+    ):
+        assert isinstance(res.times, pd.DatetimeIndex)
+    else:
+        assert not isinstance(res.times, pd.DatetimeIndex)
     exp_years = set(time_1).union(set(time_2))
     assert set(res["year"]) == exp_years
 
@@ -2584,10 +2590,24 @@ def test_timeseries_time_axis(scm_run, time_axis, mod_func):
 
 
 @time_axis_checks
+def test_long_data_time_axis_long_run(long_scm_run, time_axis, mod_func):
+    res = long_scm_run.timeseries(time_axis=time_axis)
+
+    assert (res.columns == (long_scm_run["time"].apply(mod_func))).all()
+
+
+@time_axis_checks
 def test_long_data_time_axis(scm_run, time_axis, mod_func):
     res = scm_run.long_data(time_axis=time_axis)
 
     assert (res["time"] == (scm_run.long_data()["time"].apply(mod_func))).all()
+
+
+@time_axis_checks
+def test_long_data_time_axis_long_run(long_scm_run, time_axis, mod_func):
+    res = long_scm_run.long_data(time_axis=time_axis)
+
+    assert (res["time"] == (long_scm_run.long_data()["time"].apply(mod_func))).all()
 
 
 @time_axis_checks

@@ -257,6 +257,11 @@ def scm_run():
 
 
 @pytest.fixture(scope="function")
+def long_scm_run():
+    yield ScmRun(TEST_DF_LONG_TIMES.copy())
+
+
+@pytest.fixture(scope="function")
 def base_scm_run():
     yield BaseScmRun(
         np.arange(6).reshape(3, 2),
