@@ -825,9 +825,7 @@ def linear_regression_scmrun(self):
 
 def _calculate_linear_regression(in_scmrun):
     time_unit = "s"
-    times_numpy = in_scmrun.time_points.values.astype(
-        "datetime64[{}]".format(time_unit)
-    )
+    times_numpy = in_scmrun.times.to_numpy().astype("datetime64[{}]".format(time_unit))
     times_in_s = times_numpy.astype("int")
 
     ts = in_scmrun.timeseries()

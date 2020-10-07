@@ -43,6 +43,7 @@ from .time import (
     _TARGET_DTYPE,
     TimeseriesConverter,
     decode_datetimes_to_index,
+    TimePoints,
 )
 from .units import UnitConverter
 
@@ -464,11 +465,15 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
 
         self._df = _df.astype(float)
-        if index is not None:
-            self._df.index = decode_datetimes_to_index(index)
-        else:
-            self._df.index = decode_datetimes_to_index(self._df.index.values)
+
+        self._set_time_index(index if index is not None else self._df.index)
         self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
+
+    def _set_time_index(self, index):
+        if not isinstance(index, (pd.DatetimeIndex, CFTimeIndex)):
+            index = decode_datetimes_to_index(index)
+        self._df.index = index
+        self.time_points = TimePoints(self.times.to_numpy().astype("datetime64[s]"))
 
     def copy(self):
         """
@@ -591,7 +596,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         """
         meta = np.atleast_1d(value)
         if key == "time":
-            self._df.index = decode_datetimes_to_index(meta)
+            self._set_time_index(meta)
         else:
             if len(meta) == 1:
                 new_meta = self._meta.to_frame()
@@ -804,16 +809,20 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
                 return (x - ref).astype("timedelta64[D]")
 
-            columns = calc_days(self.times.values).astype(int)
+            columns = calc_days(self.times.to_numpy().astype("datetime64[s]")).astype(
+                int
+            )
 
         elif time_axis == "seconds since 1970-01-01":
 
             def calc_seconds(x):
                 ref = np.array(["1970-01-01"], dtype=_TARGET_DTYPE)[0]
 
-                return x - ref
+                return (x - ref).astype("timedelta64[s]")
 
-            columns = calc_seconds(self.times.values).astype(int)
+            columns = calc_seconds(
+                self.times.to_numpy().astype("datetime64[s]")
+            ).astype(int)
 
         else:
             raise NotImplementedError("time_axis = '{}'".format(time_axis))
@@ -1048,7 +1057,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
                     _keep_rows = _keep_rows * False
 
             ret._df = ret._df.loc[_keep_times, _keep_rows]
-            ret._df.index = self.times[_keep_times]
+            ret._set_time_index(self.times[_keep_times])
             ret._meta = ret._meta[_keep_rows]
 
         if log_if_empty and ret.empty:
@@ -2075,6 +2084,8 @@ def run_append(
     for run in runs[1:]:
         run_to_join_df = run._df
 
+        any_cftimes = any_cftimes or isinstance(run.times, CFTimeIndex)
+
         max_idx = min_idx + run_to_join_df.shape[1]
         ind = range(min_idx, max_idx)
         min_idx = max_idx
@@ -2097,8 +2108,16 @@ def run_append(
         to_join_dfs.append(run_to_join_df)
         to_join_metas.append(run_to_join_meta)
 
+    if any_cftimes:
+        # If any cftimes are present cast everything to cftime
+        ret._df.index = decode_datetimes_to_index(ret._df.index, use_cftime=True)
+        for df in to_join_dfs:
+            df.index = decode_datetimes_to_index(df.index, use_cftime=True)
+
     ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns").sort_index()
-    ret._df.index = decode_datetimes_to_index(ret.times.values)
+    ret._set_time_index(
+        decode_datetimes_to_index(ret.times.values, use_cftime=any_cftimes)
+    )
     ret._meta = pd.MultiIndex.from_frame(
         pd.concat([ret._meta.to_frame()] + to_join_metas).astype("category")
     )
