@@ -1939,12 +1939,10 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             data = func(input_data, **kwargs)
 
         if getattr(data, "shape", ()) == self.shape:
-            return type(self)(
-                data, index=self.time_points, columns=self.meta.to_dict("list")
-            )
+            return type(self)(data, index=self.times, columns=self.meta.to_dict("list"))
         else:
             removed_axes = range(2) if axis is None else np.atleast_1d(axis) % 2
-            index = self.time_points
+            index = self.times
             meta = self.meta.to_dict("list")
             if 0 in removed_axes and len(meta):
                 # Reduced the timeseries
