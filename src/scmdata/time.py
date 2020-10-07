@@ -9,9 +9,9 @@ from datetime import datetime
 import cftime
 import numpy as np
 import pandas as pd
+from dateutil import parser
 from pandas.errors import OutOfBoundsDatetime
 from xarray import CFTimeIndex
-from dateutil import parser
 
 try:
     import scipy.interpolate
