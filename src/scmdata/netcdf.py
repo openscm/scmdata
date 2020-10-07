@@ -14,6 +14,7 @@ except ImportError:  # pragma: no cover
 from collections import defaultdict
 from datetime import datetime
 from logging import getLogger
+from xarray.coding.times import encode_cf_datetime, decode_cf_datetime
 
 import numpy as np
 
@@ -78,22 +79,46 @@ def _get_nc_type(np_type):
     return {"datatype": str, "fill_value": None}
 
 
-def _write_nc(ds, df, dimensions, extras):
+def _create_time_variable(ds, run):
+    """
+    Create a CF-compliant time variable
+
+    Note that the CF dictates the use of units, rather than unit which we use else where
+    """
+    ds.createDimension("time", run.shape[1])
+    ds.createVariable(
+        "time", "i8", "time",
+    )
+
+    num, units, calendar = encode_cf_datetime(run.times)
+    ds.variables["time"][:] = num
+    ds.variables["time"].setncatts({"calendar": calendar, "units": units})
+
+
+def _read_time_variable(time_var):
+    # If times use the f8 datatype, convert to datetime64[s]
+    if time_var.dtype == np.dtype("f8"):
+        return time_var[:].astype("datetime64[s]")
+    else:
+        # Use CF-compliant time handling
+        attrs = time_var.ncattrs()
+        units = time_var.units if "units" in attrs else None
+        calendar = time_var.calendar if "calendar" in attrs else None
+
+        return decode_cf_datetime(time_var[:], units, calendar)
+
+
+def _write_nc(ds, run, dimensions, extras):
     """
     Low level function to write the dimensions, variables and metadata to disk
     """
     all_dims = list(dimensions) + ["time"]
 
-    # Create the dimensions
-    ds.createDimension("time", len(df.time_points))
-    ds.createVariable(
-        "time", "f8", "time",
-    )
-    ds.variables["time"][:] = df.time_points.values
+    _create_time_variable(ds, run)
 
     dims = {}
     for d in dimensions:
-        vals = sorted(df.meta[d].unique())
+        vals = sorted(run.meta[d].unique())
         if not all([isinstance(v, str) for v in vals]) and np.isnan(vals).any():
             raise AssertionError("nan in dimension: `{}`".format(d))
 
@@ -104,11 +129,11 @@ def _write_nc(ds, df, dimensions, extras):
             ds.variables[d][i] = v
         dims[d] = np.asarray(vals)
 
-    var_shape = [len(dims[d]) for d in dimensions] + [len(df.time_points)]
+    var_shape = [len(dims[d]) for d in dimensions] + [run.shape[1]]
 
     # Write any extra variables
     for e in extras:
-        metadata = df.meta[[e, *dimensions]].drop_duplicates()
+        metadata = run.meta[[e, *dimensions]].drop_duplicates()
 
         if metadata[dimensions].duplicated().any():
             raise ValueError(
@@ -132,7 +157,7 @@ def _write_nc(ds, df, dimensions, extras):
 
         ds.variables[e][:] = data_to_write
 
-    for var_df in df.groupby("variable"):
+    for var_df in run.groupby("variable"):
         v = var_df.get_unique_meta("variable", True)
         meta = var_df.meta.copy().drop("variable", axis=1)
 
@@ -173,7 +198,7 @@ def _write_nc(ds, df, dimensions, extras):
 
 def _read_nc(cls, ds):
     dims = {d: ds.variables[d][:] for d in ds.dimensions}
-    dims["time"] = dims["time"].astype("datetime64[s]")
+    dims["time"] = _read_time_variable(ds.variables["time"])
 
     data = []
     columns = defaultdict(list)
