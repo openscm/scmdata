@@ -1057,7 +1057,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
                     _keep_rows = _keep_rows * False
 
             ret._df = ret._df.loc[_keep_times, _keep_rows]
-            ret._set_time_index(self.times[_keep_times])
+            ret._set_time_index(ret.times)
             ret._meta = ret._meta[_keep_rows]
 
         if log_if_empty and ret.empty:
@@ -1123,21 +1123,20 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
                         separator=self.data_hierarchy_separator,
                     )
                 # else do nothing as level handled in variable filtering
-
             elif col == "year":
-                keep_ts &= years_match(self.times.year, values)
+                keep_ts &= years_match(self.time_points.years(), values)
 
             elif col == "month":
-                keep_ts &= month_match(self.times.month, values)
+                keep_ts &= month_match(self.time_points.months(), values)
 
             elif col == "day":
                 keep_ts &= self._day_match(values)
 
             elif col == "hour":
-                keep_ts &= hour_match(self.times.hour, values)
+                keep_ts &= hour_match(self.time_points.hours(), values)
 
             elif col == "time":
-                keep_ts &= datetime_match(self.times.values, values)
+                keep_ts &= datetime_match(self.time_points.values, values)
 
             else:
                 raise ValueError("filter by `{}` not supported".format(col))
@@ -1153,9 +1152,9 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             wday = False
 
         if wday:
-            days = self.times.weekdays()
+            days = self.time_points.weekdays()
         else:  # ints or list of ints
-            days = self.times.days()
+            days = self.time_points.days()
 
         return day_match(days, values)
 
