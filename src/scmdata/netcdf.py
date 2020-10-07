@@ -14,9 +14,9 @@ except ImportError:  # pragma: no cover
 from collections import defaultdict
 from datetime import datetime
 from logging import getLogger
-from xarray.coding.times import encode_cf_datetime, decode_cf_datetime
 
 import numpy as np
+from xarray.coding.times import decode_cf_datetime, encode_cf_datetime
 
 from . import __version__
 

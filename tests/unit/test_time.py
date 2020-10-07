@@ -1,14 +1,15 @@
-import pytest
-from scmdata.time import _format_datetime, decode_datetimes_to_index, _CFTIME_CALENDARS
 import datetime as dt
-import numpy as np
 
-from xarray import CFTimeIndex
+import cftime
+import numpy as np
+import pandas as pd
+import pandas.testing as pdt
+import pytest
 from pandas import DatetimeIndex
 from pandas.errors import OutOfBoundsDatetime
-import pandas.testing as pdt
-import pandas as pd
-import cftime
+from xarray import CFTimeIndex
+
+from scmdata.time import _CFTIME_CALENDARS, _format_datetime, decode_datetimes_to_index
 
 input_type = pytest.mark.parametrize(
     "input_type",

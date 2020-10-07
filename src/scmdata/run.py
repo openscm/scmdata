@@ -13,15 +13,15 @@ import warnings
 from logging import getLogger
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
+import cftime
 import numpy as np
 import numpy.testing as npt
 import openscm_units.unit_registry as ur
 import pandas as pd
 import pint
 from dateutil import parser
-from xarray.core.ops import inject_binary_ops
 from xarray import CFTimeIndex
-import cftime
+from xarray.core.ops import inject_binary_ops
 
 from .errors import MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
@@ -41,9 +41,9 @@ from .plotting import inject_plotting_methods
 from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
 from .time import (
     _TARGET_DTYPE,
+    TimePoints,
     TimeseriesConverter,
     decode_datetimes_to_index,
-    TimePoints,
 )
 from .units import UnitConverter
 
