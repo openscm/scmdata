@@ -216,7 +216,7 @@ def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
         tdb._save_single(start_scmrun)
 
 
-@patch.object(ScmDatabase, "_save_to_database_single_file")
+@patch.object(ScmDatabase, "_save_single")
 def test_database_save(mock_save_to_database_single_file, tdb, start_scmrun):
     tdb.save(start_scmrun)
 
