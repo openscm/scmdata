@@ -15,6 +15,7 @@ import os
 import os.path
 import pathlib
 import shutil
+from abc import ABC, abstractmethod
 
 import pandas as pd
 import tqdm.autonotebook as tqdman
@@ -51,7 +52,7 @@ def _check_is_subdir(root, d):
         raise AssertionError("{} not in {}".format(d, root))
 
 
-class ScmDatabase:
+class BaseDatabase(ABC):
     """
     On-disk database handler for outputs from SCMs
 
@@ -103,16 +104,6 @@ class ScmDatabase:
         """
         return self._root_dir
 
-    @staticmethod
-    def _get_disk_filename(inp):
-        def safe_char(c):
-            if c.isalnum() or c in "-/*_.":
-                return c
-            else:
-                return "-"
-
-        return "".join(safe_char(c) for c in inp)
-
     def save(self, scmrun, disable_tqdm=False):
         """
         Save data to the database
@@ -139,7 +130,161 @@ class ScmDatabase:
             desc="Saving to database",
             disable=disable_tqdm,
         ):
-            self._save_to_database_single_file(r)
+            self._save_single(r)
+
+    def load(self, disable_tqdm=False, **filters):
+        """
+        Load data from the database
+
+        Parameters
+        ----------
+        disable_tqdm: bool
+            If True, do not show the progress bar
+        filters: dict of str : [str, list[str]]
+            Filters for the data to load.
+
+            Defaults to loading all values for a level if it isn't specified.
+
+            If a filter is a list then OR logic is applied within the level.
+            For example, if we have ``scenario=["ssp119", "ssp126"]`` then
+            both the ssp119 and ssp126 scenarios will be loaded.
+
+        Returns
+        -------
+        :class:`scmdata.ScmRun`
+            Loaded data
+
+        Raises
+        ------
+        ValueError
+            If a filter for a level not in :attr:`levels` is specified
+
+            If no data matching ``filters`` is found
+        """
+        for level in filters:
+            if level not in self.levels:
+                raise ValueError("Unknown level: {}".format(level))
+
+            if os.sep in filters[level]:
+                filters[level] = filters[level].replace(os.sep, "_")
+
+        load_files = self._get_targets(filters)
+
+        if show_tqdm:
+            return run_append(
+                [
+                    self._load_single(f)
+                    for f in tqdman.tqdm(
+                        load_files,
+                        desc="Loading files",
+                        leave=False,
+                        disable=disable_tqdm,
+                    )
+                ]
+            )
+        else:
+            return run_append([self._load_single(f) for f in load_files])
+
+    def delete(self, **filters):
+        """
+        Delete data from the database
+
+        Parameters
+        ----------
+        filters: dict of str
+            Filters for the data to load.
+
+            Defaults to deleting all data if nothing is specified.
+
+        Raises
+        ------
+        ValueError
+            If a filter for a level not in :attr:`levels` is specified
+        """
+        for level in filters:
+            if level not in self.levels:
+                raise ValueError("Unknown level: {}".format(level))
+            if os.sep in filters[level]:
+                filters[level] = filters[level].replace(os.sep, "_")
+
+        load_dirs = self._get_targets(filters, ext=None)
+
+        for d in load_dirs:
+            _check_is_subdir(self._root_dir, d)
+            self._delete_single(d)
+
+    def available_data(self):
+        """
+        Get all the data which is available to be loaded
+
+        If metadata includes non-alphanumeric characters then it
+        might appear modified in the returned table. The original
+        metadata values can still be used to filter data.
+
+        Returns
+        -------
+        :class:`pd.DataFrame`
+        """
+        all_files = self._get_targets({})
+
+        file_meta = []
+        for f in all_files:
+            dirnames = f.split(os.sep)[:-1]
+            file_meta.append(dirnames[-len(self.levels) :])
+
+        data = pd.DataFrame(file_meta, columns=self.levels)
+
+        return data.sort_values(by=data.columns.to_list()).reset_index(drop=True)
+
+    @abstractmethod
+    def _save_single(self, scmrun):
+        pass
+
+    @abstractmethod
+    def _load_single(self, fname):
+        pass
+
+    def _delete_single(self, fname):
+        pass
+
+    @abstractmethod
+    def _get_targets(self, filters, ext="*.nc"):
+        """
+        Get all matching objects for a given filter
+
+        Parameters
+        ----------
+        filters: dict of str
+            String filters
+            If a level is missing then all values are fetched
+        ext: str or None
+            Added to the end of the search string
+
+        Returns
+        -------
+        list of str
+        """
+        pass
+
+
+class ScmDatabase(BaseDatabase):
+    """
+    On-disk database handler for outputs from SCMs
+
+    Data is split into groups as specified by :attr:`levels`. This allows for fast
+    reading and writing of new subsets of data when a single output file is no longer
+    performant or data cannot all fit in memory.
+    """
+
+    @staticmethod
+    def _get_disk_filename(inp):
+        def safe_char(c):
+            if c.isalnum() or c in "-/*_.":
+                return c
+            else:
+                return "-"
+
+        return "".join(safe_char(c) for c in inp)
 
     def _get_out_filepath(self, **levels):
         """
@@ -177,7 +322,7 @@ class ScmDatabase:
 
         return self._get_disk_filename(out_fname)
 
-    def _save_to_database_single_file(self, scmrun):
+    def _save_single(self, scmrun):
         levels = {
             level: scmrun.get_unique_meta(level, no_duplicates=True).replace(
                 os.sep, "_"
@@ -197,42 +342,28 @@ class ScmDatabase:
         dimensions = nunique_meta_vals[nunique_meta_vals > 1].index.tolist()
         scmrun.to_nc(out_file, dimensions=dimensions)
 
-    def load(self, disable_tqdm=False, **filters):
+    def _load_single(self, fname):
+        return ScmRun.from_nc(fname)
+
+    def _delete_single(self, fname):
+        shutil.rmtree(fname)
+
+    def _get_targets(self, filters, ext="*.nc"):
         """
-        Load data from the database
+        Get all matching objects for a given filter
 
         Parameters
         ----------
-        disable_tqdm: bool
-            If True, do not show the progress bar
-        filters: dict of str : [str, list[str]]
-            Filters for the data to load.
-
-            Defaults to loading all values for a level if it isn't specified.
-
-            If a filter is a list then OR logic is applied within the level.
-            For example, if we have ``scenario=["ssp119", "ssp126"]`` then
-            both the ssp119 and ssp126 scenarios will be loaded.
+        filters: dict of str
+            String filters
+            If a level is missing then all values are fetched
+        ext: str or None
+            Added to the end of the search string
 
         Returns
         -------
-        :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
-            Loaded data
-
-        Raises
-        ------
-        ValueError
-            If a filter for a level not in :attr:`levels` is specified
-
-            If no data matching ``filters`` is found
+        list of str
         """
-        for level in filters:
-            if level not in self.levels:
-                raise ValueError("Unknown level: {}".format(level))
-
-            if "/" in filters[level]:
-                filters[level] = filters[level].replace("/", "_")
-
         level_options = []
         for level in self.levels:
             level_values = filters.get(level, ["*"])
@@ -254,66 +385,4 @@ class ScmDatabase:
             for v in vlist
         ]
 
-        return run_append(
-            [
-                ScmRun.from_nc(f)
-                for f in tqdman.tqdm(
-                    load_files, desc="Loading files", leave=False, disable=disable_tqdm
-                )
-            ]
-        )
-
-    def delete(self, **filters):
-        """
-        Delete data from the database
-
-        Parameters
-        ----------
-        filters: dict of str
-            Filters for the data to load.
-
-            Defaults to deleting all data if nothing is specified.
-
-        Raises
-        ------
-        ValueError
-            If a filter for a level not in :attr:`levels` is specified
-        """
-        for level in filters:
-            if level not in self.levels:
-                raise ValueError("Unknown level: {}".format(level))
-            if "/" in filters[level]:
-                filters[level] = filters[level].replace("/", "_")
-
-        paths_to_load = [filters.get(level, "*") for level in self.levels]
-        load_path = os.path.join(self._root_dir, *paths_to_load)
-        glob_to_use = self._get_disk_filename(load_path)
-        load_dirs = glob.glob(glob_to_use, recursive=True)
-
-        for d in load_dirs:
-            _check_is_subdir(self._root_dir, d)
-            shutil.rmtree(d)
-
-    def available_data(self):
-        """
-        Get all the data which is available to be loaded
-
-        If metadata includes non-alphanumeric characters then it
-        might appear modified in the returned table. The original
-        metadata values can still be used to filter data.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-        """
-        load_path = os.path.join(self._root_dir, "**", "*.nc")
-        all_files = glob.glob(load_path, recursive=True)
-
-        file_meta = []
-        for f in all_files:
-            dirnames = f.split(os.sep)[:-1]
-            file_meta.append(dirnames[-len(self.levels) :])
-
-        data = pd.DataFrame(file_meta, columns=self.levels)
-
-        return data.sort_values(by=data.columns.to_list()).reset_index(drop=True)
+        return load_files

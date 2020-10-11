@@ -160,7 +160,7 @@ def test_save_to_database_single_file(
     mock_get_out_filepath.return_value = tout_file
     inp_scmrun = start_scmrun.filter(climate_model="cmodel_a")
 
-    tdb._save_to_database_single_file(inp_scmrun)
+    tdb._save_single(inp_scmrun)
 
     mock_get_out_filepath.assert_called_once()
     mock_get_out_filepath.assert_called_with(
@@ -189,7 +189,7 @@ def test_save_to_database_single_file_non_unique_meta(
     inp_scmrun["ensemble_member"] = [0, 1]
     inp_scmrun["climate_model"] = "cmodel_a"
 
-    tdb._save_to_database_single_file(inp_scmrun)
+    tdb._save_single(inp_scmrun)
 
     mock_get_out_filepath.assert_called_once()
     mock_get_out_filepath.assert_called_with(
@@ -213,7 +213,7 @@ def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
             "`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])"
         ),
     ):
-        tdb._save_to_database_single_file(start_scmrun)
+        tdb._save_single(start_scmrun)
 
 
 @patch.object(ScmDatabase, "_save_to_database_single_file")
