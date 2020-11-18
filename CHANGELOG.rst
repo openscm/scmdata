@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#130 <https://github.com/openscm/scmdata/pull/130>`_) Add stack info to warning message when filtering results in an empty :obj:`scmdata.run.ScmRun`
+
 v0.7.3
 ------
 
