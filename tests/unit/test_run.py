@@ -1,5 +1,6 @@
 import copy
 import datetime as dt
+import logging
 import os
 import re
 import warnings
@@ -1894,8 +1895,11 @@ def test_filter_by_int(scm_run):
     assert obs["scenario"].unique() == "a_scenario"
 
 
-def test_filter_empty(scm_run):
-    empty_run = scm_run.filter(variable="not a variable")
+def test_filter_empty(scm_run, caplog):
+    with caplog.at_level(logging.WARNING, logger="scmdata.run"):
+        empty_run = scm_run.filter(variable="not a variable")
+
+    assert caplog.records[0].stack_info is not None
     assert empty_run.shape == (0, 3)
 
     # Filtering an empty run should result in an empty run

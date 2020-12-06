@@ -1071,7 +1071,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             ret["time"] = self.time_points.values[_keep_times]
 
         if log_if_empty and ret.empty:
-            _logger.warning("Filtered ScmRun is empty!")
+            _logger.warning("Filtered ScmRun is empty!", stack_info=True)
 
         if not inplace:
             return ret
