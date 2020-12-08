@@ -257,6 +257,11 @@ def scm_run():
 
 
 @pytest.fixture(scope="function")
+def long_scm_run():
+    yield ScmRun(TEST_DF_LONG_TIMES.copy())
+
+
+@pytest.fixture(scope="function")
 def base_scm_run():
     yield BaseScmRun(
         np.arange(6).reshape(3, 2),
@@ -537,6 +542,16 @@ possible_target_values = [
         source_start_time=np.datetime64("2000-01-06"),
         source_period_length=np.timedelta64(3, "D"),
         target_start_time=np.datetime64("2000-01-07"),
+        target_period_length=np.timedelta64(4, "D"),
+        source_values=possible_source_values[0],
+        target_values=[2.33333333, 3.6666667],
+        interpolation_type="linear",
+        extrapolation_type=None,
+    ),
+    dict(
+        source_start_time=np.datetime64("1000-01-06"),
+        source_period_length=np.timedelta64(3, "D"),
+        target_start_time=np.datetime64("1000-01-07"),
         target_period_length=np.timedelta64(4, "D"),
         source_values=possible_source_values[0],
         target_values=[2.33333333, 3.6666667],

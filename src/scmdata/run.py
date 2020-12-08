@@ -13,12 +13,14 @@ import warnings
 from logging import getLogger
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
+import cftime
 import numpy as np
 import numpy.testing as npt
 import openscm_units.unit_registry as ur
 import pandas as pd
 import pint
 from dateutil import parser
+from xarray import CFTimeIndex
 from xarray.core.ops import inject_binary_ops
 
 from .errors import MissingRequiredColumnError, NonUniqueMetadataError
@@ -37,7 +39,12 @@ from .offsets import generate_range, to_offset
 from .ops import inject_ops_methods
 from .plotting import inject_plotting_methods
 from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
-from .time import _TARGET_DTYPE, TimePoints, TimeseriesConverter
+from .time import (
+    _TARGET_DTYPE,
+    TimePoints,
+    TimeseriesConverter,
+    decode_datetimes_to_index,
+)
 from .units import UnitConverter
 
 _logger = getLogger(__name__)
@@ -202,7 +209,7 @@ def _format_wide_data(df, required_cols):
     time_cols, extra_cols = False, []
     for i in cols:
         # if in wide format, check if columns are years (int) or datetime
-        if isinstance(i, dt.datetime):
+        if isinstance(i, (dt.datetime, cftime.datetime)):
             time_cols = True
         else:
             try:
@@ -235,10 +242,7 @@ def _format_wide_data(df, required_cols):
 
 
 def _from_ts(
-    df: Any,
-    required_cols: Tuple[str],
-    index: Any = None,
-    **columns: Union[str, bool, float, int, List],
+    df: Any, required_cols: Tuple[str], **columns: Union[str, bool, float, int, List],
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun` from wide timeseries.
@@ -257,20 +261,11 @@ def _from_ts(
     """
     if not isinstance(df, pd.DataFrame):
         df = pd.DataFrame(df)
-    if index is not None:
-        if isinstance(index, np.ndarray):
-            df.index = TimePoints(index).to_index()
-        elif isinstance(index, TimePoints):
-            df.index = index.to_index()
-        else:
-            df.index = index
 
     # format columns to lower-case and check that all required columns exist
     if not set(required_cols).issubset(columns.keys()):
         missing = list(set(required_cols) - set(columns.keys()))
         raise MissingRequiredColumnError(missing)
-
-    df.index.name = "time"
 
     num_ts = len(df.columns)
     for c_name, col in columns.items():
@@ -423,7 +418,6 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         if isinstance(data, ScmRun):
             self._df = data._df.copy() if copy_data else data._df
             self._meta = data._meta
-            self._time_points = TimePoints(data.time_points.values)
             if metadata is None:
                 metadata = data.metadata.copy()
         else:
@@ -451,9 +445,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
                 raise ValueError("`index` argument is required")
 
         if columns is not None:
-            (_df, _meta) = _from_ts(
-                data, index=index, required_cols=self.required_cols, **columns
-            )
+            (_df, _meta) = _from_ts(data, required_cols=self.required_cols, **columns)
         elif isinstance(data, (pd.DataFrame, pd.Series)):
             (_df, _meta) = _format_data(data, self.required_cols)
         elif (IamDataFrame is not None) and isinstance(data, IamDataFrame):
@@ -472,12 +464,16 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
             (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
 
-        self._time_points = TimePoints(_df.index.values)
+        self._df = _df.astype(float)
 
-        _df = _df.astype(float)
-        self._df = _df
-        self._df.index = self._time_points.to_index()
+        self._set_time_index(index if index is not None else self._df.index)
         self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
+
+    def _set_time_index(self, index):
+        if not isinstance(index, (pd.DatetimeIndex, CFTimeIndex)):
+            index = decode_datetimes_to_index(index)
+        self._df.index = index
+        self.time_points = TimePoints(self.times.to_numpy().astype("datetime64[s]"))
 
     def copy(self):
         """
@@ -514,9 +510,9 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             [key] if isinstance(key, str) or not isinstance(key, Iterable) else key
         )
         if key == "time":
-            return pd.Series(self._time_points.to_index(), dtype="object")
+            return pd.Series(self.times, dtype="object")  # converted to datetimes
         if key == "year":
-            return pd.Series(self._time_points.years())
+            return pd.Series(self.times.year)
         if set(_key_check).issubset(self.meta_attributes):
             try:
                 return self._meta_column(key).astype(
@@ -600,8 +596,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         """
         meta = np.atleast_1d(value)
         if key == "time":
-            self._time_points = TimePoints(meta)
-            self._df.index = self._time_points.to_index()
+            self._set_time_index(meta)
         else:
             if len(meta) == 1:
                 new_meta = self._meta.to_frame()
@@ -628,12 +623,12 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
         meta_str = _indent(self.meta.__repr__())
         time_str = [
-            "Start: {}".format(self.time_points.values[0]),
-            "End: {}".format(self.time_points.values[-1]),
+            "Start: {}".format(self.times.values[0]),
+            "End: {}".format(self.times.values[-1]),
         ]
         time_str = _indent("\n".join(time_str))
         return "<scmdata.ScmRun (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}".format(
-            len(self), len(self.time_points), time_str, meta_str
+            len(self), len(self.times), time_str, meta_str
         )
 
     @staticmethod
@@ -744,15 +739,8 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         return sorted(list(self._meta.names))
 
     @property
-    def time_points(self):
-        """
-        Time points of the data
-
-        Returns
-        -------
-        :obj:`scmdata.time.TimePoints`
-        """
-        return self._time_points
+    def times(self):
+        return self._df.index
 
     def timeseries(
         self, meta=None, check_duplicated=True, time_axis=None, drop_all_nan_times=False
@@ -809,13 +797,11 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             raise NonUniqueMetadataError(_meta)
 
         if time_axis is None:
-            columns = self._time_points.to_index()
+            columns = self.times
         elif time_axis == "year":
-            columns = self._time_points.years()
+            columns = self.times.year
         elif time_axis == "year-month":
-            columns = (
-                self._time_points.years() + (self._time_points.months() - 0.5) / 12
-            )
+            columns = self.times.year + (self.times.month - 0.5) / 12
         elif time_axis == "days since 1970-01-01":
 
             def calc_days(x):
@@ -823,16 +809,20 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
                 return (x - ref).astype("timedelta64[D]")
 
-            columns = calc_days(self._time_points.values).astype(int)
+            columns = calc_days(self.times.to_numpy().astype("datetime64[s]")).astype(
+                int
+            )
 
         elif time_axis == "seconds since 1970-01-01":
 
             def calc_seconds(x):
                 ref = np.array(["1970-01-01"], dtype=_TARGET_DTYPE)[0]
 
-                return x - ref
+                return (x - ref).astype("timedelta64[s]")
 
-            columns = calc_seconds(self._time_points.values).astype(int)
+            columns = calc_seconds(
+                self.times.to_numpy().astype("datetime64[s]")
+            ).astype(int)
 
         else:
             raise NotImplementedError("time_axis = '{}'".format(time_axis))
@@ -1067,8 +1057,8 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
                     _keep_rows = _keep_rows * False
 
             ret._df = ret._df.loc[_keep_times, _keep_rows]
+            ret._set_time_index(ret.times)
             ret._meta = ret._meta[_keep_rows]
-            ret["time"] = self.time_points.values[_keep_times]
 
         if log_if_empty and ret.empty:
             _logger.warning("Filtered ScmRun is empty!", stack_info=True)
@@ -1104,7 +1094,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             Filtering cannot be performed on requested column
         """
         regexp = filters.pop("regexp", False)
-        keep_ts = np.array([True] * len(self.time_points))
+        keep_ts = np.array([True] * len(self.times))
         keep_meta = np.array([True] * len(self))
 
         # filter by columns and list of values
@@ -1133,21 +1123,20 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
                         separator=self.data_hierarchy_separator,
                     )
                 # else do nothing as level handled in variable filtering
-
             elif col == "year":
-                keep_ts &= years_match(self._time_points.years(), values)
+                keep_ts &= years_match(self.time_points.years(), values)
 
             elif col == "month":
-                keep_ts &= month_match(self._time_points.months(), values)
+                keep_ts &= month_match(self.time_points.months(), values)
 
             elif col == "day":
                 keep_ts &= self._day_match(values)
 
             elif col == "hour":
-                keep_ts &= hour_match(self._time_points.hours(), values)
+                keep_ts &= hour_match(self.time_points.hours(), values)
 
             elif col == "time":
-                keep_ts &= datetime_match(self._time_points.values, values)
+                keep_ts &= datetime_match(self.time_points.values, values)
 
             else:
                 raise ValueError("filter by `{}` not supported".format(col))
@@ -1163,9 +1152,9 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             wday = False
 
         if wday:
-            days = self._time_points.weekdays()
+            days = self.time_points.weekdays()
         else:  # ints or list of ints
-            days = self._time_points.days()
+            days = self.time_points.days()
 
         return day_match(days, values)
 
@@ -1275,11 +1264,11 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
         res = self.copy()
 
-        target_times = TimePoints(target_times)
+        target_index = decode_datetimes_to_index(target_times)
 
         timeseries_converter = TimeseriesConverter(
-            self.time_points.values,
-            target_times.values,
+            self.times.values,
+            target_times,
             interpolation_type=interpolation_type,
             extrapolation_type=extrapolation_type,
         )
@@ -1290,10 +1279,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             target_data[:, i] = timeseries_converter.convert_from(
                 res._df.iloc[:, i].values
             )
-        res._df = pd.DataFrame(
-            target_data, columns=res._df.columns, index=target_times.to_index()
-        )
-        res._time_points = target_times
+        res._df = pd.DataFrame(target_data, columns=res._df.columns, index=target_index)
 
         return res
 
@@ -1902,12 +1888,10 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             data = func(input_data, **kwargs)
 
         if getattr(data, "shape", ()) == self.shape:
-            return type(self)(
-                data, index=self.time_points, columns=self.meta.to_dict("list")
-            )
+            return type(self)(data, index=self.times, columns=self.meta.to_dict("list"))
         else:
             removed_axes = range(2) if axis is None else np.atleast_1d(axis) % 2
-            index = self.time_points
+            index = self.times
             meta = self.meta.to_dict("list")
             if 0 in removed_axes and len(meta):
                 # Reduced the timeseries
@@ -2030,6 +2014,8 @@ def run_append(
     to_join_metas = []
     overlapping_times = False
 
+    any_cftimes = isinstance(ret.times, CFTimeIndex)
+
     ind = range(ret._df.shape[1])
     ret._df.columns = ind
     ret._meta.index = ind
@@ -2037,6 +2023,8 @@ def run_append(
     min_idx = ret._df.shape[1]
     for run in runs[1:]:
         run_to_join_df = run._df
+
+        any_cftimes = any_cftimes or isinstance(run.times, CFTimeIndex)
 
         max_idx = min_idx + run_to_join_df.shape[1]
         ind = range(min_idx, max_idx)
@@ -2052,7 +2040,7 @@ def run_append(
         # check for overlap
         idx_to_check = run_to_join_df.index
         if not overlapping_times and (
-            idx_to_check.isin(ret._df.index).any()
+            idx_to_check.isin(ret.times.values.astype("datetime64[s]")).any()
             or any([idx_to_check.isin(df.index).any() for df in to_join_dfs])
         ):
             overlapping_times = True
@@ -2060,9 +2048,16 @@ def run_append(
         to_join_dfs.append(run_to_join_df)
         to_join_metas.append(run_to_join_meta)
 
+    if any_cftimes:
+        # If any cftimes are present cast everything to cftime
+        ret._df.index = decode_datetimes_to_index(ret._df.index, use_cftime=True)
+        for df in to_join_dfs:
+            df.index = decode_datetimes_to_index(df.index, use_cftime=True)
+
     ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns").sort_index()
-    ret._time_points = TimePoints(ret._df.index.values)
-    ret._df.index = ret._time_points.to_index()
+    ret._set_time_index(
+        decode_datetimes_to_index(ret.times.values, use_cftime=any_cftimes)
+    )
     ret._meta = pd.MultiIndex.from_frame(
         pd.concat([ret._meta.to_frame()] + to_join_metas).astype("category")
     )

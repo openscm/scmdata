@@ -24,7 +24,7 @@ def test_run_to_nc(scm_run):
 
         ds = nc.Dataset(out_fname)
 
-        assert ds.dimensions["time"].size == len(scm_run.time_points)
+        assert ds.dimensions["time"].size == scm_run.shape[1]
         assert ds.dimensions["scenario"].size == 2
 
         assert ds.variables["scenario"][0] == "a_scenario"
@@ -403,3 +403,9 @@ def test_error_run_to_nc_required_cols_in_extras_duplicated():
         msg = "metadata for model is not unique for requested dimensions"
         with pytest.raises(ValueError, match=msg):
             start.to_nc(out_fname, extras=("model",))
+
+
+def test_read_legacy_datetimes_nc(scm_run, test_data_path):
+    old_datetimes_run = ScmRun.from_nc(join(test_data_path, "legacy_datetimes.nc"))
+
+    assert_scmdf_almost_equal(old_datetimes_run, scm_run, check_ts_names=False)
