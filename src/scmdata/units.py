@@ -5,7 +5,7 @@ import warnings
 from typing import Optional, Sequence, Union
 
 import numpy as np
-from openscm_units.unit_registry import ScmUnitRegistry
+from openscm_units import ScmUnitRegistry
 
 _unit_registry = ScmUnitRegistry()
 """
