@@ -10,9 +10,9 @@ import functools
 from typing import Any, Callable, List, Union
 
 import numpy as np
-from openscm_units import unit_registry as ur
 import pint
 import xarray as xr
+from openscm_units import unit_registry as ur
 from xarray.core.ops import inject_binary_ops
 
 from .time import TimePoints, TimeseriesConverter
