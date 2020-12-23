@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#132 <https://github.com/openscm/scmdata/pull/132>`_) Update to new openscm-units 0.2
 - (`#130 <https://github.com/openscm/scmdata/pull/130>`_) Add stack info to warning message when filtering results in an empty :obj:`scmdata.run.ScmRun`
 
 v0.7.3
