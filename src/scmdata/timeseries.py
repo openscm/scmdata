@@ -10,7 +10,7 @@ import functools
 from typing import Any, Callable, List, Union
 
 import numpy as np
-import openscm_units.unit_registry as ur
+from openscm_units import unit_registry as ur
 import pint
 import xarray as xr
 from xarray.core.ops import inject_binary_ops
