@@ -32,7 +32,7 @@ CLASSIFIERS = [
 REQUIREMENTS = [
     "cftime",
     "numpy",
-    "openscm-units",
+    "openscm-units>=0.2,<0.3",
     "pandas>=1.0.4",
     "pint-pandas==0.1.0",
     "python-dateutil",
