@@ -39,7 +39,11 @@ REQUIREMENTS = [
     "tqdm",
     "xarray",
 ]
-REQUIREMENTS_OPTIONAL = ["netCDF4", "scipy", "xlrd"]
+REQUIREMENTS_OPTIONAL = [
+    "netCDF4",
+    "scipy",
+    "xlrd<=1.2.0",  # support reading excel
+]
 REQUIREMENTS_PLOTTING = ["seaborn"]
 REQUIREMENTS_NOTEBOOKS = (
     ["notebook", "ipywidgets"] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
