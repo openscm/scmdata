@@ -33,7 +33,7 @@ REQUIREMENTS = [
     "cftime",
     "numpy",
     "openscm-units>=0.2,<0.3",
-    "pandas>=1.0.4",
+    "pandas>=1.0.4,<1.2",
     "pint-pandas==0.1.0",
     "python-dateutil",
     "tqdm",
