@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#133 <https://github.com/openscm/scmdata/pull/133>`_) Pin pandas<1.2 to avoid pint-pandas installation failure (see `pint-pandas #51 <https://github.com/hgrecco/pint-pandas/issues/51>`_)
+
 v0.7.4
 ------
 
