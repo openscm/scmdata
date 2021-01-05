@@ -566,6 +566,18 @@ def test_filter_year_error(test_scm_run_datetimes):
         test_scm_run_datetimes.filter(year=2005.0)
 
 
+@pytest.mark.parametrize("year_list", (
+    [2005, 2010],
+    (2005, 2010),
+    np.array([2005, 2010]).astype(int),
+))
+def test_filter_year_list(year_list, test_scm_run_datetimes):
+    res = test_scm_run_datetimes.filter(year=year_list)
+    expected = [2005, 2010]
+
+    assert (res["year"].unique() == expected).all()
+
+
 def test_filter_inplace(test_scm_run_datetimes):
     test_scm_run_datetimes.filter(year=2005, inplace=True)
     expected = dt.datetime(2005, 6, 17, 12)
