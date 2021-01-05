@@ -2597,15 +2597,17 @@ def test_long_data_time_axis(scm_run, time_axis, mod_func):
 
 
 @time_axis_checks
-@patch("scmdata.plotting.sns.lineplot")
-@patch.object(ScmRun, "long_data")
 def test_lineplot_time_axis(
-    mock_long_data, mock_sns_lineplot, scm_run, time_axis, mod_func
+    scm_run, time_axis, mod_func
 ):
+    pytest.importorskip("seaborn")
     mock_return = 4
-    mock_long_data.return_value = mock_return
 
-    scm_run.lineplot(time_axis=time_axis, other_kwarg="value")
+    with patch("scmdata.plotting.sns.lineplot") as mock_sns_lineplot:
+        with patch.object(ScmRun, "long_data") as mock_long_data:
+            mock_long_data.return_value = mock_return
+
+            scm_run.lineplot(time_axis=time_axis, other_kwarg="value")
 
     mock_long_data.assert_called_once()
     mock_long_data.assert_called_with(time_axis=time_axis)
