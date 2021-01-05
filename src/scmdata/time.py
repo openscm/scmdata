@@ -11,6 +11,15 @@ import numpy as np
 import pandas as pd
 from dateutil import parser
 
+try:
+    import scipy.interpolate
+
+    has_scipy = True
+except ImportError:  # pragma: no cover
+    scipy = None
+    has_scipy = False
+
+
 _TARGET_TYPE = np.int64
 _TARGET_DTYPE = "datetime64[s]"
 
@@ -340,10 +349,10 @@ class TimeseriesConverter:
         source_time_points: np.ndarray,
         target_time_points: np.ndarray,
     ) -> np.ndarray:
-        # Lazy-load scipy.interpolate
-        from scipy import interpolate
+        if not has_scipy:
+            raise ImportError("scipy is not installed. Run 'pip install scipy'")
 
-        res_point = interpolate.interp1d(
+        res_point = scipy.interpolate.interp1d(
             source_time_points.astype(_TARGET_TYPE),
             values,
             kind=self._get_scipy_interpolation_arg(),
