@@ -5,7 +5,6 @@ import pytest
 
 from scmdata.run import ScmRun
 
-
 pytest.importorskip("seaborn")
 
 

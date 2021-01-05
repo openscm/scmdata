@@ -2597,9 +2597,7 @@ def test_long_data_time_axis(scm_run, time_axis, mod_func):
 
 
 @time_axis_checks
-def test_lineplot_time_axis(
-    scm_run, time_axis, mod_func
-):
+def test_lineplot_time_axis(scm_run, time_axis, mod_func):
     pytest.importorskip("seaborn")
     mock_return = 4
 
