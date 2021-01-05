@@ -176,7 +176,7 @@ jobs:
         pytest notebooks -r a --nbval --sanitize-with tests/notebook-tests.cfg --no-cov
 
   test-install:
-    needs: build
+    needs: [build,build-pandas-versions,build-no-seaborn]
     runs-on: ubuntu-latest
     strategy:
       matrix:
