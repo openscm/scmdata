@@ -10,10 +10,7 @@ from scmdata.time import InsufficientDataError, TimeseriesConverter
 @patch("scmdata.time.has_scipy", False)
 def test_no_scipy(scm_run):
     timeseriesconverter = TimeseriesConverter(
-        [1, 2, 3],
-        [10, 11, 12],
-        "linear",
-        "linear",
+        [1, 2, 3], [10, 11, 12], "linear", "linear",
     )
 
     with pytest.raises(
