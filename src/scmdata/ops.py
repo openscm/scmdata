@@ -15,7 +15,7 @@ from openscm_units import unit_registry
 from .time import TimePoints
 
 try:
-    import scipy
+    import scipy.integrate
 
     has_scipy = True
 except ImportError:  # pragma: no cover
