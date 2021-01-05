@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#136 <https://github.com/openscm/scmdata/pull/136>`_) Make filtering by year able to handle a :obj:`np.ndarray` of integers (previously this would raise a :class:`TypeError`)
 - (`#135 <https://github.com/openscm/scmdata/pull/135>`_) Make scipy lazy loading in ``scmdata.time`` follow lazy loading seen in other modules
 - (`#134 <https://github.com/openscm/scmdata/pull/134>`_) Add CI run in which seaborn is not installed to check scipy importing
 
