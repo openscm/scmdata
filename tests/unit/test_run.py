@@ -566,6 +566,11 @@ def test_filter_year_error(test_scm_run_datetimes):
         test_scm_run_datetimes.filter(year=2005.0)
 
 
+def test_filter_year_with_own_year(test_scm_run_datetimes):
+    res = test_scm_run_datetimes.filter(year=test_scm_run_datetimes["year"].values)
+    assert (res["year"].unique() == test_scm_run_datetimes["year"].unique()).all()
+
+
 @pytest.mark.parametrize("year_list", (
     [2005, 2010],
     (2005, 2010),
