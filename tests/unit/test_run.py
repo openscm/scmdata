@@ -2720,11 +2720,14 @@ def test_long_data_time_axis_junk_error(scm_run):
         scm_run.long_data(time_axis="junk")
 
 
-@patch("scmdata.plotting.sns.lineplot")
-def test_lineplot_time_axis_junk_error(mock_sns_lineplot, scm_run):
+def test_lineplot_time_axis_junk_error(scm_run):
+    pytest.importorskip("seaborn")
+
     error_msg = re.escape("time_axis = 'junk")
-    with pytest.raises(NotImplementedError, match=error_msg):
-        scm_run.lineplot(time_axis="junk")
+
+    with patch("scmdata.plotting.sns.lineplot") as mock_sns_lineplot:
+        with pytest.raises(NotImplementedError, match=error_msg):
+            scm_run.lineplot(time_axis="junk")
 
     assert not mock_sns_lineplot.called  # doesn't get to trying to plot
 
