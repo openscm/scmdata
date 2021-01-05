@@ -571,11 +571,9 @@ def test_filter_year_with_own_year(test_scm_run_datetimes):
     assert (res["year"].unique() == test_scm_run_datetimes["year"].unique()).all()
 
 
-@pytest.mark.parametrize("year_list", (
-    [2005, 2010],
-    (2005, 2010),
-    np.array([2005, 2010]).astype(int),
-))
+@pytest.mark.parametrize(
+    "year_list", ([2005, 2010], (2005, 2010), np.array([2005, 2010]).astype(int),)
+)
 def test_filter_year_list(year_list, test_scm_run_datetimes):
     res = test_scm_run_datetimes.filter(year=year_list)
     expected = [2005, 2010]
