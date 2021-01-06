@@ -5,6 +5,8 @@ import pytest
 
 from scmdata.run import ScmRun
 
+pytest.importorskip("seaborn")
+
 
 def test_plotting_injected_methods(scm_run):
     assert hasattr(scm_run, "line_plot")

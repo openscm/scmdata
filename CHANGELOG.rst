@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#134 <https://github.com/openscm/scmdata/pull/134>`_) Add test when seaborn is not installed to check scipy importing properly
+
 v0.7.5
 ------
 
