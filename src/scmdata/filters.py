@@ -195,7 +195,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     return matches
 
 
-def years_match(data: List, years: Union[List[int], int]) -> np.ndarray:
+def years_match(data: List, years: Union[List[int], np.ndarray, int]) -> np.ndarray:
     """
     Match years in time columns for data filtering.
 
@@ -219,7 +219,7 @@ def years_match(data: List, years: Union[List[int], int]) -> np.ndarray:
     """
     years = [years] if isinstance(years, int) else years
     usable_int = (
-        all(isinstance(y, int) for y in years)
+        all(isinstance(y, (int, np.integer)) for y in years)
         if isinstance(years, Iterable)
         else isinstance(years, int)
     )
