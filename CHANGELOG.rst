@@ -4,7 +4,8 @@ Changelog
 master
 ------
 
-- (`#134 <https://github.com/openscm/scmdata/pull/134>`_) Add test when seaborn is not installed to check scipy importing properly
+- (`#135 <https://github.com/openscm/scmdata/pull/135>`_) Make scipy lazy loading in ``scmdata.time`` follow lazy loading seen in other modules
+- (`#134 <https://github.com/openscm/scmdata/pull/134>`_) Add CI run in which seaborn is not installed to check scipy importing
 
 v0.7.5
 ------

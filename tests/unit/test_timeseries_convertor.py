@@ -1,9 +1,22 @@
 import re
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 
 from scmdata.time import InsufficientDataError, TimeseriesConverter
+
+
+@patch("scmdata.time.has_scipy", False)
+def test_no_scipy(scm_run):
+    timeseriesconverter = TimeseriesConverter(
+        [1, 2, 3], [10, 11, 12], "linear", "linear",
+    )
+
+    with pytest.raises(
+        ImportError, match="scipy is not installed. Run 'pip install scipy'"
+    ):
+        timeseriesconverter.convert_to([1, 2, 3])
 
 
 def test_short_data(combo):
