@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#138 <https://github.com/openscm/scmdata/pull/138>`_) Add :meth:`ScmRun.quantiles_over`
+
 v0.7.6
 ------
 
