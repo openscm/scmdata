@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#137 <https://github.com/openscm/scmdata/pull/137>`_) Fix :meth:`scmdata.ScmRun.to_csv` so that writing and reading is circular (i.e. you end up where you started if you write a file and then read it straight back into a new :obj:`scmdata.ScmRun` instance)
+
 v0.7.6
 ------
 
