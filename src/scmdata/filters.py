@@ -12,7 +12,6 @@ from typing import Iterable, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-
 HIERARCHY_SEPARATOR = "|"
 
 
@@ -161,12 +160,8 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         if isinstance(s, str) and s == "":
             s = np.nan
 
-        use_string_comparison = (
-            isinstance(s, str) or
-            (
-                not np.isnan(s)
-                and pd.api.types.is_string_dtype(meta_col.categories.dtype)
-            )
+        use_string_comparison = isinstance(s, str) or (
+            not np.isnan(s) and pd.api.types.is_string_dtype(meta_col.categories.dtype)
         )
 
         if use_string_comparison:

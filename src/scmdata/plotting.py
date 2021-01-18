@@ -160,8 +160,6 @@ def plumeplot(  # pragma: no cover
     else:
         _dashes = dashes
 
-
-
     quantile_labels = {}
     for q, alpha in quantiles_plumes:
         for hdf in self.groupby(hue_var):
@@ -227,7 +225,11 @@ def plumeplot(  # pragma: no cover
 
     style_val_lines = [
         mlines.Line2D(
-            [0], [0], **{"linestyle": _dashes[style_value]}, label=style_value, color="gray"
+            [0],
+            [0],
+            **{"linestyle": _dashes[style_value]},
+            label=style_value,
+            color="gray"
         )
         for style_value in self.get_unique_meta(style_var)
     ]
