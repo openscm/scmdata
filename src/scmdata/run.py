@@ -1605,7 +1605,13 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
         out = []
         for quant in quantiles:
-            quantile_df = self.process_over(cols, "quantile", q=quant)
+            if quant == "median":
+                quantile_df = self.process_over(cols, "median")
+            elif quant == "mean":
+                quantile_df = self.process_over(cols, "mean")
+            else:
+                quantile_df = self.process_over(cols, "quantile", q=quant)
+
             quantile_df["quantile"] = quant
 
             out.append(quantile_df)
@@ -1613,8 +1619,6 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         out = pd.concat(out).set_index("quantile", append=True)
 
         return out
-
-        # *** TypeError: to_iamdataframe() got an unexpected keyword argument 'hi'
 
 
     def groupby(self, *group):
