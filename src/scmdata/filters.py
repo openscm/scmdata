@@ -12,6 +12,7 @@ from typing import Iterable, List, Optional, Union
 import numpy as np
 import pandas as pd
 
+
 HIERARCHY_SEPARATOR = "|"
 
 
@@ -159,7 +160,8 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     for s in _values:
         if isinstance(s, str) and s == "":
             s = np.nan
-        if isinstance(s, str):
+
+        if isinstance(s, str) or pd.api.types.is_string_dtype(meta_col.categories.dtype):
             if not regexp and s == "*" and level is None:
                 matches |= True
             else:

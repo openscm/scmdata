@@ -1343,7 +1343,7 @@ def test_quantiles_over_operation_in_kwargs(test_processing_scm_df):
         )
 
 
-@pytest.mark.parametrize("test_quantile", ["mean", "median", "0.5"])
+@pytest.mark.parametrize("test_quantile", [0.5, "mean", "median"])
 def test_quantiles_over_filter(test_processing_scm_df, test_quantile):
     quantiles = test_processing_scm_df.quantiles_over(
         cols=["model", "scenario"], quantiles=[0, 0.5, 1, "mean", "median"],

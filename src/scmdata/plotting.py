@@ -155,7 +155,7 @@ def plumeplot(  # pragma: no cover
 
     if dashes is None:
         _dashes = {}
-        lines = ["-","--","-.",":"]
+        lines = ["-", "--", "-.", ":"]
         linestyle_cycler = cycle(lines)
     else:
         _dashes = dashes
@@ -195,7 +195,10 @@ def plumeplot(  # pragma: no cover
                         _dashes[style_value] = next(linestyle_cycler)
                         pkwargs["linestyle"] = _dashes[style_value]
 
-                    label = "{:.0f}th".format(q[0] * 100)
+                    if isinstance(q[0], str):
+                        label = q[0]
+                    else:
+                        label = "{:.0f}th".format(q[0] * 100)
                     p = ax.plot(
                         xaxis,
                         hsdf.filter(quantile=q[0]).values.squeeze(),
@@ -213,8 +216,8 @@ def plumeplot(  # pragma: no cover
                         "received: {}".format(q)
                     )
 
-            quantile_labels[label] = p
-            # quantile_labels[label].set_facecolor("gray")
+                if label not in quantile_labels:
+                    quantile_labels[label] = p
 
     # Fake the line handles for the legend
     hue_val_lines = [
