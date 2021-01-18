@@ -1620,7 +1620,6 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
         return out
 
-
     def groupby(self, *group):
         """
         Group the object by unique metadata

@@ -1286,23 +1286,32 @@ def test_quantiles_over(test_processing_scm_df):
     exp = pd.DataFrame(
         [
             ["a_model", "World", "Primary Energy", "EJ/yr", 0, -1.0, -2.0, 0.0],
+            ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 0, 0.5, 3.0, 2.0,],
+            ["a_model", "World", "Primary Energy", "EJ/yr", 0.5, 1.0, 6.0, 3.0],
+            ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 0.5, 0.5, 3.0, 2.0],
+            ["a_model", "World", "Primary Energy", "EJ/yr", "median", 1.0, 6.0, 3.0],
             [
                 "a_model",
                 "World",
                 "Primary Energy|Coal",
                 "EJ/yr",
-                0,
+                "median",
                 0.5,
                 3.0,
                 2.0,
             ],
-            ["a_model", "World", "Primary Energy", "EJ/yr", 0.5, 1.0, 6.0, 3.0],
-            ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 0.5, 0.5, 3.0, 2.0],
-            ["a_model", "World", "Primary Energy", "EJ/yr", "median", 1.0, 6.0, 3.0],
-            ["a_model", "World", "Primary Energy|Coal", "EJ/yr", "median", 0.5, 3.0, 2.0],
             ["a_model", "World", "Primary Energy", "EJ/yr", 1, 2.0, 7.0, 7.0],
             ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 1, 0.5, 3.0, 2.0],
-            ["a_model", "World", "Primary Energy", "EJ/yr", "mean", 2 / 3, 11 / 3, 10 /3],
+            [
+                "a_model",
+                "World",
+                "Primary Energy",
+                "EJ/yr",
+                "mean",
+                2 / 3,
+                11 / 3,
+                10 / 3,
+            ],
             ["a_model", "World", "Primary Energy|Coal", "EJ/yr", "mean", 0.5, 3.0, 2.0],
         ],
         columns=[
@@ -1318,8 +1327,7 @@ def test_quantiles_over(test_processing_scm_df):
     )
 
     obs = test_processing_scm_df.quantiles_over(
-        cols=["model", "scenario"],
-        quantiles=[0, 0.5, 1, "mean", "median"],
+        cols=["model", "scenario"], quantiles=[0, 0.5, 1, "mean", "median"],
     )
     pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
 
@@ -1331,9 +1339,7 @@ def test_quantiles_over_operation_in_kwargs(test_processing_scm_df):
     )
     with pytest.raises(TypeError, match=error_msg):
         test_processing_scm_df.quantiles_over(
-            cols=["model", "scenario"],
-            quantiles=[0, 0.5, 1],
-            operation="quantile"
+            cols=["model", "scenario"], quantiles=[0, 0.5, 1], operation="quantile"
         )
 
 
