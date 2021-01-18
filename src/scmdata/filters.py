@@ -176,7 +176,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
                 ) + "$"
                 pattern = re.compile(_regexp if not regexp else str(s))
 
-                subset = [m for m in meta_col.categories if pattern.match(m)]
+                subset = [m for m in meta_col.categories if pattern.match(str(m))]
 
                 if level is not None:
                     depth = find_depth(meta_col, str(s), level, separator=separator)
