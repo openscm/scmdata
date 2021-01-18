@@ -1562,6 +1562,61 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
         return res
 
+    def quantiles_over(
+        self,
+        cols: Union[str, List[str]],
+        quantiles: Union[str, List[float]],
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """
+        Calculate quantiles of the data over the input columns.
+
+        Parameters
+        ----------
+        cols
+            Columns to perform the operation on. The timeseries will be grouped by all
+            other columns in :attr:`meta`.
+
+        quantiles
+            The quantiles to calculate. This should be a list of quantiles to calculate
+            (quantile values between 0 and 1). ``quantiles`` can also include the strings
+            "median" or "mean" if these values are to be calculated.
+
+        **kwargs
+            Passed to :meth:`~ScmRun.process_over`.
+
+        Returns
+        -------
+        :obj:`pd.DataFrame`
+            The quantiles of the timeseries, grouped by all columns in :attr:`meta`
+            other than :obj:`cols`. Each calculated quantile is given a label which is
+            stored in the ``quantile`` column within the output index.
+
+        Raises
+        ------
+        TypeError
+            ``operation`` is included in ``kwargs``. The operation is inferred from ``quantiles``.
+        """
+        if "operation" in kwargs:
+            raise TypeError(
+                "quantiles_over() does not take the keyword argument 'operation', the operations "
+                "are inferred from the 'quantiles' argument"
+            )
+
+        out = []
+        for quant in quantiles:
+            quantile_df = self.process_over(cols, "quantile", q=quant)
+            quantile_df["quantile"] = quant
+
+            out.append(quantile_df)
+
+        out = pd.concat(out).set_index("quantile", append=True)
+
+        return out
+
+        # *** TypeError: to_iamdataframe() got an unexpected keyword argument 'hi'
+
+
     def groupby(self, *group):
         """
         Group the object by unique metadata
@@ -1630,7 +1685,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             If True, apply the conversion inplace and return None
 
         **kwargs
-            Extra arguments which are passed to :func:`~ScmRun.filter` to
+            Extra arguments which are passed to :meth:`~ScmRun.filter` to
             limit the timeseries which are attempted to be converted. Defaults to
             selecting the entire ScmRun, which will likely fail.
 

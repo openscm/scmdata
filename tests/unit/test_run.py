@@ -1198,11 +1198,12 @@ def test_quantiles(test_processing_scm_df):
             dt.datetime(2015, 6, 12),
         ],
     )
+
     obs = test_processing_scm_df.quantiles_over(
         cols=["model", "scenario"],
         quantiles=[0, 0.5, 1],
     )
-    assert_scmdf_almost_equal(exp, obs)
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
 
 
 def test_mean_over(test_processing_scm_df):
