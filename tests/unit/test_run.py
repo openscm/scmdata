@@ -1159,6 +1159,52 @@ def test_quantile_over_upper(test_processing_scm_df):
     pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
 
 
+def test_quantiles(test_processing_scm_df):
+    exp = pd.DataFrame(
+        [
+            ["a_model", "World", "Primary Energy", "EJ/yr", 0, -1.0, -2.0, 0.0],
+            [
+                "a_model",
+                "World",
+                "Primary Energy|Coal",
+                "EJ/yr",
+                0,
+                0.5,
+                3.0,
+                2.0,
+            ],
+            ["a_model", "World", "Primary Energy", "EJ/yr", 0.5, 1.0, 6.0, 3.0],
+            [
+                "a_model",
+                "World",
+                "Primary Energy|Coal",
+                "EJ/yr",
+                0.5,
+                0.5,
+                3.0,
+                2.0,
+            ],
+            ["a_model", "World", "Primary Energy", "EJ/yr", 1, 2.0, 7.0, 7.0],
+            ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 1, 0.5, 3.0, 2.0],
+        ],
+        columns=[
+            "climate_model",
+            "region",
+            "variable",
+            "unit",
+            "quantile",
+            dt.datetime(2005, 1, 1),
+            dt.datetime(2010, 1, 1),
+            dt.datetime(2015, 6, 12),
+        ],
+    )
+    obs = test_processing_scm_df.quantiles_over(
+        cols=["model", "scenario"],
+        quantiles=[0, 0.5, 1],
+    )
+    assert_scmdf_almost_equal(exp, obs)
+
+
 def test_mean_over(test_processing_scm_df):
     exp = pd.DataFrame(
         [

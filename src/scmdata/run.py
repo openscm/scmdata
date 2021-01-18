@@ -1559,6 +1559,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             idx_df = res.index.to_frame()
             idx_df[idx_df == na_override] = np.nan
             res.index = pd.MultiIndex.from_frame(idx_df)
+
         return res
 
     def groupby(self, *group):
