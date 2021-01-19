@@ -3,7 +3,6 @@ Plotting helpers for :obj:`ScmRun`
 
 See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 """
-import copy
 import warnings
 from itertools import cycle
 
