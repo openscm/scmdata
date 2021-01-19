@@ -44,7 +44,7 @@ REQUIREMENTS_OPTIONAL = [
     "scipy",
     "xlrd<=1.2.0",  # support reading excel
 ]
-REQUIREMENTS_PLOTTING = ["seaborn"]
+REQUIREMENTS_PLOTTING = ["matplotlib", "seaborn"]
 REQUIREMENTS_NOTEBOOKS = (
     ["notebook", "ipywidgets"] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
 )

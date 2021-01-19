@@ -27,6 +27,14 @@ def test_plotting_long_data(scm_run):
     assert exp == obs
 
 
+@patch("scmdata.plotting.has_matplotlib", False)
+def test_no_matplotlib(scm_run):
+    with pytest.raises(
+        ImportError, match="matplotlib is not installed. Run 'pip install matplotlib'"
+    ):
+        scm_run.plumeplot()
+
+
 @patch("scmdata.plotting.has_seaborn", False)
 def test_no_seaborn(scm_run):
     with pytest.raises(

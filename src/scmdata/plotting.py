@@ -6,10 +6,17 @@ See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 import warnings
 from itertools import cycle
 
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
 import numpy as np
+
+try:
+    import matplotlib.lines as mlines
+    import matplotlib.patches as mpatches
+    import matplotlib.pyplot as plt
+
+    has_matplotlib = True
+except ImportError:  # pragma: no cover
+    plt = None
+    has_matplotlib = False
 
 try:
     import seaborn as sns
@@ -147,6 +154,9 @@ def plumeplot(  # pragma: no cover
     with no testing. In some ways, it is more intended as inspiration for other
     users than as a robust plotting tool.
     """
+    if not has_matplotlib:
+        raise ImportError("matplotlib is not installed. Run 'pip install matplotlib'")
+
     if ax is None:
         ax = plt.figure().add_subplot(111)
 
