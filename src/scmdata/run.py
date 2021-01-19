@@ -1850,7 +1850,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         fname
             Path to write the file into
         """
-        self.timeseries().reset_index().to_csv(fname, **kwargs)
+        self.timeseries().reset_index().to_csv(fname, **kwargs, index=False)
 
     def reduce(self, func, dim=None, axis=None, **kwargs):
         """
