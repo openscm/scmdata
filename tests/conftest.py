@@ -329,13 +329,14 @@ def test_processing_scm_df():
 
 @pytest.fixture(scope="function")
 def plumeplot_scmrun():
+    n_ems = 30
     yield ScmRun(
-        data=np.random.random((10, 3)).T,
+        data=np.random.random((n_ems * 2, 3)).T,
         columns={
             "model": ["a_iam"],
-            "climate_model": ["a_model"] * 5 + ["a_model_2"] * 5,
-            "scenario": ["a_scenario"] * 5 + ["a_scenario_2"] * 5,
-            "ensemble_member": list(range(5)) + list(range(5)),
+            "climate_model": ["a_model"] * n_ems + ["a_model_2"] * n_ems,
+            "scenario": ["a_scenario"] * n_ems + ["a_scenario_2"] * n_ems,
+            "ensemble_member": list(range(n_ems)) + list(range(n_ems)),
             "region": ["World"],
             "variable": ["Surface Air Temperature Change"],
             "unit": ["K"],

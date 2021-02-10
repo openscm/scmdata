@@ -110,16 +110,10 @@ def test_lineplot_base(mock_seaborn_lineplot, base_scm_run, scm_run):
 
     base_scm_run.lineplot(time_axis="year")
     mock_seaborn_lineplot.assert_called()
-    call_args, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
+    _, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
     assert "hue" not in call_kwargs
 
     mock_seaborn_lineplot.reset_mock()
     scm_run.lineplot(time_axis="year")
-    call_args, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
+    _, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
     assert "hue" in call_kwargs
-
-
-# runs
-# calculate_quantiles argument works
-# sensible error if non-unique for given set of filters
-# sensible error if missing style etc.

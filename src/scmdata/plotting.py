@@ -158,7 +158,7 @@ def plumeplot(  # pragma: no cover
 
     quantile_over : str, tuple[str]
         Columns of ``self.meta`` over which the quantiles should be calculated.
-        Only used if ``pre_calculated`` is ``True``.
+        Only used if ``pre_calculated`` is ``False``.
 
     Returns
     -------
@@ -236,15 +236,24 @@ def plumeplot(  # pragma: no cover
                 style_value = hsdf.get_unique_meta(style_var, no_duplicates=True)
 
                 xaxis = hsdf.timeseries(time_axis=time_axis).columns.tolist()
-                if hue_value in _palette:
+                if palette is not None:
+                    try:
+                        pkwargs["color"] = _palette[hue_value]
+                    except KeyError as exc:
+                        error_msg = "{} not in palette: {}".format(
+                            hue_value, palette
+                        )
+                        raise KeyError(error_msg) from exc
+
+                elif hue_value in _palette:
                     pkwargs["color"] = _palette[hue_value]
 
                 if len(q) == 2:
                     label = "{:.0f}th - {:.0f}th".format(q[0] * 100, q[1] * 100)
                     p = ax.fill_between(
                         xaxis,
-                        hsdf.filter(quantile=q[0]).values.squeeze(),
-                        hsdf.filter(quantile=q[1]).values.squeeze(),
+                        _get_1d_or_raise(hsdf.filter(quantile=q[0]), hue_var, style_var),
+                        _get_1d_or_raise(hsdf.filter(quantile=q[1]), hue_var, style_var),
                         label=label,
                         **pkwargs
                     )
@@ -255,8 +264,14 @@ def plumeplot(  # pragma: no cover
                 elif len(q) == 1:
                     _plotted_lines = True
 
-                    if style_value in _dashes:
-                        pkwargs["linestyle"] = _dashes[style_value]
+                    if dashes is not None:
+                        try:
+                            pkwargs["linestyle"] = _dashes[style_value]
+                        except KeyError as exc:
+                            error_msg = "{} not in dashes: {}".format(
+                                style_value, dashes
+                            )
+                            raise KeyError(error_msg) from exc
                     else:
                         _dashes[style_value] = next(linestyle_cycler)
                         pkwargs["linestyle"] = _dashes[style_value]
@@ -268,7 +283,7 @@ def plumeplot(  # pragma: no cover
 
                     p = ax.plot(
                         xaxis,
-                        hsdf.filter(quantile=q[0]).values.squeeze(),
+                        _get_1d_or_raise(hsdf.filter(quantile=q[0]), hue_var, style_var),
                         label=label,
                         linewidth=linewidth,
                         **pkwargs
@@ -288,7 +303,7 @@ def plumeplot(  # pragma: no cover
 
     # Fake the line handles for the legend
     hue_val_lines = [
-        mlines.Line2D([0], [0], **{"color": _palette[hue_value]}, label=hue_value)
+        mlines.Line2D([0], [0], color=_palette[hue_value], label=hue_value)
         for hue_value in self.get_unique_meta(hue_var)
     ]
 
@@ -304,9 +319,10 @@ def plumeplot(  # pragma: no cover
             mlines.Line2D(
                 [0],
                 [0],
-                **{"linestyle": _dashes[style_value]},
+                linestyle=_dashes[style_value],
                 label=style_value,
-                color="gray"
+                color="gray",
+                linewidth=linewidth,
             )
             for style_value in self.get_unique_meta(style_var)
         ]
@@ -327,6 +343,33 @@ def plumeplot(  # pragma: no cover
         ax.set_ylabel(units[0])
 
     return ax, legend_items
+
+
+def _get_1d_or_raise(in_scmrun, hue_var, style_var):
+    out_arr = in_scmrun.values.squeeze()
+    if len(out_arr.shape) > 1:
+        quantile = in_scmrun.get_unique_meta("quantile", True)
+        hue_var_value = in_scmrun.get_unique_meta(hue_var, True)
+        style_var_value = in_scmrun.get_unique_meta(style_var, True)
+        error_msg = (
+            "More than one timeseries for "
+            "quantile: {}, "
+            "{}: {}, "
+            "{}: {}.\n"
+            "Please process your data to create unique quantile timeseries "
+            "before calling :meth:`plumeplot`.\n"
+            "Found: {}".format(
+                quantile,
+                hue_var,
+                hue_var_value,
+                style_var,
+                style_var_value,
+                in_scmrun,
+            )
+        )
+        raise ValueError(error_msg)
+
+    return out_arr
 
 
 def _deprecated_line_plot(self, **kwargs):  # pragma: no cover
