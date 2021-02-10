@@ -205,12 +205,9 @@ def plumeplot(  # pragma: no cover
 
     if not pre_calculated:
         quantiles = [v for qv in quantiles_plumes for v in qv[0]]
-        _pdf = type(self)(
-            self.quantiles_over(quantile_over, quantiles=quantiles)
-        )
+        _pdf = type(self)(self.quantiles_over(quantile_over, quantiles=quantiles))
     else:
         _pdf = self
-
 
     if ax is None:
         ax = plt.figure().add_subplot(111)
@@ -240,9 +237,7 @@ def plumeplot(  # pragma: no cover
                     try:
                         pkwargs["color"] = _palette[hue_value]
                     except KeyError as exc:
-                        error_msg = "{} not in palette: {}".format(
-                            hue_value, palette
-                        )
+                        error_msg = "{} not in palette: {}".format(hue_value, palette)
                         raise KeyError(error_msg) from exc
 
                 elif hue_value in _palette:
@@ -252,8 +247,12 @@ def plumeplot(  # pragma: no cover
                     label = "{:.0f}th - {:.0f}th".format(q[0] * 100, q[1] * 100)
                     p = ax.fill_between(
                         xaxis,
-                        _get_1d_or_raise(hsdf.filter(quantile=q[0]), hue_var, style_var),
-                        _get_1d_or_raise(hsdf.filter(quantile=q[1]), hue_var, style_var),
+                        _get_1d_or_raise(
+                            hsdf.filter(quantile=q[0]), hue_var, style_var
+                        ),
+                        _get_1d_or_raise(
+                            hsdf.filter(quantile=q[1]), hue_var, style_var
+                        ),
                         label=label,
                         **pkwargs
                     )
@@ -283,7 +282,9 @@ def plumeplot(  # pragma: no cover
 
                     p = ax.plot(
                         xaxis,
-                        _get_1d_or_raise(hsdf.filter(quantile=q[0]), hue_var, style_var),
+                        _get_1d_or_raise(
+                            hsdf.filter(quantile=q[0]), hue_var, style_var
+                        ),
                         label=label,
                         linewidth=linewidth,
                         **pkwargs
@@ -359,12 +360,7 @@ def _get_1d_or_raise(in_scmrun, hue_var, style_var):
             "Please process your data to create unique quantile timeseries "
             "before calling :meth:`plumeplot`.\n"
             "Found: {}".format(
-                quantile,
-                hue_var,
-                hue_var_value,
-                style_var,
-                style_var_value,
-                in_scmrun,
+                quantile, hue_var, hue_var_value, style_var, style_var_value, in_scmrun,
             )
         )
         raise ValueError(error_msg)

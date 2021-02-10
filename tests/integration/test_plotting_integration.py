@@ -1,18 +1,16 @@
 import re
 from unittest.mock import MagicMock, call
 
-import numpy as np
-import pytest
 import matplotlib.axes
 import matplotlib.pyplot as plt
+import numpy as np
+import pytest
 
 from scmdata import ScmRun
 
-
-sample_quantiles_plumes = pytest.mark.parametrize("quantiles_plumes", (
-    (((0.05, 0.95), 0.5), ((0.5,), 1.0),),
-    (((0.17, 0.83), 0.7),),
-))
+sample_quantiles_plumes = pytest.mark.parametrize(
+    "quantiles_plumes", ((((0.05, 0.95), 0.5), ((0.5,), 1.0),), (((0.17, 0.83), 0.7),),)
+)
 
 
 def test_plumeplot_default(plumeplot_scmrun):
@@ -34,8 +32,7 @@ def test_plumeplot_pre_calculated(plumeplot_scmrun, quantiles_plumes):
         plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
     )
     summary_stats.plumeplot(
-        quantiles_plumes=quantiles_plumes,
-        pre_calculated=True,
+        quantiles_plumes=quantiles_plumes, pre_calculated=True,
     )
 
 
@@ -66,21 +63,19 @@ def test_plumeplot_non_unique_lines(plumeplot_scmrun):
 
     error_msg = re.escape(
         "More than one timeseries for "
-            "quantile: {}, "
-            "scenario: {}, "
-            "variable: {}.\n"
-            "Please process your data to create unique quantile timeseries "
-            "before calling :meth:`plumeplot`.\n"
-            "Found: {}".format(
-                quantile,
-                scenario,
-                variable,
-                summary_stats.filter(
-                    quantile=quantile,
-                    scenario=scenario,
-                    variable=variable
-                ),
-            )
+        "quantile: {}, "
+        "scenario: {}, "
+        "variable: {}.\n"
+        "Please process your data to create unique quantile timeseries "
+        "before calling :meth:`plumeplot`.\n"
+        "Found: {}".format(
+            quantile,
+            scenario,
+            variable,
+            summary_stats.filter(
+                quantile=quantile, scenario=scenario, variable=variable
+            ),
+        )
     )
     with pytest.raises(ValueError, match=error_msg):
         summary_stats.plumeplot(pre_calculated=True)
@@ -122,7 +117,9 @@ def test_plumeplot_args(plumeplot_scmrun):
                     if value.get_label() == "{:.0f}th".format(q[0] * 100):
                         has_a_match = True
                 else:
-                    if value.get_label() == "{:.0f}th - {:.0f}th".format(q[0] * 100, q[1] * 100):
+                    if value.get_label() == "{:.0f}th - {:.0f}th".format(
+                        q[0] * 100, q[1] * 100
+                    ):
                         has_a_match = True
 
             assert has_a_match
@@ -154,10 +151,10 @@ def test_plumeplot_args(plumeplot_scmrun):
 
 @pytest.mark.parametrize("linewidth", (2, 2.5))
 @pytest.mark.parametrize("time_axis", ("year", None))
-@pytest.mark.parametrize("quantiles_plumes", (
-    (((0.05, 0.95), 0.5), ((0.5,), 1.0),),
-    (((0.17, 0.83), 0.7), ((0.4,), 1.0),),
-))
+@pytest.mark.parametrize(
+    "quantiles_plumes",
+    ((((0.05, 0.95), 0.5), ((0.5,), 1.0),), (((0.17, 0.83), 0.7), ((0.4,), 1.0),),),
+)
 def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewidth):
     mock_ax = MagicMock()
 
@@ -181,7 +178,6 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
     )
 
     xaxis = summary_stats.timeseries(time_axis=time_axis).columns.tolist()
-
 
     def _is_in_calls(call_to_check, call_args_list):
         pargs_to_check = call_to_check[1]
@@ -208,13 +204,11 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
 
         return in_call
 
-
     def _get_with_empty_check(idf_filtered):
         if idf_filtered.empty:
             raise ValueError("Empty")
 
         return idf_filtered.values.squeeze()
-
 
     def _make_fill_between_call(idf, cm, scen, quant_alpha):
         quantiles = quant_alpha[0]
@@ -222,13 +216,16 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
 
         return call(
             xaxis,
-            _get_with_empty_check(idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[0])),
-            _get_with_empty_check(idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[1])),
+            _get_with_empty_check(
+                idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[0])
+            ),
+            _get_with_empty_check(
+                idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[1])
+            ),
             alpha=alpha,
             color=palette[cm],
             label="{:.0f}th - {:.0f}th".format(quantiles[0] * 100, quantiles[1] * 100),
         )
-
 
     def _make_plot_call(idf, cm, scen, quant_alpha):
         quantiles = quant_alpha[0]
@@ -236,7 +233,9 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
 
         return call(
             xaxis,
-            _get_with_empty_check(idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[0])),
+            _get_with_empty_check(
+                idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[0])
+            ),
             color=palette[cm],
             linestyle=dashes[scen],
             linewidth=linewidth,
@@ -244,17 +243,8 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
             alpha=alpha,
         )
 
-
-    cm_scen_combos = (
-        summary_stats
-        .meta[["climate_model", "scenario"]]
-        .drop_duplicates()
-    )
-    cm_scen_combos = [
-        v[1].values.tolist()
-        for v in cm_scen_combos.iterrows()
-    ]
-
+    cm_scen_combos = summary_stats.meta[["climate_model", "scenario"]].drop_duplicates()
+    cm_scen_combos = [v[1].values.tolist() for v in cm_scen_combos.iterrows()]
 
     plume_qa = [q for q in quantiles_plumes if len(q[0]) == 2]
     fill_between_calls = [
@@ -264,11 +254,12 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
     ]
 
     # debug by looking at mock_ax.fill_between.call_args_list
-    assert all([
-        _is_in_calls(c, mock_ax.fill_between.call_args_list)
-        for c in fill_between_calls
-    ])
-
+    assert all(
+        [
+            _is_in_calls(c, mock_ax.fill_between.call_args_list)
+            for c in fill_between_calls
+        ]
+    )
 
     line_qa = [q for q in quantiles_plumes if len(q[0]) == 1]
     plot_calls = [
@@ -278,10 +269,7 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
     ]
 
     # debug by looking at mock_ax.plot.call_args_list
-    assert all([
-        _is_in_calls(c, mock_ax.plot.call_args_list)
-        for c in plot_calls
-    ])
+    assert all([_is_in_calls(c, mock_ax.plot.call_args_list) for c in plot_calls])
 
 
 # sensible error if missing style etc.
@@ -292,10 +280,8 @@ def test_error_missing_palette(plumeplot_scmrun):
     )
 
     # missing definitions raise
-    palette_miss = {'a_scenario_2': 'red', 'b_scenario': 'green'}
-    error_msg = re.escape(
-        "a_scenario not in palette: {}".format(palette_miss)
-    )
+    palette_miss = {"a_scenario_2": "red", "b_scenario": "green"}
+    error_msg = re.escape("a_scenario not in palette: {}".format(palette_miss))
     with pytest.raises(KeyError, match=error_msg):
         plumeplot_scmrun.plumeplot(palette=palette_miss)
 
