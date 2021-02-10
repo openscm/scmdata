@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.8.0
+------
+
 - (`#139 <https://github.com/openscm/scmdata/pull/139>`_) Update filter to handle metadata columns which contain a mix of data types
 - (`#139 <https://github.com/openscm/scmdata/pull/139>`_) Add :meth:`ScmRun.plumeplot`
 - (`#140 <https://github.com/openscm/scmdata/pull/140>`_) Add workaround for installing scmdata with Python 3.6 on windows to handle lack of cftime 1.3.1 wheel
