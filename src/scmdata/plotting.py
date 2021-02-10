@@ -75,6 +75,7 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     kwargs.setdefault("y", "value")
     if "scenario" in self.meta_attributes:
         kwargs.setdefault("hue", "scenario")
+
     kwargs.setdefault("ci", "sd")
     kwargs.setdefault("estimator", np.median)
 
@@ -93,7 +94,6 @@ def plumeplot(  # pragma: no cover
     self,
     ax=None,
     quantiles_plumes=[((0.05, 0.95), 0.5), ((0.5,), 1.0),],
-    quantile_over=("model",),
     hue_var="scenario",
     hue_label="Scenario",
     palette=None,
@@ -102,6 +102,8 @@ def plumeplot(  # pragma: no cover
     dashes=None,
     linewidth=2,
     time_axis=None,
+    pre_calculated=False,
+    quantile_over=("ensemble_member",),
 ):
     """
     Make a plume plot, showing plumes for custom quantiles
@@ -112,34 +114,51 @@ def plumeplot(  # pragma: no cover
         Axes on which to make the plot
 
     quantiles_plumes : list[tuple[tuple, float]]
-        Configuration to use when plotting quantiles. Each element is a tuple, the first element of which is itself a tuple and the second element of which is the alpha to use for the quantile. If the first element has length two, these two elements are the quantiles to plot and a plume will be made between these two quantiles. If the first element has length one, then a line will be plotted to represent this quantile.
-
-    quantile_over : tuple[str]
-        Columns of ``self.meta`` over which the quantiles should be calculated.
+        Configuration to use when plotting quantiles. Each element is a tuple,
+        the first element of which is itself a tuple and the second element of
+        which is the alpha to use for the quantile. If the first element has
+        length two, these two elements are the quantiles to plot and a plume
+        will be made between these two quantiles. If the first element has
+        length one, then a line will be plotted to represent this quantile.
 
     hue_var : str
-        The column of ``self.meta`` which should be used to distinguish different hues.
+        The column of ``self.meta`` which should be used to distinguish
+        different hues.
 
     hue_label : str
         Label to use in the legend for ``hue_var``.
 
     palette : dict
-        Dictionary defining the colour to use for different values of ``hue_var``.
+        Dictionary defining the colour to use for different values of
+        ``hue_var``.
 
     style_var : str
-        The column of ``self.meta`` which should be used to distinguish different styles.
+        The column of ``self.meta`` which should be used to distinguish
+        different styles.
 
     style_label : str
         Label to use in the legend for ``style_var``.
 
     dashes : dict
-        Dictionary defining the style to use for different values of ``style_var``.
+        Dictionary defining the style to use for different values of
+        ``style_var``.
 
     linewidth : float
-        Width of lines to use (for quantiles which are not to be shown as plumes)
+        Width of lines to use (for quantiles which are not to be shown as
+        plumes)
 
     time_axis : str
         Time axis to use for the plot (see :meth:`~ScmRun.timeseries`)
+
+    pre_calculated : bool
+        Are the quantiles pre-calculated? If no, the quantiles will be
+        calculated within this function. Pre-calculating the quantiles using
+        :meth:`ScmRun.quantiles_over` can lead to faster plotting if multiple
+        plots are to be made with the same quantiles.
+
+    quantile_over : str, tuple[str]
+        Columns of ``self.meta`` over which the quantiles should be calculated.
+        Only used if ``pre_calculated`` is ``True``.
 
     Returns
     -------
@@ -148,14 +167,50 @@ def plumeplot(  # pragma: no cover
         case the user wants to move the legend to a different position for
         example)
 
+    Examples
+    --------
+    >>> scmrun = ScmRun(
+    ...     data=np.random.random((10, 3)).T,
+    ...     columns={
+    ...         "model": ["a_iam"],
+    ...         "climate_model": ["a_model"] * 5 + ["a_model_2"] * 5,
+    ...         "scenario": ["a_scenario"] * 5 + ["a_scenario_2"] * 5,
+    ...         "ensemble_member": list(range(5)) + list(range(5)),
+    ...         "region": ["World"],
+    ...         "variable": ["Surface Air Temperature Change"],
+    ...         "unit": ["K"],
+    ...     },
+    ...     index=[2005, 2010, 2015],
+    ... )
+
+    Plot the plumes, calculated over the different ensemble members.
+
+    >>> scmrun.plumeplot(quantile_over="ensemble_member")
+
+    Pre-calculate the quantiles, then plot
+
+    >>> summary_stats = ScmRun(
+    ...     scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
+    ... )
+    >>> summary_stats.plumeplot(pre_calculated=True)
+
     Note
     ----
     ``scmdata`` is not a plotting library so this function is provided as is,
-    with no testing. In some ways, it is more intended as inspiration for other
-    users than as a robust plotting tool.
+    with little testing. In some ways, it is more intended as inspiration for
+    other users than as a robust plotting tool.
     """
     if not has_matplotlib:
         raise ImportError("matplotlib is not installed. Run 'pip install matplotlib'")
+
+    if not pre_calculated:
+        quantiles = [v for qv in quantiles_plumes for v in qv[0]]
+        _pdf = type(self)(
+            self.quantiles_over(quantile_over, quantiles=quantiles)
+        )
+    else:
+        _pdf = self
+
 
     if ax is None:
         ax = plt.figure().add_subplot(111)
@@ -169,9 +224,11 @@ def plumeplot(  # pragma: no cover
     else:
         _dashes = dashes
 
+    _plotted_lines = False
+
     quantile_labels = {}
     for q, alpha in quantiles_plumes:
-        for hdf in self.groupby(hue_var):
+        for hdf in _pdf.groupby(hue_var):
             hue_value = hdf.get_unique_meta(hue_var, no_duplicates=True)
             pkwargs = {"alpha": alpha}
 
@@ -196,6 +253,8 @@ def plumeplot(  # pragma: no cover
                         _palette[hue_value] = p.get_facecolor()[0]
 
                 elif len(q) == 1:
+                    _plotted_lines = True
+
                     if style_value in _dashes:
                         pkwargs["linestyle"] = _dashes[style_value]
                     else:
@@ -206,6 +265,7 @@ def plumeplot(  # pragma: no cover
                         label = q[0]
                     else:
                         label = "{:.0f}th".format(q[0] * 100)
+
                     p = ax.plot(
                         xaxis,
                         hsdf.filter(quantile=q[0]).values.squeeze(),
@@ -232,25 +292,33 @@ def plumeplot(  # pragma: no cover
         for hue_value in self.get_unique_meta(hue_var)
     ]
 
-    style_val_lines = [
-        mlines.Line2D(
-            [0],
-            [0],
-            **{"linestyle": _dashes[style_value]},
-            label=style_value,
-            color="gray"
-        )
-        for style_value in self.get_unique_meta(style_var)
-    ]
-
     legend_items = [
         mpatches.Patch(alpha=0, label="Quantiles"),
         *quantile_labels.values(),
         mpatches.Patch(alpha=0, label=hue_label),
         *hue_val_lines,
-        mpatches.Patch(alpha=0, label=style_label),
-        *style_val_lines,
     ]
+
+    if _plotted_lines:
+        style_val_lines = [
+            mlines.Line2D(
+                [0],
+                [0],
+                **{"linestyle": _dashes[style_value]},
+                label=style_value,
+                color="gray"
+            )
+            for style_value in self.get_unique_meta(style_var)
+        ]
+        legend_items += [
+            mpatches.Patch(alpha=0, label=style_label),
+            *style_val_lines,
+        ]
+    else:
+        if dashes is not None:
+            warnings.warn(
+                "`dashes` was passed but no lines were plotted, the style settings will not be used"
+            )
 
     ax.legend(handles=legend_items, loc="best")
 
