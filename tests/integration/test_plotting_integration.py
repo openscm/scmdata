@@ -37,18 +37,16 @@ def test_plumeplot_pre_calculated(plumeplot_scmrun, quantiles_plumes):
 
 
 def test_plumeplot_warns_dashes_without_lines(scm_run):
-    with pytest.warns(UserWarning) as record:
+    warn_msg = re.escape(
+        "`dashes` was passed but no lines were plotted, the style "
+        "settings will not be used"
+    )
+    with pytest.warns(UserWarning, match=warn_msg):
         scm_run.plumeplot(
             quantiles_plumes=(((0.17, 0.83), 0.7),),
             quantile_over="ensemble_member",
             dashes={"Surface Air Temperature Change": "--"},
         )
-
-    assert len(record) == 1
-    assert record[0].message.args[0] == (
-        "`dashes` was passed but no lines were plotted, the style "
-        "settings will not be used"
-    )
 
 
 def test_plumeplot_non_unique_lines(plumeplot_scmrun):
