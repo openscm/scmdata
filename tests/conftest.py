@@ -327,6 +327,24 @@ def test_processing_scm_df():
     )
 
 
+@pytest.fixture(scope="function")
+def plumeplot_scmrun():
+    n_ems = 30
+    yield ScmRun(
+        data=np.random.random((n_ems * 2, 3)).T,
+        columns={
+            "model": ["a_iam"],
+            "climate_model": ["a_model"] * n_ems + ["a_model_2"] * n_ems,
+            "scenario": ["a_scenario"] * n_ems + ["a_scenario_2"] * n_ems,
+            "ensemble_member": list(range(n_ems)) + list(range(n_ems)),
+            "region": ["World"],
+            "variable": ["Surface Air Temperature Change"],
+            "unit": ["K"],
+        },
+        index=[datetime(2005, 1, 1), datetime(2010, 1, 1), datetime(2015, 6, 12)],
+    )
+
+
 append_scm_df_pairs_cols = {
     "model": ["a_iam"],
     "climate_model": ["a_model"],
@@ -491,6 +509,7 @@ def test_append_scm_runs(request):
 def iamdf_type():
     if not IamDataFrame:
         pytest.skip("pyam not installed")
+
     return IamDataFrame
 
 

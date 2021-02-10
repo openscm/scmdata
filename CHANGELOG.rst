@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#139 <https://github.com/openscm/scmdata/pull/139>`_) Update filter to handle metadata columns which contain a mix of data types
+- (`#139 <https://github.com/openscm/scmdata/pull/139>`_) Add :meth:`ScmRun.plumeplot`
 - (`#140 <https://github.com/openscm/scmdata/pull/140>`_) Add workaround for installing scmdata with Python 3.6 on windows to handle lack of cftime 1.3.1 wheel
 - (`#138 <https://github.com/openscm/scmdata/pull/138>`_) Add :meth:`ScmRun.quantiles_over`
 - (`#137 <https://github.com/openscm/scmdata/pull/137>`_) Fix :meth:`scmdata.ScmRun.to_csv` so that writing and reading is circular (i.e. you end up where you started if you write a file and then read it straight back into a new :obj:`scmdata.ScmRun` instance)

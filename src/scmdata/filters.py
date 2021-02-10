@@ -159,7 +159,12 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     for s in _values:
         if isinstance(s, str) and s == "":
             s = np.nan
-        if isinstance(s, str):
+
+        use_string_comparison = isinstance(s, str) or (
+            not np.isnan(s) and pd.api.types.is_string_dtype(meta_col.categories.dtype)
+        )
+
+        if use_string_comparison:
             if not regexp and s == "*" and level is None:
                 matches |= True
             else:
@@ -176,7 +181,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
                 ) + "$"
                 pattern = re.compile(_regexp if not regexp else str(s))
 
-                subset = [m for m in meta_col.categories if pattern.match(m)]
+                subset = [m for m in meta_col.categories if pattern.match(str(m))]
 
                 if level is not None:
                     depth = find_depth(meta_col, str(s), level, separator=separator)

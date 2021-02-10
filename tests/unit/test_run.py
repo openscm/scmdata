@@ -1343,6 +1343,20 @@ def test_quantiles_over_operation_in_kwargs(test_processing_scm_df):
         )
 
 
+@pytest.mark.parametrize("test_quantile", [0.5, "mean", "median"])
+def test_quantiles_over_filter(test_processing_scm_df, test_quantile):
+    quantiles = test_processing_scm_df.quantiles_over(
+        cols=["model", "scenario"], quantiles=[0, 0.5, 1, "mean", "median"],
+    )
+    quantiles["model"] = "model"
+    quantiles["scenario"] = "scenario"
+    quantiles = ScmRun(quantiles)
+
+    res = quantiles.filter(quantile=test_quantile)
+
+    assert res.get_unique_meta("quantile", True) == test_quantile
+
+
 @pytest.mark.parametrize(
     "tfilter",
     [
@@ -1494,10 +1508,8 @@ def test_append(scm_run):
 
 def test_append_exact_duplicates(scm_run):
     other = copy.deepcopy(scm_run)
-    with warnings.catch_warnings(record=True) as mock_warn_taking_average:
+    with pytest.warns(UserWarning):
         scm_run.append(other, duplicate_msg="warn").timeseries()
-
-    assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
     assert_scmdf_almost_equal(scm_run, other, check_ts_names=False)
 
@@ -1529,6 +1541,7 @@ def test_append_duplicates_order_doesnt_matter(scm_run):
     npt.assert_almost_equal(obs, exp)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.parametrize("duplicate_msg", ("warn", True, False))
 def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     base = test_append_scm_runs["base"]
@@ -1559,6 +1572,7 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     )
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_append_doesnt_warn_if_continuous_times(test_append_scm_runs):
     join_year = 2011
     base = test_append_scm_runs["base"].filter(year=range(1, join_year))
@@ -1570,6 +1584,7 @@ def test_append_doesnt_warn_if_continuous_times(test_append_scm_runs):
     assert len(mock_warn_taking_average) == 0
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_append_doesnt_warn_if_different(test_append_scm_runs):
     base = test_append_scm_runs["base"].filter(scenario="a_scenario")
     other = test_append_scm_runs["base"].filter(scenario="a_scenario2")
@@ -1588,16 +1603,15 @@ def test_append_duplicate_times_error_msg(scm_run):
         scm_run.append(other, duplicate_msg="junk")
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_append_inplace(scm_run):
     other = scm_run * 2
 
     obs = scm_run.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2, 7, 7]
     npt.assert_almost_equal(obs, exp)
-    with warnings.catch_warnings(record=True) as mock_warn_taking_average:
+    with pytest.warns(UserWarning):  # test message elsewhere
         scm_run.append(other, inplace=True, duplicate_msg="warn")
-
-    assert len(mock_warn_taking_average) == 1  # test message elsewhere
 
     obs = scm_run.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [(2.0 + 4.0) / 2, (7.0 + 14.0) / 2, (7.0 + 14.0) / 2]

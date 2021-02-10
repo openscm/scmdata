@@ -27,6 +27,14 @@ def test_plotting_long_data(scm_run):
     assert exp == obs
 
 
+@patch("scmdata.plotting.has_matplotlib", False)
+def test_no_matplotlib(scm_run):
+    with pytest.raises(
+        ImportError, match="matplotlib is not installed. Run 'pip install matplotlib'"
+    ):
+        scm_run.plumeplot()
+
+
 @patch("scmdata.plotting.has_seaborn", False)
 def test_no_seaborn(scm_run):
     with pytest.raises(
@@ -102,10 +110,10 @@ def test_lineplot_base(mock_seaborn_lineplot, base_scm_run, scm_run):
 
     base_scm_run.lineplot(time_axis="year")
     mock_seaborn_lineplot.assert_called()
-    call_args, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
+    _, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
     assert "hue" not in call_kwargs
 
     mock_seaborn_lineplot.reset_mock()
     scm_run.lineplot(time_axis="year")
-    call_args, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
+    _, call_kwargs = mock_seaborn_lineplot.call_args_list[0]
     assert "hue" in call_kwargs
