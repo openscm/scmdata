@@ -2684,19 +2684,13 @@ def test_timeseries_time_axis(scm_run, time_axis, mod_func):
 
 
 @time_axis_checks
-def test_long_data_time_axis_long_run(long_scm_run, time_axis, mod_func):
-    res = long_scm_run.timeseries(time_axis=time_axis)
-
-    assert (res.columns == (long_scm_run["time"].apply(mod_func))).all()
-
-
-@time_axis_checks
 def test_long_data_time_axis(scm_run, time_axis, mod_func):
     res = scm_run.long_data(time_axis=time_axis)
 
     assert (res["time"] == (scm_run.long_data()["time"].apply(mod_func))).all()
 
 
+@time_axis_checks
 def test_long_data_time_axis_long_run(long_scm_run, time_axis, mod_func):
     res = long_scm_run.long_data(time_axis=time_axis)
 
