@@ -740,6 +740,9 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
     @property
     def times(self):
+        """
+        Get time points at which the data applies
+        """
         return self._df.index
 
     def timeseries(

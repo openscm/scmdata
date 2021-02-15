@@ -124,7 +124,6 @@ def _format_datetime(dts) -> np.ndarray:
     ValueError
         If one of the values in :obj:`dts` cannot be converted to :class:`np.datetime64`
     """
-
     dts = np.asarray(dts)
 
     if len(dts) <= 0:  # pylint: disable=len-as-condition
@@ -158,7 +157,7 @@ def _to_cftimes(np_dates, calendar):
 
 def decode_datetimes_to_index(dates, calendar=None, use_cftime=None):
     """
-    Decodes a list of dates to an index
+    Decode a list of dates to an index
 
     Uses a :class:`pandas.DatetimeIndex` where possible. When a non-standard calendar is
     used or for dates before year 1678 or after year 2262, a dates are converted
