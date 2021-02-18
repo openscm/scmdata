@@ -18,7 +18,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dev dependencies
       run: |
-        pip install --upgrade pip
+        pip install --upgrade pip wheel
         pip install -e .[dev]
     # TODO: add `pylint src`
     - name: Formatting and linters
@@ -61,7 +61,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install test dependencies
       run: |
-        pip install --upgrade pip
+        pip install --upgrade pip wheel
         pip install -e .[tests]
     - name: Test with pytest
       env:
@@ -98,7 +98,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install test dependencies
         run: |
-          pip install --upgrade pip
+          pip install --upgrade pip wheel
           pip install -e .[tests]
 
           pip install pandas==${{ matrix.pandas-version }}
@@ -133,7 +133,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install test dependencies
         run: |
-          pip install --upgrade pip
+          pip install --upgrade pip wheel
           pip install -e .[tests]
           pip uninstall -y seaborn
 
@@ -165,7 +165,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install notebook dependencies
       run: |
-        pip install --upgrade pip
+        pip install --upgrade pip wheel
         pip install -e .[tests,notebooks]
     - name: Test notebooks with nbval
       run: |
@@ -215,7 +215,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
+        pip install --upgrade pip wheel
         pip install -e .[dev]
     - name: Create package
       run: python setup.py sdist bdist_wheel --universal
