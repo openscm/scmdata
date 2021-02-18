@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.9.0
+------
+
 - (`#143 <https://github.com/openscm/scmdata/pull/143>`_) Alter time axis when serialising to netCDF so that time axis is easily read by other tools (e.g. xarray)
 
 v0.8.0
