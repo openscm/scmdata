@@ -272,7 +272,9 @@ def plumeplot(  # pragma: no cover
                             )
                             raise KeyError(error_msg) from exc
                     else:
-                        _dashes[style_value] = next(linestyle_cycler)
+                        if style_value not in _dashes:
+                            _dashes[style_value] = next(linestyle_cycler)
+
                         pkwargs["linestyle"] = _dashes[style_value]
 
                     if isinstance(q[0], str):
