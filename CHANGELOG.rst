@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#144 <https://github.com/openscm/scmdata/pull/144>`_) Fix :meth:`ScmRun.plumeplot` style handling (previously, if ``dashes`` was not supplied each line would be a different style even if all the lines had the same value for ``style_var``)
+
 v0.9.0
 ------
 
