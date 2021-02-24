@@ -279,8 +279,8 @@ def test_plumeplot_no_dashes_single_dash_style(plumeplot_scmrun):
 
     assert legend_items[-1].get_linestyle() == "-"
 
-    for l in ax.lines:
-        assert l.get_linestyle() == "-"
+    for line in ax.lines:
+        assert line.get_linestyle() == "-"
 
 
 # sensible error if missing style etc.
