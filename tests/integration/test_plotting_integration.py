@@ -273,11 +273,9 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
 def test_plumeplot_no_dashes_single_dash_style(plumeplot_scmrun):
     # if there's only a single variable and it is used for style, without
     # specifying dashes then all the lines should come out solid
-    ax, legend_items = (
-        plumeplot_scmrun
-        .filter(variable="Surface Air Temperature Change")
-        .plumeplot(style_var="variable")
-    )
+    ax, legend_items = plumeplot_scmrun.filter(
+        variable="Surface Air Temperature Change"
+    ).plumeplot(style_var="variable")
 
     assert legend_items[-1].get_linestyle() == "-"
 
