@@ -62,7 +62,7 @@ In particular, it provides a high-performance way of handling and serialising (i
 License
 -------
 
-**scmdata** is free software under a BSD 3-Clause License, see `LICENSE <https://github.com/openscm/scmdata/license/blob/master/LICENSE>`_.
+**scmdata** is free software under a BSD 3-Clause License, see `LICENSE <https://github.com/openscm/scmdata/blob/master/LICENSE>`_.
 
 .. sec-end-license
 .. sec-end-long-description
