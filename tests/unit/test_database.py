@@ -320,6 +320,7 @@ def test_database_load_data_extras(tdb_with_data):
         {"variable": "other"},
         {"climate_model": "cmodel_c"},
         {"climate_model": "cmodel_a", "variable": "other"},
+        {"climate_model": ["cmodel_a", "cmodel_c"]},
     ],
 )
 def test_database_load_data_missing(tdb_with_data, filter):
