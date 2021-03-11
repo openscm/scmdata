@@ -300,6 +300,7 @@ def test_database_loaded(tdb_with_data):
         {"climate_model": "cmodel_a"},
         {"climate_model": "cmodel_b"},
         {"climate_model": "cmodel_a", "variable": "variable"},
+        {"climate_model": ["cmodel_a", "cmodel_c"]},
     ],
 )
 def test_database_load_data(tdb_with_data, start_scmrun, filter):
@@ -320,7 +321,6 @@ def test_database_load_data_extras(tdb_with_data):
         {"variable": "other"},
         {"climate_model": "cmodel_c"},
         {"climate_model": "cmodel_a", "variable": "other"},
-        {"climate_model": ["cmodel_a", "cmodel_c"]},
     ],
 )
 def test_database_load_data_missing(tdb_with_data, filter):
