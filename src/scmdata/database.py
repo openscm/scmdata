@@ -235,10 +235,9 @@ class ScmDatabase:
             for levels in level_options_product
         ]
 
-
         load_files = [
-            v for vlist
-            in [glob.glob(g, recursive=True) for g in globs_to_check]
+            v
+            for vlist in [glob.glob(g, recursive=True) for g in globs_to_check]
             for v in vlist
         ]
 
