@@ -196,10 +196,14 @@ class ScmDatabase:
 
         Parameters
         ----------
-        filters: dict of str : str
+        filters: dict of str : [str, list[str]]
             Filters for the data to load.
 
             Defaults to loading all values for a level if it isn't specified.
+
+            If a filter is a list then OR logic is applied within the level.
+            For example, if we have ``scenario=["ssp119", "ssp126"]`` then
+            both the ssp119 and ssp126 scenarios will be loaded.
 
         Returns
         -------
