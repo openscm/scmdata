@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#146 <https://github.com/openscm/scmdata/pull/146>`_) Update CI-CD workflow to include more sensible dependencies and also test Python3.9
+
 v0.9.1
 ------
 
