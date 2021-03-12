@@ -10,6 +10,7 @@ and then filter. For example, one could save model results from a number of diff
 climate models and then load just the ``Surface Temperature`` data for all models.
 """
 import glob
+import itertools
 import os
 import os.path
 import pathlib
@@ -195,10 +196,14 @@ class ScmDatabase:
 
         Parameters
         ----------
-        filters: dict of str : str
+        filters: dict of str : [str, list[str]]
             Filters for the data to load.
 
             Defaults to loading all values for a level if it isn't specified.
+
+            If a filter is a list then OR logic is applied within the level.
+            For example, if we have ``scenario=["ssp119", "ssp126"]`` then
+            both the ssp119 and ssp126 scenarios will be loaded.
 
         Returns
         -------
@@ -215,13 +220,30 @@ class ScmDatabase:
         for level in filters:
             if level not in self.levels:
                 raise ValueError("Unknown level: {}".format(level))
+
             if "/" in filters[level]:
                 filters[level] = filters[level].replace("/", "_")
 
-        paths_to_load = [filters.get(level, "*") for level in self.levels]
-        load_path = os.path.join(self._root_dir, *paths_to_load)
-        glob_to_use = self._get_disk_filename(os.path.join(load_path, "*.nc"))
-        load_files = glob.glob(glob_to_use, recursive=True)
+        level_options = []
+        for level in self.levels:
+            level_values = filters.get(level, ["*"])
+            if isinstance(level_values, str):
+                level_values = [level_values]
+
+            level_options.append(level_values)
+
+        # AND logic across levels, OR logic within levels
+        level_options_product = itertools.product(*level_options)
+        globs_to_check = [
+            self._get_disk_filename(os.path.join(self._root_dir, *levels, "*.nc"))
+            for levels in level_options_product
+        ]
+
+        load_files = [
+            v
+            for vlist in [glob.glob(g, recursive=True) for g in globs_to_check]
+            for v in vlist
+        ]
 
         return run_append(
             [

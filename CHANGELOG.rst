@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#145 <https://github.com/openscm/scmdata/pull/145>`_) Allow :meth:`ScmDatabase.load` to handle lists as filter values
+
 v0.9.1
 ------
 
