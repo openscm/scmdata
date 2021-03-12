@@ -1,5 +1,11 @@
 name: scmdata CI-CD
-on: push
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
 
 jobs:
   linting-and-docs:
@@ -45,12 +51,10 @@ jobs:
           fi
 
   build:
-    needs: linting-and-docs
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
     - name: Checkout repository
@@ -81,8 +85,6 @@ jobs:
         file: ./coverage.xml
 
   build-pandas-versions:
-    needs: linting-and-docs
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -117,8 +119,6 @@ jobs:
 
   build-no-seaborn:
     # seaborn imports scipy which can make things pass when they shouldn't
-    needs: linting-and-docs
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -150,11 +150,10 @@ jobs:
           fi
 
   test-notebooks:
-    needs: build
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
     - name: Checkout repository
@@ -176,11 +175,10 @@ jobs:
         pytest notebooks -r a --nbval --sanitize-with tests/notebook-tests.cfg --no-cov
 
   test-install:
-    needs: [build,build-pandas-versions,build-no-seaborn]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
     - name: Checkout repository
@@ -198,7 +196,7 @@ jobs:
           python scripts/test_install.py
 
   deploy-pypi:
-    needs: [test-notebooks,test-install]
+    needs: [linting-and-docs,build,build-pandas-versions,build-no-seaborn,test-notebooks,test-install]
     if: startsWith(github.ref, 'refs/tags/v')
 
     runs-on: ubuntu-latest

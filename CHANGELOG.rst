@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#146 <https://github.com/openscm/scmdata/pull/146>`_) Update CI-CD workflow to include more sensible dependencies and also test Python3.9
 - (`#145 <https://github.com/openscm/scmdata/pull/145>`_) Allow :meth:`ScmDatabase.load` to handle lists as filter values
 
 v0.9.1
