@@ -1,9 +1,13 @@
+import itertools
+import os.path
 import random
+import string
 
 import numpy as np
 import pytest
 
 import scmdata
+import scmdata.testing
 
 
 @pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 4.5])
@@ -169,3 +173,58 @@ def test_append_multiple_same_time(benchmark, big_scmrun, n_to_append):
 
     assert res.shape[0] == big_scmrun.shape[0] * n_to_append
     assert res.shape[1] == big_scmrun.shape[1]
+
+
+def test_to_from_nc(benchmark, tmpdir):
+    def round_trip():
+        n_models = int(2)
+        # n_ensemble_members = 10 ** 3
+        n_ensemble_members = 10 ** 1
+        t_steps = 750
+
+        ensemble_members = list(range(n_ensemble_members))
+        variables = [
+            "Surface Air Temperature Change",
+        ]
+        models = [v for v in string.ascii_lowercase[:n_models]]
+
+        regions = [
+            "World",
+            "World|R5.2ASIA",
+            "World|R5.2LAM",
+            "World|R5.2MAF",
+            "World|R5.2REF",
+            "World|R5.2OECD",
+            "World|Bunkers",
+        ]
+        climate_models = ["MAGICC7"]
+
+        n_ts = n_models * len(regions) * len(variables) * n_ensemble_members
+
+        tmp = itertools.product(models, regions, variables, ensemble_members)
+        models_long, regions_long, variables_long, ensemble_members_long = zip(*tmp)
+        scenarios_long = [v * 2 for v in models_long]
+
+        start = scmdata.ScmRun(
+            np.random.random((n_ts, t_steps)).T,
+            index=range(1750, 1750 + t_steps),
+            columns={
+                "variable": variables_long,
+                "unit": "unknown",
+                "model": models_long,
+                "scenario": scenarios_long,
+                "region": regions_long,
+                "climate_model": climate_models,
+                "ensemble_member": ensemble_members_long,
+            },
+        )
+
+        nc_file = os.path.join(tmpdir, "nc_dump.nc")
+        start.to_nc(nc_file, dimensions=("variable", "region", "model", "ensemble_member"), extras=("scenario",))
+
+        res = scmdata.ScmRun.from_nc(nc_file)
+
+        return start, res
+
+    res = benchmark.pedantic(round_trip, iterations=1, rounds=1)
+    scmdata.testing.assert_scmdf_almost_equal(res[0], res[1], allow_unordered=True, check_ts_names=False)
