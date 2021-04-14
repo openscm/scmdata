@@ -13,6 +13,7 @@ import warnings
 from logging import getLogger
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
+import cftime
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
@@ -202,7 +203,7 @@ def _format_wide_data(df, required_cols):
     time_cols, extra_cols = False, []
     for i in cols:
         # if in wide format, check if columns are years (int) or datetime
-        if isinstance(i, dt.datetime):
+        if isinstance(i, (dt.datetime, cftime.datetime)):
             time_cols = True
         else:
             try:

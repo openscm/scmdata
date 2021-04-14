@@ -16,6 +16,7 @@ from datetime import datetime
 from logging import getLogger
 
 import numpy as np
+import xarray as xr
 from xarray.coding.times import decode_cf_datetime, encode_cf_datetime
 
 from . import __version__
@@ -107,201 +108,75 @@ def _read_time_variable(time_var):
         return decode_cf_datetime(time_var[:], units, calendar)
 
 
-def _write_nc(ds, run, dimensions, extras):
+def _write_nc(fname, run, dimensions, extras):
     """
     Low level function to write the dimensions, variables and metadata to disk
     """
-    all_dims = list(dimensions) + ["time"]
+    unit_name = "unit"
 
-    # Create the dimensions
-    _create_time_variable(ds, run)
+    id_dimensions = list(
+        set(run.meta.columns) - set(dimensions) - {"variable", "unit"}
+    )
 
-    dims = {}
-    for d in dimensions:
-        vals = sorted(run.meta[d].unique())
-        if not all([isinstance(v, str) for v in vals]) and np.isnan(vals).any():
-            raise AssertionError("nan in dimension: `{}`".format(d))
+    tmp = run.timeseries(dimensions + id_dimensions + ["variable"])
+    tmp.columns = run.time_points.as_cftime()
 
-        ds.createDimension(d, len(vals))
-        dtype = type(vals[0])
-        ds.createVariable(d, dtype, d)
-        for i, v in enumerate(vals):  # Iteration needed for str types
-            ds.variables[d][i] = v
-        dims[d] = np.asarray(vals)
+    ids = run.meta[id_dimensions].drop_duplicates()
+    ids["_id"] = range(ids.shape[0])
+    ids = ids.set_index(id_dimensions)
 
-    var_shape = [len(dims[d]) for d in dimensions] + [len(run.time_points)]
+    unit_table = (
+        run.meta[["variable", unit_name]]
+        .drop_duplicates()
+        .set_index("variable")["unit"]
+    )
 
-    # Write any extra variables
-    for e in extras:
-        metadata = run.meta[[e, *dimensions]].drop_duplicates()
+    joint = tmp.reset_index().set_index(id_dimensions).join(ids)
+    joint = joint.reset_index(drop=True).set_index(dimensions + ["variable", "_id"])
+    joint.columns.names = ["time"]
+    assert (
+        len(joint.index.unique()) == joint.shape[0]
+    ), "something not unique (also caught by initial call to timeseries so this is just another check)..."
 
-        if metadata[dimensions].duplicated().any():
-            raise ValueError(
-                "metadata for {} is not unique for requested dimensions".format(e)
-            )
+    for_xarray = joint.T.stack(dimensions + ["_id"])
 
-        type_info = _get_nc_type(metadata[e].dtype)
-        ds.createVariable(e, dimensions=dimensions, zlib=True, **type_info)
-        ds.variables[e]._is_metadata = 1
+    xr_tmp = xr.Dataset.from_dataframe(for_xarray)
+    ids_tmp = ids.reset_index().set_index("_id")
 
-        data_to_write = np.zeros(
-            [len(dims[d]) for d in dimensions], dtype=metadata[e].dtype
-        )
-        if "fill_value" in type_info:
-            data_to_write.fill(type_info["fill_value"])
+    extras = {}
+    for c in ids_tmp:
+        extras[c] = ("_id", ids_tmp[c].loc[xr_tmp["_id"].values])
 
-        df_values = metadata[e].values
-        for i, (_, m) in enumerate(metadata.iterrows()):
-            idx = [_get_idx(dims[d], m[d]) for d in dimensions]
-            data_to_write[tuple(idx)] = df_values[i]
+    xr_tmp = xr_tmp.assign_coords(extras)
 
-        ds.variables[e][:] = data_to_write
+    for data_var in xr_tmp.data_vars:
+        unit = unit_table[data_var]
+        xr_tmp[data_var].attrs["units"] = unit
 
-    for var_df in run.groupby("variable"):
-        v = var_df.get_unique_meta("variable", True)
-        meta = var_df.meta.copy().drop("variable", axis=1)
+    xr_tmp.attrs["created_at"] = datetime.utcnow().isoformat()
+    xr_tmp.attrs["_scmdata_version"] = __version__
+    if hasattr(run, "metadata"):
+        xr_tmp.attrs.update(run.metadata)
 
-        # Check that the varying dimensions are all unique
-        if meta[dimensions].duplicated().any():
-            raise ValueError(
-                "{} dimensions are not unique for variable {}".format(dimensions, v)
-            )
-
-        # Check that the other meta are consistent
-        var_attrs = {"_is_metadata": 0}
-        for d in set(meta.columns) - set(dimensions) - set(extras):
-            if len(meta[d].unique()) != 1:
-                raise ValueError(
-                    "metadata for {} is not unique for variable {}".format(d, v)
-                )
-            var_attrs[d] = meta[d].unique()[0]
-
-        var_name = _var_to_nc(v)
-        ds.createVariable(
-            var_name, DEFAULT_FLOAT, all_dims, zlib=True, fill_value=np.nan
-        )
-
-        # We need to write in one dimension at a time
-        data_to_write = np.zeros(var_shape)
-        data_to_write.fill(np.nan)
-        df_values = var_df.values
-        for i, (_, m) in enumerate(meta.iterrows()):
-            idx = [_get_idx(dims[d], m[d]) for d in dimensions]
-            idx.append(slice(None))  # time dim
-            data_to_write[tuple(idx)] = df_values[i]
-        # Write in one call to the nc library
-        ds.variables[var_name][:] = data_to_write
-
-        # Set variable metadata
-        ds.variables[var_name].setncatts(var_attrs)
+    xr_tmp.to_netcdf(fname)
 
 
-def _read_nc(cls, ds):
-    dims = {d: ds.variables[d][:] for d in ds.dimensions}
-    dims["time"] = _read_time_variable(ds.variables["time"])
+def _read_nc(cls, fname):
+    loaded = xr.load_dataset(fname)
 
-    data = []
-    columns = defaultdict(list)
+    df = loaded.to_dataframe()  # .unstack("region")
+    index_cols = list(set(df.columns) - set(loaded.data_vars))
+    df = df.set_index(index_cols, append=True).reset_index("_id", drop=True)
+    df.columns.name = "variable"
+    df = df.unstack("time").stack("variable")
+    df.columns = df.columns.astype(object)
+    df = df.reset_index()
+    unit_map = {data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars}
+    df["unit"] = df["variable"].map(unit_map).values
 
-    def _read_var(name, var):
-        var_data = var[:]
-        valid_mask = ~np.isnan(var_data).all(axis=-1)
+    run = cls(df)
 
-        var_meta = {"variable": name}
-        for v in var.ncattrs():
-            if not v.startswith("_"):
-                var_meta[v] = var.getncattr(v)
-
-        # Iterate over all combinations of dimensions
-        if len(var.dimensions) > 1:
-            meta_at_coord = np.asarray(
-                np.meshgrid(*[dims[d] for d in var.dimensions[:-1]], indexing="ij")
-            )
-            meta_at_coord = meta_at_coord[0]
-
-            with np.nditer(meta_at_coord, ["refs_ok", "multi_index"], order="F") as it:
-                for _ in it:
-                    if not valid_mask[it.multi_index]:
-                        continue
-                    data.append(var_data[it.multi_index])
-                    for i, v in enumerate(it.multi_index):
-                        dim_name = var.dimensions[i]
-                        columns[dim_name].append(dims[dim_name][v])
-                    for v in var_meta:
-                        columns[v].append(var_meta[v])
-        else:
-            data.append(var_data[:])
-            for v in var_meta:
-                columns[v].append(var_meta[v])
-
-    extra_cols = []
-    for var_name in ds.variables:
-        var = ds.variables[var_name]
-        if var_name in dims:
-            continue
-
-        # Check if metadata column
-        if var.getncattr("_is_metadata"):
-            extra_cols.append(var_name)
-
-            # Intialise the required columns and load later
-            if var_name in cls.required_cols:
-                columns[var_name] = ""
-            continue
-
-        name = _nc_to_var(var_name)
-        _read_var(name, var)
-
-    run = cls(np.asarray(data).T, columns=columns, index=dims["time"])
-
-    # Parse any extra metadata columns
-    # Requires 1 filter per item
-
-    def _merge_meta(meta, col, value, **filters):
-        result = []
-        for i, r in meta.iterrows():
-            matches = True
-            val = r[col]
-            for k, v in filters.items():
-                if r[k] != v:
-                    matches = False
-                    break
-            if matches:
-                val = value
-            result.append(val)
-        return result
-
-    for col in extra_cols:
-        var = ds.variables[col]
-        run[col] = None
-
-        values = var[:]
-        if len(var.dimensions):
-            meta_at_coord = np.asarray(
-                np.meshgrid(*[dims[d] for d in var.dimensions], indexing="ij")
-            )
-            with np.nditer(
-                meta_at_coord[0], ["refs_ok", "multi_index"], order="F"
-            ) as it:
-                for _ in it:
-                    meta_vals = {
-                        k: v
-                        for k, v in zip(
-                            var.dimensions,
-                            meta_at_coord[(slice(None),) + it.multi_index],
-                        )
-                    }
-                    run[col] = _merge_meta(
-                        run.meta, col, values[it.multi_index], **meta_vals
-                    )
-        else:
-            run[col] = var[:]
-        try:
-            run[col] = run[col].astype(var.dtype)
-        except ValueError:
-            logger.exception("could not convert meta dtype")
-
-    run.metadata.update({k: ds.getncattr(k) for k in ds.ncattrs()})
+    run.metadata.update(loaded.attrs)
 
     return run
 
@@ -338,14 +213,15 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
     if "variable" in dimensions:
         dimensions.remove("variable")
 
-    with nc.Dataset(fname, "w", diskless=True, persist=True) as ds:
-        ds.created_at = datetime.utcnow().isoformat()
-        ds._scmdata_version = __version__
+    _write_nc(fname, run, dimensions, extras)
+    # with nc.Dataset(fname, "w", diskless=True, persist=True) as ds:
+    #     ds.created_at = datetime.utcnow().isoformat()
+    #     ds._scmdata_version = __version__
 
-        if hasattr(run, "metadata"):
-            ds.setncatts(run.metadata)
+    #     if hasattr(run, "metadata"):
+    #         ds.setncatts(run.metadata)
 
-        _write_nc(ds, run, dimensions, extras)
+    #     _write_nc(ds, run, dimensions, extras)
 
 
 def nc_to_run(cls, fname):
@@ -364,12 +240,12 @@ def nc_to_run(cls, fname):
     if not has_netcdf:
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
 
-    with nc.Dataset(fname) as ds:
-        try:
-            return _read_nc(cls, ds)
-        except Exception:
-            logger.exception("Failed reading netcdf file: {}".format(fname))
-            raise
+    # with nc.Dataset(fname) as ds:
+    try:
+        return _read_nc(cls, fname)
+    except Exception:
+        logger.exception("Failed reading netcdf file: {}".format(fname))
+        raise
 
 
 def inject_nc_methods(cls):
