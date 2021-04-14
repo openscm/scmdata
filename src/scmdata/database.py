@@ -174,7 +174,9 @@ class ScmDatabase:
 
     def _save_to_database_single_file(self, scmrun):
         levels = {
-            level: scmrun.get_unique_meta(level, no_duplicates=True).replace(os.sep, "_")
+            level: scmrun.get_unique_meta(level, no_duplicates=True).replace(
+                os.sep, "_"
+            )
             for level in self.levels
         }
         out_file = self._get_out_filepath(**levels)

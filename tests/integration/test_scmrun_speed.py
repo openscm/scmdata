@@ -217,14 +217,19 @@ def test_to_from_nc(benchmark, tmpdir, n_models, n_ensemble_members):
         },
     )
 
-
     def round_trip():
         nc_file = os.path.join(tmpdir, "nc_dump.nc")
-        start.to_nc(nc_file, dimensions=("variable", "region", "model", "ensemble_member"), extras=("scenario",))
+        start.to_nc(
+            nc_file,
+            dimensions=("variable", "region", "model", "ensemble_member"),
+            extras=("scenario",),
+        )
 
         res = scmdata.ScmRun.from_nc(nc_file)
 
         return res
 
     res = benchmark.pedantic(round_trip, iterations=1, rounds=1)
-    scmdata.testing.assert_scmdf_almost_equal(start, res, allow_unordered=True, check_ts_names=False)
+    scmdata.testing.assert_scmdf_almost_equal(
+        start, res, allow_unordered=True, check_ts_names=False
+    )

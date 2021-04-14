@@ -131,8 +131,14 @@ def _write_nc(fname, run, dimensions, extras):
     joint = tmp.reset_index()
     if extras:
         import pdb
+
         pdb.set_trace()
-        joint = joint.set_index(id_dimensions).join(ids).reset_index(drop=True).set_index(dimensions + ["variable", "_id"])
+        joint = (
+            joint.set_index(id_dimensions)
+            .join(ids)
+            .reset_index(drop=True)
+            .set_index(dimensions + ["variable", "_id"])
+        )
     else:
         joint = joint.set_index(dimensions + ["variable"])
 
@@ -176,6 +182,7 @@ def _write_nc(fname, run, dimensions, extras):
     others = run.meta[other_dimensions].drop_duplicates()
     if others.shape[0] > 1:
         import pdb
+
         pdb.set_trace()
 
     for c in others:
@@ -203,7 +210,9 @@ def _read_nc(cls, fname):
     dataframe = dataframe.unstack("time").stack("variable")
     dataframe.columns = dataframe.columns.astype(object)
     dataframe = dataframe.reset_index()
-    unit_map = {data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars}
+    unit_map = {
+        data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars
+    }
     dataframe["unit"] = dataframe["variable"].map(_var_to_nc).map(unit_map).values
 
     for k in list(loaded.attrs.keys()):
