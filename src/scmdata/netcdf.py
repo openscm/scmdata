@@ -122,14 +122,6 @@ def _write_nc(fname, run, dimensions, extras):
         ids["_id"] = range(ids.shape[0])
         ids = ids.set_index(extras)
 
-    other_dimensions = list(
-        set(run.meta.columns) - set(dimensions) - {"variable", "unit"} - set(extras)
-    )
-    others = run.meta[other_dimensions].drop_duplicates()
-    if others.shape[0] > 1:
-        import pdb
-        pdb.set_trace()
-
     unit_table = (
         run.meta[["variable", unit_name]]
         .drop_duplicates()
@@ -177,6 +169,18 @@ def _write_nc(fname, run, dimensions, extras):
 
     xr_tmp.attrs["created_at"] = datetime.utcnow().isoformat()
     xr_tmp.attrs["_scmdata_version"] = __version__
+
+    other_dimensions = list(
+        set(run.meta.columns) - set(dimensions) - {"variable", "unit"} - set(extras)
+    )
+    others = run.meta[other_dimensions].drop_duplicates()
+    if others.shape[0] > 1:
+        import pdb
+        pdb.set_trace()
+
+    for c in others:
+        xr_tmp.attrs["_scmdata_metadata_{}".format(c)] = others[c].unique()[0]
+
     if hasattr(run, "metadata"):
         xr_tmp.attrs.update(run.metadata)
 
@@ -189,7 +193,11 @@ def _read_nc(cls, fname):
     dataframe = loaded.to_dataframe()
 
     index_cols = list(set(dataframe.columns) - set(loaded.data_vars))
-    dataframe = dataframe.set_index(index_cols, append=True).reset_index("_id", drop=True)
+
+    dataframe = dataframe.set_index(index_cols, append=True)
+    if "_id" in index_cols:
+        dataframe = dataframe.reset_index("_id", drop=True)
+
     dataframe.columns.name = "variable"
     dataframe.columns = dataframe.columns.map(_nc_to_var)
     dataframe = dataframe.unstack("time").stack("variable")
@@ -197,6 +205,10 @@ def _read_nc(cls, fname):
     dataframe = dataframe.reset_index()
     unit_map = {data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars}
     dataframe["unit"] = dataframe["variable"].map(_var_to_nc).map(unit_map).values
+
+    for k in list(loaded.attrs.keys()):
+        if k.startswith("_scmdata_metadata_"):
+            dataframe[k.replace("_scmdata_metadata_", "")] = loaded.attrs.pop(k)
 
     run = cls(dataframe)
 
