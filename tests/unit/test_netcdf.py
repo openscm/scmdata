@@ -31,15 +31,15 @@ def test_run_to_nc(scm_run):
         assert ds.variables["scenario"][1] == "a_scenario2"
 
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][0, :],
+            ds.variables["Primary_Energy"][:, 0 ],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][1, :],
+            ds.variables["Primary_Energy"][:, 1 ],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy__Coal"][0, :],
+            ds.variables["Primary_Energy_pipe_Coal"][:, 0   ],
             scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
@@ -59,6 +59,48 @@ def test_run_to_nc_case(scm_run, v):
         res = nc_to_run(scm_run.__class__, out_fname)
 
         assert res.get_unique_meta("variable", True) == v
+
+
+@pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\".")
+@pytest.mark.parametrize("start_with_weird", (True, False))
+def test_run_to_nc_weird_name(scm_run, ch, start_with_weird):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        scm_run = scm_run.filter(variable="Primary Energy")
+        variable = scm_run.get_unique_meta("variable", True)
+
+        if start_with_weird:
+            variable = ch + " " + variable
+        else:
+            variable = variable + " " + ch
+
+        scm_run["variable"] = variable
+
+        if start_with_weird:
+            error_msg = re.escape("NetCDF: Name contains illegal characters")
+            with pytest.raises(RuntimeError, match=error_msg):
+                run_to_nc(scm_run, out_fname, dimensions=("scenario",))
+
+        else:
+            run_to_nc(scm_run, out_fname, dimensions=("scenario",))
+            res = nc_to_run(scm_run.__class__, out_fname)
+
+            assert res.get_unique_meta("variable", True) == variable
+
+
+@pytest.mark.parametrize("ch", ("|", " ", "  "))
+def test_run_to_nc_special_character_pass(scm_run, ch):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        scm_run = scm_run.filter(variable="Primary Energy")
+        variable = scm_run.get_unique_meta("variable", True)
+        variable = ch + variable
+        scm_run["variable"] = variable
+
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",))
+        res = nc_to_run(scm_run.__class__, out_fname)
+
+        assert res.get_unique_meta("variable", True) == variable
 
 
 def test_run_to_nc_4d(scm_run, tmpdir):
@@ -176,8 +218,12 @@ def test_nc_to_run_non_unique_meta(scm_run):
         error_msg = (
             "metadata for climate_model is not unique for variable Primary Energy"
         )
-        with pytest.raises(ValueError, match=error_msg):
-            run_to_nc(scm_run, out_fname, dimensions=("scenario",))
+
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",))
+
+        loaded = ScmRun.from_nc(out_fname)
+
+    assert_scmdf_almost_equal(scm_run, loaded, check_ts_names=False)
 
 
 @pytest.mark.parametrize("dtype", (int, float, str))
@@ -204,27 +250,24 @@ def test_run_to_nc_with_extras(scm_run, dtype):
         assert ds.variables["scenario"][0] == "a_scenario"
         assert ds.variables["scenario"][1] == "a_scenario2"
 
-        assert ds.variables["run_id"]._is_metadata
         for i, run_id in enumerate(ds.variables["run_id"]):
             exp_val = dtype(unique_scenarios.index(ds.variables["scenario"][i]))
             assert run_id == exp_val
 
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][0, :],
+            ds.variables["Primary_Energy"][:, 0, 0],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
-        assert not ds.variables["Primary_Energy"]._is_metadata
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][1, :],
+            ds.variables["Primary_Energy"][:, 1, 1],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy__Coal"][0, :],
+            ds.variables["Primary_Energy_pipe_Coal"][:, 0, 0],
             scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
         )
-        assert not ds.variables["Primary_Energy__Coal"]._is_metadata
 
 
 def test_nc_to_run_with_extras(scm_run):
@@ -254,16 +297,6 @@ def test_nc_to_run_without_dimensions(scm_run):
         assert isinstance(df, scm_run.__class__)
 
         assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
-
-
-def test_nc_to_run_with_extras_non_unique_for_dimension(scm_run):
-    with tempfile.TemporaryDirectory() as tempdir:
-        out_fname = join(tempdir, "out.nc")
-        scm_run["run_id"] = [1, 2, 1]
-
-        error_msg = "metadata for run_id is not unique for requested dimensions"
-        with pytest.raises(ValueError, match=error_msg):
-            run_to_nc(scm_run, out_fname, dimensions=("scenario",), extras=("run_id",))
 
 
 def test_nc_methods(scm_run):
@@ -358,7 +391,7 @@ def test_nc_with_metadata_fails(scm_run, mdata):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
-        msg = "illegal data type for attribute b'test_fails'"
+        msg =   "Invalid value for attr 'test_fails':.*"
         with pytest.raises(TypeError, match=msg):
             run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
@@ -385,7 +418,20 @@ def test_run_to_nc_required_cols_in_extras():
     assert_scmdf_almost_equal(start, loaded, check_ts_names=False)
 
 
-def test_error_run_to_nc_required_cols_in_extras_duplicated():
+def test_run_to_nc_extra_instead_of_dimension_run_id(scm_run):
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        scm_run["run_id"] = [1, 2, 1]
+
+        error_msg = "metadata for run_id is not unique for requested dimensions"
+
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",), extras=("   run_id",))
+        loaded = ScmRun.from_nc(out_fname)
+
+    assert_scmdf_almost_equal(scm_run, loaded, check_ts_names=False)
+
+
+def test_run_to_nc_extra_instead_of_dimension():
     start = ScmRun(
         np.arange(6).reshape(3, 2),
         index=[2010, 2020, 2030],
@@ -401,5 +447,8 @@ def test_error_run_to_nc_required_cols_in_extras_duplicated():
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
         msg = "metadata for model is not unique for requested dimensions"
-        with pytest.raises(ValueError, match=msg):
-            start.to_nc(out_fname, extras=("model",))
+
+        start.to_nc(out_fname, extras=("model",))
+        loaded = ScmRun.from_nc(out_fname)
+
+    assert_scmdf_almost_equal(start, loaded, check_ts_names=False)

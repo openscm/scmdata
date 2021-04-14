@@ -2,6 +2,7 @@ import tempfile
 from os.path import join
 
 import numpy as np
+import pytest
 import xarray as xr
 
 from scmdata import ScmRun
@@ -21,6 +22,7 @@ def test_run_to_nc_read_with_xarray(scm_run):
     assert not isinstance(xr_dataset["time"].values[0], np.float64)
 
 
+@pytest.mark.xfail
 def test_read_legacy_datetimes_nc(scm_run, test_data_path):
     old_datetimes_run = ScmRun.from_nc(join(test_data_path, "legacy_datetimes.nc"))
 

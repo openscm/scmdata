@@ -55,11 +55,11 @@ DEFAULT_FLOAT = "f8"
 
 
 def _var_to_nc(var):
-    return var.replace("|", "__").replace(" ", "_")
+    return var.replace("|", "_pipe_").replace(" ", "_")
 
 
 def _nc_to_var(var):
-    return var.replace("__", "|").replace("_", " ")
+    return var.replace("_pipe_", "|").replace("_", " ")
 
 
 def _get_idx(vals, v):
@@ -114,16 +114,21 @@ def _write_nc(fname, run, dimensions, extras):
     """
     unit_name = "unit"
 
-    id_dimensions = list(
-        set(run.meta.columns) - set(dimensions) - {"variable", "unit"}
-    )
-
-    tmp = run.timeseries(dimensions + id_dimensions + ["variable"])
+    tmp = run.timeseries(dimensions + ["variable"])
     tmp.columns = run.time_points.as_cftime()
 
-    ids = run.meta[id_dimensions].drop_duplicates()
-    ids["_id"] = range(ids.shape[0])
-    ids = ids.set_index(id_dimensions)
+    if extras:
+        ids = run.meta[extras].drop_duplicates()
+        ids["_id"] = range(ids.shape[0])
+        ids = ids.set_index(extras)
+
+    other_dimensions = list(
+        set(run.meta.columns) - set(dimensions) - {"variable", "unit"} - set(extras)
+    )
+    others = run.meta[other_dimensions].drop_duplicates()
+    if others.shape[0] > 1:
+        import pdb
+        pdb.set_trace()
 
     unit_table = (
         run.meta[["variable", unit_name]]
@@ -131,26 +136,43 @@ def _write_nc(fname, run, dimensions, extras):
         .set_index("variable")["unit"]
     )
 
-    joint = tmp.reset_index().set_index(id_dimensions).join(ids)
-    joint = joint.reset_index(drop=True).set_index(dimensions + ["variable", "_id"])
+    joint = tmp.reset_index()
+    if extras:
+        import pdb
+        pdb.set_trace()
+        joint = joint.set_index(id_dimensions).join(ids).reset_index(drop=True).set_index(dimensions + ["variable", "_id"])
+    else:
+        joint = joint.set_index(dimensions + ["variable"])
+
     joint.columns.names = ["time"]
     assert (
         len(joint.index.unique()) == joint.shape[0]
     ), "something not unique (also caught by initial call to timeseries so this is just another check)..."
 
-    for_xarray = joint.T.stack(dimensions + ["_id"])
+    if extras:
+        for_xarray = joint.T.stack(dimensions + ["_id"])
+    else:
+        for_xarray = joint.T.stack(dimensions)
+
+    for_xarray.columns = for_xarray.columns.map(_var_to_nc)
 
     xr_tmp = xr.Dataset.from_dataframe(for_xarray)
-    ids_tmp = ids.reset_index().set_index("_id")
 
-    extras = {}
-    for c in ids_tmp:
-        extras[c] = ("_id", ids_tmp[c].loc[xr_tmp["_id"].values])
+    if extras:
+        ids_tmp = ids.reset_index().set_index("_id")
 
-    xr_tmp = xr_tmp.assign_coords(extras)
+        extra_coords = {}
+        for c in ids_tmp:
+            extra_coords[c] = ("_id", ids_tmp[c].loc[xr_tmp["_id"].values])
+
+        xr_tmp = xr_tmp.assign_coords(extra_coords)
 
     for data_var in xr_tmp.data_vars:
-        unit = unit_table[data_var]
+        try:
+            unit = unit_table[data_var]
+        except KeyError:
+            unit = unit_table[_nc_to_var(data_var)]
+
         xr_tmp[data_var].attrs["units"] = unit
 
     xr_tmp.attrs["created_at"] = datetime.utcnow().isoformat()
@@ -164,17 +186,19 @@ def _write_nc(fname, run, dimensions, extras):
 def _read_nc(cls, fname):
     loaded = xr.load_dataset(fname)
 
-    df = loaded.to_dataframe()  # .unstack("region")
-    index_cols = list(set(df.columns) - set(loaded.data_vars))
-    df = df.set_index(index_cols, append=True).reset_index("_id", drop=True)
-    df.columns.name = "variable"
-    df = df.unstack("time").stack("variable")
-    df.columns = df.columns.astype(object)
-    df = df.reset_index()
-    unit_map = {data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars}
-    df["unit"] = df["variable"].map(unit_map).values
+    dataframe = loaded.to_dataframe()
 
-    run = cls(df)
+    index_cols = list(set(dataframe.columns) - set(loaded.data_vars))
+    dataframe = dataframe.set_index(index_cols, append=True).reset_index("_id", drop=True)
+    dataframe.columns.name = "variable"
+    dataframe.columns = dataframe.columns.map(_nc_to_var)
+    dataframe = dataframe.unstack("time").stack("variable")
+    dataframe.columns = dataframe.columns.astype(object)
+    dataframe = dataframe.reset_index()
+    unit_map = {data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars}
+    dataframe["unit"] = dataframe["variable"].map(_var_to_nc).map(unit_map).values
+
+    run = cls(dataframe)
 
     run.metadata.update(loaded.attrs)
 
@@ -193,12 +217,10 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
         Path to write the file into
 
     dimensions: iterable of str
-        Dimensions to include in the netCDF file. The order of the dimensions
-        in the netCDF file will be the same as the order provided. The time
-        dimension is always included as the last dimension, even if not provided.
+        Dimensions to include in the netCDF file. The time dimension is always included, even if not provided. An additional co-ordinate, "_id", will be included if ``extras`` is provided. "_id" maps the timeseries in each variable to their relevant metadata.
 
-    extras : iterable of tuples or str
-        Metadata attributes to write as variables in the netCDF file.
+    extras : iterable of str
+        Metadata columns to write as co-ordinates in the netCDF file. These each have a dimension of "_id", which maps the metadata to each timeseries in variable.
 
     See Also
     --------
