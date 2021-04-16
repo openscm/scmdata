@@ -20,6 +20,7 @@ import xarray as xr
 from xarray.coding.times import decode_cf_datetime, encode_cf_datetime
 
 from . import __version__
+from .errors import NonUniqueMetadataError
 
 logger = getLogger(__name__)
 
@@ -114,7 +115,21 @@ def _write_nc(fname, run, dimensions, extras):
     """
     unit_name = "unit"
 
-    tmp = run.timeseries(dimensions + ["variable"])
+    for d in dimensions:
+        vals = sorted(run.meta[d].unique())
+        if not all([isinstance(v, str) for v in vals]) and np.isnan(vals).any():
+            raise AssertionError("nan in dimension: `{}`".format(d))
+
+    try:
+        tmp = run.timeseries(dimensions + extras + ["variable"])
+    except NonUniqueMetadataError as exc:
+        error_msg = (
+            "dimensions: `{}` and extras: `{}` do not uniquely define the "
+            "timeseries, please add extra dimensions and/or extras"
+            .format(dimensions, extras)
+        )
+        raise ValueError(error_msg) from exc
+
     tmp.columns = run.time_points.as_cftime()
 
     if extras:
@@ -130,11 +145,8 @@ def _write_nc(fname, run, dimensions, extras):
 
     joint = tmp.reset_index()
     if extras:
-        import pdb
-
-        pdb.set_trace()
         joint = (
-            joint.set_index(id_dimensions)
+            joint.set_index(ids.index.names)
             .join(ids)
             .reset_index(drop=True)
             .set_index(dimensions + ["variable", "_id"])
@@ -143,9 +155,11 @@ def _write_nc(fname, run, dimensions, extras):
         joint = joint.set_index(dimensions + ["variable"])
 
     joint.columns.names = ["time"]
-    assert (
-        len(joint.index.unique()) == joint.shape[0]
-    ), "something not unique (also caught by initial call to timeseries so this is just another check)..."
+
+    if len(joint.index.unique()) != joint.shape[0]:  # pragma: no cover # emergency valve
+        #  shouldn't be able to get here because any issues should be caught
+        # by initial call to timeseries but just in case
+        raise AssertionError("something not unique")
 
     if extras:
         for_xarray = joint.T.stack(dimensions + ["_id"])
@@ -155,7 +169,6 @@ def _write_nc(fname, run, dimensions, extras):
     for_xarray.columns = for_xarray.columns.map(_var_to_nc)
 
     xr_tmp = xr.Dataset.from_dataframe(for_xarray)
-
     if extras:
         ids_tmp = ids.reset_index().set_index("_id")
 
@@ -200,14 +213,13 @@ def _read_nc(cls, fname):
     dataframe = loaded.to_dataframe()
 
     index_cols = list(set(dataframe.columns) - set(loaded.data_vars))
-
     dataframe = dataframe.set_index(index_cols, append=True)
-    if "_id" in index_cols:
+    if "_id" in dataframe.index.names:
         dataframe = dataframe.reset_index("_id", drop=True)
 
     dataframe.columns.name = "variable"
     dataframe.columns = dataframe.columns.map(_nc_to_var)
-    dataframe = dataframe.unstack("time").stack("variable")
+    dataframe = dataframe.stack("variable").unstack("time")
     dataframe.columns = dataframe.columns.astype(object)
     dataframe = dataframe.reset_index()
     unit_map = {
@@ -251,6 +263,7 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
 
     dimensions = list(dimensions)
+    extras = list(extras)
     if "time" in dimensions:
         dimensions.remove("time")
     if "variable" in dimensions:
