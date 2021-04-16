@@ -202,10 +202,14 @@ def test_nc_to_run_4d(scm_run):
 
 
 def test_nc_to_run_non_unique_for_dimension(scm_run):
+    error_msg = (
+        "dimensions: `{}` and extras: `{}` do not uniquely define the "
+        "timeseries, please add extra dimensions and/or extras"
+        .format(["region"], [])
+    )
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
-        error_msg = "['region'] dimensions are not unique for variable Primary Energy"
         with pytest.raises(ValueError, match=re.escape(error_msg)):
             run_to_nc(scm_run, out_fname, dimensions=("region",))
 
@@ -213,18 +217,23 @@ def test_nc_to_run_non_unique_for_dimension(scm_run):
 def test_nc_to_run_non_unique_meta(scm_run):
     scm_run["climate_model"] = ["b_model", "a_model", "a_model"]
 
+    error_msg = re.escape(
+        "Other metadata is not unique for dimensions: `{}` and extras: `{}`. "
+        "Please add meta columns with more than one value to dimensions or "
+        "extras."
+        .format(["scenario"], [])
+    )
+    error_msg = (
+        "{}\nNumber of unique values in each column:\n.*\n(\\s|\\S)*"
+        "Existing values in the other metadata:.*"
+        .format(error_msg)
+    )
+
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
-        error_msg = (
-            "metadata for climate_model is not unique for variable Primary Energy"
-        )
-
-        run_to_nc(scm_run, out_fname, dimensions=("scenario",))
-
-        loaded = ScmRun.from_nc(out_fname)
-
-    assert_scmdf_almost_equal(scm_run, loaded, check_ts_names=False)
+        with pytest.raises(ValueError, match=error_msg):
+            run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
 
 @pytest.mark.parametrize("dtype", (int, float, str))
@@ -424,9 +433,7 @@ def test_run_to_nc_extra_instead_of_dimension_run_id(scm_run):
         out_fname = join(tempdir, "out.nc")
         scm_run["run_id"] = [1, 2, 1]
 
-        error_msg = "metadata for run_id is not unique for requested dimensions"
-
-        run_to_nc(scm_run, out_fname, dimensions=("scenario",), extras=("   run_id",))
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",), extras=("run_id",))
         loaded = ScmRun.from_nc(out_fname)
 
     assert_scmdf_almost_equal(scm_run, loaded, check_ts_names=False)
@@ -447,9 +454,32 @@ def test_run_to_nc_extra_instead_of_dimension():
 
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        msg = "metadata for model is not unique for requested dimensions"
 
         start.to_nc(out_fname, extras=("model",))
         loaded = ScmRun.from_nc(out_fname)
 
     assert_scmdf_almost_equal(start, loaded, check_ts_names=False)
+
+
+@pytest.mark.parametrize("start_variable", (
+    "PrimaryEnergy|Coal|FinalEnergy",  # easy, no spaces just pipes
+    "Primary Energy|Coal|Final Energy",  # single spaces
+    "Primary  Energy|Coal|Final Energy",  # double spaces
+    "Primary   Energy|Coal|Final  Energy",  # triple and double spaces
+    "Primary    Energy|Coal|Final  Energy",  # quadruple and double spaces
+))
+def test_run_to_nc_loop_tricky_variable_name(scm_run, start_variable):
+    # tests that the mapping between variable and units works even with
+    # tricky variable names that get renamed in various was before serialising to
+    # disk
+    assert "Primary Energy|Coal" in scm_run.get_unique_meta("variable")
+    scm_run["variable"] = scm_run["variable"].apply(lambda x: x.replace("Primary Energy|Coal", start_variable))
+    scm_run["unit"] = scm_run["variable"].apply(lambda x: "EJ/yr" if x != start_variable else "MJ / yr")
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+
+        scm_run.to_nc(out_fname, dimensions=("scenario",))
+        loaded = ScmRun.from_nc(out_fname)
+
+    assert_scmdf_almost_equal(scm_run, loaded, check_ts_names=False)

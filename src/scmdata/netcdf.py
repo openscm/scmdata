@@ -113,15 +113,52 @@ def _write_nc(fname, run, dimensions, extras):
     """
     Low level function to write the dimensions, variables and metadata to disk
     """
-    unit_name = "unit"
 
+    xr_ds = _get_xr_dataset(run, dimensions, extras)
+
+    xr_ds.attrs["created_at"] = datetime.utcnow().isoformat()
+    xr_ds.attrs["_scmdata_version"] = __version__
+
+    if hasattr(run, "metadata"):
+        xr_ds.attrs.update(run.metadata)
+
+    xr_ds.to_netcdf(fname)
+
+
+def _get_xr_dataset(run, dimensions, extras):
+    timeseries = _get_timeseries_for_xr_dataset(run, dimensions, extras)
+    non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(run, dimensions, extras)
+
+    if extras:
+        ids = _get_ids_for_xr_dataset(run, extras)
+    else:
+        ids = None
+
+    for_xarray = _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids)
+    xr_ds = xr.Dataset.from_dataframe(for_xarray)
+
+    if extras:
+        xr_ds = _add_extras(xr_ds, ids)
+
+    unit_map = (
+        run.meta[["variable", "unit"]]
+        .drop_duplicates()
+        .set_index("variable")["unit"]
+    )
+    xr_ds = _add_units(xr_ds, unit_map)
+    xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
+
+    return xr_ds
+
+
+def _get_timeseries_for_xr_dataset(run, dimensions, extras):
     for d in dimensions:
         vals = sorted(run.meta[d].unique())
         if not all([isinstance(v, str) for v in vals]) and np.isnan(vals).any():
             raise AssertionError("nan in dimension: `{}`".format(d))
 
     try:
-        tmp = run.timeseries(dimensions + extras + ["variable"])
+        timeseries = run.timeseries(dimensions + extras + ["variable"])
     except NonUniqueMetadataError as exc:
         error_msg = (
             "dimensions: `{}` and extras: `{}` do not uniquely define the "
@@ -130,88 +167,112 @@ def _write_nc(fname, run, dimensions, extras):
         )
         raise ValueError(error_msg) from exc
 
-    tmp.columns = run.time_points.as_cftime()
+    timeseries.columns = run.time_points.as_cftime()
 
-    if extras:
-        ids = run.meta[extras].drop_duplicates()
-        ids["_id"] = range(ids.shape[0])
-        ids = ids.set_index(extras)
+    return timeseries
 
-    unit_table = (
-        run.meta[["variable", unit_name]]
-        .drop_duplicates()
-        .set_index("variable")["unit"]
+
+def _get_other_metdata_for_xr_dataset(run, dimensions, extras):
+    other_dimensions = list(
+        set(run.meta.columns) - set(dimensions) - set(extras) - {"variable", "unit"}
     )
+    other_metdata = run.meta[other_dimensions].drop_duplicates()
+    if other_metdata.shape[0] > 1:
+        error_msg = (
+            "Other metadata is not unique for dimensions: `{}` and extras: `{}`. "
+            "Please add meta columns with more than one value to dimensions or "
+            "extras.\nNumber of unique values in each column:\n{}.\n"
+            "Existing values in the other metadata:\n{}."
+            .format(dimensions, extras, other_metdata.nunique(), other_metdata.drop_duplicates())
+        )
+        raise ValueError(error_msg)
 
-    joint = tmp.reset_index()
+    return other_metdata
+
+
+def _get_ids_for_xr_dataset(run, extras):
+    ids = run.meta[extras].drop_duplicates()
+    ids["_id"] = range(ids.shape[0])
+    ids = ids.set_index(extras)
+
+    return ids
+
+
+def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids):
+    timeseries = timeseries.reset_index()
+
     if extras:
-        joint = (
-            joint.set_index(ids.index.names)
+        timeseries = (
+            timeseries.set_index(ids.index.names)
             .join(ids)
             .reset_index(drop=True)
             .set_index(dimensions + ["variable", "_id"])
         )
     else:
-        joint = joint.set_index(dimensions + ["variable"])
+        timeseries = timeseries.set_index(dimensions + ["variable"])
 
-    joint.columns.names = ["time"]
+    timeseries.columns.names = ["time"]
 
-    if len(joint.index.unique()) != joint.shape[0]:  # pragma: no cover # emergency valve
-        #  shouldn't be able to get here because any issues should be caught
-        # by initial call to timeseries but just in case
+    if len(timeseries.index.unique()) != timeseries.shape[0]:  # pragma: no cover # emergency valve
+        # shouldn't be able to get here because any issues should be caught
+        # by initial creation of timeseries but just in case
         raise AssertionError("something not unique")
 
-    if extras:
-        for_xarray = joint.T.stack(dimensions + ["_id"])
-    else:
-        for_xarray = joint.T.stack(dimensions)
+    for_xarray = (
+        timeseries.T.stack(dimensions + ["_id"])
+        if extras
+        else timeseries.T.stack(dimensions)
+    )
 
     for_xarray.columns = for_xarray.columns.map(_var_to_nc)
 
-    xr_tmp = xr.Dataset.from_dataframe(for_xarray)
-    if extras:
-        ids_tmp = ids.reset_index().set_index("_id")
+    return for_xarray
 
-        extra_coords = {}
-        for c in ids_tmp:
-            extra_coords[c] = ("_id", ids_tmp[c].loc[xr_tmp["_id"].values])
 
-        xr_tmp = xr_tmp.assign_coords(extra_coords)
+def _add_extras(xr_ds, ids):
+    ids = ids.reset_index().set_index("_id")
 
-    for data_var in xr_tmp.data_vars:
-        try:
-            unit = unit_table[data_var]
-        except KeyError:
-            unit = unit_table[_nc_to_var(data_var)]
+    extra_coords = {
+        col: ("_id", ids[col].loc[xr_ds["_id"].values])
+        for col in ids
+    }
 
-        xr_tmp[data_var].attrs["units"] = unit
+    xr_ds = xr_ds.assign_coords(extra_coords)
 
-    xr_tmp.attrs["created_at"] = datetime.utcnow().isoformat()
-    xr_tmp.attrs["_scmdata_version"] = __version__
+    return xr_ds
 
-    other_dimensions = list(
-        set(run.meta.columns) - set(dimensions) - {"variable", "unit"} - set(extras)
-    )
-    others = run.meta[other_dimensions].drop_duplicates()
-    if others.shape[0] > 1:
-        import pdb
 
-        pdb.set_trace()
+def _add_units(xr_ds, unit_map):
+    for data_var in xr_ds.data_vars:
+        unit = unit_map[_nc_to_var(data_var)]
+        xr_ds[data_var].attrs["units"] = unit
 
-    for c in others:
-        xr_tmp.attrs["_scmdata_metadata_{}".format(c)] = others[c].unique()[0]
+    return xr_ds
 
-    if hasattr(run, "metadata"):
-        xr_tmp.attrs.update(run.metadata)
 
-    xr_tmp.to_netcdf(fname)
+def _add_scmdata_metadata(xr_ds, others):
+    for col in others:
+        vals = others[col].unique()
+        if len(vals) > 1:  # pragma: no cover # emergency valve
+            # should have already been caught...
+            raise AssertionError("More than one value for meta: {}".format(col))
+
+        xr_ds.attrs["_scmdata_metadata_{}".format(col)] = vals[0]
+
+    return xr_ds
 
 
 def _read_nc(cls, fname):
     loaded = xr.load_dataset(fname)
-
     dataframe = loaded.to_dataframe()
 
+    dataframe = _reshape_to_scmrun_dataframe(dataframe, loaded)
+    run = _convert_to_cls_and_add_metadata(dataframe, loaded, cls)
+
+    return run
+
+
+def _reshape_to_scmrun_dataframe(dataframe, loaded):
     index_cols = list(set(dataframe.columns) - set(loaded.data_vars))
     dataframe = dataframe.set_index(index_cols, append=True)
     if "_id" in dataframe.index.names:
@@ -219,20 +280,23 @@ def _read_nc(cls, fname):
 
     dataframe.columns.name = "variable"
     dataframe.columns = dataframe.columns.map(_nc_to_var)
-    dataframe = dataframe.stack("variable").unstack("time")
-    dataframe.columns = dataframe.columns.astype(object)
-    dataframe = dataframe.reset_index()
+
+    dataframe = dataframe.stack("variable").unstack("time").reset_index()
+
     unit_map = {
         data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars
     }
     dataframe["unit"] = dataframe["variable"].map(_var_to_nc).map(unit_map).values
 
+    return dataframe
+
+
+def _convert_to_cls_and_add_metadata(dataframe, loaded, cls):
     for k in list(loaded.attrs.keys()):
         if k.startswith("_scmdata_metadata_"):
             dataframe[k.replace("_scmdata_metadata_", "")] = loaded.attrs.pop(k)
 
     run = cls(dataframe)
-
     run.metadata.update(loaded.attrs)
 
     return run
@@ -242,7 +306,9 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
     """
     Write timeseries to disk as a netCDF4 file
 
-    Each unique variable will be written as a netCDF file.
+    Each unique variable will be written as a variable within the netCDF file.
+    Choosing the dimensions and extras such that there are as few empty (or
+    nan) values as possible will lead to the best compression on disk.
 
     Parameters
     ----------
@@ -270,14 +336,6 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
         dimensions.remove("variable")
 
     _write_nc(fname, run, dimensions, extras)
-    # with nc.Dataset(fname, "w", diskless=True, persist=True) as ds:
-    #     ds.created_at = datetime.utcnow().isoformat()
-    #     ds._scmdata_version = __version__
-
-    #     if hasattr(run, "metadata"):
-    #         ds.setncatts(run.metadata)
-
-    #     _write_nc(ds, run, dimensions, extras)
 
 
 def nc_to_run(cls, fname):
@@ -296,7 +354,6 @@ def nc_to_run(cls, fname):
     if not has_netcdf:
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
 
-    # with nc.Dataset(fname) as ds:
     try:
         return _read_nc(cls, fname)
     except Exception:
