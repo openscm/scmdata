@@ -130,15 +130,16 @@ def _get_xr_dataset(run, dimensions, extras):
     )
 
     if extras:
-        ids = _get_ids_for_xr_dataset(run, extras)
+        ids, ids_dimensions = _get_ids_for_xr_dataset(run, extras, dimensions)
     else:
         ids = None
+        ids_dimensions = None
 
-    for_xarray = _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids)
+    for_xarray = _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids, ids_dimensions)
     xr_ds = xr.Dataset.from_dataframe(for_xarray)
 
     if extras:
-        xr_ds = _add_extras(xr_ds, ids)
+        xr_ds = _add_extras(xr_ds, ids, ids_dimensions, run)
 
     unit_map = (
         run.meta[["variable", "unit"]].drop_duplicates().set_index("variable")["unit"]
@@ -193,18 +194,45 @@ def _get_other_metdata_for_xr_dataset(run, dimensions, extras):
     return other_metdata
 
 
-def _get_ids_for_xr_dataset(run, extras):
+def _get_ids_for_xr_dataset(run, extras, dimensions):
+    # these loops could be very slow with lots of extras and dimensions...
+    ids_dimensions = {}
+    for extra in extras:
+        for col in dimensions:
+            if _many_to_one(run.meta, extra, col):
+                dim_col = col
+                break
+        else:
+            dim_col = "_id"
+
+        ids_dimensions[extra] = dim_col
+
     ids = run.meta[extras].drop_duplicates()
     ids["_id"] = range(ids.shape[0])
     ids = ids.set_index(extras)
 
-    return ids
+    return ids, ids_dimensions
 
 
-def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids):
+def _many_to_one(df, col1, col2):
+    """
+    Check if there is a many to one mapping between col2 and col1
+    """
+    # thanks https://stackoverflow.com/a/59091549
+    checker = df[[col1, col2]].drop_duplicates()
+
+    max_count = checker.groupby(col2).count().max()[0]
+    if max_count < 1:
+        raise AssertionError
+
+    return max_count == 1
+
+
+def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids, ids_dimensions):
     timeseries = timeseries.reset_index()
 
-    if extras:
+    add_id_dimension = extras and "_id" in set(ids_dimensions.values())
+    if add_id_dimension:
         timeseries = (
             timeseries.set_index(ids.index.names)
             .join(ids)
@@ -213,6 +241,8 @@ def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids):
         )
     else:
         timeseries = timeseries.set_index(dimensions + ["variable"])
+        if extras:
+            timeseries = timeseries.drop(extras, axis="columns")
 
     timeseries.columns.names = ["time"]
 
@@ -225,17 +255,23 @@ def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids):
 
     for_xarray = (
         timeseries.T.stack(dimensions + ["_id"])
-        if extras
+        if add_id_dimension
         else timeseries.T.stack(dimensions)
     )
 
     return for_xarray
 
 
-def _add_extras(xr_ds, ids):
-    ids = ids.reset_index().set_index("_id")
+def _add_extras(xr_ds, ids, ids_dimensions, run):
+    # this loop could also be slow...
+    extra_coords = {}
+    for extra, id_dimension in ids_dimensions.items():
+        if id_dimension in ids:
+            ids_extra = ids.reset_index().set_index(id_dimension)
+        else:
+            ids_extra = run.meta[[extra, id_dimension]].drop_duplicates().set_index(id_dimension)
 
-    extra_coords = {col: ("_id", ids[col].loc[xr_ds["_id"].values]) for col in ids}
+        extra_coords[extra] = (id_dimension, ids_extra[extra].loc[xr_ds[id_dimension].values])
 
     xr_ds = xr_ds.assign_coords(extra_coords)
 

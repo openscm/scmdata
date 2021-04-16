@@ -161,10 +161,10 @@ def test_nc_to_run(scm_run, dimensions):
 
         assert exists(out_fname)
 
-        df = nc_to_run(scm_run.__class__, out_fname)
-        assert isinstance(df, scm_run.__class__)
+        run_read = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(run_read, scm_run.__class__)
 
-        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
+        assert_scmdf_almost_equal(scm_run, run_read, check_ts_names=False)
 
 
 def test_nc_to_run_4d(scm_run):
@@ -196,10 +196,10 @@ def test_nc_to_run_4d(scm_run):
 
         assert exists(out_fname)
 
-        df = nc_to_run(scm_run.__class__, out_fname)
-        assert isinstance(df, scm_run.__class__)
+        run_read = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(run_read, scm_run.__class__)
 
-        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
+        assert_scmdf_almost_equal(scm_run, run_read, check_ts_names=False)
 
 
 def test_nc_to_run_with_extras_sparsity(scm_run):
@@ -237,10 +237,10 @@ def test_nc_to_run_with_extras_sparsity(scm_run):
         # There is no way to avoid this sparsity.
         assert len(xr_ds["Primary_space_Energy"].shape) == 4
 
-        df = nc_to_run(scm_run.__class__, out_fname)
-        assert isinstance(df, scm_run.__class__)
+        run_read = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(run_read, scm_run.__class__)
 
-        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
+        assert_scmdf_almost_equal(scm_run, run_read, check_ts_names=False)
 
 
 def test_nc_to_run_with_extras_id_not_needed_sparsity(scm_run):
@@ -278,10 +278,10 @@ def test_nc_to_run_with_extras_id_not_needed_sparsity(scm_run):
         # There should be no "_id" as paraset_id is uniquely defined by "run_id"
         assert len(xr_ds["Primary_space_Energy"].shape) == 3
 
-        df = nc_to_run(scm_run.__class__, out_fname)
-        assert isinstance(df, scm_run.__class__)
+        run_read = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(run_read, scm_run.__class__)
 
-        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
+        assert_scmdf_almost_equal(scm_run, run_read, check_ts_names=False)
 
 
 def test_nc_to_run_non_unique_for_dimension(scm_run):
@@ -368,10 +368,10 @@ def test_nc_to_run_with_extras(scm_run):
 
         assert exists(out_fname)
 
-        df = nc_to_run(scm_run.__class__, out_fname)
-        assert isinstance(df, scm_run.__class__)
+        run_read = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(run_read, scm_run.__class__)
 
-        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
+        assert_scmdf_almost_equal(scm_run, run_read, check_ts_names=False)
 
 
 def test_nc_to_run_without_dimensions(scm_run):
@@ -383,10 +383,10 @@ def test_nc_to_run_without_dimensions(scm_run):
 
         assert exists(out_fname)
 
-        df = nc_to_run(scm_run.__class__, out_fname)
-        assert isinstance(df, scm_run.__class__)
+        run_read = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(run_read, scm_run.__class__)
 
-        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
+        assert_scmdf_almost_equal(scm_run, run_read, check_ts_names=False)
 
 
 def test_nc_methods(scm_run):
@@ -465,12 +465,13 @@ def test_nc_with_metadata(scm_run, mdata):
             assert _cmp(nc_attrs[k], v)
         assert "created_at" in nc_attrs
 
-        df = nc_to_run(scm_run.__class__, out_fname)
+        run_read = nc_to_run(scm_run.__class__, out_fname)
 
         for k, v in mdata.items():
-            assert k in df.metadata
-            assert _cmp(df.metadata[k], v)
-        assert "created_at" in df.metadata
+            assert k in run_read.metadata
+            assert _cmp(run_read.metadata[k], v)
+
+        assert "created_at" in run_read.metadata
 
 
 @pytest.mark.parametrize(
