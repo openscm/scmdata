@@ -52,7 +52,206 @@ def _check_is_subdir(root, d):
         raise AssertionError("{} not in {}".format(d, root))
 
 
-class BaseDatabase(ABC):
+class DatabaseBackend(ABC):
+    """
+    Abstract backend for serialising/deserialising data
+
+    Data is stored as objects represented by keys. These keys can be used later
+    to load data.
+    """
+
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    @abstractmethod
+    def save(self, sr):
+        """
+        Save data
+
+        Parameters
+        ----------
+        sr: scmdata.ScmRun
+
+        Returns
+        -------
+        str
+            Key where the data is stored
+        """
+        pass
+
+    @abstractmethod
+    def load(self, key):
+        """
+        Load data at a given key
+
+        Parameters
+        ----------
+        key : str
+            Key to load
+
+        Returns
+        -------
+        scmdata.ScmRun
+        """
+        pass
+
+    def delete(self, key):
+        """
+        Delete a given key
+
+        Parameters
+        ----------
+        key: str
+        """
+        pass
+
+    @abstractmethod
+    def get(self, filters, ext="*.nc"):
+        """
+        Get all matching keys for a given filter
+
+        Parameters
+        ----------
+        filters: dict of str
+            String filters
+            If a level is missing then all values are fetched
+        ext: str or None
+            Added to the end of the search string
+
+        Returns
+        -------
+        list of str
+            Each item is a key which may contain data which is of interest
+        """
+        pass
+
+
+class NetCDFBackend(DatabaseBackend):
+    """
+    On-disk database handler for outputs from SCMs
+
+    Data is split into groups as specified by :attr:`levels`. This allows for fast
+    reading and writing of new subsets of data when a single output file is no longer
+    performant or data cannot all fit in memory.
+    """
+
+    @staticmethod
+    def _get_disk_filename(inp):
+        def safe_char(c):
+            if c.isalnum() or c in "-/*_.":
+                return c
+            else:
+                return "-"
+
+        return "".join(safe_char(c) for c in inp)
+
+    def _get_out_filepath(self, **levels):
+        """
+        Get filepath in which data has been saved
+
+        The filepath is the root directory joined with the other information provided. The filepath
+        is also cleaned to remove spaces and special characters.
+
+        Parameters
+        ----------
+        levels: dict of str : str
+            The unique value for each level in :attr:`levels'
+
+        Returns
+        -------
+        str
+            Path in which to save the data without spaces or special characters.
+
+        Raises
+        ------
+        ValueError
+            If no value is provided for level in :attr:`levels'
+        """
+        out_levels = []
+        for level in self.kwargs["levels"]:
+            if level not in levels:
+                raise ValueError("expected value for level: {}".format(level))
+            out_levels.append(str(levels[level]))
+
+        out_path = os.path.join(self.kwargs["root_dir"], *out_levels)
+        out_fname = "__".join(out_levels) + ".nc"
+        out_fname = os.path.join(out_path, out_fname)
+
+        _check_is_subdir(self.kwargs["root_dir"], out_fname)
+
+        return self._get_disk_filename(out_fname)
+
+    def save(self, sr):
+        levels = {
+            level: sr.get_unique_meta(level, no_duplicates=True).replace(os.sep, "_")
+            for level in self.kwargs["levels"]
+        }
+        out_file = self._get_out_filepath(**levels)
+
+        ensure_dir_exists(out_file)
+        if os.path.exists(out_file):
+            existing_run = ScmRun.from_nc(out_file)
+
+            sr = run_append([existing_run, sr])
+
+        # Check for required extra dimensions
+        nunique_meta_vals = sr.meta.nunique()
+        dimensions = nunique_meta_vals[nunique_meta_vals > 1].index.tolist()
+        sr.to_nc(out_file, dimensions=dimensions)
+        return out_file
+
+    def load(self, fname):
+        return ScmRun.from_nc(fname)
+
+    def delete(self, fname):
+        os.remove(fname)
+
+    def get(self, filters, ext="*.nc"):
+        """
+        Get all matching objects for a given filter
+
+        Parameters
+        ----------
+        filters: dict of str
+            String filters
+            If a level is missing then all values are fetched
+        ext: str or None
+            Added to the end of the search string
+
+        Returns
+        -------
+        list of str
+        """
+        level_options = []
+        for level in self.kwargs["levels"]:
+            level_values = filters.get(level, ["*"])
+            if isinstance(level_values, str):
+                level_values = [level_values]
+
+            level_options.append(level_values)
+
+        # AND logic across levels, OR logic within levels
+        level_options_product = itertools.product(*level_options)
+        globs_to_check = [
+            self._get_disk_filename(
+                os.path.join(self.kwargs["root_dir"], *levels, "*.nc")
+            )
+            for levels in level_options_product
+        ]
+
+        load_files = [
+            v
+            for vlist in [glob.glob(g, recursive=True) for g in globs_to_check]
+            for v in vlist
+        ]
+
+        return load_files
+
+
+backend_classes = {"netcdf": NetCDFBackend}
+
+
+class ScmDatabase:
     """
     On-disk database handler for outputs from SCMs
 
@@ -62,7 +261,10 @@ class BaseDatabase(ABC):
     """
 
     def __init__(
-        self, root_dir, levels=("climate_model", "variable", "region", "scenario"),
+        self,
+        root_dir,
+        levels=("climate_model", "variable", "region", "scenario"),
+        backend="netcdf",
     ):
         """
         Initialise the database
@@ -87,6 +289,17 @@ class BaseDatabase(ABC):
         """
         self._root_dir = root_dir
         self.levels = tuple(levels)
+        self._backend = self._get_backend(backend)
+
+    def _get_backend(self, backend):
+        if isinstance(backend, DatabaseBackend):
+            return backend
+
+        try:
+            cls = backend_classes[backend.lower()]
+            return cls(levels=self.levels, root_dir=self._root_dir)
+        except KeyError:
+            raise ValueError("Unknown database backend: {}".format(backend))
 
     def __repr__(self):
         return "<scmdata.database.SCMDatabase (root_dir: {}, levels: {})>".format(
@@ -130,7 +343,7 @@ class BaseDatabase(ABC):
             desc="Saving to database",
             disable=disable_tqdm,
         ):
-            self._save_single(r)
+            self._backend.save(r)
 
     def load(self, disable_tqdm=False, **filters):
         """
@@ -164,26 +377,19 @@ class BaseDatabase(ABC):
         for level in filters:
             if level not in self.levels:
                 raise ValueError("Unknown level: {}".format(level))
-
             if os.sep in filters[level]:
                 filters[level] = filters[level].replace(os.sep, "_")
 
-        load_files = self._get_targets(filters)
+        load_files = self._backend.get(filters)
 
-        if show_tqdm:
-            return run_append(
-                [
-                    self._load_single(f)
-                    for f in tqdman.tqdm(
-                        load_files,
-                        desc="Loading files",
-                        leave=False,
-                        disable=disable_tqdm,
-                    )
-                ]
-            )
-        else:
-            return run_append([self._load_single(f) for f in load_files])
+        return run_append(
+            [
+                self._backend.load(f)
+                for f in tqdman.tqdm(
+                    load_files, desc="Loading files", leave=False, disable=disable_tqdm,
+                )
+            ]
+        )
 
     def delete(self, **filters):
         """
@@ -207,11 +413,11 @@ class BaseDatabase(ABC):
             if os.sep in filters[level]:
                 filters[level] = filters[level].replace(os.sep, "_")
 
-        load_dirs = self._get_targets(filters, ext=None)
+        load_dirs = self._backend.get(filters, ext=None)
 
         for d in load_dirs:
             _check_is_subdir(self._root_dir, d)
-            self._delete_single(d)
+            self._backend.delete(d)
 
     def available_data(self):
         """
@@ -225,7 +431,7 @@ class BaseDatabase(ABC):
         -------
         :class:`pd.DataFrame`
         """
-        all_files = self._get_targets({})
+        all_files = self._backend.get({})
 
         file_meta = []
         for f in all_files:
@@ -235,154 +441,3 @@ class BaseDatabase(ABC):
         data = pd.DataFrame(file_meta, columns=self.levels)
 
         return data.sort_values(by=data.columns.to_list()).reset_index(drop=True)
-
-    @abstractmethod
-    def _save_single(self, scmrun):
-        pass
-
-    @abstractmethod
-    def _load_single(self, fname):
-        pass
-
-    def _delete_single(self, fname):
-        pass
-
-    @abstractmethod
-    def _get_targets(self, filters, ext="*.nc"):
-        """
-        Get all matching objects for a given filter
-
-        Parameters
-        ----------
-        filters: dict of str
-            String filters
-            If a level is missing then all values are fetched
-        ext: str or None
-            Added to the end of the search string
-
-        Returns
-        -------
-        list of str
-        """
-        pass
-
-
-class ScmDatabase(BaseDatabase):
-    """
-    On-disk database handler for outputs from SCMs
-
-    Data is split into groups as specified by :attr:`levels`. This allows for fast
-    reading and writing of new subsets of data when a single output file is no longer
-    performant or data cannot all fit in memory.
-    """
-
-    @staticmethod
-    def _get_disk_filename(inp):
-        def safe_char(c):
-            if c.isalnum() or c in "-/*_.":
-                return c
-            else:
-                return "-"
-
-        return "".join(safe_char(c) for c in inp)
-
-    def _get_out_filepath(self, **levels):
-        """
-        Get filepath in which data has been saved
-
-        The filepath is the root directory joined with the other information provided.
-        The filepath is also cleaned to remove spaces and special characters.
-
-        Parameters
-        ----------
-        levels: dict of str : str
-            The unique value for each level in :attr:`levels'
-
-        Returns
-        -------
-        str
-            Path in which to save the data without spaces or special characters.
-
-        Raises
-        ------
-        ValueError
-            If no value is provided for level in :attr:`levels'
-        """
-        out_levels = []
-        for level in self.levels:
-            if level not in levels:
-                raise ValueError("expected value for level: {}".format(level))
-            out_levels.append(str(levels[level]))
-
-        out_path = os.path.join(self._root_dir, *out_levels)
-        out_fname = "__".join(out_levels) + ".nc"
-        out_fname = os.path.join(out_path, out_fname)
-
-        _check_is_subdir(self._root_dir, out_fname)
-
-        return self._get_disk_filename(out_fname)
-
-    def _save_single(self, scmrun):
-        levels = {
-            level: scmrun.get_unique_meta(level, no_duplicates=True).replace(
-                os.sep, "_"
-            )
-            for level in self.levels
-        }
-        out_file = self._get_out_filepath(**levels)
-
-        ensure_dir_exists(out_file)
-        if os.path.exists(out_file):
-            existing_run = ScmRun.from_nc(out_file)
-
-            scmrun = run_append([existing_run, scmrun])
-
-        # Check for required extra dimensions
-        nunique_meta_vals = scmrun.meta.nunique()
-        dimensions = nunique_meta_vals[nunique_meta_vals > 1].index.tolist()
-        scmrun.to_nc(out_file, dimensions=dimensions)
-
-    def _load_single(self, fname):
-        return ScmRun.from_nc(fname)
-
-    def _delete_single(self, fname):
-        os.remove(fname)
-
-    def _get_targets(self, filters, ext="*.nc"):
-        """
-        Get all matching objects for a given filter
-
-        Parameters
-        ----------
-        filters: dict of str
-            String filters
-            If a level is missing then all values are fetched
-        ext: str or None
-            Added to the end of the search string
-
-        Returns
-        -------
-        list of str
-        """
-        level_options = []
-        for level in self.levels:
-            level_values = filters.get(level, ["*"])
-            if isinstance(level_values, str):
-                level_values = [level_values]
-
-            level_options.append(level_values)
-
-        # AND logic across levels, OR logic within levels
-        level_options_product = itertools.product(*level_options)
-        globs_to_check = [
-            self._get_disk_filename(os.path.join(self._root_dir, *levels, "*.nc"))
-            for levels in level_options_product
-        ]
-
-        load_files = [
-            v
-            for vlist in [glob.glob(g, recursive=True) for g in globs_to_check]
-            for v in vlist
-        ]
-
-        return load_files

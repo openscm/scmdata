@@ -1,14 +1,14 @@
 import os.path
 import re
 from glob import glob
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from scmdata import ScmRun, run_append
-from scmdata.database import ScmDatabase
+from scmdata.database import ScmDatabase, NetCDFBackend, DatabaseBackend
 from scmdata.errors import NonUniqueMetadataError
 from scmdata.testing import assert_scmdf_almost_equal
 
@@ -28,6 +28,25 @@ def start_scmrun():
             "ensemble_member": 0,
         },
     )
+
+
+class DummyBackend(DatabaseBackend):
+    def __init__(self, **kwargs):
+        super(DummyBackend, self).__init__(**kwargs)
+        self.keys = {}
+
+    def get(self, filters, ext="*.nc"):
+        return self.keys  # not doing any filtering...
+
+    def save(self, sr):
+        key = os.path.join(
+            *[sr.get_unique_meta(k, True) for k in self.kwargs["levels"]]
+        )
+        self.keys[key] = sr
+        return key
+
+    def load(self, key):
+        return self.keys[key]
 
 
 @pytest.fixture()
@@ -137,17 +156,19 @@ def test_database_init_and_repr():
         ),
     ),
 )
-def test_get_out_filepath(levels, inp, exp_tail, tdb):
-    tdb.levels = levels
-    res = tdb._get_out_filepath(**inp)
-    exp = os.path.join(tdb._root_dir, exp_tail)
+def test_get_out_filepath(levels, inp, exp_tail):
+    root_dir = "/tmp/example"
+    backend = NetCDFBackend(levels=levels, root_dir=root_dir)
+    res = backend._get_out_filepath(**inp)
+    exp = os.path.join(root_dir, exp_tail)
 
     assert res == exp
 
 
-def test_get_out_filepath_not_all_values(tdb):
+def test_get_out_filepath_not_all_values():
+    backend = NetCDFBackend(levels=["climate_model"], root_dir="")
     with pytest.raises(ValueError, match=": climate_model"):
-        tdb._get_out_filepath(other="test")
+        backend._get_out_filepath(other="test")
 
 
 @patch("scmdata.database.ensure_dir_exists")
@@ -160,7 +181,7 @@ def test_save_to_database_single_file(
     mock_get_out_filepath.return_value = tout_file
     inp_scmrun = start_scmrun.filter(climate_model="cmodel_a")
 
-    tdb._save_single(inp_scmrun)
+    tdb._backend.save(inp_scmrun)
 
     mock_get_out_filepath.assert_called_once()
     mock_get_out_filepath.assert_called_with(
@@ -189,7 +210,7 @@ def test_save_to_database_single_file_non_unique_meta(
     inp_scmrun["ensemble_member"] = [0, 1]
     inp_scmrun["climate_model"] = "cmodel_a"
 
-    tdb._save_single(inp_scmrun)
+    tdb._backend.save(inp_scmrun)
 
     mock_get_out_filepath.assert_called_once()
     mock_get_out_filepath.assert_called_with(
@@ -213,11 +234,11 @@ def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
             "`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])"
         ),
     ):
-        tdb._save_single(start_scmrun)
+        tdb._backend.save(start_scmrun)
 
 
-@patch.object(ScmDatabase, "_save_single")
-def test_database_save(mock_save_to_database_single_file, tdb, start_scmrun):
+def test_database_save(tdb, start_scmrun):
+    tdb._backend = DummyBackend(levels=tdb.levels)
     tdb.save(start_scmrun)
 
     expected_calls = len(
@@ -227,7 +248,7 @@ def test_database_save(mock_save_to_database_single_file, tdb, start_scmrun):
             )
         )
     )
-    assert mock_save_to_database_single_file.call_count == expected_calls
+    assert len(tdb._backend.keys) == expected_calls
 
 
 @pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\" .")
