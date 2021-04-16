@@ -355,15 +355,15 @@ def test_run_to_nc_with_extras(scm_run, dtype):
             assert run_id == exp_val
 
         npt.assert_allclose(
-            ds.variables["Primary_space_Energy"][:, 0, 0],
+            ds.variables["Primary_space_Energy"][:, 0],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_space_Energy"][:, 1, 1],
+            ds.variables["Primary_space_Energy"][:, 1],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_space_Energy_pipe_Coal"][:, 0, 0],
+            ds.variables["Primary_space_Energy_pipe_Coal"][:, 0],
             scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
