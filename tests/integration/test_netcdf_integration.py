@@ -2,12 +2,9 @@ import tempfile
 from os.path import join
 
 import numpy as np
-import pytest
 import xarray as xr
 
-from scmdata import ScmRun
 from scmdata.netcdf import run_to_nc
-from scmdata.testing import assert_scmdf_almost_equal
 
 
 def test_run_to_nc_read_with_xarray(scm_run):

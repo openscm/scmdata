@@ -11,7 +11,6 @@ except ImportError:  # pragma: no cover
     nc = None
     has_netcdf = False
 
-from collections import defaultdict
 from datetime import datetime
 from logging import getLogger
 
@@ -113,7 +112,6 @@ def _write_nc(fname, run, dimensions, extras):
     """
     Low level function to write the dimensions, variables and metadata to disk
     """
-
     xr_ds = _get_xr_dataset(run, dimensions, extras)
 
     xr_ds.attrs["created_at"] = datetime.utcnow().isoformat()
@@ -127,7 +125,9 @@ def _write_nc(fname, run, dimensions, extras):
 
 def _get_xr_dataset(run, dimensions, extras):
     timeseries = _get_timeseries_for_xr_dataset(run, dimensions, extras)
-    non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(run, dimensions, extras)
+    non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(
+        run, dimensions, extras
+    )
 
     if extras:
         ids = _get_ids_for_xr_dataset(run, extras)
@@ -141,9 +141,7 @@ def _get_xr_dataset(run, dimensions, extras):
         xr_ds = _add_extras(xr_ds, ids)
 
     unit_map = (
-        run.meta[["variable", "unit"]]
-        .drop_duplicates()
-        .set_index("variable")["unit"]
+        run.meta[["variable", "unit"]].drop_duplicates().set_index("variable")["unit"]
     )
     xr_ds = _add_units(xr_ds, unit_map)
     xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
@@ -162,8 +160,9 @@ def _get_timeseries_for_xr_dataset(run, dimensions, extras):
     except NonUniqueMetadataError as exc:
         error_msg = (
             "dimensions: `{}` and extras: `{}` do not uniquely define the "
-            "timeseries, please add extra dimensions and/or extras"
-            .format(dimensions, extras)
+            "timeseries, please add extra dimensions and/or extras".format(
+                dimensions, extras
+            )
         )
         raise ValueError(error_msg) from exc
 
@@ -182,8 +181,12 @@ def _get_other_metdata_for_xr_dataset(run, dimensions, extras):
             "Other metadata is not unique for dimensions: `{}` and extras: `{}`. "
             "Please add meta columns with more than one value to dimensions or "
             "extras.\nNumber of unique values in each column:\n{}.\n"
-            "Existing values in the other metadata:\n{}."
-            .format(dimensions, extras, other_metdata.nunique(), other_metdata.drop_duplicates())
+            "Existing values in the other metadata:\n{}.".format(
+                dimensions,
+                extras,
+                other_metdata.nunique(),
+                other_metdata.drop_duplicates(),
+            )
         )
         raise ValueError(error_msg)
 
@@ -213,7 +216,9 @@ def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids):
 
     timeseries.columns.names = ["time"]
 
-    if len(timeseries.index.unique()) != timeseries.shape[0]:  # pragma: no cover # emergency valve
+    if (
+        len(timeseries.index.unique()) != timeseries.shape[0]
+    ):  # pragma: no cover # emergency valve
         # shouldn't be able to get here because any issues should be caught
         # by initial creation of timeseries but just in case
         raise AssertionError("something not unique")
@@ -230,10 +235,7 @@ def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids):
 def _add_extras(xr_ds, ids):
     ids = ids.reset_index().set_index("_id")
 
-    extra_coords = {
-        col: ("_id", ids[col].loc[xr_ds["_id"].values])
-        for col in ids
-    }
+    extra_coords = {col: ("_id", ids[col].loc[xr_ds["_id"].values]) for col in ids}
 
     xr_ds = xr_ds.assign_coords(extra_coords)
 
