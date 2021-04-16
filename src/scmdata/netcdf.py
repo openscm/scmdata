@@ -135,7 +135,9 @@ def _get_xr_dataset(run, dimensions, extras):
         ids = None
         ids_dimensions = None
 
-    for_xarray = _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids, ids_dimensions)
+    for_xarray = _get_dataframe_for_xr_dataset(
+        timeseries, dimensions, extras, ids, ids_dimensions
+    )
     xr_ds = xr.Dataset.from_dataframe(for_xarray)
 
     if extras:
@@ -269,9 +271,16 @@ def _add_extras(xr_ds, ids, ids_dimensions, run):
         if id_dimension in ids:
             ids_extra = ids.reset_index().set_index(id_dimension)
         else:
-            ids_extra = run.meta[[extra, id_dimension]].drop_duplicates().set_index(id_dimension)
+            ids_extra = (
+                run.meta[[extra, id_dimension]]
+                .drop_duplicates()
+                .set_index(id_dimension)
+            )
 
-        extra_coords[extra] = (id_dimension, ids_extra[extra].loc[xr_ds[id_dimension].values])
+        extra_coords[extra] = (
+            id_dimension,
+            ids_extra[extra].loc[xr_ds[id_dimension].values],
+        )
 
     xr_ds = xr_ds.assign_coords(extra_coords)
 

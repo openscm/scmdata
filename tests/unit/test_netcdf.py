@@ -226,7 +226,12 @@ def test_nc_to_run_with_extras_sparsity(scm_run):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
-        run_to_nc(scm_run, out_fname, dimensions=("climate_model", "run_id"), extras=("scenario",))
+        run_to_nc(
+            scm_run,
+            out_fname,
+            dimensions=("climate_model", "run_id"),
+            extras=("scenario",),
+        )
 
         assert exists(out_fname)
 
@@ -269,7 +274,12 @@ def test_nc_to_run_with_extras_id_not_needed_sparsity(scm_run):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
-        run_to_nc(scm_run, out_fname, dimensions=("climate_model", "run_id"), extras=("paraset_id",))
+        run_to_nc(
+            scm_run,
+            out_fname,
+            dimensions=("climate_model", "run_id"),
+            extras=("paraset_id",),
+        )
 
         assert exists(out_fname)
 
