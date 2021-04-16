@@ -202,7 +202,7 @@ def test_nc_to_run_4d(scm_run):
         assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
 
 
-def test_nc_to_run_with_extras_not_sparse(scm_run):
+def test_nc_to_run_with_extras_sparsity(scm_run):
     df = scm_run.timeseries()
     val_cols = df.columns.tolist()
     df = df.reset_index()
@@ -231,7 +231,51 @@ def test_nc_to_run_with_extras_not_sparse(scm_run):
         assert exists(out_fname)
 
         xr_ds = xr.load_dataset(out_fname)
-        # should save with three dimensions: "time", "climate_model", "run_id"
+        # Should save with four dimensions: "time", "climate_model", "run_id", "_id"
+        # the "_id" dimension is required as a short-hand mapping between extras and
+        # the data.
+        # There is no way to avoid this sparsity.
+        assert len(xr_ds["Primary_space_Energy"].shape) == 4
+
+        df = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(df, scm_run.__class__)
+
+        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
+
+
+def test_nc_to_run_with_extras_id_not_needed_sparsity(scm_run):
+    df = scm_run.filter(scenario="a_scenario").timeseries()
+    val_cols = df.columns.tolist()
+    df = df.reset_index()
+
+    df["climate_model"] = "base_m"
+    df["run_id"] = 1
+    df.loc[:, val_cols] = np.random.rand(df.shape[0], len(val_cols))
+
+    big_df = [df]
+    for climate_model in ["abc_m", "def_m", "ghi_m"]:
+        for run_id in range(10):
+            new_df = df.copy()
+            new_df["run_id"] = run_id
+            new_df["climate_model"] = climate_model
+            new_df.loc[:, val_cols] = np.random.rand(df.shape[0], len(val_cols))
+
+            big_df.append(new_df)
+
+    big_df = pd.concat(big_df).reset_index(drop=True)
+    big_df["paraset_id"] = big_df["run_id"].apply(lambda x: x // 3)
+    scm_run = scm_run.__class__(big_df)
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+
+        run_to_nc(scm_run, out_fname, dimensions=("climate_model", "run_id"), extras=("paraset_id",))
+
+        assert exists(out_fname)
+
+        xr_ds = xr.load_dataset(out_fname)
+        # Should save with three dimensions: "time", "climate_model", "run_id"
+        # There should be no "_id" as paraset_id is uniquely defined by "run_id"
         assert len(xr_ds["Primary_space_Energy"].shape) == 3
 
         df = nc_to_run(scm_run.__class__, out_fname)
