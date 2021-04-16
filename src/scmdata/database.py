@@ -346,7 +346,7 @@ class ScmDatabase(BaseDatabase):
         return ScmRun.from_nc(fname)
 
     def _delete_single(self, fname):
-        shutil.rmtree(fname)
+        os.remove(fname)
 
     def _get_targets(self, filters, ext="*.nc"):
         """
