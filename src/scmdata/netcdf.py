@@ -56,11 +56,11 @@ DEFAULT_FLOAT = "f8"
 
 
 def _var_to_nc(var):
-    return var.replace("|", "_pipe_").replace(" ", "_")
+    return var.replace("|", "_pipe_").replace(" ", "_space_")
 
 
 def _nc_to_var(var):
-    return var.replace("_pipe_", "|").replace("_", " ")
+    return var.replace("_pipe_", "|").replace("_space_", " ")
 
 
 def _get_idx(vals, v):
@@ -224,8 +224,6 @@ def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids):
         else timeseries.T.stack(dimensions)
     )
 
-    for_xarray.columns = for_xarray.columns.map(_var_to_nc)
-
     return for_xarray
 
 
@@ -244,8 +242,10 @@ def _add_extras(xr_ds, ids):
 
 def _add_units(xr_ds, unit_map):
     for data_var in xr_ds.data_vars:
-        unit = unit_map[_nc_to_var(data_var)]
+        unit = unit_map[data_var]
         xr_ds[data_var].attrs["units"] = unit
+
+    xr_ds = xr_ds.rename_vars({v: _var_to_nc(v) for v in xr_ds.data_vars})
 
     return xr_ds
 
