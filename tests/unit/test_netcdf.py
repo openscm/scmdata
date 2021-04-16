@@ -153,7 +153,15 @@ def test_run_to_nc_nan_dimension_error(scm_run, tmpdir):
         run_to_nc(scm_run, out_fname, dimensions=("scenario", "run_id"))
 
 
-@pytest.mark.parametrize("dimensions", (("scenario",), ("scenario", "time")))
+@pytest.mark.parametrize(
+    "dimensions",
+    (
+        ("scenario", "variable"),
+        ("scenario",),
+        ("scenario", "time"),
+        ("scenario", "variable", "time"),
+    ),
+)
 def test_nc_to_run(scm_run, dimensions):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")

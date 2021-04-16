@@ -62,52 +62,6 @@ def _nc_to_var(var):
     return var.replace("_pipe_", "|").replace("_space_", " ")
 
 
-def _get_idx(vals, v):
-    if v not in vals:
-        raise AssertionError("{} is not in {}".format(v, vals))
-
-    return np.where(vals == v)[0][0]
-
-
-def _get_nc_type(np_type):
-    if np_type == int:
-        return {
-            "datatype": "i8",
-        }
-    elif np_type == float:
-        return {"datatype": DEFAULT_FLOAT, "fill_value": np.nan}
-
-    return {"datatype": str, "fill_value": None}
-
-
-def _create_time_variable(ds, run):
-    """
-    Create a CF-compliant time variable
-    Note that the CF dictates the use of units, rather than unit which we use else where
-    """
-    ds.createDimension("time", run.shape[1])
-    ds.createVariable(
-        "time", "i8", "time",
-    )
-
-    num, units, calendar = encode_cf_datetime(run.time_points.as_cftime())
-    ds.variables["time"][:] = num
-    ds.variables["time"].setncatts({"calendar": calendar, "units": units})
-
-
-def _read_time_variable(time_var):
-    # If times use the f8 datatype, convert to datetime64[s]
-    if time_var.dtype == np.dtype("f8"):
-        return time_var[:].astype("datetime64[s]")
-    else:
-        # Use CF-compliant time handling
-        attrs = time_var.ncattrs()
-        units = time_var.units if "units" in attrs else None
-        calendar = time_var.calendar if "calendar" in attrs else None
-
-        return decode_cf_datetime(time_var[:], units, calendar)
-
-
 def _write_nc(fname, run, dimensions, extras):
     """
     Low level function to write the dimensions, variables and metadata to disk
@@ -117,7 +71,7 @@ def _write_nc(fname, run, dimensions, extras):
     xr_ds.attrs["created_at"] = datetime.utcnow().isoformat()
     xr_ds.attrs["_scmdata_version"] = __version__
 
-    if hasattr(run, "metadata"):
+    if run.metadata:
         xr_ds.attrs.update(run.metadata)
 
     xr_ds.to_netcdf(fname)
@@ -224,7 +178,7 @@ def _many_to_one(df, col1, col2):
     checker = df[[col1, col2]].drop_duplicates()
 
     max_count = checker.groupby(col2).count().max()[0]
-    if max_count < 1:
+    if max_count < 1:  # pragma: no cover # emergency valve
         raise AssertionError
 
     return max_count == 1
@@ -377,8 +331,10 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
 
     dimensions = list(dimensions)
     extras = list(extras)
+
     if "time" in dimensions:
         dimensions.remove("time")
+
     if "variable" in dimensions:
         dimensions.remove("variable")
 
