@@ -16,7 +16,6 @@ from logging import getLogger
 
 import numpy as np
 import xarray as xr
-from xarray.coding.times import decode_cf_datetime, encode_cf_datetime
 
 from . import __version__
 from .errors import NonUniqueMetadataError
