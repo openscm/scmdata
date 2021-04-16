@@ -9,6 +9,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pytest
+import xarray as xr
 
 from scmdata import ScmRun
 from scmdata.netcdf import nc_to_run, run_to_nc
@@ -194,6 +195,44 @@ def test_nc_to_run_4d(scm_run):
         )
 
         assert exists(out_fname)
+
+        df = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(df, scm_run.__class__)
+
+        assert_scmdf_almost_equal(scm_run, df, check_ts_names=False)
+
+
+def test_nc_to_run_with_extras_not_sparse(scm_run):
+    df = scm_run.timeseries()
+    val_cols = df.columns.tolist()
+    df = df.reset_index()
+
+    df["climate_model"] = "base_m"
+    df["run_id"] = 1
+    df.loc[:, val_cols] = np.random.rand(df.shape[0], len(val_cols))
+
+    big_df = [df]
+    for climate_model in ["abc_m", "def_m", "ghi_m"]:
+        for run_id in range(10):
+            new_df = df.copy()
+            new_df["run_id"] = run_id
+            new_df["climate_model"] = climate_model
+            new_df.loc[:, val_cols] = np.random.rand(df.shape[0], len(val_cols))
+
+            big_df.append(new_df)
+
+    scm_run = scm_run.__class__(pd.concat(big_df).reset_index(drop=True))
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+
+        run_to_nc(scm_run, out_fname, dimensions=("climate_model", "run_id"), extras=("scenario",))
+
+        assert exists(out_fname)
+
+        xr_ds = xr.load_dataset(out_fname)
+        # should save with three dimensions: "time", "climate_model", "run_id"
+        assert len(xr_ds["Primary_space_Energy"].shape) == 3
 
         df = nc_to_run(scm_run.__class__, out_fname)
         assert isinstance(df, scm_run.__class__)
@@ -453,6 +492,28 @@ def test_run_to_nc_extra_instead_of_dimension():
         out_fname = join(tempdir, "out.nc")
 
         start.to_nc(out_fname, extras=("model",))
+        loaded = ScmRun.from_nc(out_fname)
+
+    assert_scmdf_almost_equal(start, loaded, check_ts_names=False)
+
+
+def test_run_to_nc_dimensions_cover_all_metadata():
+    start = ScmRun(
+        np.arange(6).reshape(3, 2),
+        index=[2010, 2020, 2030],
+        columns={
+            "variable": "Surface Temperature",
+            "unit": "K",
+            "model": ["model_a", "model_b"],
+            "scenario": "scen_a",
+            "region": "World",
+        },
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+
+        start.to_nc(out_fname, dimensions=("region", "model", "scenario"))
         loaded = ScmRun.from_nc(out_fname)
 
     assert_scmdf_almost_equal(start, loaded, check_ts_names=False)

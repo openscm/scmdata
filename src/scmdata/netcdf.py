@@ -176,7 +176,7 @@ def _get_other_metdata_for_xr_dataset(run, dimensions, extras):
         set(run.meta.columns) - set(dimensions) - set(extras) - {"variable", "unit"}
     )
     other_metdata = run.meta[other_dimensions].drop_duplicates()
-    if other_metdata.shape[0] > 1:
+    if other_metdata.shape[0] > 1 and not other_metdata.empty:
         error_msg = (
             "Other metadata is not unique for dimensions: `{}` and extras: `{}`. "
             "Please add meta columns with more than one value to dimensions or "
