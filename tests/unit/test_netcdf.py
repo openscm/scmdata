@@ -302,6 +302,53 @@ def test_nc_to_run_with_extras_id_not_needed_sparsity(scm_run):
         assert_scmdf_almost_equal(scm_run, run_read, check_ts_names=False)
 
 
+def test_nc_to_run_with_extras_id_needed_and_not_needed(scm_run):
+    scmrun = scm_run.filter(scenario="a_scenario")
+
+    full_df = []
+    for model in ("model_a", "model_b"):
+        for scenario in ("scenario_a", "scenario_b"):
+            for run_id in range(10):
+                tmp = scmrun.timeseries()
+                tmp["run_id"] = run_id
+                tmp["model"] = model
+                tmp["scenario"] = scenario
+                tmp.index = tmp.index.droplevel(["model", "scenario"])
+                full_df.append(tmp)
+
+    full_df = pd.concat(full_df)
+    scm_run = scm_run.__class__(full_df)
+    scm_run["paraset_id"] = scm_run["run_id"].apply(lambda x: x // 3)
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+
+        run_to_nc(
+            scm_run,
+            out_fname,
+            dimensions=("climate_model", "run_id", "scenario"),
+            extras=("paraset_id", "model"),
+        )
+
+        assert exists(out_fname)
+
+        xr_ds = xr.load_dataset(out_fname)
+
+        # Should save with dimensions: "time", "climate_model",
+        # "run_id", "scenario" and "_id"
+        assert len(xr_ds["Primary_space_Energy"].shape) == 5
+
+        # model must be saved with id
+        assert xr_ds["model"].dims == ("_id",)
+        # paraset_id is wholly defined by run_id
+        assert xr_ds["paraset_id"].dims == ("run_id",)
+
+        run_read = nc_to_run(scm_run.__class__, out_fname)
+        assert isinstance(run_read, scm_run.__class__)
+
+        assert_scmdf_almost_equal(scm_run, run_read, check_ts_names=False)
+
+
 def test_nc_to_run_non_unique_for_dimension(scm_run):
     error_msg = (
         "dimensions: `{}` and extras: `{}` do not uniquely define the "
