@@ -22,30 +22,6 @@ from .errors import NonUniqueMetadataError
 
 logger = getLogger(__name__)
 
-_TO_NC_DOCSTRING = """\
-Write data to disk as a netCDF4 file
-
-Parameters
-----------
-path: str
-    Path to write the file into
-
-dimensions: iterable of str
-    Dimensions to include in the netCDF file. The order of the dimensions in the netCDF file will be the same
-    as the order provided.
-    The time dimension is always included as the last dimension, even if not provided.
-"""
-
-
-_FROM_NC_DOCSTRING = """\
-Read netCDF4 file from disk
-
-Parameters
-----------
-path: str
-    Path to write the file into
-
-"""
 
 """
 Default to writing float data as 8 byte floats
@@ -316,10 +292,10 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
         Path to write the file into
 
     dimensions: iterable of str
-        Dimensions to include in the netCDF file. The time dimension is always included, even if not provided. An additional co-ordinate, "_id", will be included if ``extras`` is provided. "_id" maps the timeseries in each variable to their relevant metadata.
+        Dimensions to include in the netCDF file. The time dimension is always included, even if not provided. An additional co-ordinate, "_id", will be included if ``extras`` is provided and any of the metadata in ``extras`` is not uniquely defined by ``dimensions``. "_id" maps the timeseries in each variable to their relevant metadata.
 
     extras : iterable of str
-        Metadata columns to write as co-ordinates in the netCDF file. These each have a dimension of "_id", which maps the metadata to each timeseries in variable.
+        Metadata columns to write as co-ordinates in the netCDF file. Where possible, the metadata in ``dimensions`` will be the co-ordinates of these co-ordinates. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` co-ordinates will have co-ordinates of "_id", which maps the metadata to each timeseries in the serialised dataset.
 
     See Also
     --------
