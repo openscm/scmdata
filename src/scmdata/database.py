@@ -52,6 +52,16 @@ def _check_is_subdir(root, d):
         raise AssertionError("{} not in {}".format(d, root))
 
 
+def _get_safe_filename(inp):
+    def safe_char(c):
+        if c.isalnum() or c in "-/*_.":
+            return c
+        else:
+            return "-"
+
+    return "".join(safe_char(c) for c in inp)
+
+
 class DatabaseBackend(ABC):
     """
     Abstract backend for serialising/deserialising data
@@ -136,15 +146,6 @@ class NetCDFBackend(DatabaseBackend):
     """
 
     @staticmethod
-    def _get_disk_filename(inp):
-        def safe_char(c):
-            if c.isalnum() or c in "-/*_.":
-                return c
-            else:
-                return "-"
-
-        return "".join(safe_char(c) for c in inp)
-
     def _get_out_filepath(self, **levels):
         """
         Get filepath in which data has been saved
@@ -179,7 +180,7 @@ class NetCDFBackend(DatabaseBackend):
 
         _check_is_subdir(self.kwargs["root_dir"], out_fname)
 
-        return self._get_disk_filename(out_fname)
+        return _get_safe_filename(out_fname)
 
     def save(self, sr):
         levels = {
@@ -233,9 +234,7 @@ class NetCDFBackend(DatabaseBackend):
         # AND logic across levels, OR logic within levels
         level_options_product = itertools.product(*level_options)
         globs_to_check = [
-            self._get_disk_filename(
-                os.path.join(self.kwargs["root_dir"], *levels, "*.nc")
-            )
+            _get_safe_filename(os.path.join(self.kwargs["root_dir"], *levels, "*.nc"))
             for levels in level_options_product
         ]
 
