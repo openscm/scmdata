@@ -1,7 +1,8 @@
 import os.path
 import re
+import tempfile
 from glob import glob
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -171,60 +172,66 @@ def test_get_out_filepath_not_all_values():
         backend._get_out_filepath(other="test")
 
 
-@patch("scmdata.database.ensure_dir_exists")
-@patch.object(ScmDatabase, "_get_out_filepath")
 @patch.object(ScmRun, "to_nc")
-def test_save_to_database_single_file(
-    mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
-):
-    tout_file = "test_out.nc"
-    mock_get_out_filepath.return_value = tout_file
-    inp_scmrun = start_scmrun.filter(climate_model="cmodel_a")
+def test_netcdf_save(mock_to_nc, tdb, start_scmrun):
+    with tempfile.TemporaryDirectory() as tempdir:
+        backend = NetCDFBackend(levels=tdb.levels, root_dir=tempdir)
 
-    tdb._backend.save(inp_scmrun)
+        with patch.object(backend, "_get_out_filepath") as mock_get_out_filepath:
+            out_fname = os.path.join(tempdir, "test-level", "out.nc")
+            mock_get_out_filepath.return_value = out_fname
+            inp_scmrun = start_scmrun.filter(climate_model="cmodel_a")
 
-    mock_get_out_filepath.assert_called_once()
-    mock_get_out_filepath.assert_called_with(
-        climate_model=inp_scmrun.get_unique_meta("climate_model", no_duplicates=True),
-        variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
-        region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
-        scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
-    )
+            backend.save(inp_scmrun)
 
-    mock_ensure_dir_exists.assert_called_once()
-    mock_ensure_dir_exists.assert_called_with(tout_file)
+            mock_get_out_filepath.assert_called_once()
+            mock_get_out_filepath.assert_called_with(
+                climate_model=inp_scmrun.get_unique_meta(
+                    "climate_model", no_duplicates=True
+                ),
+                variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
+                region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
+                scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
+            )
 
-    mock_to_nc.assert_called_once()
-    mock_to_nc.assert_called_with(tout_file, dimensions=[])
+            assert os.path.exists(os.path.dirname(out_fname))
+            mock_to_nc.assert_called_once()
+            inp_scmrun.to_nc.assert_called_with(out_fname, dimensions=[])
 
 
 @patch("scmdata.database.ensure_dir_exists")
-@patch.object(ScmDatabase, "_get_out_filepath")
 @patch.object(ScmRun, "to_nc")
-def test_save_to_database_single_file_non_unique_meta(
-    mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
+def test_netcdf_save_non_unique_meta(
+    mock_to_nc, mock_ensure_dir_exists, tdb, start_scmrun
 ):
-    tout_file = "test_out.nc"
-    mock_get_out_filepath.return_value = tout_file
-    inp_scmrun = start_scmrun
-    inp_scmrun["ensemble_member"] = [0, 1]
-    inp_scmrun["climate_model"] = "cmodel_a"
+    with tempfile.TemporaryDirectory() as tempdir:
+        backend = NetCDFBackend(levels=tdb.levels, root_dir=tempdir)
 
-    tdb._backend.save(inp_scmrun)
+        with patch.object(backend, "_get_out_filepath") as mock_get_out_filepath:
+            out_fname = os.path.join(tempdir, "test-level", "out.nc")
+            mock_get_out_filepath.return_value = out_fname
 
-    mock_get_out_filepath.assert_called_once()
-    mock_get_out_filepath.assert_called_with(
-        climate_model=inp_scmrun.get_unique_meta("climate_model", no_duplicates=True),
-        variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
-        region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
-        scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
-    )
+            inp_scmrun = start_scmrun
+            inp_scmrun["ensemble_member"] = [0, 1]
+            inp_scmrun["climate_model"] = "cmodel_a"
 
-    mock_ensure_dir_exists.assert_called_once()
-    mock_ensure_dir_exists.assert_called_with(tout_file)
+            backend.save(inp_scmrun)
 
-    mock_to_nc.assert_called_once()
-    mock_to_nc.assert_called_with(tout_file, dimensions=["ensemble_member"])
+            mock_get_out_filepath.assert_called_once()
+            mock_get_out_filepath.assert_called_with(
+                climate_model=inp_scmrun.get_unique_meta(
+                    "climate_model", no_duplicates=True
+                ),
+                variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
+                region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
+                scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
+            )
+
+            mock_ensure_dir_exists.assert_called_once()
+            mock_ensure_dir_exists.assert_called_with(out_fname)
+
+            mock_to_nc.assert_called_once()
+            mock_to_nc.assert_called_with(out_fname, dimensions=["ensemble_member"])
 
 
 def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
