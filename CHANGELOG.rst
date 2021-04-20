@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#149 <https://github.com/openscm/scmdata/pull/149>`_) Fix bug in testcase for xarray<=0.16.1
 - (`#147 <https://github.com/openscm/scmdata/pull/147>`_) Re-do netCDF reading and writing to make use of xarray and provide better handling of extras (results in speedups of 10-100x)
 - (`#146 <https://github.com/openscm/scmdata/pull/146>`_) Update CI-CD workflow to include more sensible dependencies and also test Python3.9
 - (`#145 <https://github.com/openscm/scmdata/pull/145>`_) Allow :meth:`ScmDatabase.load` to handle lists as filter values

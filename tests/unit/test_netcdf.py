@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import netCDF4 as nc
 import numpy as np
 import numpy.testing as npt
+import packaging.version
 import pandas as pd
 import pytest
 import xarray as xr
@@ -547,7 +548,11 @@ def test_nc_with_metadata_fails(scm_run, mdata):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
 
-        msg = "Invalid value for attr 'test_fails':.*"
+        xarray_version = packaging.version.parse(xr.__version__)
+        if xarray_version >= packaging.version.parse("0.16.2"):
+            msg = "Invalid value for attr 'test_fails':.*"
+        else:
+            msg = "Invalid value for attr: {}".format(mdata["test_fails"])
         with pytest.raises(TypeError, match=msg):
             run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
