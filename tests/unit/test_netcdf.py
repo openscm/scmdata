@@ -3,11 +3,11 @@ import re
 import tempfile
 from os.path import exists, join
 from unittest.mock import MagicMock, patch
-import packaging.version
 
 import netCDF4 as nc
 import numpy as np
 import numpy.testing as npt
+import packaging.version
 import pandas as pd
 import pytest
 import xarray as xr
