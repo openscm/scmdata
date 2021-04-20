@@ -552,7 +552,7 @@ def test_nc_with_metadata_fails(scm_run, mdata):
         if xarray_version >= packaging.version.parse("0.16.2"):
             msg = "Invalid value for attr 'test_fails':.*"
         else:
-            msg = "Invalid value for attr: {}".format(str(mdata["test_fails"]))
+            msg = "Invalid value for attr: {}".format(mdata["test_fails"])
         with pytest.raises(TypeError, match=msg):
             run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
