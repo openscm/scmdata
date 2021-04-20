@@ -14,7 +14,6 @@ import itertools
 import os
 import os.path
 import pathlib
-import shutil
 from abc import ABC, abstractmethod
 
 import pandas as pd
@@ -143,17 +142,17 @@ class NetCDFBackend(DatabaseBackend):
     performant or data cannot all fit in memory.
     """
 
-    def _get_out_filepath(self, **levels):
+    def get_key(self, sr):
         """
-        Get filepath in which data has been saved
+        Get key where the data will be stored
 
-        The filepath is the root directory joined with the other information provided. The filepath
+        The key is the root directory joined with the other information provided. The filepath
         is also cleaned to remove spaces and special characters.
 
         Parameters
         ----------
-        levels: dict of str : str
-            The unique value for each level in :attr:`levels'
+        sr: :class:`scmdata.ScmRun`
+            Data
 
         Returns
         -------
@@ -163,8 +162,17 @@ class NetCDFBackend(DatabaseBackend):
         Raises
         ------
         ValueError
-            If no value is provided for level in :attr:`levels'
+            If no value is provided for level in :attr:`levels' or non unique metadata
+            is found for the levels of interest
         """
+        levels = {
+            level: sr.get_unique_meta(level, no_duplicates=True).replace(os.sep, "_")
+            for level in self.kwargs["levels"]
+        }
+
+        return self._get_out_filepath(**levels)
+
+    def _get_out_filepath(self, **levels):
         out_levels = []
         for level in self.kwargs["levels"]:
             if level not in levels:
@@ -180,29 +188,65 @@ class NetCDFBackend(DatabaseBackend):
         return _get_safe_filename(out_fname)
 
     def save(self, sr):
-        levels = {
-            level: sr.get_unique_meta(level, no_duplicates=True).replace(os.sep, "_")
-            for level in self.kwargs["levels"]
-        }
-        out_file = self._get_out_filepath(**levels)
+        """
+        Save a ScmRun to the database
 
-        ensure_dir_exists(out_file)
-        if os.path.exists(out_file):
-            existing_run = ScmRun.from_nc(out_file)
+        The dataset should not contain any duplicate metadata for the
+        database levels
+
+        Parameters
+        ----------
+        sr : :class:`scmdata.ScmRun`
+            Data to save
+
+        Raises
+        ------
+        ValueError
+            If duplicate metadata are present
+
+        Returns
+        -------
+        str
+            Key where the data is saved
+        """
+        key = self.get_key(sr)
+
+        ensure_dir_exists(key)
+        if os.path.exists(key):
+            existing_run = ScmRun.from_nc(key)
 
             sr = run_append([existing_run, sr])
 
         # Check for required extra dimensions
         nunique_meta_vals = sr.meta.nunique()
         dimensions = nunique_meta_vals[nunique_meta_vals > 1].index.tolist()
-        sr.to_nc(out_file, dimensions=dimensions)
-        return out_file
+        sr.to_nc(key, dimensions=dimensions)
+        return key
 
-    def load(self, fname):
-        return ScmRun.from_nc(fname)
+    def load(self, key):
+        """
 
-    def delete(self, fname):
-        os.remove(fname)
+        Parameters
+        ----------
+        key: str
+
+        Returns
+        -------
+        :class:`scmdata.ScmRun`
+
+        """
+        return ScmRun.from_nc(key)
+
+    def delete(self, key):
+        """
+        Delete a key
+
+        Parameters
+        ----------
+        key: str
+
+        """
+        os.remove(key)
 
     def get(self, filters):
         """
