@@ -1,12 +1,11 @@
+import os
 import tempfile
 from os.path import join
 
 import numpy as np
 import xarray as xr
 
-from scmdata import ScmRun
 from scmdata.netcdf import run_to_nc
-from scmdata.testing import assert_scmdf_almost_equal
 
 
 def test_run_to_nc_read_with_xarray(scm_run):
@@ -21,7 +20,22 @@ def test_run_to_nc_read_with_xarray(scm_run):
     assert not isinstance(xr_dataset["time"].values[0], np.float64)
 
 
-def test_read_legacy_datetimes_nc(scm_run, test_data_path):
-    old_datetimes_run = ScmRun.from_nc(join(test_data_path, "legacy_datetimes.nc"))
+def test_run_to_nc_xarray_kwarg_passing(scm_run, tmpdir):
+    out_fname = join(tmpdir, "out.nc")
+    run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
-    assert_scmdf_almost_equal(old_datetimes_run, scm_run, check_ts_names=False)
+    out_fname_compressed = join(tmpdir, "out_shrunk.nc")
+    # actually using compression here makes the file bigger because the data
+    # is so small
+    comp = dict(dtype="int32")
+    encoding = {var: comp for var in scm_run.get_unique_meta("variable")}
+    run_to_nc(
+        scm_run,
+        out_fname_compressed,
+        dimensions=("scenario",),
+        encoding=encoding,
+        engine="netcdf4",
+        format="NETCDF4",
+    )
+
+    assert os.stat(out_fname).st_size > os.stat(out_fname_compressed).st_size
