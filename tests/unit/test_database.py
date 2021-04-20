@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from scmdata import ScmRun, run_append
-from scmdata.database import ScmDatabase, NetCDFBackend, DatabaseBackend
+from scmdata.database import DatabaseBackend, NetCDFBackend, ScmDatabase
 from scmdata.errors import NonUniqueMetadataError
 from scmdata.testing import assert_scmdf_almost_equal
 
