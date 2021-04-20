@@ -30,11 +30,7 @@ DEFAULT_FLOAT = "f8"
 
 
 def _var_to_nc(var):
-    return var.replace("|", "_pipe_").replace(" ", "_space_")
-
-
-def _nc_to_var(var):
-    return var.replace("_pipe_", "|").replace("_space_", " ")
+    return var.replace("|", "__").replace(" ", "_")
 
 
 def _write_nc(fname, run, dimensions, extras):
@@ -76,6 +72,7 @@ def _get_xr_dataset(run, dimensions, extras):
         run.meta[["variable", "unit"]].drop_duplicates().set_index("variable")["unit"]
     )
     xr_ds = _add_units(xr_ds, unit_map)
+    xr_ds = _rename_variables(xr_ds)
     xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
 
     return xr_ds
@@ -221,7 +218,17 @@ def _add_units(xr_ds, unit_map):
         unit = unit_map[data_var]
         xr_ds[data_var].attrs["units"] = unit
 
-    xr_ds = xr_ds.rename_vars({v: _var_to_nc(v) for v in xr_ds.data_vars})
+    return xr_ds
+
+
+def _rename_variables(xr_ds):
+    name_mapping = {}
+    for data_var in xr_ds.data_vars:
+        serialised_name = _var_to_nc(data_var)
+        name_mapping[data_var] = serialised_name
+        xr_ds[data_var].attrs["long_name"] = data_var
+
+    xr_ds = xr_ds.rename_vars(name_mapping)
 
     return xr_ds
 
@@ -254,8 +261,9 @@ def _reshape_to_scmrun_dataframe(dataframe, loaded):
     if "_id" in dataframe.index.names:
         dataframe = dataframe.reset_index("_id", drop=True)
 
+    variable_name_map = {k: v.attrs["long_name"] for k, v in loaded.data_vars.items()}
     dataframe.columns.name = "variable"
-    dataframe.columns = dataframe.columns.map(_nc_to_var)
+    dataframe.columns = dataframe.columns.map(variable_name_map)
 
     dataframe = dataframe.stack("variable").unstack("time").reset_index()
 

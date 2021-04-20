@@ -32,15 +32,15 @@ def test_run_to_nc(scm_run):
         assert ds.variables["scenario"][1] == "a_scenario2"
 
         npt.assert_allclose(
-            ds.variables["Primary_space_Energy"][:, 0],
+            ds.variables["Primary_Energy"][:, 0],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_space_Energy"][:, 1],
+            ds.variables["Primary_Energy"][:, 1],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_space_Energy_pipe_Coal"][:, 0],
+            ds.variables["Primary_Energy__Coal"][:, 0],
             scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
@@ -248,7 +248,7 @@ def test_nc_to_run_with_extras_sparsity(scm_run):
         # the "_id" dimension is required as a short-hand mapping between extras and
         # the data.
         # There is no way to avoid this sparsity.
-        assert len(xr_ds["Primary_space_Energy"].shape) == 4
+        assert len(xr_ds["Primary_Energy"].shape) == 4
 
         run_read = nc_to_run(scm_run.__class__, out_fname)
         assert isinstance(run_read, scm_run.__class__)
@@ -294,7 +294,7 @@ def test_nc_to_run_with_extras_id_not_needed_sparsity(scm_run):
         xr_ds = xr.load_dataset(out_fname)
         # Should save with three dimensions: "time", "climate_model", "run_id"
         # There should be no "_id" as paraset_id is uniquely defined by "run_id"
-        assert len(xr_ds["Primary_space_Energy"].shape) == 3
+        assert len(xr_ds["Primary_Energy"].shape) == 3
 
         run_read = nc_to_run(scm_run.__class__, out_fname)
         assert isinstance(run_read, scm_run.__class__)
@@ -336,7 +336,7 @@ def test_nc_to_run_with_extras_id_needed_and_not_needed(scm_run):
 
         # Should save with dimensions: "time", "climate_model",
         # "run_id", "scenario" and "_id"
-        assert len(xr_ds["Primary_space_Energy"].shape) == 5
+        assert len(xr_ds["Primary_Energy"].shape) == 5
 
         # model must be saved with id
         assert xr_ds["model"].dims == ("_id",)
@@ -410,15 +410,15 @@ def test_run_to_nc_with_extras(scm_run, dtype):
             assert run_id == exp_val
 
         npt.assert_allclose(
-            ds.variables["Primary_space_Energy"][:, 0],
+            ds.variables["Primary_Energy"][:, 0],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_space_Energy"][:, 1],
+            ds.variables["Primary_Energy"][:, 1],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_space_Energy_pipe_Coal"][:, 0],
+            ds.variables["Primary_Energy__Coal"][:, 0],
             scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
