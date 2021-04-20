@@ -151,19 +151,18 @@ class NetCDFBackend(DatabaseBackend):
 
         Parameters
         ----------
-        sr: :class:`scmdata.ScmRun`
-            Data
-
-        Returns
-        -------
-        str
-            Path in which to save the data without spaces or special characters.
+        sr : :class:`scmdata.ScmRun`
+            Data to save
 
         Raises
         ------
         ValueError
-            If no value is provided for level in :attr:`levels' or non unique metadata
-            is found for the levels of interest
+            If non-unique metadata or missing metadata is found for each of :attr:`self.kwargs["levels"]`
+
+        Returns
+        -------
+        str
+            Path in which to save the data without spaces or special characters
         """
         levels = {
             level: sr.get_unique_meta(level, no_duplicates=True).replace(os.sep, "_")
