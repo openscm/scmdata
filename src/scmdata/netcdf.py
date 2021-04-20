@@ -331,7 +331,7 @@ def run_to_nc(run, fname, dimensions=("region",), extras=(), **kwargs):
         Metadata columns to write as variables (specifically co-ordinates in xarray terms) in the netCDF file. Where possible, the metadata in ``dimensions`` will be used as the dimensions of these variables. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` variables will have dimensions of "_id", which maps the metadata to each timeseries in the serialised dataset.
 
     kwargs
-        Passed through to ``xarray.Dataset.to_netcdf``
+        Passed through to :meth:`xarray.Dataset.to_netcdf`
 
     See Also
     --------
