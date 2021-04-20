@@ -292,10 +292,10 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
         Path to write the file into
 
     dimensions: iterable of str
-        Dimensions to include in the netCDF file. The time dimension is always included, even if not provided. An additional co-ordinate, "_id", will be included if ``extras`` is provided and any of the metadata in ``extras`` is not uniquely defined by ``dimensions``. "_id" maps the timeseries in each variable to their relevant metadata.
+        Dimensions to include in the netCDF file. The time dimension is always included, even if not provided. An additional dimension (specifically a co-ordinate in xarray terms), "_id", will be included if ``extras`` is provided and any of the metadata in ``extras`` is not uniquely defined by ``dimensions``. "_id" maps the timeseries in each variable to their relevant metadata.
 
     extras : iterable of str
-        Metadata columns to write as co-ordinates in the netCDF file. Where possible, the metadata in ``dimensions`` will be the co-ordinates of these co-ordinates. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` co-ordinates will have co-ordinates of "_id", which maps the metadata to each timeseries in the serialised dataset.
+        Metadata columns to write as variables (specifically co-ordinates in xarray terms) in the netCDF file. Where possible, the metadata in ``dimensions`` will be used as the dimensions of these variables. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` variables will have dimensions of "_id", which maps the metadata to each timeseries in the serialised dataset.
 
     See Also
     --------
