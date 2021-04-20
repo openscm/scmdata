@@ -143,7 +143,6 @@ class NetCDFBackend(DatabaseBackend):
     performant or data cannot all fit in memory.
     """
 
-    @staticmethod
     def _get_out_filepath(self, **levels):
         """
         Get filepath in which data has been saved
@@ -243,6 +242,11 @@ class NetCDFBackend(DatabaseBackend):
         return load_files
 
 
+"""
+Loaded backends for ScmDatabase
+
+Additional backends should be based upon :class:`DatabaseBackend`
+"""
 backend_classes = {"netcdf": NetCDFBackend}
 
 
@@ -312,6 +316,14 @@ class ScmDatabase:
         """
         return self._root_dir
 
+    def _clean_filters(self, filters):
+        for level in filters:
+            if level not in self.levels:
+                raise ValueError("Unknown level: {}".format(level))
+            if os.sep in filters[level]:
+                filters[level] = filters[level].replace(os.sep, "_")
+        return filters
+
     def save(self, scmrun, disable_tqdm=False):
         """
         Save data to the database
@@ -369,11 +381,7 @@ class ScmDatabase:
 
             If no data matching ``filters`` is found
         """
-        for level in filters:
-            if level not in self.levels:
-                raise ValueError("Unknown level: {}".format(level))
-            if os.sep in filters[level]:
-                filters[level] = filters[level].replace(os.sep, "_")
+        filters = self._clean_filters(filters)
 
         load_files = self._backend.get(filters)
 
@@ -402,17 +410,12 @@ class ScmDatabase:
         ValueError
             If a filter for a level not in :attr:`levels` is specified
         """
-        for level in filters:
-            if level not in self.levels:
-                raise ValueError("Unknown level: {}".format(level))
-            if os.sep in filters[level]:
-                filters[level] = filters[level].replace(os.sep, "_")
+        filters = self._clean_filters(filters)
+        targets = self._backend.get(filters)
 
-        load_dirs = self._backend.get(filters, ext=None)
-
-        for d in load_dirs:
-            _check_is_subdir(self._root_dir, d)
-            self._backend.delete(d)
+        for t in targets:
+            _check_is_subdir(self._root_dir, t)
+            self._backend.delete(t)
 
     def available_data(self):
         """
