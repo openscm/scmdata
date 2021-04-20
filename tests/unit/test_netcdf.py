@@ -12,7 +12,7 @@ import pytest
 import xarray as xr
 
 from scmdata import ScmRun
-from scmdata.netcdf import nc_to_run, run_to_nc
+from scmdata.netcdf import nc_to_run, run_to_nc, _get_xr_dataset
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -664,22 +664,36 @@ def test_run_to_nc_loop_tricky_variable_name(scm_run, start_variable):
 
 @patch("scmdata.netcdf._get_xr_dataset")
 def test_run_to_nc_xarray_kwarg_passing(mock_get_xr_dataset, scm_run, tmpdir):
+    dimensions = ["scenario"]
+    extras = []
     mock_ds = MagicMock()
+    mock_ds.data_vars = _get_xr_dataset(scm_run, dimensions, extras).data_vars
     mock_get_xr_dataset.return_value = mock_ds
 
     out_fname = join(tmpdir, "out.nc")
-    run_to_nc(scm_run, out_fname, dimensions=("scenario",), engine="engine")
+    run_to_nc(scm_run, out_fname, dimensions=dimensions, extras=extras, engine="engine")
 
     mock_ds.to_netcdf.assert_called_with(out_fname, engine="engine")
 
 
 @patch("scmdata.netcdf._get_xr_dataset")
-def test_run_to_nc_xarray_kwarg_passing_variable_renaming(mock_get_xr_dataset, scm_run, tmpdir):
+@pytest.mark.parametrize("in_kwargs,call_kwargs", (
+    (dict(encoding={"Primary Energy": {"zlib": True, "complevel": 9}}), dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}})),
+    (dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}}), dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}})),
+    (dict(unlimited_dims="Primary Energy"), dict(unlimited_dims="Primary_Energy")),
+    (dict(unlimited_dims="Primary_Energy"), dict(unlimited_dims="Primary_Energy")),
+    (dict(encoding={"Primary Energy": {"zlib": True, "complevel": 9}}, unlimited_dims="Primary Energy"), dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}}, unlimited_dims="Primary_Energy")),
+))
+def test_run_to_nc_xarray_kwarg_passing_variable_renaming(mock_get_xr_dataset, scm_run, tmpdir, in_kwargs, call_kwargs):
+    dimensions = ["scenario"]
+    extras = []
+
     mock_ds = MagicMock()
+    mock_ds.data_vars = _get_xr_dataset(scm_run, dimensions, extras).data_vars
     mock_get_xr_dataset.return_value = mock_ds
 
     out_fname = join(tmpdir, "out.nc")
-    run_to_nc(scm_run, out_fname, dimensions=("scenario",), encoding={"Primary Energy": {"zlib": True, "complevel": 9}})
+    run_to_nc(scm_run, out_fname, dimensions=("scenario",), **in_kwargs)
 
     # variable should be renamed so it matches what goes to disk
-    mock_ds.to_netcdf.assert_called_with(out_fname, encoding={"Primary_Energy": {"zlib": True, "complevel": 9}})
+    mock_ds.to_netcdf.assert_called_with(out_fname, **call_kwargs)

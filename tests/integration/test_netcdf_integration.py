@@ -24,7 +24,11 @@ def test_run_to_nc_xarray_kwarg_passing(scm_run, tmpdir):
     out_fname = join(tmpdir, "out.nc")
     run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
-    out_fname_compressed = join(tmpdir, "out_compressed.nc")
-    run_to_nc(scm_run, out_fname, dimensions=("scenario",), encoding={"Primary Energy": {"zlib": True, "complevel": 9}})
+    out_fname_compressed = join(tmpdir, "out_shrunk.nc")
+    # actually using compression here makes the file bigger because the data
+    # is so small
+    comp = dict(dtype="int32")
+    encoding = {var: comp for var in scm_run.get_unique_meta("variable")}
+    run_to_nc(scm_run, out_fname_compressed, dimensions=("scenario",), encoding=encoding, engine="netcdf4", format="NETCDF4")
 
     assert os.stat(out_fname).st_size > os.stat(out_fname_compressed).st_size

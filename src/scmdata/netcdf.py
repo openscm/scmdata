@@ -33,7 +33,7 @@ def _var_to_nc(var):
     return var.replace("|", "__").replace(" ", "_")
 
 
-def _write_nc(fname, run, dimensions, extras):
+def _write_nc(fname, run, dimensions, extras, **kwargs):
     """
     Low level function to write the dimensions, variables and metadata to disk
     """
@@ -45,7 +45,8 @@ def _write_nc(fname, run, dimensions, extras):
     if run.metadata:
         xr_ds.attrs.update(run.metadata)
 
-    xr_ds.to_netcdf(fname)
+    write_kwargs = _update_kwargs_to_match_serialised_variable_names(xr_ds, kwargs)
+    xr_ds.to_netcdf(fname, **write_kwargs)
 
 
 def _get_xr_dataset(run, dimensions, extras):
@@ -286,7 +287,31 @@ def _convert_to_cls_and_add_metadata(dataframe, loaded, cls):
     return run
 
 
-def run_to_nc(run, fname, dimensions=("region",), extras=()):
+def _update_kwargs_to_match_serialised_variable_names(xr_ds, in_kwargs):
+    variable_name_map = {v.attrs["long_name"]: k for k, v in xr_ds.data_vars.items()}
+
+    def _update_kwargs(dict_in):
+        dict_out = {}
+        for key, value in dict_in.items():
+
+            if isinstance(value, dict):
+                new_val = _update_kwargs(value)
+            elif value in variable_name_map:
+                new_val = variable_name_map[value]
+            else:
+                new_val = value
+
+            if key in variable_name_map:
+                dict_out[variable_name_map[key]] = new_val
+            else:
+                dict_out[key] = new_val
+
+        return dict_out
+
+    return _update_kwargs(in_kwargs)
+
+
+def run_to_nc(run, fname, dimensions=("region",), extras=(), **kwargs):
     """
     Write timeseries to disk as a netCDF4 file
 
@@ -296,14 +321,17 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
 
     Parameters
     ----------
-    fname: str
+    fname : str
         Path to write the file into
 
-    dimensions: iterable of str
+    dimensions : iterable of str
         Dimensions to include in the netCDF file. The time dimension is always included, even if not provided. An additional dimension (specifically a co-ordinate in xarray terms), "_id", will be included if ``extras`` is provided and any of the metadata in ``extras`` is not uniquely defined by ``dimensions``. "_id" maps the timeseries in each variable to their relevant metadata.
 
     extras : iterable of str
         Metadata columns to write as variables (specifically co-ordinates in xarray terms) in the netCDF file. Where possible, the metadata in ``dimensions`` will be used as the dimensions of these variables. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` variables will have dimensions of "_id", which maps the metadata to each timeseries in the serialised dataset.
+
+    kwargs
+        Passed through to ``xarray.Dataset.to_netcdf``
 
     See Also
     --------
@@ -321,7 +349,7 @@ def run_to_nc(run, fname, dimensions=("region",), extras=()):
     if "variable" in dimensions:
         dimensions.remove("variable")
 
-    _write_nc(fname, run, dimensions, extras)
+    _write_nc(fname, run, dimensions, extras, **kwargs)
 
 
 def nc_to_run(cls, fname):
