@@ -2,7 +2,7 @@ import logging
 import re
 import tempfile
 from os.path import exists, join
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import netCDF4 as nc
 import numpy as np
@@ -660,3 +660,26 @@ def test_run_to_nc_loop_tricky_variable_name(scm_run, start_variable):
         loaded = ScmRun.from_nc(out_fname)
 
     assert_scmdf_almost_equal(scm_run, loaded, check_ts_names=False)
+
+
+@patch("scmdata.netcdf._get_xr_dataset")
+def test_run_to_nc_xarray_kwarg_passing(mock_get_xr_dataset, scm_run, tmpdir):
+    mock_ds = MagicMock()
+    mock_get_xr_dataset.return_value = mock_ds
+
+    out_fname = join(tmpdir, "out.nc")
+    run_to_nc(scm_run, out_fname, dimensions=("scenario",), engine="engine")
+
+    mock_ds.to_netcdf.assert_called_with(out_fname, engine="engine")
+
+
+@patch("scmdata.netcdf._get_xr_dataset")
+def test_run_to_nc_xarray_kwarg_passing_variable_renaming(mock_get_xr_dataset, scm_run, tmpdir):
+    mock_ds = MagicMock()
+    mock_get_xr_dataset.return_value = mock_ds
+
+    out_fname = join(tmpdir, "out.nc")
+    run_to_nc(scm_run, out_fname, dimensions=("scenario",), encoding={"Primary Energy": {"zlib": True, "complevel": 9}})
+
+    # variable should be renamed so it matches what goes to disk
+    mock_ds.to_netcdf.assert_called_with(out_fname, encoding={"Primary_Energy": {"zlib": True, "complevel": 9}})
