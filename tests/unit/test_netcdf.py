@@ -12,7 +12,7 @@ import pytest
 import xarray as xr
 
 from scmdata import ScmRun
-from scmdata.netcdf import nc_to_run, run_to_nc, _get_xr_dataset
+from scmdata.netcdf import _get_xr_dataset, nc_to_run, run_to_nc
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -677,14 +677,34 @@ def test_run_to_nc_xarray_kwarg_passing(mock_get_xr_dataset, scm_run, tmpdir):
 
 
 @patch("scmdata.netcdf._get_xr_dataset")
-@pytest.mark.parametrize("in_kwargs,call_kwargs", (
-    (dict(encoding={"Primary Energy": {"zlib": True, "complevel": 9}}), dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}})),
-    (dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}}), dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}})),
-    (dict(unlimited_dims="Primary Energy"), dict(unlimited_dims="Primary_Energy")),
-    (dict(unlimited_dims="Primary_Energy"), dict(unlimited_dims="Primary_Energy")),
-    (dict(encoding={"Primary Energy": {"zlib": True, "complevel": 9}}, unlimited_dims="Primary Energy"), dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}}, unlimited_dims="Primary_Energy")),
-))
-def test_run_to_nc_xarray_kwarg_passing_variable_renaming(mock_get_xr_dataset, scm_run, tmpdir, in_kwargs, call_kwargs):
+@pytest.mark.parametrize(
+    "in_kwargs,call_kwargs",
+    (
+        (
+            dict(encoding={"Primary Energy": {"zlib": True, "complevel": 9}}),
+            dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}}),
+        ),
+        (
+            dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}}),
+            dict(encoding={"Primary_Energy": {"zlib": True, "complevel": 9}}),
+        ),
+        (dict(unlimited_dims="Primary Energy"), dict(unlimited_dims="Primary_Energy")),
+        (dict(unlimited_dims="Primary_Energy"), dict(unlimited_dims="Primary_Energy")),
+        (
+            dict(
+                encoding={"Primary Energy": {"zlib": True, "complevel": 9}},
+                unlimited_dims="Primary Energy",
+            ),
+            dict(
+                encoding={"Primary_Energy": {"zlib": True, "complevel": 9}},
+                unlimited_dims="Primary_Energy",
+            ),
+        ),
+    ),
+)
+def test_run_to_nc_xarray_kwarg_passing_variable_renaming(
+    mock_get_xr_dataset, scm_run, tmpdir, in_kwargs, call_kwargs
+):
     dimensions = ["scenario"]
     extras = []
 

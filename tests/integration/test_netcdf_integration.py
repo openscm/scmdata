@@ -29,6 +29,13 @@ def test_run_to_nc_xarray_kwarg_passing(scm_run, tmpdir):
     # is so small
     comp = dict(dtype="int32")
     encoding = {var: comp for var in scm_run.get_unique_meta("variable")}
-    run_to_nc(scm_run, out_fname_compressed, dimensions=("scenario",), encoding=encoding, engine="netcdf4", format="NETCDF4")
+    run_to_nc(
+        scm_run,
+        out_fname_compressed,
+        dimensions=("scenario",),
+        encoding=encoding,
+        engine="netcdf4",
+        format="NETCDF4",
+    )
 
     assert os.stat(out_fname).st_size > os.stat(out_fname_compressed).st_size
