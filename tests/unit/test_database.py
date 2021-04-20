@@ -69,6 +69,29 @@ def test_database_init_and_repr():
     assert "root_dir: root_dir" in str(tdb)
 
 
+def test_database_custom_backend():
+    backend = DummyBackend()
+    tdb = ScmDatabase("root_dir", backend=backend)
+
+    assert tdb._backend == backend
+
+
+def test_database_custom_backend_invalid():
+    class WrongBackend(dict):
+        pass
+
+    backend = WrongBackend()
+    msg = "Backend should be an instance of scmdata.database.DatabaseBackend"
+    with pytest.raises(ValueError, match=msg):
+        ScmDatabase("root_dir", backend=backend)
+
+
+def test_database_custom_backend_missing():
+    msg = "Unknown database backend: other"
+    with pytest.raises(ValueError, match=msg):
+        ScmDatabase("root_dir", backend="other")
+
+
 @pytest.mark.parametrize(
     "levels,inp,exp_tail",
     (

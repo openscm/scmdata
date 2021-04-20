@@ -17,6 +17,7 @@ import pathlib
 from abc import ABC, abstractmethod
 
 import pandas as pd
+import six
 import tqdm.autonotebook as tqdman
 
 from scmdata import ScmRun, run_append
@@ -334,14 +335,18 @@ class ScmDatabase:
         self._backend = self._get_backend(backend)
 
     def _get_backend(self, backend):
-        if isinstance(backend, DatabaseBackend):
+        if isinstance(backend, six.string_types):
+            try:
+                cls = backend_classes[backend.lower()]
+                return cls(levels=self.levels, root_dir=self._root_dir)
+            except KeyError:
+                raise ValueError("Unknown database backend: {}".format(backend))
+        else:
+            if not isinstance(backend, DatabaseBackend):
+                raise ValueError(
+                    "Backend should be an instance of scmdata.database.DatabaseBackend"
+                )
             return backend
-
-        try:
-            cls = backend_classes[backend.lower()]
-            return cls(levels=self.levels, root_dir=self._root_dir)
-        except KeyError:
-            raise ValueError("Unknown database backend: {}".format(backend))
 
     def __repr__(self):
         return "<scmdata.database.SCMDatabase (root_dir: {}, levels: {})>".format(
