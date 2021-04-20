@@ -116,7 +116,7 @@ class DatabaseBackend(ABC):
         pass
 
     @abstractmethod
-    def get(self, filters, ext="*.nc"):
+    def get(self, filters):
         """
         Get all matching keys for a given filter
 
@@ -125,8 +125,6 @@ class DatabaseBackend(ABC):
         filters: dict of str
             String filters
             If a level is missing then all values are fetched
-        ext: str or None
-            Added to the end of the search string
 
         Returns
         -------
@@ -207,7 +205,7 @@ class NetCDFBackend(DatabaseBackend):
     def delete(self, fname):
         os.remove(fname)
 
-    def get(self, filters, ext="*.nc"):
+    def get(self, filters):
         """
         Get all matching objects for a given filter
 
@@ -216,8 +214,6 @@ class NetCDFBackend(DatabaseBackend):
         filters: dict of str
             String filters
             If a level is missing then all values are fetched
-        ext: str or None
-            Added to the end of the search string
 
         Returns
         -------
