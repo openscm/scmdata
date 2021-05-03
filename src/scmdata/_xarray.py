@@ -31,7 +31,6 @@ def _to_xarray(run, dimensions, extras):
         run.meta[["variable", "unit"]].drop_duplicates().set_index("variable")["unit"]
     )
     xr_ds = _add_units(xr_ds, unit_map)
-    xr_ds = _rename_variables(xr_ds)
     xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
 
     return xr_ds
@@ -176,23 +175,6 @@ def _add_units(xr_ds, unit_map):
     for data_var in xr_ds.data_vars:
         unit = unit_map[data_var]
         xr_ds[data_var].attrs["units"] = unit
-
-    return xr_ds
-
-
-def _var_to_nc(var):
-    # TODO: remove renaming in this module
-    return var.replace("|", "__").replace(" ", "_")
-
-
-def _rename_variables(xr_ds):
-    name_mapping = {}
-    for data_var in xr_ds.data_vars:
-        serialised_name = _var_to_nc(data_var)
-        name_mapping[data_var] = serialised_name
-        xr_ds[data_var].attrs["long_name"] = data_var
-
-    xr_ds = xr_ds.rename_vars(name_mapping)
 
     return xr_ds
 

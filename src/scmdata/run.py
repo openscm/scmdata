@@ -1986,6 +1986,16 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             return type(self)(data, index=index, columns=meta)
 
     def to_xarray(self, dimensions, extras):
+        """
+        Convert to a :class:`xr.Dataset`
+
+        TODO: write rest
+
+        Returns
+        -------
+        :obj:`xr.Dataset`
+            Data in self, re-formatted as an :obj:`xr.Dataset`
+        """
         return _to_xarray(self, dimensions, extras)
 
 

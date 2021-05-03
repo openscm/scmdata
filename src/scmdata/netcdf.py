@@ -25,12 +25,30 @@ def _var_to_nc(var):
     return var.replace("|", "__").replace(" ", "_")
 
 
+def _rename_variables(xr_ds):
+    name_mapping = {}
+    for data_var in xr_ds.data_vars:
+        serialised_name = _var_to_nc(data_var)
+        name_mapping[data_var] = serialised_name
+        xr_ds[data_var].attrs["long_name"] = data_var
+
+    xr_ds = xr_ds.rename_vars(name_mapping)
+
+    return xr_ds
+
+
+def _get_xr_dataset_to_write(run, dimensions, extras):
+    xr_ds = run.to_xarray(dimensions, extras)
+    xr_ds = _rename_variables(xr_ds)
+
+    return xr_ds
+
+
 def _write_nc(fname, run, dimensions, extras, **kwargs):
     """
     Low level function to write the dimensions, variables and metadata to disk
     """
-    # xr_ds = _get_xr_dataset(run, dimensions, extras)
-    xr_ds = run.to_xarray(dimensions, extras)
+    xr_ds = _get_xr_dataset_to_write(run, dimensions, extras)
 
     xr_ds.attrs["created_at"] = datetime.utcnow().isoformat()
     xr_ds.attrs["_scmdata_version"] = __version__
