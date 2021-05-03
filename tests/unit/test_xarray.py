@@ -236,13 +236,16 @@ def test_to_xarray_multiple_units_error(scm_run):
     scm_run = get_multiple_units_scm_run(scm_run, "J/yr", "MJ/yr")
 
     variable_unit_table = scm_run.meta[["variable", "unit"]].drop_duplicates()
-    variable_units = variable_unit_table.set_index("variable")["unit"]
     variable_counts = variable_unit_table["variable"].value_counts()
     more_than_one_unit_variables = variable_counts[variable_counts > 1]
     error_msg = re.escape(
         "The following variables are reported in more than one unit. "
         "Found variable-unit combinations are:\n{}".format(
-            variable_units[more_than_one_unit_variables.index.values]
+            variable_unit_table[
+                variable_unit_table["variable"].isin(
+                    more_than_one_unit_variables.index.values
+                )
+            ]
         )
     )
 

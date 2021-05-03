@@ -97,7 +97,11 @@ def _unify_scmrun_units(run, unify_units):
             error_msg = (
                 "The following variables are reported in more than one unit. "
                 "Found variable-unit combinations are:\n{}".format(
-                    variable_units[more_than_one_unit_variables.index.values]
+                    variable_unit_table[
+                        variable_unit_table["variable"].isin(
+                            more_than_one_unit_variables.index.values
+                        )
+                    ]
                 )
             )
 
