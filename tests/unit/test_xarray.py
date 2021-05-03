@@ -156,10 +156,27 @@ def test_to_xarray_extras_with_id_coord(scm_run, extras, dimensions, expected_di
 
             npt.assert_array_equal(scm_run_spot.values.squeeze(), xarray_spot.values.squeeze())
 
+
+@pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\".")
+@pytest.mark.parametrize("weird_idx", (0, -1, 5))
+def test_to_xarray_weird_names(scm_run, ch, weird_idx):
+    new_vars = []
+    for i, variable_name in enumerate(scm_run.get_unique_meta("variable")):
+        if i < 1:
+            new_name = list(variable_name)
+            new_name.insert(weird_idx, ch)
+            new_name = "".join(new_name)
+            new_vars.append(new_name)
+        else:
+            new_vars.append(variable_name)
+
+    dimensions = ("region", "scenario", "time")
+    res = scm_run.to_xarray(dimensions=dimensions)
+
+    do_basic_to_xarray_checks(res, scm_run, dimensions, (),)
+    do_basic_check_of_data_points(res, scm_run, dimensions)
+
 # Tests to write:
-# - dimensions handling
-# - extras handling
-# - weird variable name handling
 # - multiple units for given variable
 # - overlapping dimensions and extras
 # - underdefined dimensions and extras
