@@ -43,20 +43,25 @@ def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
     if dimensions_extras_overlap:
         raise ValueError(
             "dimensions and extras cannot have any overlap. "
-            "Current values in both dimensions and extras: {}"
-            .format(dimensions_extras_overlap)
+            "Current values in both dimensions and extras: {}".format(
+                dimensions_extras_overlap
+            )
         )
 
     timeseries_dims = list(set(dimensions) - {"time"} - {"_id"})
 
     self_unified_units = _unify_scmrun_units(self, unify_units)
-    timeseries = _get_timeseries_for_xr_dataset(self_unified_units, timeseries_dims, extras)
+    timeseries = _get_timeseries_for_xr_dataset(
+        self_unified_units, timeseries_dims, extras
+    )
     non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(
         self_unified_units, dimensions, extras
     )
 
     if extras:
-        ids, ids_dimensions = _get_ids_for_xr_dataset(self_unified_units, extras, timeseries_dims)
+        ids, ids_dimensions = _get_ids_for_xr_dataset(
+            self_unified_units, extras, timeseries_dims
+        )
     else:
         ids = None
         ids_dimensions = None
@@ -70,7 +75,9 @@ def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
         xr_ds = _add_extras(xr_ds, ids, ids_dimensions, self_unified_units)
 
     unit_map = (
-        self_unified_units.meta[["variable", "unit"]].drop_duplicates().set_index("variable")["unit"]
+        self_unified_units.meta[["variable", "unit"]]
+        .drop_duplicates()
+        .set_index("variable")["unit"]
     )
     xr_ds = _add_units(xr_ds, unit_map)
     xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
@@ -103,8 +110,9 @@ def _unify_scmrun_units(run, unify_units):
             except pint.errors.DimensionalityError as exc:
                 error_msg = (
                     "Variable `{}` cannot be converted to a common unit. "
-                    "Units in the provided dataset: {}."
-                    .format(variable, variable_units[variable].values.tolist())
+                    "Units in the provided dataset: {}.".format(
+                        variable, variable_units[variable].values.tolist()
+                    )
                 )
                 raise ValueError(error_msg) from exc
 

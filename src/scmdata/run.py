@@ -2188,6 +2188,7 @@ inject_plotting_methods(BaseScmRun)
 inject_ops_methods(BaseScmRun)
 inject_xarray_methods(BaseScmRun)
 
+
 class ScmRun(BaseScmRun):
     """
     Data container for holding one or many time-series of SCM data.

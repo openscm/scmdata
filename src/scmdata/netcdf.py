@@ -92,8 +92,8 @@ def _reshape_to_scmrun_dataframe(dataframe, loaded):
 
 def _convert_to_cls_and_add_metadata(dataframe, loaded, cls):
     for k in list(loaded.attrs.keys()):
-        if k.startswith("_scmdata_metadata_"):
-            dataframe[k.replace("_scmdata_metadata_", "")] = loaded.attrs.pop(k)
+        if k.startswith("scmdata_metadata_"):
+            dataframe[k.replace("scmdata_metadata_", "")] = loaded.attrs.pop(k)
 
     run = cls(dataframe)
     run.metadata.update(loaded.attrs)

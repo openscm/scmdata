@@ -7,7 +7,6 @@ import pytest
 import xarray as xr
 
 import scmdata
-from scmdata.errors import NonUniqueMetadataError
 
 
 def do_basic_to_xarray_checks(res, start_run, dimensions, extras):
@@ -21,7 +20,12 @@ def do_basic_to_xarray_checks(res, start_run, dimensions, extras):
         assert data_var.units in unit
 
     # all other metadata should be in attrs
-    for meta_col in set(start_run.meta.columns) - set(dimensions) - set(extras) - {"variable", "unit"}:
+    for meta_col in (
+        set(start_run.meta.columns)
+        - set(dimensions)
+        - set(extras)
+        - {"variable", "unit"}
+    ):
         meta_val = start_run.get_unique_meta(meta_col, True)
         assert res.attrs["scmdata_metadata_{}".format(meta_col)] == meta_val
 
@@ -43,29 +47,32 @@ def do_basic_check_of_data_points(res, start_run, dimensions):
                 npt.assert_array_equal(xarray_spot.values, start_run_vals)
 
 
-@pytest.mark.parametrize("dimensions,expected_dimensions", (
-    (("region", "scenario", "time"), ("region", "scenario", "time")),
-    (("time", "region", "scenario"), ("time", "region", "scenario")),
-    (("region", "time", "scenario"), ("region", "time", "scenario")),
-    (("region", "scenario"), ("region", "scenario", "time")),
-    (("scenario", "region"), ("scenario", "region", "time")),
-    (("scenario",), ("scenario", "time")),
-))
+@pytest.mark.parametrize(
+    "dimensions,expected_dimensions",
+    (
+        (("region", "scenario", "time"), ("region", "scenario", "time")),
+        (("time", "region", "scenario"), ("time", "region", "scenario")),
+        (("region", "time", "scenario"), ("region", "time", "scenario")),
+        (("region", "scenario"), ("region", "scenario", "time")),
+        (("scenario", "region"), ("scenario", "region", "time")),
+        (("scenario",), ("scenario", "time")),
+    ),
+)
 def test_to_xarray(scm_run, dimensions, expected_dimensions):
     res = scm_run.to_xarray(dimensions=dimensions)
 
-    do_basic_to_xarray_checks(res, scm_run, expected_dimensions, (),)
+    do_basic_to_xarray_checks(
+        res, scm_run, expected_dimensions, (),
+    )
     do_basic_check_of_data_points(res, scm_run, expected_dimensions)
 
     # no extras
     assert not set(res.coords) - set(res.dims)
 
 
-@pytest.mark.parametrize("extras", (
-    ("model",),
-    ("climate_model",),
-    ("climate_model", "model"),
-))
+@pytest.mark.parametrize(
+    "extras", (("model",), ("climate_model",), ("climate_model", "model"),)
+)
 def test_to_xarray_extras_no_id_coord(scm_run, extras):
     dimensions = ("scenario", "region", "time")
     res = scm_run.to_xarray(dimensions=dimensions, extras=extras)
@@ -84,26 +91,48 @@ def test_to_xarray_extras_no_id_coord(scm_run, extras):
         xarray_coords = res[extra_col][extra_dims].values
 
         for xarray_extra_val, extra_xarray_coord in zip(xarray_vals, xarray_coords):
-            scm_run_extra_val = scm_run_meta[scm_run_meta[extra_dims] == extra_xarray_coord][extra_col].unique().tolist()
+            scm_run_extra_val = (
+                scm_run_meta[scm_run_meta[extra_dims] == extra_xarray_coord][extra_col]
+                .unique()
+                .tolist()
+            )
             assert len(scm_run_extra_val) == 1
             scm_run_extra_val = scm_run_extra_val[0]
 
             assert scm_run_extra_val == xarray_extra_val
 
 
-@pytest.mark.parametrize("extras", (
-    ("scenario", "model", "random_key"),
-))
-@pytest.mark.parametrize("dimensions,expected_dimensions", (
-    (("climate_model", "run_id"), ("climate_model", "run_id", "time", "_id")),
-    (("run_id", "climate_model"), ("run_id", "climate_model", "time", "_id")),
-    (("run_id", "climate_model", "time"), ("run_id", "climate_model", "time", "_id")),
-    (("run_id", "time", "climate_model"), ("run_id", "time", "climate_model", "_id")),
-    (("run_id", "climate_model", "time", "_id"), ("run_id", "climate_model", "time", "_id")),
-    (("_id", "run_id", "time", "climate_model"), ("_id", "run_id", "time", "climate_model")),
-    (("run_id", "_id", "climate_model"), ("run_id", "_id", "climate_model", "time")),
-))
-def test_to_xarray_extras_with_id_coord(scm_run, extras, dimensions, expected_dimensions):
+@pytest.mark.parametrize("extras", (("scenario", "model", "random_key"),))
+@pytest.mark.parametrize(
+    "dimensions,expected_dimensions",
+    (
+        (("climate_model", "run_id"), ("climate_model", "run_id", "time", "_id")),
+        (("run_id", "climate_model"), ("run_id", "climate_model", "time", "_id")),
+        (
+            ("run_id", "climate_model", "time"),
+            ("run_id", "climate_model", "time", "_id"),
+        ),
+        (
+            ("run_id", "time", "climate_model"),
+            ("run_id", "time", "climate_model", "_id"),
+        ),
+        (
+            ("run_id", "climate_model", "time", "_id"),
+            ("run_id", "climate_model", "time", "_id"),
+        ),
+        (
+            ("_id", "run_id", "time", "climate_model"),
+            ("_id", "run_id", "time", "climate_model"),
+        ),
+        (
+            ("run_id", "_id", "climate_model"),
+            ("run_id", "_id", "climate_model", "time"),
+        ),
+    ),
+)
+def test_to_xarray_extras_with_id_coord(
+    scm_run, extras, dimensions, expected_dimensions
+):
     df = scm_run.timeseries()
     val_cols = df.columns.tolist()
     df = df.reset_index()
@@ -157,10 +186,16 @@ def test_to_xarray_extras_with_id_coord(scm_run, extras, dimensions, expected_di
             scm_run_filter = row.to_dict()
             scm_run_spot = scm_run.filter(**scm_run_filter)
 
-            xarray_sel = {k: v for k, v in scm_run_filter.items() if k in xarray_timeseries.dims}
-            xarray_spot = xarray_timeseries.sel(**xarray_sel)[scm_run_filter["variable"]]
+            xarray_sel = {
+                k: v for k, v in scm_run_filter.items() if k in xarray_timeseries.dims
+            }
+            xarray_spot = xarray_timeseries.sel(**xarray_sel)[
+                scm_run_filter["variable"]
+            ]
 
-            npt.assert_array_equal(scm_run_spot.values.squeeze(), xarray_spot.values.squeeze())
+            npt.assert_array_equal(
+                scm_run_spot.values.squeeze(), xarray_spot.values.squeeze()
+            )
 
 
 @pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\".")
@@ -179,7 +214,9 @@ def test_to_xarray_weird_names(scm_run, ch, weird_idx):
     dimensions = ("region", "scenario", "time")
     res = scm_run.to_xarray(dimensions=dimensions)
 
-    do_basic_to_xarray_checks(res, scm_run, dimensions, (),)
+    do_basic_to_xarray_checks(
+        res, scm_run, dimensions, (),
+    )
     do_basic_check_of_data_points(res, scm_run, dimensions)
 
 
@@ -218,7 +255,9 @@ def test_to_xarray_unify_multiple_units(scm_run):
 
     dimensions = ("region", "scenario", "time")
     res = scm_run.to_xarray(dimensions=dimensions, unify_units=True)
-    do_basic_to_xarray_checks(res, scm_run, dimensions, (),)
+    do_basic_to_xarray_checks(
+        res, scm_run, dimensions, (),
+    )
     do_basic_check_of_data_points(res, scm_run, dimensions)
 
 
@@ -230,21 +269,25 @@ def test_to_xarray_unify_multiple_units_incompatible_units(scm_run):
     first_var = scm_run.get_unique_meta("variable")[0]
     error_msg = re.escape(
         "Variable `{}` cannot be converted to a common unit. "
-        "Units in the provided dataset: {}."
-        .format(first_var, scm_run.filter(variable=first_var).get_unique_meta("unit"))
+        "Units in the provided dataset: {}.".format(
+            first_var, scm_run.filter(variable=first_var).get_unique_meta("unit")
+        )
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run.to_xarray(dimensions=dimensions, unify_units=True)
 
 
-@pytest.mark.parametrize("dimensions,extras", (
-    (("junk",), (),),
-    (("junk",), ("climate_model"),),
-    (("scenario", "junk_1"), ("junk",)),
-    (("scenario",), ("junk",)),
-    (("scenario",), ("junk", "climate_model")),
-    (("scenario",), ("junk", "junk_2", "climate_model")),
-))
+@pytest.mark.parametrize(
+    "dimensions,extras",
+    (
+        (("junk",), (),),
+        (("junk",), ("climate_model"),),
+        (("scenario", "junk_1"), ("junk",)),
+        (("scenario",), ("junk",)),
+        (("scenario",), ("junk", "climate_model")),
+        (("scenario",), ("junk", "junk_2", "climate_model")),
+    ),
+)
 def test_dimension_and_or_extra_not_in_metadata(scm_run, dimensions, extras):
     with pytest.raises(KeyError):
         scm_run.to_xarray(dimensions=dimensions, extras=extras)
@@ -256,8 +299,7 @@ def test_to_xarray_dimensions_extra_overlap(scm_run):
 
     error_msg = re.escape(
         "dimensions and extras cannot have any overlap. "
-        "Current values in both dimensions and extras: {}"
-        .format({"scenario"})
+        "Current values in both dimensions and extras: {}".format({"scenario"})
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run.to_xarray(dimensions=dimensions, extras=extras)
@@ -268,8 +310,7 @@ def test_to_xarray_non_unique_timeseries(scm_run):
 
     error_msg = re.escape(
         "dimensions: `{}` and extras: `[]` do not uniquely define the timeseries, "
-        "please add extra dimensions and/or extras"
-        .format(list(dimensions))
+        "please add extra dimensions and/or extras".format(list(dimensions))
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run.to_xarray(dimensions=dimensions)

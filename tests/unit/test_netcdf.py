@@ -33,15 +33,15 @@ def test_run_to_nc(scm_run):
         assert ds.variables["scenario"][1] == "a_scenario2"
 
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][:, 0],
+            ds.variables["Primary_Energy"][0, :],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][:, 1],
+            ds.variables["Primary_Energy"][1, :],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy__Coal"][:, 0],
+            ds.variables["Primary_Energy__Coal"][0, :],
             scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
@@ -411,15 +411,15 @@ def test_run_to_nc_with_extras(scm_run, dtype):
             assert run_id == exp_val
 
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][:, 0],
+            ds.variables["Primary_Energy"][0, :],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][:, 1],
+            ds.variables["Primary_Energy"][1, :],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy__Coal"][:, 0],
+            ds.variables["Primary_Energy__Coal"][0, :],
             scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
