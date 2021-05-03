@@ -1,8 +1,13 @@
+import re
+
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pytest
 import xarray as xr
+
+import scmdata
+from scmdata.errors import NonUniqueMetadataError
 
 
 def do_basic_to_xarray_checks(res, start_run, dimensions, extras):
@@ -12,8 +17,8 @@ def do_basic_to_xarray_checks(res, start_run, dimensions, extras):
     for variable_name, data_var in res.data_vars.items():
         assert data_var.dims == dimensions
 
-        unit = start_run.filter(variable=variable_name).get_unique_meta("unit", True)
-        assert data_var.units == unit
+        unit = start_run.filter(variable=variable_name).get_unique_meta("unit")
+        assert data_var.units in unit
 
     # all other metadata should be in attrs
     for meta_col in set(start_run.meta.columns) - set(dimensions) - set(extras) - {"variable", "unit"}:
@@ -28,8 +33,9 @@ def do_basic_check_of_data_points(res, start_run, dimensions):
             xarray_spot = data_var.isel({v: idx for v in dimensions})
             fkwargs = {k: [v.values.tolist()] for k, v in xarray_spot.coords.items()}
             fkwargs["variable"] = variable_name
+            xarray_unit = data_var.units
 
-            start_run_spot = start_run.filter(**fkwargs)
+            start_run_spot = start_run.filter(**fkwargs).convert_unit(xarray_unit)
             if np.isnan(xarray_spot):
                 assert start_run_spot.empty
             else:
@@ -175,6 +181,60 @@ def test_to_xarray_weird_names(scm_run, ch, weird_idx):
 
     do_basic_to_xarray_checks(res, scm_run, dimensions, (),)
     do_basic_check_of_data_points(res, scm_run, dimensions)
+
+
+def get_multiple_units_scm_run(scm_run, new_unit, new_unit_alternate):
+    first_var = scm_run.get_unique_meta("variable")[0]
+    scm_run_first_var = scm_run.filter(variable=first_var)
+    scm_run_first_var["unit"] = [
+        v if i >= 1 else new_unit if v != new_unit else new_unit_alternate
+        for i, v in enumerate(scm_run_first_var["unit"].tolist())
+    ]
+    scm_run_other_vars = scm_run.filter(variable=first_var, keep=False)
+
+    return scmdata.run_append([scm_run_first_var, scm_run_other_vars])
+
+
+def test_to_xarray_multiple_units_error(scm_run):
+    scm_run = get_multiple_units_scm_run(scm_run, "J/yr", "MJ/yr")
+
+    variable_unit_table = scm_run.meta[["variable", "unit"]].drop_duplicates()
+    variable_units = variable_unit_table.set_index("variable")["unit"]
+    variable_counts = variable_unit_table["variable"].value_counts()
+    more_than_one_unit_variables = variable_counts[variable_counts > 1]
+    error_msg = re.escape(
+        "The following variables are reported in more than one unit. "
+        "Found variable-unit combinations are:\n{}".format(
+            variable_units[more_than_one_unit_variables.index.values]
+        )
+    )
+
+    with pytest.raises(ValueError, match=error_msg):
+        scm_run.to_xarray(dimensions=("region", "scenario", "time"), unify_units=False)
+
+
+def test_to_xarray_unify_multiple_units(scm_run):
+    scm_run = get_multiple_units_scm_run(scm_run, "J/yr", "MJ/yr")
+
+    dimensions = ("region", "scenario", "time")
+    res = scm_run.to_xarray(dimensions=dimensions, unify_units=True)
+    do_basic_to_xarray_checks(res, scm_run, dimensions, (),)
+    do_basic_check_of_data_points(res, scm_run, dimensions)
+
+
+def test_to_xarray_unify_multiple_units_incompatible_units(scm_run):
+    scm_run = get_multiple_units_scm_run(scm_run, "kg", "g")
+
+    dimensions = ("region", "scenario", "time")
+
+    first_var = scm_run.get_unique_meta("variable")[0]
+    error_msg = re.escape(
+        "Variable `{}` cannot be converted to a common unit. "
+        "Units in the provided dataset: {}."
+        .format(first_var, scm_run.filter(variable=first_var).get_unique_meta("unit"))
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scm_run.to_xarray(dimensions=dimensions, unify_units=True)
 
 # Tests to write:
 # - multiple units for given variable

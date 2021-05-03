@@ -2,39 +2,50 @@
 Interface with `xarray <https://xarray.pydata.org/en/stable/index.html>`_
 """
 import numpy as np
+import pint.errors
 import xarray as xr
 
 from .errors import NonUniqueMetadataError
 
 
-def to_xarray(run, dimensions=("region",), extras=()):
+def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
     """
     Convert to a :class:`xr.Dataset`
 
     Parameters
     ----------
     dimensions : iterable of str
-        Dimensions for each variable in the returned dataset. If ``"time"`` is not included in ``dimensions`` it will be the last dimension. If ``"_id"`` is required (see ``extras`` documentation for when ``"_id"`` is required) and is not included in ``dimensions`` then it will be the last dimension.
+        Dimensions for each variable in the returned dataset. If ``"time"`` is not included in ``dimensions`` it will be the last dimension. If an "_id" co-ordinate is required (see ``extras`` documentation for when "_id" is required) and is not included in ``dimensions`` then it will be the last dimension.
 
     extras : iterable of str
-        TODO: write (when _id is added)
+        Columns in ``self.meta`` from which to create "non-dimension co-ordinates" (see `xarray terminology <https://xarray.pydata.org/en/stable/terminology.html>`_ for more details). These non-dimension co-ordinates store extra information and can be mapped to each timeseries found in the data variables of the output :obj:`xr.Dataset`. Where possible, these non-dimension co-ordinates will use dimension co-ordinates as their own co-ordinates. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` co-ordinates will have dimensions of "_id". This "_id" co-ordinate maps the values in the ``extras`` co-ordinates to each timeseries in the serialised dataset. Where "_id" is required, an extra "_id" dimension will also be added to ``dimensions``.
+
+    unify_units : bool
+        If a given variable has multiple units, should we attempt to unify them?
 
     Returns
     -------
     :obj:`xr.Dataset`
         Data in self, re-formatted as an :obj:`xr.Dataset`
+
+    Raises
+    ------
+    ValueError
+        If a given variable has multiple units and ``unify_units`` is ``False``.
     """
     dimensions = list(dimensions)
     extras = list(extras)
 
     timeseries_dims = list(set(dimensions) - {"time"} - {"_id"})
-    timeseries = _get_timeseries_for_xr_dataset(run, timeseries_dims, extras)
+
+    self_unified_units = _unify_scmrun_units(self, unify_units)
+    timeseries = _get_timeseries_for_xr_dataset(self_unified_units, timeseries_dims, extras, unify_units)
     non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(
-        run, dimensions, extras
+        self_unified_units, dimensions, extras
     )
 
     if extras:
-        ids, ids_dimensions = _get_ids_for_xr_dataset(run, extras, timeseries_dims)
+        ids, ids_dimensions = _get_ids_for_xr_dataset(self_unified_units, extras, timeseries_dims)
     else:
         ids = None
         ids_dimensions = None
@@ -45,10 +56,10 @@ def to_xarray(run, dimensions=("region",), extras=()):
     xr_ds = xr.Dataset.from_dataframe(for_xarray)
 
     if extras:
-        xr_ds = _add_extras(xr_ds, ids, ids_dimensions, run)
+        xr_ds = _add_extras(xr_ds, ids, ids_dimensions, self_unified_units)
 
     unit_map = (
-        run.meta[["variable", "unit"]].drop_duplicates().set_index("variable")["unit"]
+        self_unified_units.meta[["variable", "unit"]].drop_duplicates().set_index("variable")["unit"]
     )
     xr_ds = _add_units(xr_ds, unit_map)
     xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
@@ -57,7 +68,40 @@ def to_xarray(run, dimensions=("region",), extras=()):
     return xr_ds
 
 
-def _get_timeseries_for_xr_dataset(run, dimensions, extras):
+def _unify_scmrun_units(run, unify_units):
+    variable_unit_table = run.meta[["variable", "unit"]].drop_duplicates()
+    variable_units = variable_unit_table.set_index("variable")["unit"]
+
+    variable_counts = variable_unit_table["variable"].value_counts()
+    more_than_one_unit_variables = variable_counts[variable_counts > 1]
+    if not more_than_one_unit_variables.empty:
+        if not unify_units:
+            error_msg = (
+                "The following variables are reported in more than one unit. "
+                "Found variable-unit combinations are:\n{}".format(
+                    variable_units[more_than_one_unit_variables.index.values]
+                )
+            )
+
+            raise ValueError(error_msg)
+
+        for variable in more_than_one_unit_variables.index:
+            out_unit = variable_units[variable].iloc[0]
+            try:
+                run = run.convert_unit(out_unit, variable=variable)
+            except pint.errors.DimensionalityError as exc:
+                error_msg = (
+                    "Variable `{}` cannot be converted to a common unit. "
+                    "Units in the provided dataset: {}."
+                    .format(variable, variable_units[variable].values.tolist())
+                )
+                raise ValueError(error_msg) from exc
+
+    return run
+
+
+def _get_timeseries_for_xr_dataset(run, dimensions, extras, unify_units):
+
     for d in dimensions:
         vals = sorted(run.meta[d].unique())
         if not all([isinstance(v, str) for v in vals]) and np.isnan(vals).any():
@@ -195,6 +239,11 @@ def _add_extras(xr_ds, ids, ids_dimensions, run):
 def _add_units(xr_ds, unit_map):
     for data_var in xr_ds.data_vars:
         unit = unit_map[data_var]
+        if not isinstance(unit, str) and len(unit) > 1:
+            raise AssertionError(
+                "Found multiple units ({}) for {}".format(unit, data_var)
+            )
+
         xr_ds[data_var].attrs["units"] = unit
 
     return xr_ds
