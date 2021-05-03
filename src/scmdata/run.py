@@ -22,7 +22,7 @@ from dateutil import parser
 from openscm_units import unit_registry as ur
 from xarray.core.ops import inject_binary_ops
 
-from ._xarray import _to_xarray
+from ._xarray import inject_xarray_methods
 from .errors import MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
@@ -1985,22 +1985,6 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
             return type(self)(data, index=index, columns=meta)
 
-    def to_xarray(self, dimensions=("region",), extras=()):
-        """
-        Convert to a :class:`xr.Dataset`
-
-        TODO: write rest
-
-        Returns
-        -------
-        :obj:`xr.Dataset`
-            Data in self, re-formatted as an :obj:`xr.Dataset`
-        """
-        dimensions = list(dimensions)
-        extras = list(extras)
-
-        return _to_xarray(self, dimensions, extras)
-
 
 def _merge_metadata(metadata):
     res = metadata[0].copy()
@@ -2202,7 +2186,7 @@ inject_binary_ops(BaseScmRun)
 inject_nc_methods(BaseScmRun)
 inject_plotting_methods(BaseScmRun)
 inject_ops_methods(BaseScmRun)
-
+inject_xarray_methods(BaseScmRun)
 
 class ScmRun(BaseScmRun):
     """

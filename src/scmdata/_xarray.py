@@ -7,20 +7,40 @@ import xarray as xr
 from .errors import NonUniqueMetadataError
 
 
-def _to_xarray(run, dimensions, extras):
-    timeseries = _get_timeseries_for_xr_dataset(run, dimensions, extras)
+def to_xarray(run, dimensions=("region",), extras=()):
+    """
+    Convert to a :class:`xr.Dataset`
+
+    Parameters
+    ----------
+    dimensions : iterable of str
+        Dimensions for each variable in the returned dataset. If `"time"` is not included in ``dimensions`` it will be the last dimension.
+
+    extras : iterable of str
+        TODO: write
+
+    Returns
+    -------
+    :obj:`xr.Dataset`
+        Data in self, re-formatted as an :obj:`xr.Dataset`
+    """
+    dimensions = list(dimensions)
+    extras = list(extras)
+
+    timeseries_dims = list(set(dimensions) - {"time"})
+    timeseries = _get_timeseries_for_xr_dataset(run, timeseries_dims, extras)
     non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(
         run, dimensions, extras
     )
 
     if extras:
-        ids, ids_dimensions = _get_ids_for_xr_dataset(run, extras, dimensions)
+        ids, ids_dimensions = _get_ids_for_xr_dataset(run, extras, timeseries_dims)
     else:
         ids = None
         ids_dimensions = None
 
     for_xarray = _get_dataframe_for_xr_dataset(
-        timeseries, dimensions, extras, ids, ids_dimensions
+        timeseries, timeseries_dims, extras, ids, ids_dimensions
     )
     xr_ds = xr.Dataset.from_dataframe(for_xarray)
 
@@ -32,6 +52,8 @@ def _to_xarray(run, dimensions, extras):
     )
     xr_ds = _add_units(xr_ds, unit_map)
     xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
+    out_dimensions = dimensions if "time" in dimensions else dimensions + ["time"]
+    xr_ds = xr_ds.transpose(*out_dimensions)
 
     return xr_ds
 
@@ -186,6 +208,23 @@ def _add_scmdata_metadata(xr_ds, others):
             # should have already been caught...
             raise AssertionError("More than one value for meta: {}".format(col))
 
-        xr_ds.attrs["_scmdata_metadata_{}".format(col)] = vals[0]
+        xr_ds.attrs["scmdata_metadata_{}".format(col)] = vals[0]
 
     return xr_ds
+
+
+def inject_xarray_methods(cls):
+    """
+    Inject the xarray methods
+
+    Parameters
+    ----------
+    cls
+        Target class
+    """
+    methods = [
+        ("to_xarray", to_xarray),
+    ]
+
+    for name, f in methods:
+        setattr(cls, name, f)
