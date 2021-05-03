@@ -1,3 +1,4 @@
+import datetime as dt
 import re
 from unittest.mock import patch
 
@@ -989,3 +990,7 @@ def test_linear_regression_scmrun():
     assert_scmdf_almost_equal(
         res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
     )
+
+
+# TODO: notebook illustrating rolling mean options
+# Rationale: rolling means are really tricky (do you take e.g. an annual mean first, do you worry about happens at the window edge?) and they're pretty easy to convert back into ScmRun objects so a notebooks is probably more helpful than exact functionality for now
