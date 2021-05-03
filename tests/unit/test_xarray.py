@@ -314,3 +314,29 @@ def test_to_xarray_non_unique_timeseries(scm_run):
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run.to_xarray(dimensions=dimensions)
+
+
+def test_nan_in_dimension(scm_run):
+    run_id = np.arange(scm_run.shape[0]).astype(float)
+    run_id[-2] = np.nan
+    scm_run["run_id"] = run_id
+
+    with pytest.raises(AssertionError, match="nan in dimension: `run_id`"):
+        scm_run.to_xarray(dimensions=("run_id",))
+
+
+def test_non_unique_meta(scm_run):
+    scm_run["climate_model"] = ["b_model", "a_model", "a_model"]
+
+    error_msg = re.escape(
+        "Other metadata is not unique for dimensions: `{}` and extras: `{}`. "
+        "Please add meta columns with more than one value to dimensions or "
+        "extras.".format(["scenario"], [])
+    )
+    error_msg = (
+        "{}\nNumber of unique values in each column:\n.*\n(\\s|\\S)*"
+        "Existing values in the other metadata:.*".format(error_msg)
+    )
+
+    with pytest.raises(ValueError, match=error_msg):
+        scm_run.to_xarray(dimensions=("scenario",))

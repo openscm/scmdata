@@ -120,7 +120,6 @@ def _unify_scmrun_units(run, unify_units):
 
 
 def _get_timeseries_for_xr_dataset(run, dimensions, extras):
-
     for d in dimensions:
         vals = sorted(run.meta[d].unique())
         if not all([isinstance(v, str) for v in vals]) and np.isnan(vals).any():
@@ -258,7 +257,9 @@ def _add_extras(xr_ds, ids, ids_dimensions, run):
 def _add_units(xr_ds, unit_map):
     for data_var in xr_ds.data_vars:
         unit = unit_map[data_var]
-        if not isinstance(unit, str) and len(unit) > 1:  # pragma: no cover # emergency valve
+        if (
+            not isinstance(unit, str) and len(unit) > 1
+        ):  # pragma: no cover # emergency valve
             # should have already been caught...
             raise AssertionError(
                 "Found multiple units ({}) for {}".format(unit, data_var)
