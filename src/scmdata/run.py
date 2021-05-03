@@ -1985,7 +1985,7 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
 
             return type(self)(data, index=index, columns=meta)
 
-    def to_xarray(self, dimensions, extras):
+    def to_xarray(self, dimensions=("region",), extras=()):
         """
         Convert to a :class:`xr.Dataset`
 
@@ -1996,6 +1996,9 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
         :obj:`xr.Dataset`
             Data in self, re-formatted as an :obj:`xr.Dataset`
         """
+        dimensions = list(dimensions)
+        extras = list(extras)
+
         return _to_xarray(self, dimensions, extras)
 
 
