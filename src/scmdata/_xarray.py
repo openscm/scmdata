@@ -14,10 +14,10 @@ def to_xarray(run, dimensions=("region",), extras=()):
     Parameters
     ----------
     dimensions : iterable of str
-        Dimensions for each variable in the returned dataset. If `"time"` is not included in ``dimensions`` it will be the last dimension.
+        Dimensions for each variable in the returned dataset. If ``"time"`` is not included in ``dimensions`` it will be the last dimension. If ``"_id"`` is required (see ``extras`` documentation for when ``"_id"`` is required) and is not included in ``dimensions`` then it will be the last dimension.
 
     extras : iterable of str
-        TODO: write
+        TODO: write (when _id is added)
 
     Returns
     -------
@@ -27,7 +27,7 @@ def to_xarray(run, dimensions=("region",), extras=()):
     dimensions = list(dimensions)
     extras = list(extras)
 
-    timeseries_dims = list(set(dimensions) - {"time"})
+    timeseries_dims = list(set(dimensions) - {"time"} - {"_id"})
     timeseries = _get_timeseries_for_xr_dataset(run, timeseries_dims, extras)
     non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(
         run, dimensions, extras
@@ -52,8 +52,7 @@ def to_xarray(run, dimensions=("region",), extras=()):
     )
     xr_ds = _add_units(xr_ds, unit_map)
     xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
-    out_dimensions = dimensions if "time" in dimensions else dimensions + ["time"]
-    xr_ds = xr_ds.transpose(*out_dimensions)
+    xr_ds = _set_dimensions(xr_ds, dimensions)
 
     return xr_ds
 
@@ -211,6 +210,17 @@ def _add_scmdata_metadata(xr_ds, others):
         xr_ds.attrs["scmdata_metadata_{}".format(col)] = vals[0]
 
     return xr_ds
+
+
+def _set_dimensions(xr_ds, dimensions):
+    out_dimensions = dimensions
+    if "time" not in dimensions:
+        out_dimensions += ["time"]
+
+    if "_id" in xr_ds.dims and "_id" not in dimensions:
+        out_dimensions += ["_id"]
+
+    return xr_ds.transpose(*out_dimensions)
 
 
 def inject_xarray_methods(cls):
