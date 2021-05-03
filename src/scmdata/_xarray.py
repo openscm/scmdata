@@ -15,7 +15,7 @@ def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
     Parameters
     ----------
     dimensions : iterable of str
-        Dimensions for each variable in the returned dataset. If ``"time"`` is not included in ``dimensions`` it will be the last dimension. If an "_id" co-ordinate is required (see ``extras`` documentation for when "_id" is required) and is not included in ``dimensions`` then it will be the last dimension.
+        Dimensions for each variable in the returned dataset. If an "_id" co-ordinate is required (see ``extras`` documentation for when "_id" is required) and is not included in ``dimensions`` then it will be the last dimension (or second last dimension if "time" is also not included in ``dimensions``). If "time" is not included in ``dimensions`` it will be the last dimension.
 
     extras : iterable of str
         Columns in ``self.meta`` from which to create "non-dimension co-ordinates" (see `xarray terminology <https://xarray.pydata.org/en/stable/terminology.html>`_ for more details). These non-dimension co-ordinates store extra information and can be mapped to each timeseries found in the data variables of the output :obj:`xr.Dataset`. Where possible, these non-dimension co-ordinates will use dimension co-ordinates as their own co-ordinates. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` co-ordinates will have dimensions of "_id". This "_id" co-ordinate maps the values in the ``extras`` co-ordinates to each timeseries in the serialised dataset. Where "_id" is required, an extra "_id" dimension will also be added to ``dimensions``.
@@ -31,15 +31,26 @@ def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
     Raises
     ------
     ValueError
-        If a given variable has multiple units and ``unify_units`` is ``False``.
+        If a variable has multiple units and ``unify_units`` is ``False``.
+
+    ValueError
+        If a variable has multiple units which are not able to be converted to a common unit because they have different base units.
     """
     dimensions = list(dimensions)
     extras = list(extras)
 
+    dimensions_extras_overlap = set(dimensions).intersection(set(extras))
+    if dimensions_extras_overlap:
+        raise ValueError(
+            "dimensions and extras cannot have any overlap. "
+            "Current values in both dimensions and extras: {}"
+            .format(dimensions_extras_overlap)
+        )
+
     timeseries_dims = list(set(dimensions) - {"time"} - {"_id"})
 
     self_unified_units = _unify_scmrun_units(self, unify_units)
-    timeseries = _get_timeseries_for_xr_dataset(self_unified_units, timeseries_dims, extras, unify_units)
+    timeseries = _get_timeseries_for_xr_dataset(self_unified_units, timeseries_dims, extras)
     non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(
         self_unified_units, dimensions, extras
     )
@@ -100,7 +111,7 @@ def _unify_scmrun_units(run, unify_units):
     return run
 
 
-def _get_timeseries_for_xr_dataset(run, dimensions, extras, unify_units):
+def _get_timeseries_for_xr_dataset(run, dimensions, extras):
 
     for d in dimensions:
         vals = sorted(run.meta[d].unique())

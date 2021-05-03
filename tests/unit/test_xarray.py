@@ -236,7 +236,40 @@ def test_to_xarray_unify_multiple_units_incompatible_units(scm_run):
     with pytest.raises(ValueError, match=error_msg):
         scm_run.to_xarray(dimensions=dimensions, unify_units=True)
 
-# Tests to write:
-# - multiple units for given variable
-# - overlapping dimensions and extras
-# - underdefined dimensions and extras
+
+@pytest.mark.parametrize("dimensions,extras", (
+    (("junk",), (),),
+    (("junk",), ("climate_model"),),
+    (("scenario", "junk_1"), ("junk",)),
+    (("scenario",), ("junk",)),
+    (("scenario",), ("junk", "climate_model")),
+    (("scenario",), ("junk", "junk_2", "climate_model")),
+))
+def test_dimension_and_or_extra_not_in_metadata(scm_run, dimensions, extras):
+    with pytest.raises(KeyError):
+        scm_run.to_xarray(dimensions=dimensions, extras=extras)
+
+
+def test_to_xarray_dimensions_extra_overlap(scm_run):
+    dimensions = ("scenario", "region")
+    extras = ("scenario",)
+
+    error_msg = re.escape(
+        "dimensions and extras cannot have any overlap. "
+        "Current values in both dimensions and extras: {}"
+        .format({"scenario"})
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scm_run.to_xarray(dimensions=dimensions, extras=extras)
+
+
+def test_to_xarray_non_unique_timeseries(scm_run):
+    dimensions = ("region",)
+
+    error_msg = re.escape(
+        "dimensions: `{}` and extras: `[]` do not uniquely define the timeseries, "
+        "please add extra dimensions and/or extras"
+        .format(list(dimensions))
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scm_run.to_xarray(dimensions=dimensions)
