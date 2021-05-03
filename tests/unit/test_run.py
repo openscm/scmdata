@@ -10,6 +10,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+import xarray as xr
 from numpy import testing as npt
 from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
@@ -3047,3 +3048,10 @@ def test_drop_meta_nonunique():
 
     with pytest.raises(NonUniqueMetadataError):
         start.drop_meta("new_meta")
+
+
+def test_to_xarray(scm_run):
+    res = scm_run.to_xarray()
+
+    assert isinstance(res, xr.DataSet)
+    assert False

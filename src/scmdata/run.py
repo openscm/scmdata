@@ -22,6 +22,7 @@ from dateutil import parser
 from openscm_units import unit_registry as ur
 from xarray.core.ops import inject_binary_ops
 
+from ._xarray import _to_xarray
 from .errors import MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
@@ -1983,6 +1984,9 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
                 raise NotImplementedError  # pragma: no cover
 
             return type(self)(data, index=index, columns=meta)
+
+    def to_xarray(self, dimensions, extras):
+        return _to_xarray(self, dimensions, extras)
 
 
 def _merge_metadata(metadata):
