@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.10.0
+-------
+
 - (`#151 <https://github.com/openscm/scmdata/pull/151>`_) Add :meth:`ScmRun.to_xarray` (improves conversion to xarray and ability of user to control dimensions etc. when writing netCDF files)
 - (`#149 <https://github.com/openscm/scmdata/pull/149>`_) Fix bug in testcase for xarray<=0.16.1
 - (`#147 <https://github.com/openscm/scmdata/pull/147>`_) Re-do netCDF reading and writing to make use of xarray and provide better handling of extras (results in speedups of 10-100x)
