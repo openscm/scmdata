@@ -36,6 +36,7 @@ scmdata
 .. |conda platforms| image:: https://img.shields.io/conda/pn/conda-forge/scmdata.svg
     :target: https://anaconda.org/conda-forge/scmdata
 .. |conda version| image:: https://img.shields.io/conda/vn/conda-forge/scmdata.svg
+    :target: https://anaconda.org/conda-forge/scmdata
 .. |Contributors| image:: https://img.shields.io/github/contributors/openscm/scmdata.svg
     :target: https://github.com/openscm/scmdata/graphs/contributors
 .. |Last Commit| image:: https://img.shields.io/github/last-commit/openscm/scmdata.svg
