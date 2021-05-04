@@ -22,6 +22,7 @@ from dateutil import parser
 from openscm_units import unit_registry as ur
 from xarray.core.ops import inject_binary_ops
 
+from ._xarray import inject_xarray_methods
 from .errors import MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
@@ -2185,6 +2186,7 @@ inject_binary_ops(BaseScmRun)
 inject_nc_methods(BaseScmRun)
 inject_plotting_methods(BaseScmRun)
 inject_ops_methods(BaseScmRun)
+inject_xarray_methods(BaseScmRun)
 
 
 class ScmRun(BaseScmRun):

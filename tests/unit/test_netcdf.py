@@ -13,7 +13,7 @@ import pytest
 import xarray as xr
 
 from scmdata import ScmRun
-from scmdata.netcdf import _get_xr_dataset, nc_to_run, run_to_nc
+from scmdata.netcdf import _get_xr_dataset_to_write, nc_to_run, run_to_nc
 from scmdata.testing import assert_scmdf_almost_equal
 
 
@@ -33,15 +33,15 @@ def test_run_to_nc(scm_run):
         assert ds.variables["scenario"][1] == "a_scenario2"
 
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][:, 0],
+            ds.variables["Primary_Energy"][0, :],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][:, 1],
+            ds.variables["Primary_Energy"][1, :],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy__Coal"][:, 0],
+            ds.variables["Primary_Energy__Coal"][0, :],
             scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
@@ -411,15 +411,15 @@ def test_run_to_nc_with_extras(scm_run, dtype):
             assert run_id == exp_val
 
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][:, 0],
+            ds.variables["Primary_Energy"][0, :],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy"][:, 1],
+            ds.variables["Primary_Energy"][1, :],
             scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
         )
         npt.assert_allclose(
-            ds.variables["Primary_Energy__Coal"][:, 0],
+            ds.variables["Primary_Energy__Coal"][0, :],
             scm_run.filter(
                 variable="Primary Energy|Coal", scenario="a_scenario"
             ).values[0],
@@ -667,12 +667,12 @@ def test_run_to_nc_loop_tricky_variable_name(scm_run, start_variable):
     assert_scmdf_almost_equal(scm_run, loaded, check_ts_names=False)
 
 
-@patch("scmdata.netcdf._get_xr_dataset")
+@patch("scmdata.netcdf._get_xr_dataset_to_write")
 def test_run_to_nc_xarray_kwarg_passing(mock_get_xr_dataset, scm_run, tmpdir):
     dimensions = ["scenario"]
     extras = []
     mock_ds = MagicMock()
-    mock_ds.data_vars = _get_xr_dataset(scm_run, dimensions, extras).data_vars
+    mock_ds.data_vars = _get_xr_dataset_to_write(scm_run, dimensions, extras).data_vars
     mock_get_xr_dataset.return_value = mock_ds
 
     out_fname = join(tmpdir, "out.nc")
@@ -681,7 +681,7 @@ def test_run_to_nc_xarray_kwarg_passing(mock_get_xr_dataset, scm_run, tmpdir):
     mock_ds.to_netcdf.assert_called_with(out_fname, engine="engine")
 
 
-@patch("scmdata.netcdf._get_xr_dataset")
+@patch("scmdata.netcdf._get_xr_dataset_to_write")
 @pytest.mark.parametrize(
     "in_kwargs,call_kwargs",
     (
@@ -714,7 +714,7 @@ def test_run_to_nc_xarray_kwarg_passing_variable_renaming(
     extras = []
 
     mock_ds = MagicMock()
-    mock_ds.data_vars = _get_xr_dataset(scm_run, dimensions, extras).data_vars
+    mock_ds.data_vars = _get_xr_dataset_to_write(scm_run, dimensions, extras).data_vars
     mock_get_xr_dataset.return_value = mock_ds
 
     out_fname = join(tmpdir, "out.nc")

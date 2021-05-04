@@ -14,212 +14,15 @@ except ImportError:  # pragma: no cover
 from datetime import datetime
 from logging import getLogger
 
-import numpy as np
 import xarray as xr
 
 from . import __version__
-from .errors import NonUniqueMetadataError
 
 logger = getLogger(__name__)
 
 
-"""
-Default to writing float data as 8 byte floats
-"""
-DEFAULT_FLOAT = "f8"
-
-
 def _var_to_nc(var):
     return var.replace("|", "__").replace(" ", "_")
-
-
-def _write_nc(fname, run, dimensions, extras, **kwargs):
-    """
-    Low level function to write the dimensions, variables and metadata to disk
-    """
-    xr_ds = _get_xr_dataset(run, dimensions, extras)
-
-    xr_ds.attrs["created_at"] = datetime.utcnow().isoformat()
-    xr_ds.attrs["_scmdata_version"] = __version__
-
-    if run.metadata:
-        xr_ds.attrs.update(run.metadata)
-
-    write_kwargs = _update_kwargs_to_match_serialised_variable_names(xr_ds, kwargs)
-    xr_ds.to_netcdf(fname, **write_kwargs)
-
-
-def _get_xr_dataset(run, dimensions, extras):
-    timeseries = _get_timeseries_for_xr_dataset(run, dimensions, extras)
-    non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(
-        run, dimensions, extras
-    )
-
-    if extras:
-        ids, ids_dimensions = _get_ids_for_xr_dataset(run, extras, dimensions)
-    else:
-        ids = None
-        ids_dimensions = None
-
-    for_xarray = _get_dataframe_for_xr_dataset(
-        timeseries, dimensions, extras, ids, ids_dimensions
-    )
-    xr_ds = xr.Dataset.from_dataframe(for_xarray)
-
-    if extras:
-        xr_ds = _add_extras(xr_ds, ids, ids_dimensions, run)
-
-    unit_map = (
-        run.meta[["variable", "unit"]].drop_duplicates().set_index("variable")["unit"]
-    )
-    xr_ds = _add_units(xr_ds, unit_map)
-    xr_ds = _rename_variables(xr_ds)
-    xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
-
-    return xr_ds
-
-
-def _get_timeseries_for_xr_dataset(run, dimensions, extras):
-    for d in dimensions:
-        vals = sorted(run.meta[d].unique())
-        if not all([isinstance(v, str) for v in vals]) and np.isnan(vals).any():
-            raise AssertionError("nan in dimension: `{}`".format(d))
-
-    try:
-        timeseries = run.timeseries(dimensions + extras + ["variable"])
-    except NonUniqueMetadataError as exc:
-        error_msg = (
-            "dimensions: `{}` and extras: `{}` do not uniquely define the "
-            "timeseries, please add extra dimensions and/or extras".format(
-                dimensions, extras
-            )
-        )
-        raise ValueError(error_msg) from exc
-
-    timeseries.columns = run.time_points.as_cftime()
-
-    return timeseries
-
-
-def _get_other_metdata_for_xr_dataset(run, dimensions, extras):
-    other_dimensions = list(
-        set(run.meta.columns) - set(dimensions) - set(extras) - {"variable", "unit"}
-    )
-    other_metdata = run.meta[other_dimensions].drop_duplicates()
-    if other_metdata.shape[0] > 1 and not other_metdata.empty:
-        error_msg = (
-            "Other metadata is not unique for dimensions: `{}` and extras: `{}`. "
-            "Please add meta columns with more than one value to dimensions or "
-            "extras.\nNumber of unique values in each column:\n{}.\n"
-            "Existing values in the other metadata:\n{}.".format(
-                dimensions,
-                extras,
-                other_metdata.nunique(),
-                other_metdata.drop_duplicates(),
-            )
-        )
-        raise ValueError(error_msg)
-
-    return other_metdata
-
-
-def _get_ids_for_xr_dataset(run, extras, dimensions):
-    # these loops could be very slow with lots of extras and dimensions...
-    ids_dimensions = {}
-    for extra in extras:
-        for col in dimensions:
-            if _many_to_one(run.meta, extra, col):
-                dim_col = col
-                break
-        else:
-            dim_col = "_id"
-
-        ids_dimensions[extra] = dim_col
-
-    ids = run.meta[extras].drop_duplicates()
-    ids["_id"] = range(ids.shape[0])
-    ids = ids.set_index(extras)
-
-    return ids, ids_dimensions
-
-
-def _many_to_one(df, col1, col2):
-    """
-    Check if there is a many to one mapping between col2 and col1
-    """
-    # thanks https://stackoverflow.com/a/59091549
-    checker = df[[col1, col2]].drop_duplicates()
-
-    max_count = checker.groupby(col2).count().max()[0]
-    if max_count < 1:  # pragma: no cover # emergency valve
-        raise AssertionError
-
-    return max_count == 1
-
-
-def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids, ids_dimensions):
-    timeseries = timeseries.reset_index()
-
-    add_id_dimension = extras and "_id" in set(ids_dimensions.values())
-    if add_id_dimension:
-        timeseries = (
-            timeseries.set_index(ids.index.names)
-            .join(ids)
-            .reset_index(drop=True)
-            .set_index(dimensions + ["variable", "_id"])
-        )
-    else:
-        timeseries = timeseries.set_index(dimensions + ["variable"])
-        if extras:
-            timeseries = timeseries.drop(extras, axis="columns")
-
-    timeseries.columns.names = ["time"]
-
-    if (
-        len(timeseries.index.unique()) != timeseries.shape[0]
-    ):  # pragma: no cover # emergency valve
-        # shouldn't be able to get here because any issues should be caught
-        # by initial creation of timeseries but just in case
-        raise AssertionError("something not unique")
-
-    for_xarray = (
-        timeseries.T.stack(dimensions + ["_id"])
-        if add_id_dimension
-        else timeseries.T.stack(dimensions)
-    )
-
-    return for_xarray
-
-
-def _add_extras(xr_ds, ids, ids_dimensions, run):
-    # this loop could also be slow...
-    extra_coords = {}
-    for extra, id_dimension in ids_dimensions.items():
-        if id_dimension in ids:
-            ids_extra = ids.reset_index().set_index(id_dimension)
-        else:
-            ids_extra = (
-                run.meta[[extra, id_dimension]]
-                .drop_duplicates()
-                .set_index(id_dimension)
-            )
-
-        extra_coords[extra] = (
-            id_dimension,
-            ids_extra[extra].loc[xr_ds[id_dimension].values],
-        )
-
-    xr_ds = xr_ds.assign_coords(extra_coords)
-
-    return xr_ds
-
-
-def _add_units(xr_ds, unit_map):
-    for data_var in xr_ds.data_vars:
-        unit = unit_map[data_var]
-        xr_ds[data_var].attrs["units"] = unit
-
-    return xr_ds
 
 
 def _rename_variables(xr_ds):
@@ -234,16 +37,27 @@ def _rename_variables(xr_ds):
     return xr_ds
 
 
-def _add_scmdata_metadata(xr_ds, others):
-    for col in others:
-        vals = others[col].unique()
-        if len(vals) > 1:  # pragma: no cover # emergency valve
-            # should have already been caught...
-            raise AssertionError("More than one value for meta: {}".format(col))
-
-        xr_ds.attrs["_scmdata_metadata_{}".format(col)] = vals[0]
+def _get_xr_dataset_to_write(run, dimensions, extras):
+    xr_ds = run.to_xarray(dimensions, extras)
+    xr_ds = _rename_variables(xr_ds)
 
     return xr_ds
+
+
+def _write_nc(fname, run, dimensions, extras, **kwargs):
+    """
+    Low level function to write the dimensions, variables and metadata to disk
+    """
+    xr_ds = _get_xr_dataset_to_write(run, dimensions, extras)
+
+    xr_ds.attrs["created_at"] = datetime.utcnow().isoformat()
+    xr_ds.attrs["_scmdata_version"] = __version__
+
+    if run.metadata:
+        xr_ds.attrs.update(run.metadata)
+
+    write_kwargs = _update_kwargs_to_match_serialised_variable_names(xr_ds, kwargs)
+    xr_ds.to_netcdf(fname, **write_kwargs)
 
 
 def _read_nc(cls, fname):
@@ -278,8 +92,8 @@ def _reshape_to_scmrun_dataframe(dataframe, loaded):
 
 def _convert_to_cls_and_add_metadata(dataframe, loaded, cls):
     for k in list(loaded.attrs.keys()):
-        if k.startswith("_scmdata_metadata_"):
-            dataframe[k.replace("_scmdata_metadata_", "")] = loaded.attrs.pop(k)
+        if k.startswith("scmdata_metadata_"):
+            dataframe[k.replace("scmdata_metadata_", "")] = loaded.attrs.pop(k)
 
     run = cls(dataframe)
     run.metadata.update(loaded.attrs)
@@ -325,10 +139,10 @@ def run_to_nc(run, fname, dimensions=("region",), extras=(), **kwargs):
         Path to write the file into
 
     dimensions : iterable of str
-        Dimensions to include in the netCDF file. The time dimension is always included, even if not provided. An additional dimension (specifically a co-ordinate in xarray terms), "_id", will be included if ``extras`` is provided and any of the metadata in ``extras`` is not uniquely defined by ``dimensions``. "_id" maps the timeseries in each variable to their relevant metadata.
+        Dimensions to include in the netCDF file. The time dimension is always included (if not provided it will be the last dimension). An additional dimension (specifically a co-ordinate in xarray terms), "_id", will be included if ``extras`` is provided and any of the metadata in ``extras`` is not uniquely defined by ``dimensions``. "_id" maps the timeseries in each variable to their relevant metadata.
 
     extras : iterable of str
-        Metadata columns to write as variables (specifically co-ordinates in xarray terms) in the netCDF file. Where possible, the metadata in ``dimensions`` will be used as the dimensions of these variables. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` variables will have dimensions of "_id", which maps the metadata to each timeseries in the serialised dataset.
+        Metadata columns to write as variables in the netCDF file (specifically as "non-dimension co-ordinates" in xarray terms, ee `xarray terminology <https://xarray.pydata.org/en/stable/terminology.html>`_ for more details). Where possible, these non-dimension co-ordinates will use dimension co-ordinates as their own co-ordinates. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` co-ordinates will have dimensions of "_id". This "_id" co-ordinate maps the values in the ``extras`` co-ordinates to each timeseries in the serialised dataset. Where "_id" is required, an extra "_id" dimension will also be added to ``dimensions``.
 
     kwargs
         Passed through to :meth:`xarray.Dataset.to_netcdf`
