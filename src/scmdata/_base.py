@@ -1,4 +1,8 @@
-class ScmRunOpsMixin:
+import operator
+import numpy as np
+
+
+class OpsMixin:
     def _binary_op(self, other, f, reflexive=False):
         raise NotImplementedError
 
@@ -45,10 +49,11 @@ class ScmRunOpsMixin:
         return self._binary_op(other, operator.ge)
 
     def __eq__(self, other):
-        return self._binary_op(other, nputils.array_eq)
+        return self._binary_op(other, np.not_equal)
 
     def __ne__(self, other):
-        return self._binary_op(other, nputils.array_ne)
+        # TODO: check xarray
+        return self._binary_op(other, np.equal)
 
     def __radd__(self, other):
         return self._binary_op(other, operator.add, reflexive=True)
@@ -142,8 +147,8 @@ class ScmRunOpsMixin:
     __le__.__doc__ = operator.le.__doc__
     __gt__.__doc__ = operator.gt.__doc__
     __ge__.__doc__ = operator.ge.__doc__
-    __eq__.__doc__ = nputils.array_eq.__doc__
-    __ne__.__doc__ = nputils.array_ne.__doc__
+    __eq__.__doc__ = np.equal.__doc__
+    __ne__.__doc__ = np.not_equal.__doc__
     __radd__.__doc__ = operator.add.__doc__
     __rsub__.__doc__ = operator.sub.__doc__
     __rmul__.__doc__ = operator.mul.__doc__

@@ -13,8 +13,8 @@ import numpy as np
 import pint
 import xarray as xr
 from openscm_units import unit_registry as ur
-from xarray.core.ops import inject_binary_ops
 
+from ._base import OpsMixin
 from .time import TimePoints, TimeseriesConverter
 
 
@@ -35,7 +35,7 @@ class _Counter:
 get_default_name = _Counter()
 
 
-class TimeSeries:
+class TimeSeries(OpsMixin):
     """
     A 1D time-series with metadata
 
@@ -298,6 +298,3 @@ class TimeSeries:
         ts._data[:] = timeseries_converter.convert_from(self._data.values)
 
         return ts
-
-
-inject_binary_ops(TimeSeries)

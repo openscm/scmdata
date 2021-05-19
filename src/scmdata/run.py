@@ -21,7 +21,7 @@ import pint
 from dateutil import parser
 from openscm_units import unit_registry as ur
 
-from ._base import ScmRunOpsMixin
+from ._base import OpsMixin
 from ._xarray import inject_xarray_methods
 from .errors import MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
@@ -295,7 +295,7 @@ def _from_ts(
     return df, meta
 
 
-class BaseScmRun:  # pylint: disable=too-many-public-methods
+class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     """
     Base class of a data container for timeseries data
     """
@@ -2188,7 +2188,7 @@ inject_ops_methods(BaseScmRun)
 inject_xarray_methods(BaseScmRun)
 
 
-class ScmRun(BaseScmRun, ScmRunOpsMixin):
+class ScmRun(BaseScmRun):
     """
     Data container for holding one or many time-series of SCM data.
     """
