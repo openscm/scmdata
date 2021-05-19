@@ -20,8 +20,8 @@ import pandas as pd
 import pint
 from dateutil import parser
 from openscm_units import unit_registry as ur
-from xarray.core.ops import inject_binary_ops
 
+from ._base import ScmRunOpsMixin
 from ._xarray import inject_xarray_methods
 from .errors import MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
@@ -2182,14 +2182,13 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
     raise ValueError("Unrecognised value for duplicate_msg")
 
 
-inject_binary_ops(BaseScmRun)
 inject_nc_methods(BaseScmRun)
 inject_plotting_methods(BaseScmRun)
 inject_ops_methods(BaseScmRun)
 inject_xarray_methods(BaseScmRun)
 
 
-class ScmRun(BaseScmRun):
+class ScmRun(BaseScmRun, ScmRunOpsMixin):
     """
     Data container for holding one or many time-series of SCM data.
     """
