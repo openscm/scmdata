@@ -638,61 +638,56 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             len(self), len(self.time_points), time_str, meta_str
         )
 
-    @staticmethod
     def _binary_op(
-        f: Callable[..., Any], reflexive=False, **kwargs,
+            self, other, f, reflexive=False, **kwargs,
     ) -> Callable[..., "ScmRun"]:
-        @functools.wraps(f)
-        def func(self, other):
-            if isinstance(other, ScmRun):
-                return NotImplemented
+        if isinstance(other, ScmRun):
+            return NotImplemented
 
-            is_scalar = isinstance(other, (numbers.Number, pint.Quantity))
-            if not is_scalar:
-                other_ndim = len(other.shape)
-                if other_ndim == 1:
-                    if other.shape[0] != self.shape[1]:
-                        raise ValueError(
-                            "only vectors with the same number of timesteps "
-                            "as self ({}) are supported".format(self.shape[1])
-                        )
-                else:
+        is_scalar = isinstance(other, (numbers.Number, pint.Quantity))
+        if not is_scalar:
+            other_ndim = len(other.shape)
+            if other_ndim == 1:
+                if other.shape[0] != self.shape[1]:
                     raise ValueError(
-                        "operations with {}d data are not supported".format(other_ndim)
+                        "only vectors with the same number of timesteps "
+                        "as self ({}) are supported".format(self.shape[1])
                     )
+            else:
+                raise ValueError(
+                    "operations with {}d data are not supported".format(other_ndim)
+                )
 
-            def _perform_op(df):
-                if isinstance(other, pint.Quantity):
-                    try:
-                        data = df.values * ur(df.get_unique_meta("unit", True))
-                        use_pint = True
-                    except KeyError:
-                        # let Pint assume dimensionless and raise an error as
-                        # necessary
-                        data = df.values
-                        use_pint = False
-                else:
+        def _perform_op(df):
+            if isinstance(other, pint.Quantity):
+                try:
+                    data = df.values * ur(df.get_unique_meta("unit", True))
+                    use_pint = True
+                except KeyError:
+                    # let Pint assume dimensionless and raise an error as
+                    # necessary
                     data = df.values
                     use_pint = False
+            else:
+                data = df.values
+                use_pint = False
 
-                res = []
-                for v in data:
-                    if not reflexive:
-                        res.append(f(v, other))
-                    else:
-                        res.append(f(other, v))
-                res = np.vstack(res)
-
-                if use_pint:
-                    df._df.values[:] = res.magnitude.T
-                    df["unit"] = str(res.units)
+            res = []
+            for v in data:
+                if not reflexive:
+                    res.append(f(v, other))
                 else:
-                    df._df.values[:] = res.T
-                return df
+                    res.append(f(other, v))
+            res = np.vstack(res)
 
-            return self.copy().groupby("unit").map(_perform_op)
+            if use_pint:
+                df._df.values[:] = res.magnitude.T
+                df["unit"] = str(res.units)
+            else:
+                df._df.values[:] = res.T
+            return df
 
-        return func
+        return self.copy().groupby("unit").map(_perform_op)
 
     def drop_meta(self, columns: Union[list, str], inplace: Optional[bool] = False):
         """

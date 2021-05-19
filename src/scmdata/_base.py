@@ -85,39 +85,6 @@ class OpsMixin:
     def __ror__(self, other):
         return self._binary_op(other, operator.or_, reflexive=True)
 
-    def _inplace_binary_op(self, other, f):
-        raise NotImplementedError
-
-    def __iadd__(self, other):
-        return self._inplace_binary_op(other, operator.iadd)
-
-    def __isub__(self, other):
-        return self._inplace_binary_op(other, operator.isub)
-
-    def __imul__(self, other):
-        return self._inplace_binary_op(other, operator.imul)
-
-    def __ipow__(self, other):
-        return self._inplace_binary_op(other, operator.ipow)
-
-    def __itruediv__(self, other):
-        return self._inplace_binary_op(other, operator.itruediv)
-
-    def __ifloordiv__(self, other):
-        return self._inplace_binary_op(other, operator.ifloordiv)
-
-    def __imod__(self, other):
-        return self._inplace_binary_op(other, operator.imod)
-
-    def __iand__(self, other):
-        return self._inplace_binary_op(other, operator.iand)
-
-    def __ixor__(self, other):
-        return self._inplace_binary_op(other, operator.ixor)
-
-    def __ior__(self, other):
-        return self._inplace_binary_op(other, operator.ior)
-
     def _unary_op(self, f, *args, **kwargs):
         raise NotImplementedError
 
@@ -159,16 +126,6 @@ class OpsMixin:
     __rand__.__doc__ = operator.and_.__doc__
     __rxor__.__doc__ = operator.xor.__doc__
     __ror__.__doc__ = operator.or_.__doc__
-    __iadd__.__doc__ = operator.iadd.__doc__
-    __isub__.__doc__ = operator.isub.__doc__
-    __imul__.__doc__ = operator.imul.__doc__
-    __ipow__.__doc__ = operator.ipow.__doc__
-    __itruediv__.__doc__ = operator.itruediv.__doc__
-    __ifloordiv__.__doc__ = operator.ifloordiv.__doc__
-    __imod__.__doc__ = operator.imod.__doc__
-    __iand__.__doc__ = operator.iand.__doc__
-    __ixor__.__doc__ = operator.ixor.__doc__
-    __ior__.__doc__ = operator.ior.__doc__
     __neg__.__doc__ = operator.neg.__doc__
     __pos__.__doc__ = operator.pos.__doc__
     __abs__.__doc__ = operator.abs.__doc__
