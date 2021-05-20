@@ -1,3 +1,4 @@
+import operator
 import re
 from unittest.mock import patch
 
@@ -989,3 +990,93 @@ def test_linear_regression_scmrun():
     assert_scmdf_almost_equal(
         res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
     )
+
+
+@pytest.mark.parametrize(
+    "op, expected",
+    (
+        (operator.add, [3, 4, 5]),
+        (operator.sub, [-1, 0, 1]),
+        (operator.mul, [2, 4, 6]),
+        (operator.floordiv, [0, 1, 1]),
+        (operator.truediv, [1 / 2, 1, 3 / 2]),
+        (operator.ge, [0, 1, 1]),
+        (operator.gt, [0, 0, 1]),
+        (operator.le, [1, 1, 0]),
+        (operator.lt, [1, 0, 0]),
+        (operator.eq, [0, 1, 0]),
+        (operator.ne, [1, 0, 1]),
+        (operator.pow, [1, 4, 9]),
+        (operator.mod, [1, 0, 1]),
+    ),
+)
+def test_binary_ops(op, expected):
+    ts = get_single_ts()
+
+    res = op(ts, 2)
+    npt.assert_allclose(res.values, [expected])
+
+
+@pytest.mark.parametrize(
+    "op,expected",
+    (
+        (operator.add, [3, 4, 5]),
+        (operator.sub, [1, 0, -1]),
+        (operator.mul, [2, 4, 6]),
+        (operator.floordiv, [2, 1, 0]),
+        (operator.truediv, [2, 1, 2 / 3]),
+        (operator.ge, [1, 1, 0]),
+        (operator.gt, [1, 0, 0]),
+        (operator.le, [0, 1, 1]),
+        (operator.lt, [0, 0, 1]),
+        (operator.eq, [0, 1, 0]),
+        (operator.ne, [1, 0, 1]),
+        (operator.pow, [2, 4, 8]),
+        (operator.mod, [0, 0, 2]),
+    ),
+)
+def test_binary_ops_reflexive(op, expected):
+    ts = get_single_ts()
+
+    res = op(2, ts)
+    npt.assert_allclose(res.values, [expected])
+
+
+@pytest.mark.parametrize(
+    "op, expected",
+    (
+        (operator.neg, [1, 0, -1]),
+        (operator.pos, [-1, 0, 1]),
+        (operator.abs, [1, 0, 1]),
+    ),
+)
+def test_unary_ops(op, expected):
+    ts = get_single_ts()
+
+    res = op(ts - 2)
+    npt.assert_allclose(res.values, [expected])
+
+
+@pytest.mark.parametrize(
+    "op,other",
+    (
+        (operator.or_, True),
+        (operator.xor, True),
+        (operator.and_, True),
+        (operator.invert, False),
+    ),
+)
+def test_missing_ops(op, other):
+    ts = get_single_ts()
+
+    if other:
+        match = "unsupported operand"
+        with pytest.raises(TypeError, match=match):
+            op(ts, 2)
+        # reflexive
+        with pytest.raises(TypeError, match=match):
+            op(2, ts)
+    else:
+        match = "bad operand type for unary"
+        with pytest.raises(TypeError, match=match):
+            op(ts)

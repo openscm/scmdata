@@ -33,7 +33,7 @@ jobs:
         black-nb --check notebooks
         isort --check-only --quiet src tests setup.py
         pydocstyle src
-        bandit -c .bandit.yml -r scmdata
+        bandit -c .bandit.yml -r src/scmdata
         flake8 src tests setup.py
     - name: Build docs
       # treat warnings as errors (-W)...
@@ -104,6 +104,39 @@ jobs:
           pip install -e .[tests]
 
           pip install pandas==${{ matrix.pandas-version }}
+
+      - name: Test with pytest
+        env:
+          MIN_COVERAGE: 90
+        run: |
+          pytest tests -r a --cov=scmdata --cov-report=xml
+          if ! coverage report --fail-under=${MIN_COVERAGE} --show-missing
+          then
+              echo
+              echo "Error: Test coverage has to be at least ${MIN_COVERAGE}"
+              exit 1
+          fi
+
+  build-xarray-versions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ 3.7 ]
+        xarray-version: [ 0.16.2, 0.17.0, 0.18.2 ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install test dependencies
+        run: |
+          pip install --upgrade pip wheel
+          pip install -e .[tests]
+
+          pip install xarray==${{ matrix.xarray-version }}
 
       - name: Test with pytest
         env:

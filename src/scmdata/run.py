@@ -6,7 +6,6 @@ ensembles of model runs.
 """
 import copy
 import datetime as dt
-import functools
 import numbers
 import os
 import warnings
@@ -20,8 +19,8 @@ import pandas as pd
 import pint
 from dateutil import parser
 from openscm_units import unit_registry as ur
-from xarray.core.ops import inject_binary_ops
 
+from ._base import OpsMixin
 from ._xarray import inject_xarray_methods
 from .errors import MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
@@ -295,7 +294,7 @@ def _from_ts(
     return df, meta
 
 
-class BaseScmRun:  # pylint: disable=too-many-public-methods
+class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     """
     Base class of a data container for timeseries data
     """
@@ -638,61 +637,64 @@ class BaseScmRun:  # pylint: disable=too-many-public-methods
             len(self), len(self.time_points), time_str, meta_str
         )
 
-    @staticmethod
     def _binary_op(
-        f: Callable[..., Any], reflexive=False, **kwargs,
+        self, other, f, reflexive=False, **kwargs,
     ) -> Callable[..., "ScmRun"]:
-        @functools.wraps(f)
-        def func(self, other):
-            if isinstance(other, ScmRun):
-                return NotImplemented
+        if isinstance(other, ScmRun):
+            return NotImplemented
 
-            is_scalar = isinstance(other, (numbers.Number, pint.Quantity))
-            if not is_scalar:
-                other_ndim = len(other.shape)
-                if other_ndim == 1:
-                    if other.shape[0] != self.shape[1]:
-                        raise ValueError(
-                            "only vectors with the same number of timesteps "
-                            "as self ({}) are supported".format(self.shape[1])
-                        )
-                else:
+        is_scalar = isinstance(other, (numbers.Number, pint.Quantity))
+        if not is_scalar:
+            other_ndim = len(other.shape)
+            if other_ndim == 1:
+                if other.shape[0] != self.shape[1]:
                     raise ValueError(
-                        "operations with {}d data are not supported".format(other_ndim)
+                        "only vectors with the same number of timesteps "
+                        "as self ({}) are supported".format(self.shape[1])
                     )
+            else:
+                raise ValueError(
+                    "operations with {}d data are not supported".format(other_ndim)
+                )
 
-            def _perform_op(df):
-                if isinstance(other, pint.Quantity):
-                    try:
-                        data = df.values * ur(df.get_unique_meta("unit", True))
-                        use_pint = True
-                    except KeyError:
-                        # let Pint assume dimensionless and raise an error as
-                        # necessary
-                        data = df.values
-                        use_pint = False
+        def _perform_op(df):
+            if isinstance(other, pint.Quantity):
+                try:
+                    data = df.values * ur(df.get_unique_meta("unit", True))
+                    use_pint = True
+                except KeyError:  # pragma: no cover # emergency valve
+                    raise KeyError(
+                        "No `unit` column in your metadata, cannot perform operations with pint quantities"
+                    )
+            else:
+                data = df.values
+                use_pint = False
+
+            res = []
+            for v in data:
+                if not reflexive:
+                    res.append(f(v, other))
                 else:
-                    data = df.values
-                    use_pint = False
+                    res.append(f(other, v))
+            res = np.vstack(res)
 
-                res = []
-                for v in data:
-                    if not reflexive:
-                        res.append(f(v, other))
-                    else:
-                        res.append(f(other, v))
-                res = np.vstack(res)
+            if use_pint:
+                df._df.values[:] = res.magnitude.T
+                df["unit"] = str(res.units)
+            else:
+                df._df.values[:] = res.T
+            return df
 
-                if use_pint:
-                    df._df.values[:] = res.magnitude.T
-                    df["unit"] = str(res.units)
-                else:
-                    df._df.values[:] = res.T
-                return df
+        return self.copy().groupby("unit").map(_perform_op)
 
-            return self.copy().groupby("unit").map(_perform_op)
+    def _unary_op(self, f, *args, **kwargs) -> Callable[..., "ScmRun"]:
+        df = self.copy()
 
-        return func
+        res = [f(v) for v in df.values]
+        res = np.vstack(res)
+
+        df._df.values[:] = res.T
+        return df
 
     def drop_meta(self, columns: Union[list, str], inplace: Optional[bool] = False):
         """
@@ -2182,7 +2184,6 @@ def _handle_potential_duplicates_in_append(data, duplicate_msg):
     raise ValueError("Unrecognised value for duplicate_msg")
 
 
-inject_binary_ops(BaseScmRun)
 inject_nc_methods(BaseScmRun)
 inject_plotting_methods(BaseScmRun)
 inject_ops_methods(BaseScmRun)

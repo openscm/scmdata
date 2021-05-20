@@ -6,15 +6,14 @@ Functionality for handling and storing individual time-series
 
 import copy
 import datetime as dt
-import functools
 from typing import Any, Callable, List, Union
 
 import numpy as np
 import pint
 import xarray as xr
 from openscm_units import unit_registry as ur
-from xarray.core.ops import inject_binary_ops
 
+from ._base import OpsMixin
 from .time import TimePoints, TimeseriesConverter
 
 
@@ -35,7 +34,7 @@ class _Counter:
 get_default_name = _Counter()
 
 
-class TimeSeries:
+class TimeSeries(OpsMixin):
     """
     A 1D time-series with metadata
 
@@ -199,43 +198,33 @@ class TimeSeries:
     def __setitem__(self, key, value):
         self._data.__setitem__(key, value)
 
-    @staticmethod
     def _binary_op(
-        f: Callable[..., Any], reflexive=False, **kwargs,
+        self, other, f: Callable[..., Any], reflexive=False, **kwargs,
     ) -> Callable[..., "TimeSeries"]:
-        @functools.wraps(f)
-        def func(self, other):
-            other_data = getattr(other, "_data", other)
+        other_data = getattr(other, "_data", other)
 
-            if isinstance(other, pint.Quantity):
-                try:
-                    self_data = self._data * ur(self.meta["unit"])
-                except KeyError:
-                    # let Pint assume dimensionless and raise an error as
-                    # necessary
-                    self_data = self._data
-            else:
+        if isinstance(other, pint.Quantity):
+            try:
+                self_data = self._data * ur(self.meta["unit"])
+            except KeyError:
+                # let Pint assume dimensionless and raise an error as
+                # necessary
                 self_data = self._data
+        else:
+            self_data = self._data
 
-            ts = f(self_data, other_data) if not reflexive else f(other_data, self_data)
-            ts.attrs = self._data.attrs
-            if isinstance(other, pint.Quantity):
-                ts.attrs["unit"] = str(ts.data.units)
-                ts.data = ts.data.magnitude
+        ts = f(self_data, other_data) if not reflexive else f(other_data, self_data)
+        ts.attrs = self._data.attrs
+        if isinstance(other, pint.Quantity):
+            ts.attrs["unit"] = str(ts.data.units)
+            ts.data = ts.data.magnitude
 
-            return TimeSeries(ts)
+        return TimeSeries(ts)
 
-        return func
-
-    @staticmethod
-    def _inplace_binary_op(f: Callable) -> Callable[..., "TimeSeries"]:
-        @functools.wraps(f)
-        def func(self, other):
-            other_data = getattr(other, "_data", other)
-            f(self._data, other_data)
-            return self
-
-        return func
+    def _inplace_binary_op(self, other, f: Callable) -> Callable[..., "TimeSeries"]:
+        other_data = getattr(other, "_data", other)
+        f(self._data, other_data)
+        return self
 
     def reindex(self, time, **kwargs):
         """
@@ -298,6 +287,3 @@ class TimeSeries:
         ts._data[:] = timeseries_converter.convert_from(self._data.values)
 
         return ts
-
-
-inject_binary_ops(TimeSeries)
