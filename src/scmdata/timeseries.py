@@ -199,35 +199,33 @@ class TimeSeries(OpsMixin):
     def __setitem__(self, key, value):
         self._data.__setitem__(key, value)
 
-    def _binary_op(self,
-        other, f: Callable[..., Any], reflexive=False, **kwargs,
+    def _binary_op(
+        self, other, f: Callable[..., Any], reflexive=False, **kwargs,
     ) -> Callable[..., "TimeSeries"]:
-            other_data = getattr(other, "_data", other)
+        other_data = getattr(other, "_data", other)
 
-            if isinstance(other, pint.Quantity):
-                try:
-                    self_data = self._data * ur(self.meta["unit"])
-                except KeyError:
-                    # let Pint assume dimensionless and raise an error as
-                    # necessary
-                    self_data = self._data
-            else:
+        if isinstance(other, pint.Quantity):
+            try:
+                self_data = self._data * ur(self.meta["unit"])
+            except KeyError:
+                # let Pint assume dimensionless and raise an error as
+                # necessary
                 self_data = self._data
+        else:
+            self_data = self._data
 
-            ts = f(self_data, other_data) if not reflexive else f(other_data, self_data)
-            ts.attrs = self._data.attrs
-            if isinstance(other, pint.Quantity):
-                ts.attrs["unit"] = str(ts.data.units)
-                ts.data = ts.data.magnitude
+        ts = f(self_data, other_data) if not reflexive else f(other_data, self_data)
+        ts.attrs = self._data.attrs
+        if isinstance(other, pint.Quantity):
+            ts.attrs["unit"] = str(ts.data.units)
+            ts.data = ts.data.magnitude
 
-            return TimeSeries(ts)
-
+        return TimeSeries(ts)
 
     def _inplace_binary_op(self, other, f: Callable) -> Callable[..., "TimeSeries"]:
         other_data = getattr(other, "_data", other)
         f(self._data, other_data)
         return self
-
 
     def reindex(self, time, **kwargs):
         """

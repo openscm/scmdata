@@ -639,7 +639,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         )
 
     def _binary_op(
-            self, other, f, reflexive=False, **kwargs,
+        self, other, f, reflexive=False, **kwargs,
     ) -> Callable[..., "ScmRun"]:
         if isinstance(other, ScmRun):
             return NotImplemented
