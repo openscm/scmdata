@@ -206,7 +206,7 @@ class TimeSeries(OpsMixin):
         if isinstance(other, pint.Quantity):
             try:
                 self_data = self._data * ur(self.meta["unit"])
-            except KeyError:  # pragma: no cover # emergency valve
+            except KeyError:
                 # let Pint assume dimensionless and raise an error as
                 # necessary
                 self_data = self._data
