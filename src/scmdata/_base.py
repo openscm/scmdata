@@ -4,6 +4,10 @@ import numpy as np
 
 
 class OpsMixin:
+    """
+    Mixin for common binary operators
+    """
+
     def _binary_op(self, other, f, reflexive=False):
         raise NotImplementedError
 

@@ -6,7 +6,6 @@ ensembles of model runs.
 """
 import copy
 import datetime as dt
-import functools
 import numbers
 import os
 import warnings

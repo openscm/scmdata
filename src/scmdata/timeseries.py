@@ -6,7 +6,6 @@ Functionality for handling and storing individual time-series
 
 import copy
 import datetime as dt
-import functools
 from typing import Any, Callable, List, Union
 
 import numpy as np

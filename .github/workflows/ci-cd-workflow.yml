@@ -33,7 +33,7 @@ jobs:
         black-nb --check notebooks
         isort --check-only --quiet src tests setup.py
         pydocstyle src
-        bandit -c .bandit.yml -r scmdata
+        bandit -c .bandit.yml -r src/scmdata
         flake8 src tests setup.py
     - name: Build docs
       # treat warnings as errors (-W)...
