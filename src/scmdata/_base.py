@@ -32,15 +32,6 @@ class OpsMixin:
     def __mod__(self, other):
         return self._binary_op(other, operator.mod)
 
-    def __and__(self, other):
-        return self._binary_op(other, operator.and_)
-
-    def __xor__(self, other):
-        return self._binary_op(other, operator.xor)
-
-    def __or__(self, other):
-        return self._binary_op(other, operator.or_)
-
     def __lt__(self, other):
         return self._binary_op(other, operator.lt)
 
@@ -54,11 +45,11 @@ class OpsMixin:
         return self._binary_op(other, operator.ge)
 
     def __eq__(self, other):
-        return self._binary_op(other, np.not_equal)
+        return self._binary_op(other, np.equal)
 
     def __ne__(self, other):
-        # TODO: check xarray
-        return self._binary_op(other, np.equal)
+        # TODO: check xarray implementation
+        return self._binary_op(other, np.not_equal)
 
     def __radd__(self, other):
         return self._binary_op(other, operator.add, reflexive=True)
@@ -81,15 +72,6 @@ class OpsMixin:
     def __rmod__(self, other):
         return self._binary_op(other, operator.mod, reflexive=True)
 
-    def __rand__(self, other):
-        return self._binary_op(other, operator.and_, reflexive=True)
-
-    def __rxor__(self, other):
-        return self._binary_op(other, operator.xor, reflexive=True)
-
-    def __ror__(self, other):
-        return self._binary_op(other, operator.or_, reflexive=True)
-
     def _unary_op(self, f, *args, **kwargs):
         raise NotImplementedError
 
@@ -102,9 +84,6 @@ class OpsMixin:
     def __abs__(self):
         return self._unary_op(operator.abs)
 
-    def __invert__(self):
-        return self._unary_op(operator.invert)
-
     __add__.__doc__ = operator.add.__doc__
     __sub__.__doc__ = operator.sub.__doc__
     __mul__.__doc__ = operator.mul.__doc__
@@ -112,9 +91,6 @@ class OpsMixin:
     __truediv__.__doc__ = operator.truediv.__doc__
     __floordiv__.__doc__ = operator.floordiv.__doc__
     __mod__.__doc__ = operator.mod.__doc__
-    __and__.__doc__ = operator.and_.__doc__
-    __xor__.__doc__ = operator.xor.__doc__
-    __or__.__doc__ = operator.or_.__doc__
     __lt__.__doc__ = operator.lt.__doc__
     __le__.__doc__ = operator.le.__doc__
     __gt__.__doc__ = operator.gt.__doc__
@@ -128,10 +104,6 @@ class OpsMixin:
     __rtruediv__.__doc__ = operator.truediv.__doc__
     __rfloordiv__.__doc__ = operator.floordiv.__doc__
     __rmod__.__doc__ = operator.mod.__doc__
-    __rand__.__doc__ = operator.and_.__doc__
-    __rxor__.__doc__ = operator.xor.__doc__
-    __ror__.__doc__ = operator.or_.__doc__
     __neg__.__doc__ = operator.neg.__doc__
     __pos__.__doc__ = operator.pos.__doc__
     __abs__.__doc__ = operator.abs.__doc__
-    __invert__.__doc__ = operator.invert.__doc__

@@ -688,6 +688,15 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return self.copy().groupby("unit").map(_perform_op)
 
+    def _unary_op(self, f, *args, **kwargs) -> Callable[..., "ScmRun"]:
+        df = self.copy()
+
+        res = [f(v) for v in df.values]
+        res = np.vstack(res)
+
+        df._df.values[:] = res.T
+        return df
+
     def drop_meta(self, columns: Union[list, str], inplace: Optional[bool] = False):
         """
         Drop meta columns out of the Run
