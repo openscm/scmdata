@@ -199,12 +199,9 @@ class TimeSeries(OpsMixin):
     def __setitem__(self, key, value):
         self._data.__setitem__(key, value)
 
-    @staticmethod
-    def _binary_op(
-        f: Callable[..., Any], reflexive=False, **kwargs,
+    def _binary_op(self,
+        other, f: Callable[..., Any], reflexive=False, **kwargs,
     ) -> Callable[..., "TimeSeries"]:
-        @functools.wraps(f)
-        def func(self, other):
             other_data = getattr(other, "_data", other)
 
             if isinstance(other, pint.Quantity):
@@ -225,17 +222,12 @@ class TimeSeries(OpsMixin):
 
             return TimeSeries(ts)
 
-        return func
 
-    @staticmethod
-    def _inplace_binary_op(f: Callable) -> Callable[..., "TimeSeries"]:
-        @functools.wraps(f)
-        def func(self, other):
-            other_data = getattr(other, "_data", other)
-            f(self._data, other_data)
-            return self
+    def _inplace_binary_op(self, other, f: Callable) -> Callable[..., "TimeSeries"]:
+        other_data = getattr(other, "_data", other)
+        f(self._data, other_data)
+        return self
 
-        return func
 
     def reindex(self, time, **kwargs):
         """
