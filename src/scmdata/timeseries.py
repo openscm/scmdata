@@ -207,7 +207,9 @@ class TimeSeries(OpsMixin):
             try:
                 self_data = self._data * ur(self.meta["unit"])
             except KeyError:  # pragma: no cover # emergency valve
-                raise KeyError("No `unit` column in your metadata, cannot perform operations with pint quantities")
+                # let Pint assume dimensionless and raise an error as
+                # necessary
+                self_data = self._data
         else:
             self_data = self._data
 
