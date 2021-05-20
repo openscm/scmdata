@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#154 <https://github.com/openscm/scmdata/pull/154>`_) Refactor common binary operators for :class:`scmdata.run.BaseScmRun` and :class:`scmdata.timeseries.Timeseries` into a mixin following the removal of :func:`xarray.core.ops.inject_binary_ops` in `xarray==1.18.0`
+
 v0.10.0
 -------
 
