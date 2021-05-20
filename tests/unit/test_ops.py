@@ -1069,13 +1069,14 @@ def test_unary_ops(op, expected):
 def test_missing_ops(op, other):
     ts = get_single_ts()
 
-    match = "unsupported operand"
     if other:
+        match = "unsupported operand"
         with pytest.raises(TypeError, match=match):
             op(ts, 2)
         # reflexive
         with pytest.raises(TypeError, match=match):
             op(2, ts)
     else:
-        with pytest.raises(TypeError, match="bad operand type for unary"):
+        match = "bad operand type for unary"
+        with pytest.raises(TypeError, match=match):
             op(ts)

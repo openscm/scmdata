@@ -663,7 +663,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                     data = df.values * ur(df.get_unique_meta("unit", True))
                     use_pint = True
                 except KeyError:  # pragma: no cover # emergency valve
-                    raise KeyError("No `unit` column in your metadata, cannot perform operations with pint quantities")
+                    raise KeyError(
+                        "No `unit` column in your metadata, cannot perform operations with pint quantities"
+                    )
             else:
                 data = df.values
                 use_pint = False
