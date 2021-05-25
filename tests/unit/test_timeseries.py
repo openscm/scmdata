@@ -274,7 +274,8 @@ def test_timeseries_add_sub_pint_scalar_invalid_units(ts_gtc_per_yr_units, inpla
     scalar = 2 * ur(other_unit)
 
     error_msg = re.escape(
-        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / a ** 2' ([carbon] * [mass] / [time] ** 2)"
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / "
+        "a ** 2' ([carbon] * [mass] / [time] ** 2)"
     )
     with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
         if inplace:
@@ -411,7 +412,8 @@ def test_timeseries_add_sub_pint_vector_invalid_units(ts_gtc_per_yr_units, inpla
     vector = np.arange(3) * ur(other_unit)
 
     error_msg = re.escape(
-        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / a ** 2' ([carbon] * [mass] / [time] ** 2)"
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / "
+        "a ** 2' ([carbon] * [mass] / [time] ** 2)"
     )
     with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
         if inplace:

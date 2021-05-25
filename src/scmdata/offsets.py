@@ -1,7 +1,8 @@
 """
 Allow stepping through time using :mod:`xarray`'s offset functionality
 
-Provides similar functionality to https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
+Provides similar functionality to https://pandas.pydata.org/pandas-docs/stable/user_gui
+de/timeseries.html#dateoffset-objects
 """
 from typing import Iterable
 

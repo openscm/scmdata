@@ -62,7 +62,7 @@ def prep_for_op(inp, op_cols, meta, ur=unit_registry):
     out = out.T
 
     if "unit" not in op_cols:
-        unit_level = out.columns.names.index("unit")
+        unit_level = out.columns.names.index("unit",)
         out = out.pint.quantify(level=unit_level)
 
     return out
@@ -169,7 +169,7 @@ def subtract(self, other, op_cols, **kwargs):
 
     Examples
     --------
-        >>> import numpy as np
+    >>> import numpy as np
     >>> from scmdata import ScmRun
     >>>
     >>> IDX = [2010, 2020, 2030]
@@ -372,7 +372,12 @@ def multiply(self, other, op_cols, **kwargs):
         :obj:`ScmRun` containing data to multiply
 
     op_cols : dict of str: str
-        Dictionary containing the columns to drop before multiplying as the keys and the value those columns should hold in the output as the values. For example, if we have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then the multiplication will be performed with an index that uses all columns except the "variable" column and the output will have a "variable" column with the value "Emissions|CO2 - Emissions|CO2|Fossil".
+        Dictionary containing the columns to drop before multiplying as the keys and the
+        value those columns should hold in the output as the values. For example, if we
+        have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then the
+        multiplication will be performed with an index that uses all columns except the
+        "variable" column and the output will have a "variable" column with the value
+        "Emissions|CO2 - Emissions|CO2|Fossil".
 
     **kwargs : any
         Passed to :func:`prep_for_op`
@@ -380,7 +385,9 @@ def multiply(self, other, op_cols, **kwargs):
     Returns
     -------
     :obj:`ScmRun`
-        Product of ``self`` and ``other``, using ``op_cols`` to define the columns which should be dropped before the data is aligned and to define the value of these columns in the output.
+        Product of ``self`` and ``other``, using ``op_cols`` to define the columns which
+        should be dropped before the data is aligned and to define the value of these
+        columns in the output.
 
     Examples
     --------
@@ -462,7 +469,12 @@ def divide(self, other, op_cols, **kwargs):
         :obj:`ScmRun` containing data to divide
 
     op_cols : dict of str: str
-        Dictionary containing the columns to drop before dividing as the keys and the value those columns should hold in the output as the values. For example, if we have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then the division will be performed with an index that uses all columns except the "variable" column and the output will have a "variable" column with the value "Emissions|CO2 - Emissions|CO2|Fossil".
+        Dictionary containing the columns to drop before dividing as the keys and the
+        value those columns should hold in the output as the values. For example, if we
+        have ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}`` then the
+        division will be performed with an index that uses all columns except the
+        "variable" column and the output will have a "variable" column with the value
+        "Emissions|CO2 - Emissions|CO2|Fossil".
 
     **kwargs : any
         Passed to :func:`prep_for_op`
@@ -470,7 +482,9 @@ def divide(self, other, op_cols, **kwargs):
     Returns
     -------
     :obj:`ScmRun`
-        Quotient of ``self`` and ``other``, using ``op_cols`` to define the columns which should be dropped before the data is aligned and to define the value of these columns in the output.
+        Quotient of ``self`` and ``other``, using ``op_cols`` to define the columns
+        which should be dropped before the data is aligned and to define the value of
+        these columns in the output.
 
     Examples
     --------

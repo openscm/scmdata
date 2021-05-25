@@ -412,7 +412,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Raises
         ------
         ValueError
-            * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.run_append` instead.
+            * If you try to load from multiple files at once. If you wish to do this,
+                please use :func:`scmdata.run.run_append` instead.
             * Not specifying :obj:`index` and :obj:`columns` if :obj:`data` is a :obj:`numpy.ndarray`
 
         :obj:`scmdata.errors.MissingRequiredColumn`
@@ -592,7 +593,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         value
             Values to write
 
-            If a list of values is provided, then the length of that :obj:`value` must be the same as the number of timeseries
+            If a list of values is provided, then the length of that :obj:`value` must
+            be the same as the number of timeseries
 
         Raises
         ------
@@ -613,11 +615,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 new_meta_index[key] = pd.Series(meta, dtype="category")
                 self._meta = pd.MultiIndex.from_frame(new_meta_index)
             else:
-                raise ValueError(
-                    "Invalid length for metadata, `{}`, must be 1 or equal to the number of timeseries, `{}`".format(
-                        len(meta), len(self)
-                    )
+                msg = (
+                    "Invalid length for metadata, `{}`, must be 1 or equal to the "
+                    "number of timeseries, `{}`"
                 )
+                raise ValueError(msg.format(len(meta), len(self)))
 
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)
@@ -1407,7 +1409,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         References
         ----------
         See the pandas documentation for
-        `resample <http://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.resample.html>`
+        `resample <http://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.
+        Series.resample.html>`
         for more information about possible arguments.
         """
         orig_dts = self["time"]
@@ -1427,7 +1430,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ----------
         rule : ["AC", "AS", "A"]
             How to take the time mean. The names reflect the pandas
-            `user guide <http://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects>`_
+            `user guide <http://pandas.pydata.org/pandas-docs/stable/user_guide/timeser
+            ies.html#dateoffset-objects>`_
             where they can, but only the options
             given above are supported. For clarity, if ``rule`` is ``'AC'``, then the
             mean is an annual mean i.e. each time point in the result is the mean of
@@ -1866,7 +1870,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Raises
         ------
         NonUniqueMetadataError
-            If the appending results in timeseries with duplicate metadata and :attr:`duplicate_msg` is ``True``
+            If the appending results in timeseries with duplicate metadata and
+            :attr:`duplicate_msg` is ``True``
 
         """
         if not isinstance(other, ScmRun):
@@ -1919,10 +1924,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         Apply a function along a given axis
 
-        This is to provide the GroupBy functionality in :func:`ScmRun.groupby` and is not generally called directly.
+        This is to provide the GroupBy functionality in :func:`ScmRun.groupby` and is
+        not generally called directly.
 
-        This implementation is very bare-bones - no reduction along the time time dimension is allowed and only the `dim`
-        parameter is used.
+        This implementation is very bare-bones - no reduction along the time time
+        dimension is allowed and only the `dim` parameter is used.
 
         Parameters
         ----------
@@ -1930,8 +1936,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         dim : str
             Ignored
         axis : int
-            The dimension along which the function is applied. The only valid value is 0 which corresponds to the along the
-            time-series dimension.
+            The dimension along which the function is applied. The only valid value is 0
+            which corresponds to the along the time-series dimension.
         kwargs
             Other parameters passed to `func`
 
@@ -2010,10 +2016,10 @@ def run_append(
     When appending many objects, it may be more efficient to call this routine once with
     a list of :class:`ScmRun`'s, than using :func:`ScmRun.append` multiple times.
 
-    If timeseries with duplicate metadata are found, the timeseries are appended and values
-    falling on the same timestep are averaged if :obj:`duplicate_msg` is not "return". If
-    :obj:`duplicate_msg` is "return", then the result will contain the duplicated timeseries
-    for further inspection.
+    If timeseries with duplicate metadata are found, the timeseries are appended and
+    values falling on the same timestep are averaged if :obj:`duplicate_msg` is not
+    "return". If :obj:`duplicate_msg` is "return", then the result will contain the
+    duplicated timeseries for further inspection.
 
     .. code:: python
 
