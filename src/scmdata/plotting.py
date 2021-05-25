@@ -93,7 +93,7 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
 def plumeplot(  # pragma: no cover
     self,
     ax=None,
-    quantiles_plumes=[((0.05, 0.95), 0.5), ((0.5,), 1.0),],
+    quantiles_plumes=[((0.05, 0.95), 0.5), ((0.5,), 1.0)],
     hue_var="scenario",
     hue_label="Scenario",
     palette=None,

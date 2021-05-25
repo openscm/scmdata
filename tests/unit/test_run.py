@@ -1286,7 +1286,7 @@ def test_quantiles_over(test_processing_scm_df):
     exp = pd.DataFrame(
         [
             ["a_model", "World", "Primary Energy", "EJ/yr", 0, -1.0, -2.0, 0.0],
-            ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 0, 0.5, 3.0, 2.0,],
+            ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 0, 0.5, 3.0, 2.0],
             ["a_model", "World", "Primary Energy", "EJ/yr", 0.5, 1.0, 6.0, 3.0],
             ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 0.5, 0.5, 3.0, 2.0],
             ["a_model", "World", "Primary Energy", "EJ/yr", "median", 1.0, 6.0, 3.0],
@@ -2021,7 +2021,7 @@ def test_filter_empty(scm_run, caplog):
             "PJ/yr",
             "EJ/yr",
             {"scenario": "a_scenario2"},
-            [2000.0, 1.0, 0.5,],
+            [2000.0, 1.0, 0.5],
             ["PJ/yr", "EJ/yr", "EJ/yr"],
         ),
         (
@@ -2882,13 +2882,13 @@ def test_append_long_run(tax1, tax2):
         ),
         (
             {"first": "example", "second": "other_example"},
-            {"first": "other",},
+            {"first": "other"},
             None,
             {"first": "example", "second": "other_example"},
         ),
         (
             {"first": "example", "second": "other_example"},
-            {"first": "other",},
+            {"first": "other"},
             {"first": "", "third": "other_example"},
             {"first": "", "third": "other_example"},
         ),
