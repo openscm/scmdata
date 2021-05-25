@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#156 <https://github.com/openscm/scmdata/pull/156>`_) Fix :mod:`pandas` and :mod:`xarray` documentation links
 - (`#155 <https://github.com/openscm/scmdata/pull/155>`_) Simplify flake8 configuration
 
 v0.10.1
