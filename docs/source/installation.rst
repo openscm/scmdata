@@ -22,6 +22,7 @@ is the recommended method for installing scmdata for most users.
 
 Installing with pip
 -------------------
+
 scmdata can also be installed from `PyPi <https://pypi.org/>`_ using pip.
 
 We recommend creating a virtual environment to manage this and any other libraries your
