@@ -359,9 +359,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             Possible input formats include :
 
             * :class:`datetime.datetime`
-            * :class:`int` Start of year
-            * :class:`float` Decimal year
-            * :class:`str` Uses :func:`dateutil.parser`. Slow and should be avoided if possible
+            * :obj:`int` Start of year
+            * :obj:`float` Decimal year
+            * :obj:`str` Uses :func:`dateutil.parser`. Slow and should be avoided if possible
 
             If :obj:`index` is ``None``, than the time index will be obtained from the
             :obj:`data` if possible.
@@ -402,7 +402,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             This can be used to store information such as the longer-form information
             about a particular dataset, for example, dataset description or DOIs.
 
-            Defaults to an empty :class:`dict` if no default metadata are provided.
+            Defaults to an empty :obj:`dict` if no default metadata are provided.
 
         copy_data: bool
             If True, an explicit copy of data is performed.
@@ -599,7 +599,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         value
             Values to write
 
-            If a list of values is provided, then the length of that :class:`value` must
+            If a list of values is provided, then the length of that :obj:`value` must
             be the same as the number of timeseries
 
         Raises
@@ -1044,9 +1044,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
               :class:`datetime.datetime`'s
               TODO: default to np.datetime64
 
-            - 'year', 'month', 'day', hour': takes an :class:`int` or list of
-              :class:`int`'s ('month' and 'day' also accept :class:`str` or list of
-              :class:`str`)
+            - 'year', 'month', 'day', hour': takes an :obj:`int` or list of
+              :obj:`int`'s ('month' and 'day' also accept :obj:`str` or list of
+              :obj:`str`)
 
             If ``regexp=True`` is included in :obj:`kwargs` then the pseudo-regexp
             syntax in :func:`pattern_match` is disabled.

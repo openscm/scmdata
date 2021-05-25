@@ -1,7 +1,7 @@
 """
 Helpers for filtering data in :class:`scmdata.run.ScmRun`.
 
-Based upon :class:`pyam.utils`.
+Based upon :mod:`pyam.utils`.
 """
 
 import datetime
@@ -25,7 +25,7 @@ def is_in(vals: List, items: List) -> np.ndarray:
         The list of values to check
 
     items
-        The options used to determine whether each element of :class:`vals` is in the
+        The options used to determine whether each element of :obj:`vals` is in the
         desired subset or not
 
     Returns
@@ -220,7 +220,7 @@ def years_match(data: List, years: Union[List[int], np.ndarray, int]) -> np.ndar
     Raises
     ------
     TypeError
-        If :obj:`years` is not :class:`int` or list of :class:`int`
+        If :obj:`years` is not :obj:`int` or list of :obj:`int`
     """
     years = [years] if isinstance(years, int) else years
     usable_int = (
@@ -410,7 +410,7 @@ def datetime_match(
     Raises
     ------
     TypeError
-        :obj:`dts` contains :class:`int`
+        :obj:`dts` contains :obj:`int`
     """
     dts = [dts] if isinstance(dts, datetime.datetime) else dts
     if isinstance(dts, int) or any([isinstance(d, int) for d in dts]):
