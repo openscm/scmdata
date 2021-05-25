@@ -355,7 +355,8 @@ def test_scalar_ops_pint_wrong_unit(op):
     )
 
     error_msg = re.escape(
-        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) "
+        "to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
     )
     with pytest.raises(DimensionalityError, match=error_msg):
         if op == "add":
@@ -415,7 +416,8 @@ def test_vector_ops_pint_wrong_unit(op, start_unit):
     )
 
     error_msg = re.escape(
-        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) "
+        "to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
     )
     with pytest.raises(DimensionalityError, match=error_msg):
         if op == "add":
@@ -839,8 +841,8 @@ def test_linear_regression_nan_handling():
     )
 
     warn_msg = re.escape(
-        "You are calculating a linear regression of data which contains nans so your result "
-        "will also contain nans. Perhaps you want to remove the nans before "
+        "You are calculating a linear regression of data which contains nans so your "
+        "result will also contain nans. Perhaps you want to remove the nans before "
         "calculating the regression using a combination of :meth:`filter` and "
         ":meth:`interpolate`?"
     )

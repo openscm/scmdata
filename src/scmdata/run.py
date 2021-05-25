@@ -222,7 +222,10 @@ def _format_wide_data(df, required_cols):
                     extra_cols.append(i)  # some other string
 
     if not time_cols:
-        msg = "invalid column format, must contain some time (int, float or datetime) columns!"
+        msg = (
+            "invalid column format, must contain some time (int, float or datetime) "
+            "columns!"
+        )
         raise ValueError(msg)
 
     all_cols = set(tuple(required_cols) + tuple(extra_cols))
@@ -332,19 +335,21 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ----------
         data: Union[ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str]
             If a :class:`ScmRun` object is provided, then a new
-            :obj:`ScmRun` is created with a copy of the values and metadata from :obj:`data`.
+            :obj:`ScmRun` is created with a copy of the values and metadata from :obj:
+            `data`.
 
-            A :class:`pd.DataFrame` with IAMC-format data columns (the result
-            from :func:`ScmRun.timeseries()`) can be provided without any additional
+            A :class:`pd.DataFrame` with IAMC-format data columns (the result from
+            :func:`ScmRun.timeseries()`) can be provided without any additional
             :obj:`columns` and :obj:`index` information.
 
-            If a numpy array of timeseries data is provided, :obj:`columns` and :obj:`index`
-            must also be specified. The shape of the numpy array should be
-            ``(n_times, n_series)`` where `n_times` is the number of timesteps and `n_series`
-            is the number of time series.
+            If a numpy array of timeseries data is provided, :obj:`columns` and
+            :obj:`index` must also be specified. The shape of the numpy array should be
+            ``(n_times, n_series)`` where `n_times` is the number of timesteps and
+            `n_series` is the number of time series.
 
-            If a string is passed, data will be attempted to be read from file. Currently,
-            reading from CSV, gzipped CSV and Excel formatted files is supported.
+            If a string is passed, data will be attempted to be read from file.
+            Currently, reading from CSV, gzipped CSV and Excel formatted files is
+            supported.
 
         index: np.ndarray
             If :obj:`index` is not ``None``, then the :obj:`index` is used as the timesteps
@@ -412,8 +417,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Raises
         ------
         ValueError
-            * If you try to load from multiple files at once. If you wish to do this, please use :func:`scmdata.run.run_append` instead.
-            * Not specifying :obj:`index` and :obj:`columns` if :obj:`data` is a :obj:`numpy.ndarray`
+            * If you try to load from multiple files at once. If you wish to do this,
+                please use :func:`scmdata.run.run_append` instead.
+            * Not specifying :obj:`index` and :obj:`columns` if :obj:`data` is a
+                :obj:`numpy.ndarray`
 
         :obj:`scmdata.errors.MissingRequiredColumn`
             If metadata for :attr:`required_cols` is not found
@@ -592,7 +599,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         value
             Values to write
 
-            If a list of values is provided, then the length of that :obj:`value` must be the same as the number of timeseries
+            If a list of values is provided, then the length of that :obj:`value` must
+            be the same as the number of timeseries
 
         Raises
         ------
@@ -613,11 +621,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 new_meta_index[key] = pd.Series(meta, dtype="category")
                 self._meta = pd.MultiIndex.from_frame(new_meta_index)
             else:
-                raise ValueError(
-                    "Invalid length for metadata, `{}`, must be 1 or equal to the number of timeseries, `{}`".format(
-                        len(meta), len(self)
-                    )
+                msg = (
+                    "Invalid length for metadata, `{}`, must be 1 or equal to the "
+                    "number of timeseries, `{}`"
                 )
+                raise ValueError(msg.format(len(meta), len(self)))
 
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)
@@ -664,7 +672,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                     use_pint = True
                 except KeyError:  # pragma: no cover # emergency valve
                     raise KeyError(
-                        "No `unit` column in your metadata, cannot perform operations with pint quantities"
+                        "No `unit` column in your metadata, cannot perform operations "
+                        "with pint quantities"
                     )
             else:
                 data = df.values
@@ -775,14 +784,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             duplicated metadata
 
         time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
-            Time axis to use for the output's columns. If ``None``,
-            :class:`datetime.datetime` objects will be used. If ``"year"``, the
-            year of each time point  will be used. If ``"year-month"``, the year
-            plus (month - 0.5) / 12  will be used. If
-            ``"days since 1970-01-01"``, the number of days since 1st Jan 1970
-            will be used (calculated using the :mod:`datetime` module). If
-            ``"seconds since 1970-01-01"``, the number of seconds  since 1st Jan
-            1970 will be used (calculated using the :mod:`datetime` module).
+            See :func:`long_data` for a description of the options.
 
         drop_all_nan_times : bool
             Should time points which contain only nan values be dropped? This operation is applied
@@ -866,19 +868,25 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Parameters
         ----------
         time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
-            Time axis to use for the output's columns. If `None`,
-            :class:`datetime.datetime` objects will be used. If `"year"`, the
-            year of each time point  will be used. If `"year-month", the year
-            plus (month - 0.5) / 12  will be used. If
-            `"days since 1970-01-01"`, the number of days  since 1st Jan 1970
-            will be used (calculated using the ``datetime``  module). If
-            `"seconds since 1970-01-01"`, the number of seconds  since 1st Jan
-            1970 will be used (calculated using the ``datetime`` module).
+            Time axis to use for the output's columns.
+
+            If ``None``, :class:`datetime.datetime` objects will be used.
+
+            If ``"year"``, the year of each time point  will be used.
+
+            If ``"year-month"``, the year plus (month - 0.5) / 12  will be used.
+
+            If ``"days since 1970-01-01"``, the number of days  since 1st Jan 1970
+            will be used (calculated using the :mod:`datetime`  module).
+
+            If ``"seconds since 1970-01-01"``, the number of seconds  since 1st Jan
+            1970 will be used (calculated using the :mod:`datetime` module).
 
         Returns
         -------
         :obj:`pd.DataFrame`
-            :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation per row).
+            :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation
+            per row).
         """
         out = self.timeseries(time_axis=time_axis).stack()
         out.name = "value"
@@ -1407,7 +1415,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         References
         ----------
         See the pandas documentation for
-        `resample <http://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.resample.html>`
+        `resample <http://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.
+        Series.resample.html>`
         for more information about possible arguments.
         """
         orig_dts = self["time"]
@@ -1427,7 +1436,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ----------
         rule : ["AC", "AS", "A"]
             How to take the time mean. The names reflect the pandas
-            `user guide <http://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects>`_
+            `user guide <http://pandas.pydata.org/pandas-docs/stable/user_guide/timeser
+            ies.html#dateoffset-objects>`_
             where they can, but only the options
             given above are supported. For clarity, if ``rule`` is ``'AC'``, then the
             mean is an annual mean i.e. each time point in the result is the mean of
@@ -1628,7 +1638,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         Group the object by unique metadata
 
-        Enables iteration over groups of data. For example, to iterate over each scenario in the object
+        Enables iteration over groups of data. For example, to iterate over each
+        scenario in the object
 
         .. code:: python
 
@@ -1733,7 +1744,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         to_convert = to_convert_filtered.filter(
             unit=unit, log_if_empty=False, keep=False
         )
-        to_not_convert = run_append([to_not_convert_filtered, already_correct_unit,])
+        to_not_convert = run_append([to_not_convert_filtered, already_correct_unit])
 
         if "unit_context" in to_convert.meta_attributes and not to_convert.empty:
             self._check_unit_context(to_convert, context)
@@ -1843,15 +1854,16 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             new :class:`ScmRun` instance with the appended data.
 
         duplicate_msg
-            If ``True``, raise a :class:`scmdata.errors.NonUniqueMetadataError` error so the user
-            can see the duplicate timeseries. If ``False``, take the average
+            If ``True``, raise a :class:`scmdata.errors.NonUniqueMetadataError` error
+            so the user can see the duplicate timeseries. If ``False``, take the average
             and do not raise a warning or error. If ``"warn"``, raise a
             warning if duplicate data is detected.
 
         metadata
-            If not ``None``, override the metadata of the resulting :obj:`ScmRun` with ``metadata``.
-            Otherwise, the metadata for the runs are merged. In the case where there are duplicate
-            metadata keys, the values from the first run are used.
+            If not ``None``, override the metadata of the resulting :obj:`ScmRun` with
+            ``metadata``. Otherwise, the metadata for the runs are merged. In the case
+            where there are duplicate metadata keys, the values from the first run are
+            used.
 
         **kwargs
             Keywords to pass to :func:`ScmRun.__init__` when reading
@@ -1866,7 +1878,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Raises
         ------
         NonUniqueMetadataError
-            If the appending results in timeseries with duplicate metadata and :attr:`duplicate_msg` is ``True``
+            If the appending results in timeseries with duplicate metadata and
+            :attr:`duplicate_msg` is ``True``
 
         """
         if not isinstance(other, ScmRun):
@@ -1919,10 +1932,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         Apply a function along a given axis
 
-        This is to provide the GroupBy functionality in :func:`ScmRun.groupby` and is not generally called directly.
+        This is to provide the GroupBy functionality in :func:`ScmRun.groupby` and is
+        not generally called directly.
 
-        This implementation is very bare-bones - no reduction along the time time dimension is allowed and only the `dim`
-        parameter is used.
+        This implementation is very bare-bones - no reduction along the time time
+        dimension is allowed and only the `dim` parameter is used.
 
         Parameters
         ----------
@@ -1930,8 +1944,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         dim : str
             Ignored
         axis : int
-            The dimension along which the function is applied. The only valid value is 0 which corresponds to the along the
-            time-series dimension.
+            The dimension along which the function is applied. The only valid value is 0
+            which corresponds to the along the time-series dimension.
         kwargs
             Other parameters passed to `func`
 
@@ -2010,10 +2024,10 @@ def run_append(
     When appending many objects, it may be more efficient to call this routine once with
     a list of :class:`ScmRun`'s, than using :func:`ScmRun.append` multiple times.
 
-    If timeseries with duplicate metadata are found, the timeseries are appended and values
-    falling on the same timestep are averaged if :obj:`duplicate_msg` is not "return". If
-    :obj:`duplicate_msg` is "return", then the result will contain the duplicated timeseries
-    for further inspection.
+    If timeseries with duplicate metadata are found, the timeseries are appended and
+    values falling on the same timestep are averaged if :obj:`duplicate_msg` is not
+    "return". If :obj:`duplicate_msg` is "return", then the result will contain the
+    duplicated timeseries for further inspection.
 
     .. code:: python
 
@@ -2053,9 +2067,9 @@ def run_append(
         duplicate data is detected.
 
     metadata
-        If not ``None``, override the metadata of the resulting :obj:`ScmRun` with ``metadata``.
-        Otherwise, the metadata for the runs are merged. In the case where there are duplicate
-        metadata keys, the values from the first run are used.
+        If not ``None``, override the metadata of the resulting :obj:`ScmRun` with
+        ``metadata``. Otherwise, the metadata for the runs are merged. In the case where
+        there are duplicate metadata keys, the values from the first run are used.
 
     Returns
     -------

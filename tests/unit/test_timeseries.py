@@ -16,7 +16,7 @@ from scmdata.timeseries import TimeSeries
 @pytest.fixture(scope="function")
 def ts():
     times = np.asarray(
-        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1),]
+        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1)]
     )
     return TimeSeries([1, 2, 3], time=times)
 
@@ -151,7 +151,7 @@ def test_timeseries_mul(ts, inplace):
 @pytest.fixture(scope="function")
 def ts_gtc_per_yr_units():
     times = np.asarray(
-        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1),]
+        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1)]
     )
     return TimeSeries([1, 2, 3], time=times, attrs={"unit": "GtC / yr"})
 
@@ -274,7 +274,8 @@ def test_timeseries_add_sub_pint_scalar_invalid_units(ts_gtc_per_yr_units, inpla
     scalar = 2 * ur(other_unit)
 
     error_msg = re.escape(
-        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / a ** 2' ([carbon] * [mass] / [time] ** 2)"
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / "
+        "a ** 2' ([carbon] * [mass] / [time] ** 2)"
     )
     with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
         if inplace:
@@ -411,7 +412,8 @@ def test_timeseries_add_sub_pint_vector_invalid_units(ts_gtc_per_yr_units, inpla
     vector = np.arange(3) * ur(other_unit)
 
     error_msg = re.escape(
-        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / a ** 2' ([carbon] * [mass] / [time] ** 2)"
+        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) to 'gigatC / "
+        "a ** 2' ([carbon] * [mass] / [time] ** 2)"
     )
     with pytest.raises(pint.errors.DimensionalityError, match=error_msg):
         if inplace:
@@ -454,7 +456,7 @@ def test_extrapolation_long(dt):
     target = np.arange(800, 1100)
     res = ts.interpolate([dt(y, 1, 1) for y in target], extrapolation_type="linear",)
 
-    # Interpolating annually using seconds is not identical to just assuming everything is years
+    # Interpolating annually using seconds is not identical to just assuming years
     npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=0)
 
 

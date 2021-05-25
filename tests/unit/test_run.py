@@ -117,7 +117,8 @@ def test_init_df_missing_time_columns_error(test_pd_df):
         axis="columns",
     )
     error_msg = re.escape(
-        "invalid column format, must contain some time (int, float or datetime) columns!"
+        "invalid column format, must contain some time (int, float or datetime) "
+        "columns!"
     )
     with pytest.raises(ValueError, match=error_msg):
         ScmRun(test_init)
@@ -1286,7 +1287,7 @@ def test_quantiles_over(test_processing_scm_df):
     exp = pd.DataFrame(
         [
             ["a_model", "World", "Primary Energy", "EJ/yr", 0, -1.0, -2.0, 0.0],
-            ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 0, 0.5, 3.0, 2.0,],
+            ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 0, 0.5, 3.0, 2.0],
             ["a_model", "World", "Primary Energy", "EJ/yr", 0.5, 1.0, 6.0, 3.0],
             ["a_model", "World", "Primary Energy|Coal", "EJ/yr", 0.5, 0.5, 3.0, 2.0],
             ["a_model", "World", "Primary Energy", "EJ/yr", "median", 1.0, 6.0, 3.0],
@@ -1334,8 +1335,8 @@ def test_quantiles_over(test_processing_scm_df):
 
 def test_quantiles_over_operation_in_kwargs(test_processing_scm_df):
     error_msg = re.escape(
-        "quantiles_over() does not take the keyword argument 'operation', the operations "
-        "are inferred from the 'quantiles' argument"
+        "quantiles_over() does not take the keyword argument 'operation', the "
+        "operations are inferred from the 'quantiles' argument"
     )
     with pytest.raises(TypeError, match=error_msg):
         test_processing_scm_df.quantiles_over(
@@ -2021,7 +2022,7 @@ def test_filter_empty(scm_run, caplog):
             "PJ/yr",
             "EJ/yr",
             {"scenario": "a_scenario2"},
-            [2000.0, 1.0, 0.5,],
+            [2000.0, 1.0, 0.5],
             ["PJ/yr", "EJ/yr", "EJ/yr"],
         ),
         (
@@ -2175,7 +2176,11 @@ def test_convert_unit_context(scm_run):
     npt.assert_array_almost_equal(obs.filter(year=2005).values.squeeze(), expected)
     assert all(obs["unit_context"] == "AR4GWP100")
 
-    error_msg = "Cannot convert from 'SF5CF3 * kilogram / a' ([SF5CF3] * [mass] / [time]) to 'CO2 * kilogram / a' ([carbon] * [mass] / [time])"
+    error_msg = (
+        "Cannot convert from 'SF5CF3 * kilogram / a' "
+        "([SF5CF3] * [mass] / [time]) to "
+        "'CO2 * kilogram / a' ([carbon] * [mass] / [time])"
+    )
     with pytest.raises(DimensionalityError, match=re.escape(error_msg)):
         scm_run.convert_unit("kg CO2 / yr")
 
@@ -2285,8 +2290,8 @@ def test_unit_context_both_have_existing_context_error(
         scm_run.filter(variable=to_convert, keep=False)["unit_context"] = context
 
     error_msg = re.escape(
-        "Existing unit conversion context(s), `['junk']`, doesn't match input context, `{}`, drop "
-        "`unit_context` metadata before doing conversion".format(context)
+        "Existing unit conversion context(s), `['junk']`, doesn't match input context, "
+        "`{}`, drop `unit_context` metadata before doing conversion".format(context)
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
@@ -2882,13 +2887,13 @@ def test_append_long_run(tax1, tax2):
         ),
         (
             {"first": "example", "second": "other_example"},
-            {"first": "other",},
+            {"first": "other"},
             None,
             {"first": "example", "second": "other_example"},
         ),
         (
             {"first": "example", "second": "other_example"},
-            {"first": "other",},
+            {"first": "other"},
             {"first": "", "third": "other_example"},
             {"first": "", "third": "other_example"},
         ),

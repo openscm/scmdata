@@ -8,7 +8,8 @@ from scmdata.testing import assert_scmdf_almost_equal
     "g", (("variable",), ("variable", "scenario"), ("variable", "region"), ("model",),),
 )
 def test_groupby(scm_run, g):
-    # Check that the metadata for each group is unique for the dimensions being grouped together
+    # Check that the metadata for each group is unique for the dimensions being grouped
+    # together
     def func(df):
         sub_df = df.meta[list(g)]
 

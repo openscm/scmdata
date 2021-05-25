@@ -1,7 +1,8 @@
 """
 Time period handling and interpolation
 
-A large portion of this module was originally from openscm. Thanks to the original author, Sven Willner
+A large portion of this module was originally from openscm.
+Thanks to the original author, Sven Willner
 """
 
 from datetime import datetime

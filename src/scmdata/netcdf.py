@@ -139,10 +139,24 @@ def run_to_nc(run, fname, dimensions=("region",), extras=(), **kwargs):
         Path to write the file into
 
     dimensions : iterable of str
-        Dimensions to include in the netCDF file. The time dimension is always included (if not provided it will be the last dimension). An additional dimension (specifically a co-ordinate in xarray terms), "_id", will be included if ``extras`` is provided and any of the metadata in ``extras`` is not uniquely defined by ``dimensions``. "_id" maps the timeseries in each variable to their relevant metadata.
+        Dimensions to include in the netCDF file. The time dimension is always included
+        (if not provided it will be the last dimension). An additional dimension
+        (specifically a co-ordinate in xarray terms), "_id", will be included if
+        ``extras`` is provided and any of the metadata in ``extras`` is not uniquely
+        defined by ``dimensions``. "_id" maps the timeseries in each variable to
+        their relevant metadata.
 
     extras : iterable of str
-        Metadata columns to write as variables in the netCDF file (specifically as "non-dimension co-ordinates" in xarray terms, ee `xarray terminology <https://xarray.pydata.org/en/stable/terminology.html>`_ for more details). Where possible, these non-dimension co-ordinates will use dimension co-ordinates as their own co-ordinates. However, if the metadata in ``extras`` is not defined by a single dimension in ``dimensions``, then the ``extras`` co-ordinates will have dimensions of "_id". This "_id" co-ordinate maps the values in the ``extras`` co-ordinates to each timeseries in the serialised dataset. Where "_id" is required, an extra "_id" dimension will also be added to ``dimensions``.
+        Metadata columns to write as variables in the netCDF file (specifically as
+        "non-dimension co-ordinates" in xarray terms, see `xarray terminology
+        <https://xarray.pydata.org/en/stable/terminology.html>`_ for more details).
+        Where possible, these non-dimension co-ordinates will use dimension co-ordinates
+        as their own co-ordinates. However, if the metadata in ``extras`` is not defined
+        by a single dimension in ``dimensions``, then the ``extras`` co-ordinates will
+        have dimensions of "_id". This "_id" co-ordinate maps the values in the
+        ``extras`` co-ordinates to each timeseries in the serialised dataset. Where
+        "_id" is required, an extra "_id" dimension will also be added to
+        ``dimensions``.
 
     kwargs
         Passed through to :meth:`xarray.Dataset.to_netcdf`

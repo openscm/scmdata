@@ -40,8 +40,9 @@ try:
             ]
             if any(not_datetime):
                 bad_values = self.data[not_datetime]["time"]
-                error_msg = "All time values must be convertible to datetime. The following values are not:\n{}".format(
-                    bad_values
+                error_msg = (
+                    "All time values must be convertible to datetime. The following "
+                    "values are not:\n{}".format(bad_values)
                 )
                 raise ValueError(error_msg)
 
