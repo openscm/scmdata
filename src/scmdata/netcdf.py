@@ -1,7 +1,7 @@
 """
 NetCDF4 file operations
 
-Reading and writing :obj:`ScmRun` to disk as binary
+Reading and writing :class:`ScmRun` to disk as binary
 """
 try:
     import netCDF4 as nc

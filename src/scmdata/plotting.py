@@ -1,5 +1,5 @@
 """
-Plotting helpers for :obj:`ScmRun`
+Plotting helpers for :class:`ScmRun`
 
 See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 """
@@ -73,7 +73,7 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
 
     Returns
     -------
-    :obj:`matplotlib.axes._subplots.AxesSubplot`
+    :class:`matplotlib.axes._subplots.AxesSubplot`
         Output of call to ``seaborn.lineplot``
     """
     if not has_seaborn:
@@ -119,7 +119,7 @@ def plumeplot(  # pragma: no cover
 
     Parameters
     ----------
-    ax : :obj:`matplotlib.axes._subplots.AxesSubplot`
+    ax : :class:`matplotlib.axes._subplots.AxesSubplot`
         Axes on which to make the plot
 
     quantiles_plumes : list[tuple[tuple, float]]
@@ -171,7 +171,7 @@ def plumeplot(  # pragma: no cover
 
     Returns
     -------
-    :obj:`matplotlib.axes._subplots.AxesSubplot`, list
+    :class:`matplotlib.axes._subplots.AxesSubplot`, list
         Axes on which the plot was made and the legend items we have made (in
         case the user wants to move the legend to a different position for
         example)
@@ -395,7 +395,7 @@ def _deprecated_line_plot(self, **kwargs):  # pragma: no cover
 
     Returns
     -------
-    :obj:`matplotlib.axes._subplots.AxesSubplot`
+    :class:`matplotlib.axes._subplots.AxesSubplot`
         Output of call to ``seaborn.lineplot``
     """
     warnings.warn("Use lineplot instead", DeprecationWarning)

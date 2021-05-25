@@ -1,5 +1,5 @@
 """
-Operations for :obj:`ScmRun`
+Operations for :class:`ScmRun <scmdata.run.ScmRun>` objects
 
 These largely rely on
 `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
@@ -29,8 +29,8 @@ def prep_for_op(inp, op_cols, meta, ur=unit_registry):
 
     Parameters
     ----------
-    inp : :obj:`ScmRun`
-        :obj:`ScmRun` containing data to prepare
+    inp : :class:`ScmRun`
+        :class:`ScmRun` containing data to prepare
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop in order to prepare
@@ -39,12 +39,12 @@ def prep_for_op(inp, op_cols, meta, ur=unit_registry):
         ``op_cols={"variable": "Emissions|CO2 - Emissions|CO2|Fossil"}``
         then we will drop the "variable" column from the index.
 
-    ur : :obj:`pint.UnitRegistry`
+    ur : :class:`pint.UnitRegistry`
         Pint unit registry to use for the operation
 
     Returns
     -------
-    :obj:`pandas.DataFrame`
+    :class:`pandas.DataFrame`
         Timeseries to use for the operation. They are the transpose of
         the normal :meth:`ScmRun.timeseries` output with the columns
         being Pint arrays (unless "unit" is in op_cols in which case no
@@ -74,7 +74,7 @@ def set_op_values(output, op_cols):
 
     Parameters
     ----------
-    output : :obj:`pandas.Dataframe`
+    output : :class:`pandas.Dataframe`
         Dataframe of which to update the values
 
     op_cols : dict of str: str
@@ -87,7 +87,7 @@ def set_op_values(output, op_cols):
 
     Returns
     -------
-    :obj:`pandas.Dataframe`
+    :class:`pandas.Dataframe`
         ``output`` with the relevant columns being set according to ``op_cols``.
     """
     for k, v in op_cols.items():
@@ -144,8 +144,8 @@ def subtract(self, other, op_cols, **kwargs):
 
     Parameters
     ----------
-    other : :obj:`ScmRun`
-        :obj:`ScmRun` containing data to subtract
+    other : :class:`ScmRun`
+        :class:`ScmRun` containing data to subtract
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop before subtracting as
@@ -162,7 +162,7 @@ def subtract(self, other, op_cols, **kwargs):
 
     Returns
     -------
-    :obj:`ScmRun`
+    :class:`ScmRun`
         Difference between ``self`` and ``other``, using ``op_cols`` to
         define the columns which should be dropped before the data is
         aligned and to define the value of these columns in the output.
@@ -250,8 +250,8 @@ def add(self, other, op_cols, **kwargs):
 
     Parameters
     ----------
-    other : :obj:`ScmRun`
-        :obj:`ScmRun` containing data to add
+    other : :class:`ScmRun`
+        :class:`ScmRun` containing data to add
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop before adding as the
@@ -268,7 +268,7 @@ def add(self, other, op_cols, **kwargs):
 
     Returns
     -------
-    :obj:`ScmRun`
+    :class:`ScmRun`
         Sum of ``self`` and ``other``, using ``op_cols`` to define the
         columns which should be dropped before the data is aligned and
         to define the value of these columns in the output.
@@ -368,8 +368,8 @@ def multiply(self, other, op_cols, **kwargs):
 
     Parameters
     ----------
-    other : :obj:`ScmRun`
-        :obj:`ScmRun` containing data to multiply
+    other : :class:`ScmRun`
+        :class:`ScmRun` containing data to multiply
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop before multiplying as the keys and the
@@ -384,7 +384,7 @@ def multiply(self, other, op_cols, **kwargs):
 
     Returns
     -------
-    :obj:`ScmRun`
+    :class:`ScmRun`
         Product of ``self`` and ``other``, using ``op_cols`` to define the columns which
         should be dropped before the data is aligned and to define the value of these
         columns in the output.
@@ -465,8 +465,8 @@ def divide(self, other, op_cols, **kwargs):
 
     Parameters
     ----------
-    other : :obj:`ScmRun`
-        :obj:`ScmRun` containing data to divide
+    other : :class:`ScmRun`
+        :class:`ScmRun` containing data to divide
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop before dividing as the keys and the
@@ -481,7 +481,7 @@ def divide(self, other, op_cols, **kwargs):
 
     Returns
     -------
-    :obj:`ScmRun`
+    :class:`ScmRun`
         Quotient of ``self`` and ``other``, using ``op_cols`` to define the columns
         which should be dropped before the data is aligned and to define the value of
         these columns in the output.
@@ -569,8 +569,8 @@ def integrate(self, out_var=None):
 
     Returns
     -------
-    :obj:`scmdata.ScmRun <scmdata.run.ScmRun>`
-        :obj:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the integral of ``self`` with respect
+    :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
+        :class:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the integral of ``self`` with respect
         to time
 
     Warns
@@ -640,8 +640,8 @@ def delta_per_delta_time(self, out_var=None):
 
     Returns
     -------
-    :obj:`scmdata.ScmRun <scmdata.run.ScmRun>`
-        :obj:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the changes in values of ``self``,
+    :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
+        :class:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the changes in values of ``self``,
         normalised by the change in time
 
     Warns
@@ -714,7 +714,7 @@ def linear_regression(self):
         List of dictionaries. Each dictionary contains the metadata for the
         timeseries plus the gradient (with key ``"gradient"``) and intercept (
         with key ``"intercept"``). The gradient and intercept are stored as
-        :obj:`pint.Quantity`.
+        :class:`pint.Quantity`.
     """
     _, _, time_unit, gradients, intercepts, meta = _calculate_linear_regression(self)
 
@@ -764,7 +764,7 @@ def linear_regression_gradient(self, unit=None):
 
     Returns
     -------
-    :obj:`pandas.DataFrame`
+    :class:`pandas.DataFrame`
         ``self.meta`` plus a column with the value of the gradient for each
         timeseries. The ``"unit"`` column is updated to show the unit of the
         gradient.
@@ -794,7 +794,7 @@ def linear_regression_intercept(self, unit=None):
 
     Returns
     -------
-    :obj:`pandas.DataFrame`
+    :class:`pandas.DataFrame`
         ``self.meta`` plus a column with the value of the gradient for each
         timeseries. The ``"unit"`` column is updated to show the unit of the
         gradient.
@@ -810,7 +810,7 @@ def linear_regression_scmrun(self):
 
     Returns
     -------
-    :obj:`scmdata.ScmRun <scmdata.run.ScmRun>`
+    :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
         The timeseries, re-calculated based on a linear regression
     """
     (

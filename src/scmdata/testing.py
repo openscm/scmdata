@@ -25,13 +25,13 @@ def assert_scmdf_almost_equal(
     left, right, allow_unordered=False, check_ts_names=True, rtol=1e-5, atol=1e-8
 ):
     """
-    Check that left and right :obj:`ScmRun` are equal.
+    Check that left and right :class:`ScmRun` are equal.
 
     Parameters
     ----------
-    left : :obj:`ScmRun`
+    left : :class:`ScmRun`
 
-    right : :obj:`ScmRun`
+    right : :class:`ScmRun`
 
     allow_unordered : bool
         If true, the order of the timeseries is not checked

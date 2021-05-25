@@ -75,7 +75,7 @@ def _format_datetime(dts: np.ndarray) -> np.ndarray:
     Raises
     ------
     ValueError
-        If one of the values in :obj:`dts` cannot be converted to :class:`np.datetime64`
+        If one of the values in :class:`dts` cannot be converted to :class:`np.datetime64`
     """
     if len(dts) <= 0:  # pylint: disable=len-as-condition
         return np.array([], dtype=_TARGET_DTYPE)
@@ -153,7 +153,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`np.array` of :obj:`int`
             Year of each time point
         """
         return np.vectorize(getattr)(self._values.astype(object), "year")
@@ -164,7 +164,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`np.array` of :obj:`int`
             Month of each time point
         """
         return np.vectorize(getattr)(self._values.astype(object), "month")
@@ -175,7 +175,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`np.array` of :obj:`int`
             Day of each time point
         """
         return np.vectorize(getattr)(self._values.astype(object), "day")
@@ -186,7 +186,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`np.array` of :obj:`int`
             Hour of each time point
         """
         return np.vectorize(getattr)(self._values.astype(object), "hour")
@@ -197,7 +197,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`np.array` of :obj:`int`
             Day of the week of each time point
         """
         return np.vectorize(datetime.weekday)(self._values.astype(object))
