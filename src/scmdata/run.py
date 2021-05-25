@@ -355,7 +355,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             If :obj:`index` is not ``None``, then the :obj:`index` is used as the timesteps
             for run. All timeseries in the run use the same set of timesteps.
 
-            The values will be attempted to be converted to :class:`np.datetime[s]` values.
+            The values will be attempted to be converted to :class:`numpy.datetime[s]` values.
             Possible input formats include :
 
             * :class:`datetime.datetime`

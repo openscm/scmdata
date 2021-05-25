@@ -30,7 +30,7 @@ def is_in(vals: List, items: List) -> np.ndarray:
 
     Returns
     -------
-    :class:`np.array` of :obj:`bool`
+    :class:`numpy.ndarray` of :obj:`bool`
         Array of the same length as :obj:`vals` where the element is ``True`` if the
         corresponding element of :obj:`vals` is in :obj:`items` and False otherwise
     """
@@ -65,7 +65,7 @@ def find_depth(
 
     Returns
     -------
-    :class:`np.array` of :obj:`bool`
+    :class:`numpy.ndarray` of :obj:`bool`
         Array where ``True`` indicates a match
 
     Raises
@@ -131,8 +131,8 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     has_nan
         If ``True``, convert all nan values in :obj:`meta_col` to empty string before
         applying filters. This means that "" and "*" will match rows with
-        :class:`np.nan`. If ``False``, the conversion is not applied and so a search in
-        a string column which contains :class:`np.nan` will result in a
+        :class:`numpy.nan`. If ``False``, the conversion is not applied and so a search in
+        a string column which contains :class:`numpy.nan` will result in a
         :class:`TypeError`.
 
     separator
@@ -147,7 +147,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     ------
     TypeError
         Filtering is performed on a string metadata column which contains
-        :class:`np.nan` and :obj:`has_nan` is ``False``
+        :class:`numpy.nan` and :obj:`has_nan` is ``False``
     """
     matches = np.array([False] * len(meta_col), dtype=bool)
     _values = (
@@ -214,7 +214,7 @@ def years_match(data: List, years: Union[List[int], np.ndarray, int]) -> np.ndar
 
     Returns
     -------
-    :class:`np.array` of :obj:`bool`
+    :class:`numpy.ndarray` of :obj:`bool`
         Array where True indicates a match
 
     Raises
@@ -251,7 +251,7 @@ def month_match(
 
     Returns
     -------
-    :class:`np.array` of :obj:`bool`
+    :class:`numpy.ndarray` of :obj:`bool`
         Array where ``True`` indicates a match
     """
     return time_match(data, months, ["%b", "%B"], "tm_mon", "month")
@@ -271,7 +271,7 @@ def day_match(data: List, days: Union[List[str], List[int], int, str]) -> np.nda
 
     Returns
     -------
-    :class:`np.array` of :obj:`bool`
+    :class:`numpy.ndarray` of :obj:`bool`
         Array where ``True`` indicates a match
     """
     return time_match(data, days, ["%a", "%A"], "tm_wday", "day")
@@ -291,7 +291,7 @@ def hour_match(data: List, hours: Union[List[int], int]) -> np.ndarray:
 
     Returns
     -------
-    :class:`np.array` of :obj:`bool`
+    :class:`numpy.ndarray` of :obj:`bool`
         Array where ``True`` indicates a match
     """
     hours_list = [hours] if isinstance(hours, int) else hours
@@ -330,7 +330,7 @@ def time_match(
 
     Returns
     -------
-    :class:`np.array` of :obj:`bool`
+    :class:`numpy.ndarray` of :obj:`bool`
         Array where ``True`` indicates a match
 
     Raises
@@ -404,7 +404,7 @@ def datetime_match(
 
     Returns
     -------
-    :class:`np.array` of :obj:`bool`
+    :class:`numpy.ndarray` of :obj:`bool`
         Array where ``True`` indicates a match
 
     Raises
