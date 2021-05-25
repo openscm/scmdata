@@ -110,8 +110,8 @@ html_theme = "sphinx_rtd_theme"
 # html_sidebars = {}
 
 html_context = {
-    "display_github": False,
-    "github_user": "lewisjared",
+    "display_github": True,
+    "github_user": "openscm",
     "github_repo": "scmdata",
     "github_version": "master",
     "conf_py_path": "/docs/source",
