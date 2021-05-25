@@ -147,8 +147,8 @@ class TimeSeries(OpsMixin):
         """
         Create a deep copy of the timeseries.
 
-        Any further modifications to the :obj:`Timeseries` returned copy will not be reflecting
-        in the current :obj:`Timeseries`
+        Any further modifications to the :obj:`Timeseries` returned copy will not be
+        reflected in the current :obj:`Timeseries`
 
         Returns
         -------

@@ -117,7 +117,8 @@ def test_init_df_missing_time_columns_error(test_pd_df):
         axis="columns",
     )
     error_msg = re.escape(
-        "invalid column format, must contain some time (int, float or datetime) columns!"
+        "invalid column format, must contain some time (int, float or datetime) "
+        "columns!"
     )
     with pytest.raises(ValueError, match=error_msg):
         ScmRun(test_init)
@@ -1334,8 +1335,8 @@ def test_quantiles_over(test_processing_scm_df):
 
 def test_quantiles_over_operation_in_kwargs(test_processing_scm_df):
     error_msg = re.escape(
-        "quantiles_over() does not take the keyword argument 'operation', the operations "
-        "are inferred from the 'quantiles' argument"
+        "quantiles_over() does not take the keyword argument 'operation', the "
+        "operations are inferred from the 'quantiles' argument"
     )
     with pytest.raises(TypeError, match=error_msg):
         test_processing_scm_df.quantiles_over(
@@ -2289,8 +2290,8 @@ def test_unit_context_both_have_existing_context_error(
         scm_run.filter(variable=to_convert, keep=False)["unit_context"] = context
 
     error_msg = re.escape(
-        "Existing unit conversion context(s), `['junk']`, doesn't match input context, `{}`, drop "
-        "`unit_context` metadata before doing conversion".format(context)
+        "Existing unit conversion context(s), `['junk']`, doesn't match input context, "
+        "`{}`, drop `unit_context` metadata before doing conversion".format(context)
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)

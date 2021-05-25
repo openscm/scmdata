@@ -75,14 +75,14 @@ class ScmDatabase:
             Specifies how the runs should be stored on disk.
 
             The data will be grouped by ``levels``. These levels should be adapted to
-            best match the input data and desired access pattern. If there are any additional
-            varying dimensions, they will be stored as dimensions.
+            best match the input data and desired access pattern. If there are any
+            additional varying dimensions, they will be stored as dimensions.
 
         .. note::
 
-            Creating a new :class:`ScmDatabase` does not modify any existing data on disk. To
-            load an existing database ensure that the :attr:`root_dir` and :attr:`levels` are
-            the same as the previous instance.
+            Creating a new :class:`ScmDatabase` does not modify any existing data on
+            disk. To load an existing database ensure that the :attr:`root_dir` and
+            :attr:`levels` are the same as the previous instance.
         """
         self._root_dir = root_dir
         self.levels = tuple(levels)
@@ -140,8 +140,8 @@ class ScmDatabase:
         """
         Get filepath in which data has been saved
 
-        The filepath is the root directory joined with the other information provided. The filepath
-        is also cleaned to remove spaces and special characters.
+        The filepath is the root directory joined with the other information provided.
+        The filepath is also cleaned to remove spaces and special characters.
 
         Parameters
         ----------

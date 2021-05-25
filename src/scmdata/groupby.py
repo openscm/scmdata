@@ -32,7 +32,8 @@ class _GroupBy(ImplementsArrayReduce):
         if any([np.issubdtype(m[c].dtype, np.number) for c in m]):
             if (meta == na_fill_value).any(axis=None):
                 raise ValueError(
-                    "na_fill_value conflicts with data value. Choose a na_fill_value not in meta"
+                    "na_fill_value conflicts with data value. Choose a na_fill_value "
+                    "not in meta"
                 )
             else:
                 m = m.fillna(na_fill_value)

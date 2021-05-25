@@ -44,19 +44,28 @@ RCMIP_SCENARIO_COLOURS = {
 
 def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     """
-    Make a line plot via `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
+    Make a line plot via `seaborn's lineplot
+    <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
 
     If only a single unit is present, it will be used as the y-axis label.
     The axis object is returned so this can be changed by the user if desired.
 
     Parameters
     ----------
-    time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
-        Time axis to use for the plot. If `None`, :class:`datetime.datetime` objects will be used.
-        If `"year"`, the year of each time point  will be used. If `"year-month", the year plus
-        (month - 0.5) / 12  will be used. If `"days since 1970-01-01"`, the number of days  since 1st
-        Jan 1970 will be used (calculated using the ``datetime``  module). If `"seconds since 1970-01-01"`,
-        the number of seconds  since 1st Jan 1970 will be used (calculated using the ``datetime`` module).
+    time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}  # noqa: E501
+        Time axis to use for the plot.
+
+        If ``None``, :class:`datetime.datetime` objects will be used.
+
+        If ``"year"``, the year of each time point  will be used.
+
+        If ``"year-month"``, the year plus (month - 0.5) / 12  will be used.
+
+        If ``"days since 1970-01-01"``, the number of days since 1st Jan 1970 will be
+        used (calculated using the :mod:`datetime` module).
+
+        If ``"seconds since 1970-01-01"``, the number of seconds  since 1st Jan 1970 will
+        be used (calculated using the :mod:`datetime`module).
 
     **kwargs
         Keyword arguments to be passed to ``seaborn.lineplot``. If none are passed,
@@ -336,7 +345,8 @@ def plumeplot(  # pragma: no cover
     else:
         if dashes is not None:
             warnings.warn(
-                "`dashes` was passed but no lines were plotted, the style settings will not be used"
+                "`dashes` was passed but no lines were plotted, the style settings "
+                "will not be used"
             )
 
     ax.legend(handles=legend_items, loc="best")
@@ -372,7 +382,8 @@ def _get_1d_or_raise(in_scmrun, hue_var, style_var):
 
 def _deprecated_line_plot(self, **kwargs):  # pragma: no cover
     """
-    Make a line plot via `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
+    Make a line plot via
+    `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
 
     Deprecated: use :func:`lineplot` instead
 

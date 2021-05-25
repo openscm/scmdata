@@ -841,8 +841,8 @@ def test_linear_regression_nan_handling():
     )
 
     warn_msg = re.escape(
-        "You are calculating a linear regression of data which contains nans so your result "
-        "will also contain nans. Perhaps you want to remove the nans before "
+        "You are calculating a linear regression of data which contains nans so your "
+        "result will also contain nans. Perhaps you want to remove the nans before "
         "calculating the regression using a combination of :meth:`filter` and "
         ":meth:`interpolate`?"
     )
