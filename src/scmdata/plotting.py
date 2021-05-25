@@ -65,7 +65,7 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
         used (calculated using the :mod:`datetime` module).
 
         If ``"seconds since 1970-01-01"``, the number of seconds  since 1st Jan 1970 will
-        be used (calculated using the :mod:`datetime`module).
+        be used (calculated using the :mod:`datetime` module).
 
     **kwargs
         Keyword arguments to be passed to ``seaborn.lineplot``. If none are passed,
