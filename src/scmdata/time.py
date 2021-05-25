@@ -125,12 +125,12 @@ class TimePoints:
 
     def to_index(self) -> pd.Index:
         """
-        Get time points as :class:`pd.Index`.
+        Get time points as :class:`pandas.Index`.
 
         Returns
         -------
-        :class:`pd.Index`
-            :class:`pd.Index` of :class:`np.dtype` :class:`object` with name ``"time"``
+        :class:`pandas.Index`
+            :class:`pandas.Index` of :class:`np.dtype` :class:`object` with name ``"time"``
             made from the time points represented as :class:`datetime.datetime`.
         """
         return pd.Index(self._values.astype(object), dtype=object, name="time")

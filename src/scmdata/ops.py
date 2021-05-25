@@ -44,7 +44,7 @@ def prep_for_op(inp, op_cols, meta, ur=unit_registry):
 
     Returns
     -------
-    :obj:`pd.DataFrame`
+    :obj:`pandas.DataFrame`
         Timeseries to use for the operation. They are the transpose of
         the normal :meth:`ScmRun.timeseries` output with the columns
         being Pint arrays (unless "unit" is in op_cols in which case no
@@ -74,7 +74,7 @@ def set_op_values(output, op_cols):
 
     Parameters
     ----------
-    output : :obj:`pd.Dataframe`
+    output : :obj:`pandas.Dataframe`
         Dataframe of which to update the values
 
     op_cols : dict of str: str
@@ -87,7 +87,7 @@ def set_op_values(output, op_cols):
 
     Returns
     -------
-    :obj:`pd.Dataframe`
+    :obj:`pandas.Dataframe`
         ``output`` with the relevant columns being set according to ``op_cols``.
     """
     for k, v in op_cols.items():
@@ -764,7 +764,7 @@ def linear_regression_gradient(self, unit=None):
 
     Returns
     -------
-    :obj:`pd.DataFrame`
+    :obj:`pandas.DataFrame`
         ``self.meta`` plus a column with the value of the gradient for each
         timeseries. The ``"unit"`` column is updated to show the unit of the
         gradient.
@@ -794,7 +794,7 @@ def linear_regression_intercept(self, unit=None):
 
     Returns
     -------
-    :obj:`pd.DataFrame`
+    :obj:`pandas.DataFrame`
         ``self.meta`` plus a column with the value of the gradient for each
         timeseries. The ``"unit"`` column is updated to show the unit of the
         gradient.

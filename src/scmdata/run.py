@@ -62,7 +62,7 @@ def _read_file(  # pylint: disable=missing-return-doc
 
     Returns
     -------
-    :obj:`pd.DataFrame`, :obj:`pd.DataFrame`
+    :obj:`pandas.DataFrame`, :obj:`pandas.DataFrame`
         First dataframe is the data. Second dataframe is metadata
     """
     _logger.info("Reading %s", fnames)
@@ -74,7 +74,7 @@ def _read_pandas(
     fname: str, *args: Any, lowercase_cols=False, **kwargs: Any
 ) -> pd.DataFrame:
     """
-    Read a file and return a :class:`pd.DataFrame`.
+    Read a file and return a :class:`pandas.DataFrame`.
 
     Parameters
     ----------
@@ -85,16 +85,16 @@ def _read_pandas(
         If True, convert the column names of the file to lowercase
 
     *args
-        Passed to :func:`pd.read_excel` if :obj:`fname` ends with '.xls' or
-        '.xslx, otherwise passed to :func:`pd.read_csv`.
+        Passed to :func:`pandas.read_excel` if :obj:`fname` ends with '.xls' or
+        '.xslx, otherwise passed to :func:`pandas.read_csv`.
 
     **kwargs
-        Passed to :func:`pd.read_excel` if :obj:`fname` ends with '.xls' or
-        '.xslx, otherwise passed to :func:`pd.read_csv`.
+        Passed to :func:`pandas.read_excel` if :obj:`fname` ends with '.xls' or
+        '.xslx, otherwise passed to :func:`pandas.read_csv`.
 
     Returns
     -------
-    :obj:`pd.DataFrame`
+    :obj:`pandas.DataFrame`
         Read data
 
     Raises
@@ -134,8 +134,8 @@ def _format_data(  # pylint: disable=missing-return-doc
     df: Union[pd.DataFrame, pd.Series], required_cols: Tuple[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmRun` from :class:`pd.DataFrame` or
-    :class:`pd.Series`.
+    Prepare data to initialize :class:`ScmRun` from :class:`pandas.DataFrame` or
+    :class:`pandas.Series`.
 
     See docstring of :func:`ScmRun.__init__` for details.
 
@@ -146,7 +146,7 @@ def _format_data(  # pylint: disable=missing-return-doc
 
     Returns
     -------
-    :obj:`pd.DataFrame`, :obj:`pd.DataFrame`
+    :obj:`pandas.DataFrame`, :obj:`pandas.DataFrame`
         First dataframe is the data. Second dataframe is metadata.
 
     Raises
@@ -338,7 +338,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             :obj:`ScmRun` is created with a copy of the values and metadata from :obj:
             `data`.
 
-            A :class:`pd.DataFrame` with IAMC-format data columns (the result from
+            A :class:`pandas.DataFrame` with IAMC-format data columns (the result from
             :func:`ScmRun.timeseries()`) can be provided without any additional
             :obj:`columns` and :obj:`index` information.
 
@@ -771,7 +771,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self, meta=None, check_duplicated=True, time_axis=None, drop_all_nan_times=False
     ):
         """
-        Return the data with metadata as a :obj:`pd.DataFrame`.
+        Return the data with metadata as a :obj:`pandas.DataFrame`.
 
         Parameters
         ----------
@@ -792,7 +792,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :obj:`pandas.DataFrame`
             DataFrame with datetimes as columns and timeseries as rows.
             Metadata is in the index.
 
@@ -884,8 +884,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
-            :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation
+        :obj:`pandas.DataFrame`
+            :obj:`pandas.DataFrame` containing the data in 'long form' (i.e. one observation
             per row).
         """
         out = self.timeseries(time_axis=time_axis).stack()
@@ -1195,7 +1195,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :obj:`pandas.DataFrame`
             Tail of :func:`self.timeseries()`
         """
         return self.timeseries().head(*args, **kwargs)
@@ -1214,7 +1214,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :obj:`pandas.DataFrame`
             Tail of :func:`self.timeseries()`
         """
         return self.timeseries().tail(*args, **kwargs)
@@ -1537,7 +1537,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :obj:`pandas.DataFrame`
             The quantiles of the timeseries, grouped by all columns in :attr:`meta`
             other than :obj:`cols`
 
@@ -1601,7 +1601,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :obj:`pandas.DataFrame`
             The quantiles of the timeseries, grouped by all columns in :attr:`meta`
             other than :obj:`cols`. Each calculated quantile is given a label which is
             stored in the ``quantile`` column within the output index.

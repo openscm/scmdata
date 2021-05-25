@@ -125,7 +125,7 @@ class ScmDatabase:
 
         Parameters
         ----------
-        scmrun : :obj:`scmdata.ScmRun`
+        scmrun : :class:`scmdata.ScmRun`
             Data to save.
 
             The timeseries in this run should have valid metadata for each
@@ -295,7 +295,7 @@ class ScmDatabase:
 
         Returns
         -------
-        :class:`pd.DataFrame`
+        :class:`pandas.DataFrame`
         """
         load_path = os.path.join(self._root_dir, "**", "*.nc")
         all_files = glob.glob(load_path, recursive=True)

@@ -49,17 +49,17 @@ class TimeSeries(OpsMixin):
         ----------
         data : array_like
             Data to be held by the :obj:`TimeSeries` instance. ``data`` must
-            be one-dimensional. If ``data`` is an :obj:`xr.DataArray`
+            be one-dimensional. If ``data`` is an :obj:`xarray.DataArray`
             instance, its single dimension must be ``"time"``. If ``data``
-            is not an :obj:`xr.DataArray`, then ``time`` must also be supplied.
+            is not an :obj:`xarray.DataArray`, then ``time`` must also be supplied.
 
         time : array_like or None
-            Only used if ``data`` is not an :obj:`xr.DataArray`. These become
+            Only used if ``data`` is not an :obj:`xarray.DataArray`. These become
             the time axis of ``self._data``.
 
         **kwargs
-            Only used if `data`` is not an :obj:`xr.DataArray`. Passed to the
-            :obj:`xr.DataArray` constructor.
+            Only used if `data`` is not an :obj:`xarray.DataArray`. Passed to the
+            :obj:`xarray.DataArray` constructor.
 
         Raises
         ------
@@ -67,17 +67,17 @@ class TimeSeries(OpsMixin):
             ``data`` is not one-dimensional
 
         TypeError
-            ``data`` is an :obj:`xr.DataArray` and ``time is not None``
+            ``data`` is an :obj:`xarray.DataArray` and ``time is not None``
 
         ValueError
-            ``data`` is an :obj:`xr.DataArray` and its dimension is not named
+            ``data`` is an :obj:`xarray.DataArray` and its dimension is not named
             ``"time"``.
 
         TypeError
-            ``data`` is not an :obj:`xr.DataArray` and ``time is None``
+            ``data`` is not an :obj:`xarray.DataArray` and ``time is None``
 
         ValueError
-            ``data`` is not an :obj:`xr.DataArray` and ``coords`` is supplied
+            ``data`` is not an :obj:`xarray.DataArray` and ``coords`` is supplied
             via ``**kwargs``
         """
         values = np.asarray(data)
@@ -88,12 +88,13 @@ class TimeSeries(OpsMixin):
         if isinstance(data, xr.DataArray):
             if time is not None:
                 raise TypeError(
-                    "If data is an :obj:`xr.DataArray` instance, time must be " "`None`"
+                    "If data is an :obj:`xarray.DataArray` instance, time must be "
+                    "`None`"
                 )
 
             if data.dims != ("time",):
                 raise ValueError(
-                    "If data is an :obj:`xr.DataArray` instance, its only "
+                    "If data is an :obj:`xarray.DataArray` instance, its only "
                     "dimension must be named `'time'`"
                 )
             self._data = data
@@ -101,13 +102,13 @@ class TimeSeries(OpsMixin):
         else:
             if time is None:
                 raise TypeError(
-                    "If data is not an :obj:`xr.DataArray` instance, `time` "
+                    "If data is not an :obj:`xarray.DataArray` instance, `time` "
                     "must not be `None`"
                 )
 
             if "coords" in kwargs:
                 raise ValueError(
-                    "If ``data`` is not an :obj:`xr.DataArray`, `coords` must "
+                    "If ``data`` is not an :obj:`xarray.DataArray`, `coords` must "
                     "not be supplied via `kwargs` because it will be "
                     "automatically filled with the value of `time`."
                 )
