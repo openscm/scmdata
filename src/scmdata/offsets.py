@@ -25,11 +25,11 @@ def generate_range(
 
     Parameters
     ----------
-    start: cftime.datetime
+    start: :class:`cftime.datetime`
         Starting datetime from which to generate the range (noting roll backward
         mentioned above and illustrated in the examples).
 
-    end: cftime.datetime
+    end: :class:`cftime.datetime`
         Last datetime from which to generate the range (noting roll forward mentioned
         above and illustrated in the examples).
 
@@ -38,7 +38,7 @@ def generate_range(
 
     Yields
     ------
-    :obj:`cftime.datetime`
+    :class:`cftime.datetime`
         Next datetime in the range
 
     Raises

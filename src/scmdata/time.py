@@ -69,7 +69,7 @@ def _format_datetime(dts: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    :class:`np.ndarray` of :class:`np.datetime64`
+    :class:`numpy.ndarray` of :class:`np.datetime64`
         Converted array
 
     Raises
@@ -96,7 +96,7 @@ def _format_datetime(dts: np.ndarray) -> np.ndarray:
 
 class TimePoints:
     """
-    Handles time points by wrapping :class:`np.ndarray` of :class:`np.datetime64`..
+    Handles time points by wrapping :class:`numpy.ndarray` of :class:`np.datetime64`..
     """
 
     def __init__(self, values):

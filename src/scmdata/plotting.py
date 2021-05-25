@@ -1,5 +1,5 @@
 """
-Plotting helpers for :class:`ScmRun`
+Plotting helpers for :class:`ScmRun <scmdata.run.ScmRun>`
 
 See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 """

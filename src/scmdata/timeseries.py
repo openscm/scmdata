@@ -175,7 +175,7 @@ class TimeSeries(OpsMixin):
 
         Returns
         -------
-        :class:`np.ndarray`
+        :class:`numpy.ndarray`
         """
         return TimePoints(self._data.coords["time"].values)
 
@@ -186,7 +186,7 @@ class TimeSeries(OpsMixin):
 
         Returns
         -------
-        :class:`np.ndarray`
+        :class:`numpy.ndarray`
         """
         return self._data.values
 

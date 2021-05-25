@@ -79,12 +79,12 @@ class RunGroupBy(_GroupBy):
         """
         Apply a function to each group and append the results
 
-        `func` is called like `func(ar, *args, **kwargs)` for each :class:`ScmRun` ``ar``
+        `func` is called like `func(ar, *args, **kwargs)` for each :class:`ScmRun <scmdata.run.ScmRun>` ``ar``
         in this group. If the result of this function call is None, than it is
         excluded from the results.
 
         The results are appended together using :func:`run_append`. The function
-        can change the size of the input :class:`ScmRun` as long as :func:`run_append`
+        can change the size of the input :class:`ScmRun <scmdata.run.ScmRun>` as long as :func:`run_append`
         can be applied to all results.
 
         Examples
@@ -109,7 +109,7 @@ class RunGroupBy(_GroupBy):
 
         Returns
         -------
-        applied : :class:`ScmRun`
+        applied : :class:`ScmRun <scmdata.run.ScmRun>`
             The result of splitting, applying and combining this array.
         """
         grouped = self._iter_grouped()
@@ -154,7 +154,7 @@ class RunGroupBy(_GroupBy):
 
         Returns
         -------
-        reduced : :class:`ScmRun`
+        reduced : :class:`ScmRun <scmdata.run.ScmRun>`
             Array with summarized data and the indicated dimension(s)
             removed.
         """

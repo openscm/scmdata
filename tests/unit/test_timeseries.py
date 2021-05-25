@@ -77,7 +77,7 @@ def test_timeseries_init_xarray_time_is_not_none():
     raw_data = [-1, -2, -3]
     time_points = [20, 2020, 5050]
     data = xr.DataArray(raw_data, coords=[("time", time_points)])
-    error_msg = "If data is an :obj:`xarray.DataArray` instance, time must be `None`"
+    error_msg = "If data is an :class:`xarray.DataArray` instance, time must be `None`"
     with pytest.raises(TypeError, match=re.escape(error_msg)):
         TimeSeries(data, time=time_points)
 
@@ -88,7 +88,7 @@ def test_timeseries_init_xarray_no_time_coord(coord_name):
     time_points = [20, 2020, 5050]
     data = xr.DataArray(raw_data, coords=[(coord_name, time_points)])
     error_msg = (
-        "If data is an :obj:`xarray.DataArray` instance, its only dimension must "
+        "If data is an :class:`xarray.DataArray` instance, its only dimension must "
         "be named `'time'`"
     )
     with pytest.raises(ValueError, match=re.escape(error_msg)):
@@ -98,7 +98,7 @@ def test_timeseries_init_xarray_no_time_coord(coord_name):
 @pytest.mark.parametrize("data", ([1, 2, 3], (1, 2, 3), np.array([1, 2, 3])))
 def test_timeseries_init_no_time_list(data):
     error_msg = (
-        "If data is not an :obj:`xarray.DataArray` instance, `time` must not be "
+        "If data is not an :class:`xarray.DataArray` instance, `time` must not be "
         "`None`"
     )
     with pytest.raises(TypeError, match=re.escape(error_msg)):
@@ -108,7 +108,7 @@ def test_timeseries_init_no_time_list(data):
 @pytest.mark.parametrize("data", ([1, 2, 3], (1, 2, 3), np.array([1, 2, 3])))
 def test_timeseries_init_time_and_coords(data):
     error_msg = (
-        "If ``data`` is not an :obj:`xarray.DataArray`, `coords` must not be "
+        "If ``data`` is not an :class:`xarray.DataArray`, `coords` must not be "
         "supplied via `kwargs` because it will be automatically filled with "
         "the value of `time`."
     )

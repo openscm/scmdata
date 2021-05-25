@@ -29,8 +29,8 @@ def prep_for_op(inp, op_cols, meta, ur=unit_registry):
 
     Parameters
     ----------
-    inp : :class:`ScmRun`
-        :class:`ScmRun` containing data to prepare
+    inp : :class:`ScmRun <scmdata.run.ScmRun>`
+        :class:`ScmRun <scmdata.run.ScmRun>` containing data to prepare
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop in order to prepare
@@ -144,8 +144,8 @@ def subtract(self, other, op_cols, **kwargs):
 
     Parameters
     ----------
-    other : :class:`ScmRun`
-        :class:`ScmRun` containing data to subtract
+    other : :class:`ScmRun <scmdata.run.ScmRun>`
+        :class:`ScmRun <scmdata.run.ScmRun>` containing data to subtract
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop before subtracting as
@@ -162,7 +162,7 @@ def subtract(self, other, op_cols, **kwargs):
 
     Returns
     -------
-    :class:`ScmRun`
+    :class:`ScmRun <scmdata.run.ScmRun>`
         Difference between ``self`` and ``other``, using ``op_cols`` to
         define the columns which should be dropped before the data is
         aligned and to define the value of these columns in the output.
@@ -250,8 +250,8 @@ def add(self, other, op_cols, **kwargs):
 
     Parameters
     ----------
-    other : :class:`ScmRun`
-        :class:`ScmRun` containing data to add
+    other : :class:`ScmRun <scmdata.run.ScmRun>`
+        :class:`ScmRun <scmdata.run.ScmRun>` containing data to add
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop before adding as the
@@ -268,7 +268,7 @@ def add(self, other, op_cols, **kwargs):
 
     Returns
     -------
-    :class:`ScmRun`
+    :class:`ScmRun <scmdata.run.ScmRun>`
         Sum of ``self`` and ``other``, using ``op_cols`` to define the
         columns which should be dropped before the data is aligned and
         to define the value of these columns in the output.
@@ -368,8 +368,8 @@ def multiply(self, other, op_cols, **kwargs):
 
     Parameters
     ----------
-    other : :class:`ScmRun`
-        :class:`ScmRun` containing data to multiply
+    other : :class:`ScmRun <scmdata.run.ScmRun>`
+        :class:`ScmRun <scmdata.run.ScmRun>` containing data to multiply
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop before multiplying as the keys and the
@@ -384,7 +384,7 @@ def multiply(self, other, op_cols, **kwargs):
 
     Returns
     -------
-    :class:`ScmRun`
+    :class:`ScmRun <scmdata.run.ScmRun>`
         Product of ``self`` and ``other``, using ``op_cols`` to define the columns which
         should be dropped before the data is aligned and to define the value of these
         columns in the output.
@@ -465,8 +465,8 @@ def divide(self, other, op_cols, **kwargs):
 
     Parameters
     ----------
-    other : :class:`ScmRun`
-        :class:`ScmRun` containing data to divide
+    other : :class:`ScmRun <scmdata.run.ScmRun>`
+        :class:`ScmRun <scmdata.run.ScmRun>` containing data to divide
 
     op_cols : dict of str: str
         Dictionary containing the columns to drop before dividing as the keys and the
@@ -481,7 +481,7 @@ def divide(self, other, op_cols, **kwargs):
 
     Returns
     -------
-    :class:`ScmRun`
+    :class:`ScmRun <scmdata.run.ScmRun>`
         Quotient of ``self`` and ``other``, using ``op_cols`` to define the columns
         which should be dropped before the data is aligned and to define the value of
         these columns in the output.

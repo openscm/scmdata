@@ -140,7 +140,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
 
     Returns
     -------
-    :class:`np.ndarray` of :obj:`bool`
+    :class:`numpy.ndarray` of :obj:`bool`
         Array where ``True`` indicates a match
 
     Raises
