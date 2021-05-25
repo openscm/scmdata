@@ -569,8 +569,8 @@ def integrate(self, out_var=None):
 
     Returns
     -------
-    :obj:`scmdata.ScmRun`
-        :obj:`scmdata.ScmRun` containing the integral of ``self`` with respect
+    :obj:`scmdata.ScmRun <scmdata.run.ScmRun>`
+        :obj:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the integral of ``self`` with respect
         to time
 
     Warns
@@ -640,8 +640,8 @@ def delta_per_delta_time(self, out_var=None):
 
     Returns
     -------
-    :obj:`scmdata.ScmRun`
-        :obj:`scmdata.ScmRun` containing the changes in values of ``self``,
+    :obj:`scmdata.ScmRun <scmdata.run.ScmRun>`
+        :obj:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the changes in values of ``self``,
         normalised by the change in time
 
     Warns
@@ -810,7 +810,7 @@ def linear_regression_scmrun(self):
 
     Returns
     -------
-    :obj:`scmdata.ScmRun`
+    :obj:`scmdata.ScmRun <scmdata.run.ScmRun>`
         The timeseries, re-calculated based on a linear regression
     """
     (
