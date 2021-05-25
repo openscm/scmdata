@@ -176,7 +176,7 @@ class NetCDFBackend(DatabaseBackend):
         out_levels = []
         for level in self.kwargs["levels"]:
             if level not in levels:
-                raise ValueError("expected value for level: {}".format(level))
+                raise ValueError("expected level: {}".format(level))
             out_levels.append(str(levels[level]))
 
         out_path = os.path.join(self.kwargs["root_dir"], *out_levels)
