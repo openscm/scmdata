@@ -51,7 +51,7 @@ def _read_file(  # pylint: disable=missing-return-doc
     fnames: str, required_cols: Tuple[str], *args: Any, **kwargs: Any
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmRun` from a file.
+    Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from a file.
 
     Parameters
     ----------
@@ -62,7 +62,7 @@ def _read_file(  # pylint: disable=missing-return-doc
 
     Returns
     -------
-    :obj:`pd.DataFrame`, :obj:`pd.DataFrame`
+    :class:`pandas.DataFrame`, :class:`pandas.DataFrame`
         First dataframe is the data. Second dataframe is metadata
     """
     _logger.info("Reading %s", fnames)
@@ -74,7 +74,7 @@ def _read_pandas(
     fname: str, *args: Any, lowercase_cols=False, **kwargs: Any
 ) -> pd.DataFrame:
     """
-    Read a file and return a :class:`pd.DataFrame`.
+    Read a file and return a :class:`pandas.DataFrame`.
 
     Parameters
     ----------
@@ -85,16 +85,16 @@ def _read_pandas(
         If True, convert the column names of the file to lowercase
 
     *args
-        Passed to :func:`pd.read_excel` if :obj:`fname` ends with '.xls' or
-        '.xslx, otherwise passed to :func:`pd.read_csv`.
+        Passed to :func:`pandas.read_excel` if :obj:`fname` ends with '.xls' or
+        '.xslx, otherwise passed to :func:`pandas.read_csv`.
 
     **kwargs
-        Passed to :func:`pd.read_excel` if :obj:`fname` ends with '.xls' or
-        '.xslx, otherwise passed to :func:`pd.read_csv`.
+        Passed to :func:`pandas.read_excel` if :obj:`fname` ends with '.xls' or
+        '.xslx, otherwise passed to :func:`pandas.read_csv`.
 
     Returns
     -------
-    :obj:`pd.DataFrame`
+    :class:`pandas.DataFrame`
         Read data
 
     Raises
@@ -134,8 +134,8 @@ def _format_data(  # pylint: disable=missing-return-doc
     df: Union[pd.DataFrame, pd.Series], required_cols: Tuple[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmRun` from :class:`pd.DataFrame` or
-    :class:`pd.Series`.
+    Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from :class:`pandas.DataFrame` or
+    :class:`pandas.Series`.
 
     See docstring of :func:`ScmRun.__init__` for details.
 
@@ -146,7 +146,7 @@ def _format_data(  # pylint: disable=missing-return-doc
 
     Returns
     -------
-    :obj:`pd.DataFrame`, :obj:`pd.DataFrame`
+    :class:`pandas.DataFrame`, :class:`pandas.DataFrame`
         First dataframe is the data. Second dataframe is metadata.
 
     Raises
@@ -245,7 +245,7 @@ def _from_ts(
     **columns: Union[str, bool, float, int, List],
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmRun` from wide timeseries.
+    Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from wide timeseries.
 
     See docstring of :func:`ScmRun.__init__` for details.
 
@@ -334,11 +334,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Parameters
         ----------
         data: Union[ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str]
-            If a :class:`ScmRun` object is provided, then a new
-            :obj:`ScmRun` is created with a copy of the values and metadata from :obj:
+            If a :class:`ScmRun <scmdata.run.ScmRun>` object is provided, then a new
+            :class:`ScmRun <scmdata.run.ScmRun>` is created with a copy of the values and metadata from :obj:
             `data`.
 
-            A :class:`pd.DataFrame` with IAMC-format data columns (the result from
+            A :class:`pandas.DataFrame` with IAMC-format data columns (the result from
             :func:`ScmRun.timeseries()`) can be provided without any additional
             :obj:`columns` and :obj:`index` information.
 
@@ -355,10 +355,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             If :obj:`index` is not ``None``, then the :obj:`index` is used as the timesteps
             for run. All timeseries in the run use the same set of timesteps.
 
-            The values will be attempted to be converted to :class:`np.datetime[s]` values.
+            The values will be attempted to be converted to :class:`numpy.datetime[s]` values.
             Possible input formats include :
 
-            * :obj:`datetime.datetime`
+            * :class:`datetime.datetime`
             * :obj:`int` Start of year
             * :obj:`float` Decimal year
             * :obj:`str` Uses :func:`dateutil.parser`. Slow and should be avoided if possible
@@ -420,9 +420,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             * If you try to load from multiple files at once. If you wish to do this,
                 please use :func:`scmdata.run.run_append` instead.
             * Not specifying :obj:`index` and :obj:`columns` if :obj:`data` is a
-                :obj:`numpy.ndarray`
+                :class:`numpy.ndarray`
 
-        :obj:`scmdata.errors.MissingRequiredColumn`
+        :class:`scmdata.errors.MissingRequiredColumn`
             If metadata for :attr:`required_cols` is not found
 
         TypeError
@@ -495,7 +495,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmRun`
+        :class:`ScmRun <scmdata.run.ScmRun>`
             :func:`copy.deepcopy` of ``self``
         """
         ret = copy.copy(self)
@@ -544,7 +544,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Notes
         -----
         If the meta values changes are applied to a filtered subset, the change will be reflected
-        in the original :obj:`ScmRun` object.
+        in the original :class:`ScmRun <scmdata.run.ScmRun>` object.
 
         .. code:: python
 
@@ -763,7 +763,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`scmdata.time.TimePoints`
+        :class:`scmdata.time.TimePoints`
         """
         return self._time_points
 
@@ -771,7 +771,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self, meta=None, check_duplicated=True, time_axis=None, drop_all_nan_times=False
     ):
         """
-        Return the data with metadata as a :obj:`pd.DataFrame`.
+        Return the data with metadata as a :class:`pandas.DataFrame`.
 
         Parameters
         ----------
@@ -792,7 +792,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :class:`pandas.DataFrame`
             DataFrame with datetimes as columns and timeseries as rows.
             Metadata is in the index.
 
@@ -884,8 +884,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
-            :obj:`pd.DataFrame` containing the data in 'long form' (i.e. one observation
+        :class:`pandas.DataFrame`
+            :class:`pandas.DataFrame` containing the data in 'long form' (i.e. one observation
             per row).
         """
         out = self.timeseries(time_axis=time_axis).stack()
@@ -912,13 +912,13 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         The values are returned such that each row is a different
         timeseries being a row and each column is a different time (although
-        no time information is included as a plain :obj:`np.ndarray` is
+        no time information is included as a plain :class:`numpy.ndarray` is
         returned).
 
         Returns
         -------
         np.ndarray
-            The array in the same shape as :py:obj:`ScmRun.shape`, that is
+            The array in the same shape as :meth:`ScmRun.shape`, that is
             ``(num_timeseries, num_timesteps)``.
         """
         return self._df.values.T
@@ -926,12 +926,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     @property
     def empty(self) -> bool:
         """
-        Indicate whether :obj:`ScmRun` is empty i.e. contains no data
+        Indicate whether :class:`ScmRun <scmdata.run.ScmRun>` is empty i.e. contains no data
 
         Returns
         -------
         bool
-            If :obj:`ScmRun` is empty, return ``True``, if not return ``False``
+            If :class:`ScmRun <scmdata.run.ScmRun>` is empty, return ``True``, if not return ``False``
         """
         return np.equal(len(self), 0)
 
@@ -1044,16 +1044,16 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
               :class:`datetime.datetime`'s
               TODO: default to np.datetime64
 
-            - 'year', 'month', 'day', hour': takes an :class:`int` or list of
-              :class:`int`'s ('month' and 'day' also accept :class:`str` or list of
-              :class:`str`)
+            - 'year', 'month', 'day', hour': takes an :obj:`int` or list of
+              :obj:`int`'s ('month' and 'day' also accept :obj:`str` or list of
+              :obj:`str`)
 
             If ``regexp=True`` is included in :obj:`kwargs` then the pseudo-regexp
             syntax in :func:`pattern_match` is disabled.
 
         Returns
         -------
-        :obj:`ScmRun`
+        :class:`ScmRun <scmdata.run.ScmRun>`
             If not ``inplace``, return a new instance with the filtered data.
         """
         ret = copy.copy(self) if not inplace else self
@@ -1105,8 +1105,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`np.ndarray` of :class:`bool`, :obj:`np.ndarray` of :class:`bool`
-            Two boolean :class:`np.ndarray`'s. The first contains the columns to keep
+        :class:`numpy.ndarray` of :class:`bool`, :class:`numpy.ndarray` of :class:`bool`
+            Two boolean :class:`numpy.ndarray`'s. The first contains the columns to keep
             (i.e. which time points to keep). The second contains the rows to keep (i.e.
             which metadata matched the filters).
 
@@ -1195,7 +1195,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :class:`pandas.DataFrame`
             Tail of :func:`self.timeseries()`
         """
         return self.timeseries().head(*args, **kwargs)
@@ -1214,7 +1214,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :class:`pandas.DataFrame`
             Tail of :func:`self.timeseries()`
         """
         return self.timeseries().tail(*args, **kwargs)
@@ -1277,8 +1277,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmRun`
-            A new :class:`ScmRun` containing the data interpolated onto the
+        :class:`ScmRun <scmdata.run.ScmRun>`
+            A new :class:`ScmRun <scmdata.run.ScmRun>` containing the data interpolated onto the
             :obj:`target_times` grid
         """
         # pylint: disable=protected-access
@@ -1330,8 +1330,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmRun`
-            New :class:`ScmRun` instance on a new time index
+        :class:`ScmRun <scmdata.run.ScmRun>`
+            New :class:`ScmRun <scmdata.run.ScmRun>` instance on a new time index
 
         Examples
         --------
@@ -1451,7 +1451,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmRun`
+        :class:`ScmRun <scmdata.run.ScmRun>`
             The time mean of ``self``.
         """
         if rule == "AS":
@@ -1537,7 +1537,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :class:`pandas.DataFrame`
             The quantiles of the timeseries, grouped by all columns in :attr:`meta`
             other than :obj:`cols`
 
@@ -1601,7 +1601,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`pd.DataFrame`
+        :class:`pandas.DataFrame`
             The quantiles of the timeseries, grouped by all columns in :attr:`meta`
             other than :obj:`cols`. Each calculated quantile is given a label which is
             stored in the ``quantile`` column within the output index.
@@ -1668,7 +1668,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`RunGroupBy`
+        :class:`RunGroupBy`
             See the documentation for :class:`RunGroupBy` for more information
 
         """
@@ -1709,8 +1709,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmRun`
-            If :obj:`inplace` is not ``False``, a new :class:`ScmRun` instance
+        :class:`ScmRun <scmdata.run.ScmRun>`
+            If :obj:`inplace` is not ``False``, a new :class:`ScmRun <scmdata.run.ScmRun>` instance
             with the converted units.
 
         Notes
@@ -1805,7 +1805,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmRun`
+        :class:`ScmRun <scmdata.run.ScmRun>`
             New object containing the timeseries, adjusted to the reference period mean.
             The reference period year bounds are stored in the meta columns
             ``"reference_period_start_year"`` and ``"reference_period_end_year"``.
@@ -1847,11 +1847,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Parameters
         ----------
         other
-            Data (in format which can be cast to :class:`ScmRun`) to append
+            Data (in format which can be cast to :class:`ScmRun <scmdata.run.ScmRun>`) to append
 
         inplace
             If ``True``, append data in place and return ``None``. Otherwise, return a
-            new :class:`ScmRun` instance with the appended data.
+            new :class:`ScmRun <scmdata.run.ScmRun>` instance with the appended data.
 
         duplicate_msg
             If ``True``, raise a :class:`scmdata.errors.NonUniqueMetadataError` error
@@ -1860,7 +1860,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             warning if duplicate data is detected.
 
         metadata
-            If not ``None``, override the metadata of the resulting :obj:`ScmRun` with
+            If not ``None``, override the metadata of the resulting :class:`ScmRun <scmdata.run.ScmRun>` with
             ``metadata``. Otherwise, the metadata for the runs are merged. In the case
             where there are duplicate metadata keys, the values from the first run are
             used.
@@ -1871,8 +1871,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmRun`
-            If not :obj:`inplace`, return a new :class:`ScmRun` instance
+        :class:`ScmRun <scmdata.run.ScmRun>`
+            If not :obj:`inplace`, return a new :class:`ScmRun <scmdata.run.ScmRun>` instance
             containing the result of the append.
 
         Raises
@@ -1951,7 +1951,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :obj:`ScmRun`
+        :class:`ScmRun <scmdata.run.ScmRun>`
 
         Raises
         ------
@@ -2022,7 +2022,7 @@ def run_append(
     Append together many objects.
 
     When appending many objects, it may be more efficient to call this routine once with
-    a list of :class:`ScmRun`'s, than using :func:`ScmRun.append` multiple times.
+    a list of :class:`ScmRun <scmdata.run.ScmRun>`'s, than using :func:`ScmRun.append` multiple times.
 
     If timeseries with duplicate metadata are found, the timeseries are appended and
     values falling on the same timestep are averaged if :obj:`duplicate_msg` is not
@@ -2053,8 +2053,8 @@ def run_append(
 
     Parameters
     ----------
-    runs: list of :class:`ScmRun`
-        The runs to append. Values will be attempted to be cast to :class:`ScmRun`.
+    runs: list of :class:`ScmRun <scmdata.run.ScmRun>`
+        The runs to append. Values will be attempted to be cast to :class:`ScmRun <scmdata.run.ScmRun>`.
 
     inplace
         If ``True``, then the operation updates the first item in :obj:`runs` and returns
@@ -2067,13 +2067,13 @@ def run_append(
         duplicate data is detected.
 
     metadata
-        If not ``None``, override the metadata of the resulting :obj:`ScmRun` with
+        If not ``None``, override the metadata of the resulting :class:`ScmRun <scmdata.run.ScmRun>` with
         ``metadata``. Otherwise, the metadata for the runs are merged. In the case where
         there are duplicate metadata keys, the values from the first run are used.
 
     Returns
     -------
-    :obj:`ScmRun`
+    :class:`ScmRun <scmdata.run.ScmRun>`
         If not :obj:`inplace`, the return value is the object containing the merged
         data. The resultant class will be determined by the type of the first object.
 
@@ -2081,7 +2081,7 @@ def run_append(
     ------
     TypeError
         If :obj:`inplace` is ``True`` but the first element in :obj:`dfs` is not an
-        instance of :class:`ScmRun`
+        instance of :class:`ScmRun <scmdata.run.ScmRun>`
 
         ``runs`` argument is not a list
 

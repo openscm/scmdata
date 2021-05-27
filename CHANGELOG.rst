@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#156 <https://github.com/openscm/scmdata/pull/156>`_) Fix :mod:`pandas` and :mod:`xarray` documentation links
 - (`#155 <https://github.com/openscm/scmdata/pull/155>`_) Simplify flake8 configuration
 
 v0.10.1
@@ -37,7 +38,7 @@ v0.8.0
 - (`#139 <https://github.com/openscm/scmdata/pull/139>`_) Add :meth:`ScmRun.plumeplot`
 - (`#140 <https://github.com/openscm/scmdata/pull/140>`_) Add workaround for installing scmdata with Python 3.6 on windows to handle lack of cftime 1.3.1 wheel
 - (`#138 <https://github.com/openscm/scmdata/pull/138>`_) Add :meth:`ScmRun.quantiles_over`
-- (`#137 <https://github.com/openscm/scmdata/pull/137>`_) Fix :meth:`scmdata.ScmRun.to_csv` so that writing and reading is circular (i.e. you end up where you started if you write a file and then read it straight back into a new :obj:`scmdata.ScmRun` instance)
+- (`#137 <https://github.com/openscm/scmdata/pull/137>`_) Fix :meth:`scmdata.ScmRun.to_csv` so that writing and reading is circular (i.e. you end up where you started if you write a file and then read it straight back into a new :obj:`scmdata.ScmRun <scmdata.run.ScmRun>` instance)
 
 v0.7.6
 ------
@@ -62,7 +63,7 @@ v0.7.3
 
 - (`#124 <https://github.com/openscm/scmdata/pull/124>`_) Add :class:`scmdata.run.BaseScmRun` and :attr:`scmdata.run.BaseScmRun.required_cols` so new sub-classes can be defined which use a different set of required columns from :class:`scmdata.run.ScmRun`. Also added :class:`scmdata.errors.MissingRequiredColumn` and tidied up the docs.
 - (`#75 <https://github.com/openscm/scmdata/pull/75>`_) Add test to ensure that :meth:`scmdata.ScmRun.groupby` cannot pick up the same timeseries twice even if metadata is changed by the function being applied
-- (`#125 <https://github.com/openscm/scmdata/pull/125>`_) Fix edge-case when filtering an empty :class:`scmdata.ScmRun`
+- (`#125 <https://github.com/openscm/scmdata/pull/125>`_) Fix edge-case when filtering an empty :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
 - (`#123 <https://github.com/openscm/scmdata/pull/123>`_) Add :class:`scmdata.database.ScmDatabase` to read/write data using multiple files. (closes `#103 <https://github.com/openscm/scmdata/issues/103>`_)
 
 v0.7.2
@@ -111,7 +112,7 @@ v0.6.2
 ------
 
 - (`#87 <https://github.com/openscm/scmdata/pull/87>`_) Upgrade workflow to use ``isort>=5``
-- (`#82 <https://github.com/openscm/scmdata/pull/82>`_) Add support for adding Pint scalars and vectors to :class:`scmdata.Timeseries` and :class:`scmdata.ScmRun` instances
+- (`#82 <https://github.com/openscm/scmdata/pull/82>`_) Add support for adding Pint scalars and vectors to :class:`scmdata.Timeseries` and :class:`scmdata.ScmRun <scmdata.run.ScmRun>` instances
 - (`#85 <https://github.com/openscm/scmdata/pull/85>`_) Allow required columns to be read as ``extras`` from netCDF files (closes `#83 <https://github.com/openscm/scmdata/issues/83>`_)
 - (`#84 <https://github.com/openscm/scmdata/pull/84>`_) Raise a DeprecationWarning if no default ``inplace`` argument is provided for :meth:`ScmRun.drop_meta`. inplace default behaviour scheduled to be changed to ``False`` in v0.7.0
 - (`#81 <https://github.com/openscm/scmdata/pull/81>`_) Add :attr:`scmdata.run.ScmRun.metadata` to track :class:`ScmRun` instance-specific metadata (closes `#77 <https://github.com/openscm/scmdata/issues/77>`_)

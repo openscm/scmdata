@@ -110,8 +110,8 @@ html_theme = "sphinx_rtd_theme"
 # html_sidebars = {}
 
 html_context = {
-    "display_github": False,
-    "github_user": "lewisjared",
+    "display_github": True,
+    "github_user": "openscm",
     "github_repo": "scmdata",
     "github_version": "master",
     "conf_py_path": "/docs/source",
@@ -205,7 +205,8 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "pyam": ("https://pyam-iamc.readthedocs.io/en/latest", None),
     "scmdata": ("https://scmdata.readthedocs.io/en/latest", None),
-    # "pint": ("https://pint.readthedocs.io/en/latest", None), # no full API doc here, unfortunately
+    "xarray": ("http://xarray.pydata.org/en/stable", None),
+    "pint": ("https://pint.readthedocs.io/en/latest", None,),
 }
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True

@@ -60,7 +60,7 @@ def _parse_datetime(inp: np.ndarray) -> np.ndarray:
 
 def _format_datetime(dts: np.ndarray) -> np.ndarray:
     """
-    Convert an array to an array of :class:`np.datetime64`.
+    Convert an array to an array of :class:`numpy.datetime64`.
 
     Parameters
     ----------
@@ -69,13 +69,13 @@ def _format_datetime(dts: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    :class:`np.ndarray` of :class:`np.datetime64`
+    :class:`numpy.ndarray` of :class:`numpy.datetime64`
         Converted array
 
     Raises
     ------
     ValueError
-        If one of the values in :obj:`dts` cannot be converted to :class:`np.datetime64`
+        If one of the values in :obj:`dts` cannot be converted to :class:`numpy.datetime64`
     """
     if len(dts) <= 0:  # pylint: disable=len-as-condition
         return np.array([], dtype=_TARGET_DTYPE)
@@ -96,7 +96,7 @@ def _format_datetime(dts: np.ndarray) -> np.ndarray:
 
 class TimePoints:
     """
-    Handles time points by wrapping :class:`np.ndarray` of :class:`np.datetime64`..
+    Handles time points by wrapping :class:`numpy.ndarray` of :class:`numpy.datetime64`..
     """
 
     def __init__(self, values):
@@ -125,12 +125,12 @@ class TimePoints:
 
     def to_index(self) -> pd.Index:
         """
-        Get time points as :class:`pd.Index`.
+        Get time points as :class:`pandas.Index`.
 
         Returns
         -------
-        :class:`pd.Index`
-            :class:`pd.Index` of :class:`np.dtype` :class:`object` with name ``"time"``
+        :class:`pandas.Index`
+            :class:`pandas.Index` of :class:`numpy.dtype` :class:`object` with name ``"time"``
             made from the time points represented as :class:`datetime.datetime`.
         """
         return pd.Index(self._values.astype(object), dtype=object, name="time")
@@ -153,7 +153,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`numpy.ndarray` of :obj:`int`
             Year of each time point
         """
         return np.vectorize(getattr)(self._values.astype(object), "year")
@@ -164,7 +164,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`numpy.ndarray` of :obj:`int`
             Month of each time point
         """
         return np.vectorize(getattr)(self._values.astype(object), "month")
@@ -175,7 +175,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`numpy.ndarray` of :obj:`int`
             Day of each time point
         """
         return np.vectorize(getattr)(self._values.astype(object), "day")
@@ -186,7 +186,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`numpy.ndarray` of :obj:`int`
             Hour of each time point
         """
         return np.vectorize(getattr)(self._values.astype(object), "hour")
@@ -197,7 +197,7 @@ class TimePoints:
 
         Returns
         -------
-        :obj:`np.array` of :obj:`int`
+        :class:`numpy.ndarray` of :obj:`int`
             Day of the week of each time point
         """
         return np.vectorize(datetime.weekday)(self._values.astype(object))

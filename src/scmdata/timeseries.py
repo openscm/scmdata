@@ -43,23 +43,23 @@ class TimeSeries(OpsMixin):
 
     def __init__(self, data, time=None, **kwargs):
         """
-        Initialise a :obj:`TimeSeries` instance
+        Initialise a :class:`TimeSeries` instance
 
         Parameters
         ----------
         data : array_like
-            Data to be held by the :obj:`TimeSeries` instance. ``data`` must
-            be one-dimensional. If ``data`` is an :obj:`xr.DataArray`
+            Data to be held by the :class:`TimeSeries` instance. ``data`` must
+            be one-dimensional. If ``data`` is an :class:`xarray.DataArray`
             instance, its single dimension must be ``"time"``. If ``data``
-            is not an :obj:`xr.DataArray`, then ``time`` must also be supplied.
+            is not an :class:`xarray.DataArray`, then ``time`` must also be supplied.
 
         time : array_like or None
-            Only used if ``data`` is not an :obj:`xr.DataArray`. These become
+            Only used if ``data`` is not an :class:`xarray.DataArray`. These become
             the time axis of ``self._data``.
 
         **kwargs
-            Only used if `data`` is not an :obj:`xr.DataArray`. Passed to the
-            :obj:`xr.DataArray` constructor.
+            Only used if `data`` is not an :class:`xarray.DataArray`. Passed to the
+            :class:`xarray.DataArray` constructor.
 
         Raises
         ------
@@ -67,17 +67,17 @@ class TimeSeries(OpsMixin):
             ``data`` is not one-dimensional
 
         TypeError
-            ``data`` is an :obj:`xr.DataArray` and ``time is not None``
+            ``data`` is an :class:`xarray.DataArray` and ``time is not None``
 
         ValueError
-            ``data`` is an :obj:`xr.DataArray` and its dimension is not named
+            ``data`` is an :class:`xarray.DataArray` and its dimension is not named
             ``"time"``.
 
         TypeError
-            ``data`` is not an :obj:`xr.DataArray` and ``time is None``
+            ``data`` is not an :class:`xarray.DataArray` and ``time is None``
 
         ValueError
-            ``data`` is not an :obj:`xr.DataArray` and ``coords`` is supplied
+            ``data`` is not an :class:`xarray.DataArray` and ``coords`` is supplied
             via ``**kwargs``
         """
         values = np.asarray(data)
@@ -88,12 +88,13 @@ class TimeSeries(OpsMixin):
         if isinstance(data, xr.DataArray):
             if time is not None:
                 raise TypeError(
-                    "If data is an :obj:`xr.DataArray` instance, time must be " "`None`"
+                    "If data is an :class:`xarray.DataArray` instance, time must be "
+                    "`None`"
                 )
 
             if data.dims != ("time",):
                 raise ValueError(
-                    "If data is an :obj:`xr.DataArray` instance, its only "
+                    "If data is an :class:`xarray.DataArray` instance, its only "
                     "dimension must be named `'time'`"
                 )
             self._data = data
@@ -101,13 +102,13 @@ class TimeSeries(OpsMixin):
         else:
             if time is None:
                 raise TypeError(
-                    "If data is not an :obj:`xr.DataArray` instance, `time` "
+                    "If data is not an :class:`xarray.DataArray` instance, `time` "
                     "must not be `None`"
                 )
 
             if "coords" in kwargs:
                 raise ValueError(
-                    "If ``data`` is not an :obj:`xr.DataArray`, `coords` must "
+                    "If ``data`` is not an :class:`xarray.DataArray`, `coords` must "
                     "not be supplied via `kwargs` because it will be "
                     "automatically filled with the value of `time`."
                 )
@@ -147,12 +148,12 @@ class TimeSeries(OpsMixin):
         """
         Create a deep copy of the timeseries.
 
-        Any further modifications to the :obj:`Timeseries` returned copy will not be
-        reflected in the current :obj:`Timeseries`
+        Any further modifications to the :class:`Timeseries` returned copy will not be
+        reflected in the current :class:`Timeseries`
 
         Returns
         -------
-        :obj:`Timeseries`
+        :class:`Timeseries`
         """
         return copy.deepcopy(self)
 
@@ -174,7 +175,7 @@ class TimeSeries(OpsMixin):
 
         Returns
         -------
-        :obj:`np.ndarray`
+        :class:`numpy.ndarray`
         """
         return TimePoints(self._data.coords["time"].values)
 
@@ -185,7 +186,7 @@ class TimeSeries(OpsMixin):
 
         Returns
         -------
-        :obj:`np.ndarray`
+        :class:`numpy.ndarray`
         """
         return self._data.values
 
@@ -244,7 +245,7 @@ class TimeSeries(OpsMixin):
 
         Returns
         -------
-        :obj:`TimeSeries`
+        :class:`TimeSeries`
             A new TimeSeries with the new time dimension
 
         References
@@ -272,7 +273,7 @@ class TimeSeries(OpsMixin):
             Extrapolation type. Options are None, 'linear' or 'constant'
         Returns
         -------
-        :obj:`TimeSeries`
+        :class:`TimeSeries`
             A new TimeSeries with the new time dimension
         """
         target_times = TimePoints(target_times)

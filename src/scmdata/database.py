@@ -121,11 +121,11 @@ class ScmDatabase:
         :attr:`levels` in a directory structure underneath ``root_dir``.
 
         Use :meth:`available_data` to see what data is available. Subsets of
-        data can then be loaded as an :class:`scmdata.ScmRun` using :meth:`load`.
+        data can then be loaded as an :class:`scmdata.ScmRun <scmdata.run.ScmRun>` using :meth:`load`.
 
         Parameters
         ----------
-        scmrun : :obj:`scmdata.ScmRun`
+        scmrun : :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
             Data to save.
 
             The timeseries in this run should have valid metadata for each
@@ -209,7 +209,7 @@ class ScmDatabase:
 
         Returns
         -------
-        :class:`scmdata.ScmRun`
+        :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
             Loaded data
 
         Raises
@@ -295,7 +295,7 @@ class ScmDatabase:
 
         Returns
         -------
-        :class:`pd.DataFrame`
+        :class:`pandas.DataFrame`
         """
         load_path = os.path.join(self._root_dir, "**", "*.nc")
         all_files = glob.glob(load_path, recursive=True)

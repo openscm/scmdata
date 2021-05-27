@@ -10,7 +10,7 @@ from .errors import NonUniqueMetadataError
 
 def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
     """
-    Convert to a :class:`xr.Dataset`
+    Convert to a :class:`xarray.Dataset`
 
     Parameters
     ----------
@@ -26,7 +26,7 @@ def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
         `xarray terminology <https://xarray.pydata.org/en/stable/terminology.html>`_
         for more details). These non-dimension co-ordinates store extra information and
         can be mapped to each timeseries found in the data variables of the output
-        :obj:`xr.Dataset`. Where possible, these non-dimension co-ordinates will use
+        :class:`xarray.Dataset`. Where possible, these non-dimension co-ordinates will use
         dimension co-ordinates as their own co-ordinates. However, if the metadata in
         ``extras`` is not defined by a single dimension in ``dimensions``, then the
         ``extras`` co-ordinates will have dimensions of "_id". This "_id" co-ordinate
@@ -39,8 +39,8 @@ def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
 
     Returns
     -------
-    :obj:`xr.Dataset`
-        Data in self, re-formatted as an :obj:`xr.Dataset`
+    :class:`xarray.Dataset`
+        Data in self, re-formatted as an :class:`xarray.Dataset`
 
     Raises
     ------

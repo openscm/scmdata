@@ -30,7 +30,7 @@ The complete set of manipulation features can be found in the documentation page
 :class:`ScmRun <scmdata.run.ScmRun>` has three key properties and one key method, which allow the user to quickly access their data in more standard formats:
 
 * :attr:`values <scmdata.run.ScmRun.values>` returns all of the timeseries as a single :obj:`numpy.ndarray` without any metadata or indication of the time axis.
-* :attr:`meta <scmdata.run.ScmRun.meta>` returns all of the timeseries' metadata as a single :obj:`pandas.DataFrame`. This allows users to quickly have an overview of the timeseries held by :class:`scmdata.ScmRun` without having to also view the data itself.
+* :attr:`meta <scmdata.run.ScmRun.meta>` returns all of the timeseries' metadata as a single :obj:`pandas.DataFrame`. This allows users to quickly have an overview of the timeseries held by :class:`scmdata.ScmRun <scmdata.run.ScmRun>` without having to also view the data itself.
 * :attr:`metadata <scmdata.run.ScmRun.metadata` stores run-specific metadata, i.e. metadata which isn't tied to any timeseries specifically.
 * :meth:`timeseries() <scmdata.run.ScmRun.timeseries>` combines :attr:`values <scmdata.run.ScmRun.values>` and :attr:`meta <scmdata.run.ScmRun.meta>` to form a :obj:`pandas.DataFrame` whose index is equal to :attr:`scmdata.ScmRun.meta <scmdata.run.ScmRun.meta>` and whose values are equal to :attr:`scmdata.ScmRun.values <scmdata.run.ScmRun.values>`. The columns of the output of :meth:`timeseries() <scmdata.run.ScmRun.timeseries>` are the time axis of the data.
 
