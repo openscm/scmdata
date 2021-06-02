@@ -69,6 +69,20 @@ def test_database_init_and_repr():
     assert "root_dir: root_dir" in str(tdb)
 
 
+@pytest.mark.parametrize("levels", [("scenario",), ("scenario", "model")])
+def test_database_passes_config(levels):
+    tdb = ScmDatabase("root_dir", levels=levels, backend_config={"test": "example"})
+    assert tdb._backend.kwargs["levels"] == levels
+    assert tdb._backend.kwargs["test"] == "example"
+
+
+@pytest.mark.parametrize("cfg_name", ["levels", "root_dir"])
+def test_database_invalid_config(cfg_name):
+    msg = "backend_config cannot contain key of `{}`".format(cfg_name)
+    with pytest.raises(ValueError, match=msg):
+        ScmDatabase("root_dir", backend_config={cfg_name: "test"})
+
+
 def test_database_custom_backend():
     backend = DummyBackend()
     tdb = ScmDatabase("root_dir", backend=backend)

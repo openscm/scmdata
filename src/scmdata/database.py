@@ -308,6 +308,7 @@ class ScmDatabase:
         root_dir,
         levels=("climate_model", "variable", "region", "scenario"),
         backend="netcdf",
+        backend_config=None,
     ):
         """
         Initialise the database
@@ -324,6 +325,22 @@ class ScmDatabase:
             best match the input data and desired access pattern. If there are any
             additional varying dimensions, they will be stored as dimensions.
 
+        backend: str or :class:`DatabaseBackend`
+            Determine the backend to serialize and deserialize data
+
+            Defaults to using :class:`NetCDFBackend` which reads and writes data as
+            netCDF files. Note that this requires the optional dependency of netCDF4 to
+            be installed.
+
+            If a custom backend class is being used, it must be extend the
+            :class:`DatabaseBackend` class.
+
+        backend_config: dict
+            Additional configuration to pass to the backend
+
+            See the documentation for the target backend to determine what configuration
+            options are available.
+
         .. note::
 
             Creating a new :class:`ScmDatabase` does not modify any existing data on
@@ -332,13 +349,23 @@ class ScmDatabase:
         """
         self._root_dir = root_dir
         self.levels = tuple(levels)
-        self._backend = self._get_backend(backend)
 
-    def _get_backend(self, backend):
+        backend_config = backend_config if backend_config else {}
+        for key in ["levels", "root_dir"]:
+            if key in backend_config:
+                raise ValueError(
+                    "backend_config cannot contain key of `{}`".format(key)
+                )
+        backend_config["levels"] = self.levels
+        backend_config["root_dir"] = root_dir
+
+        self._backend = self._get_backend(backend, backend_config)
+
+    def _get_backend(self, backend, backend_config):
         if isinstance(backend, six.string_types):
             try:
                 cls = backend_classes[backend.lower()]
-                return cls(levels=self.levels, root_dir=self._root_dir)
+                return cls(**backend_config)
             except KeyError:
                 raise ValueError("Unknown database backend: {}".format(backend))
         else:
