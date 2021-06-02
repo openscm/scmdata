@@ -1240,6 +1240,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             There is more than one unique value in the metadata column and
             ``no_duplicates`` is ``True``.
 
+        KeyError
+            If a ``meta`` column does not exist in the run's metadata
+
         Returns
         -------
         [List[Any], Any]

@@ -158,7 +158,10 @@ class NetCDFBackend(DatabaseBackend):
         Raises
         ------
         ValueError
-            If non-unique metadata or missing metadata is found for each of :attr:`self.kwargs["levels"]`
+            If non-unique metadata is found for each of :attr:`self.kwargs["levels"]`
+
+        KeyError
+            If missing metadata is found for each of :attr:`self.kwargs["levels"]`
 
         Returns
         -------
@@ -166,18 +169,20 @@ class NetCDFBackend(DatabaseBackend):
             Path in which to save the data without spaces or special characters
         """
         levels = {
-            level: sr.get_unique_meta(level, no_duplicates=True).replace(os.sep, "_")
-            for level in self.kwargs["levels"]
+            database_level: sr.get_unique_meta(
+                database_level, no_duplicates=True
+            ).replace(os.sep, "_")
+            for database_level in self.kwargs["levels"]
         }
 
         return self._get_out_filepath(**levels)
 
-    def _get_out_filepath(self, **levels):
+    def _get_out_filepath(self, **data_levels):
         out_levels = []
-        for level in self.kwargs["levels"]:
-            if level not in levels:
-                raise ValueError("expected level: {}".format(level))
-            out_levels.append(str(levels[level]))
+        for database_level in self.kwargs["levels"]:
+            if database_level not in data_levels:  # pragma: no cover # emergency valve
+                raise ValueError("expected level: {}".format(database_level))
+            out_levels.append(str(data_levels[database_level]))
 
         out_path = os.path.join(self.kwargs["root_dir"], *out_levels)
         out_fname = "__".join(out_levels) + ".nc"
@@ -203,6 +208,12 @@ class NetCDFBackend(DatabaseBackend):
         ------
         ValueError
             If duplicate metadata are present
+
+            To resolve this, review the selected database levels to ensure that the
+            match the dimensionality of the data
+
+        KeyError
+            If metadata for the requested database levels are not found
 
         Returns
         -------
@@ -420,6 +431,14 @@ class ScmDatabase:
             of the columns specified in ``levels``.
         disable_tqdm: bool
             If True, do not show the progress bar
+
+        Raises
+        ------
+
+        NonUniqueMetadata
+
+        KeyError
+            If a filter for a level not in :attr:`levels` is specified
         """
         for r in tqdman.tqdm(
             scmrun.groupby(self.levels),
