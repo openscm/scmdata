@@ -113,7 +113,7 @@ class ScmDatabase:
 
         return "".join(safe_char(c) for c in inp)
 
-    def save(self, scmrun):
+    def save(self, scmrun, disable_tqdm=False):
         """
         Save data to the database
 
@@ -130,9 +130,14 @@ class ScmDatabase:
 
             The timeseries in this run should have valid metadata for each
             of the columns specified in ``levels``.
+        disable_tqdm: bool
+            If True, do not show the progress bar
         """
         for r in tqdman.tqdm(
-            scmrun.groupby(self.levels), leave=False, desc="Saving to database",
+            scmrun.groupby(self.levels),
+            leave=False,
+            desc="Saving to database",
+            disable=disable_tqdm,
         ):
             self._save_to_database_single_file(r)
 
@@ -192,12 +197,14 @@ class ScmDatabase:
         dimensions = nunique_meta_vals[nunique_meta_vals > 1].index.tolist()
         scmrun.to_nc(out_file, dimensions=dimensions)
 
-    def load(self, **filters):
+    def load(self, disable_tqdm=False, **filters):
         """
         Load data from the database
 
         Parameters
         ----------
+        disable_tqdm: bool
+            If True, do not show the progress bar
         filters: dict of str : [str, list[str]]
             Filters for the data to load.
 
@@ -250,7 +257,9 @@ class ScmDatabase:
         return run_append(
             [
                 ScmRun.from_nc(f)
-                for f in tqdman.tqdm(load_files, desc="Loading files", leave=False)
+                for f in tqdman.tqdm(
+                    load_files, desc="Loading files", leave=False, disable=disable_tqdm
+                )
             ]
         )
 
