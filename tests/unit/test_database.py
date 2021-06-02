@@ -22,8 +22,8 @@ def start_scmrun():
         columns={
             "scenario": "scenario",
             "model": "model",
-            "climate_model": "cmodel_a",
-            "variable": ["variable_a", "variable_b"],
+            "climate_model": ["cmodel_a", "cmodel_b"],
+            "variable": "variable",
             "unit": "unit",
             "region": "region",
             "ensemble_member": 0,
@@ -210,13 +210,14 @@ class TestNetCDFBackend:
 
     def test_get_out_filepath_not_all_values(self):
         backend = NetCDFBackend(levels=["climate_model"], root_dir="")
-        with pytest.raises(ValueError, match=": climate_model"):
+        with pytest.raises(KeyError, match=": climate_model"):
             backend._get_out_filepath(other="test")
 
     def test_netcdf_save_missing_meta(self, tdb, start_scmrun):
         with tempfile.TemporaryDirectory() as tempdir:
             backend = NetCDFBackend(levels=tdb.levels, root_dir=tempdir)
 
+            start_scmrun["variable"] = ["variable_a", "variable_b"]
             run = start_scmrun.drop_meta("climate_model")
 
             # TODO: make missing key exceptions consistent
@@ -226,9 +227,9 @@ class TestNetCDFBackend:
 
     def test_netcdf_save_duplicate_meta(self, tdb, start_scmrun):
         with tempfile.TemporaryDirectory() as tempdir:
-            backend = NetCDFBackend(levels=("variable",), root_dir=tempdir)
+            backend = NetCDFBackend(levels=("climate_model",), root_dir=tempdir)
             msg = re.escape(
-                "`variable` column is not unique (found values: ['variable_a', 'variable_b'])"
+                "`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])"
             )
             with pytest.raises(ValueError, match=msg):
                 backend.save(start_scmrun)
@@ -241,7 +242,7 @@ class TestNetCDFBackend:
             with patch.object(backend, "_get_out_filepath") as mock_get_out_filepath:
                 out_fname = os.path.join(tempdir, "test-level", "out.nc")
                 mock_get_out_filepath.return_value = out_fname
-                inp_scmrun = start_scmrun.filter(variable="variable_a")
+                inp_scmrun = start_scmrun.filter(climate_model="cmodel_a")
 
                 backend.save(inp_scmrun)
 
@@ -273,7 +274,7 @@ class TestNetCDFBackend:
 
                 inp_scmrun = start_scmrun
                 inp_scmrun["ensemble_member"] = [0, 1]
-                inp_scmrun["variable"] = "variable_a"
+                inp_scmrun["climate_model"] = "cmodel_a"
 
                 backend.save(inp_scmrun)
 

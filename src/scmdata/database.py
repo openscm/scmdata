@@ -181,7 +181,7 @@ class NetCDFBackend(DatabaseBackend):
         out_levels = []
         for database_level in self.kwargs["levels"]:
             if database_level not in data_levels:  # pragma: no cover # emergency valve
-                raise ValueError("expected level: {}".format(database_level))
+                raise KeyError("expected level: {}".format(database_level))
             out_levels.append(str(data_levels[database_level]))
 
         out_path = os.path.join(self.kwargs["root_dir"], *out_levels)
@@ -207,10 +207,7 @@ class NetCDFBackend(DatabaseBackend):
         Raises
         ------
         ValueError
-            If duplicate metadata are present
-
-            To resolve this, review the selected database levels to ensure that the
-            match the dimensionality of the data
+            If duplicate metadata are present for the requested database levels
 
         KeyError
             If metadata for the requested database levels are not found
