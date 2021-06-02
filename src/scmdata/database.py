@@ -218,8 +218,10 @@ class NetCDFBackend(DatabaseBackend):
             sr = run_append([existing_run, sr])
 
         # Check for required extra dimensions
-        nunique_meta_vals = sr.meta.nunique()
-        dimensions = nunique_meta_vals[nunique_meta_vals > 1].index.tolist()
+        dimensions = self.kwargs.get("dimensions", None)
+        if not dimensions:
+            nunique_meta_vals = sr.meta.nunique()
+            dimensions = nunique_meta_vals[nunique_meta_vals > 1].index.tolist()
         sr.to_nc(key, dimensions=dimensions)
         return key
 
