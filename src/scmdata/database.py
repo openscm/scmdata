@@ -431,9 +431,6 @@ class ScmDatabase:
 
         Raises
         ------
-
-        NonUniqueMetadata
-
         KeyError
             If a filter for a level not in :attr:`levels` is specified
         """
