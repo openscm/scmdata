@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#157 <https://github.com/openscm/scmdata/pull/157>`_) Add ``disable_tqdm`` parameter to :meth:`scmdata.database.ScmDatabase.load` and :meth:`scmdata.database.ScmDatabase.save` to disable displaying progress bars
 - (`#156 <https://github.com/openscm/scmdata/pull/156>`_) Fix :mod:`pandas` and :mod:`xarray` documentation links
 - (`#155 <https://github.com/openscm/scmdata/pull/155>`_) Simplify flake8 configuration
 
