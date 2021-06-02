@@ -6,6 +6,7 @@ omit = *_version.py
 [report]
 fail_under = 90
 exclude_lines =
+    pass
     if self.debug:
     pragma: no cover
     raise NotImplementedError

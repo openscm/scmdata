@@ -1,5 +1,6 @@
 import os.path
 import re
+import tempfile
 from glob import glob
 from unittest.mock import patch
 
@@ -8,7 +9,7 @@ import pandas as pd
 import pytest
 
 from scmdata import ScmRun, run_append
-from scmdata.database import ScmDatabase
+from scmdata.database import DatabaseBackend, NetCDFBackend, ScmDatabase
 from scmdata.errors import NonUniqueMetadataError
 from scmdata.testing import assert_scmdf_almost_equal
 
@@ -30,6 +31,25 @@ def start_scmrun():
     )
 
 
+class DummyBackend(DatabaseBackend):
+    def __init__(self, **kwargs):
+        super(DummyBackend, self).__init__(**kwargs)
+        self.keys = {}
+
+    def get(self, filters, ext="*.nc"):
+        return self.keys  # not doing any filtering...
+
+    def save(self, sr):
+        key = os.path.join(
+            *[sr.get_unique_meta(k, True) for k in self.kwargs["levels"]]
+        )
+        self.keys[key] = sr
+        return key
+
+    def load(self, key):
+        return self.keys[key]
+
+
 @pytest.fixture()
 def tdb(tmpdir):
     return ScmDatabase(tmpdir)
@@ -49,161 +69,230 @@ def test_database_init_and_repr():
     assert "root_dir: root_dir" in str(tdb)
 
 
-@pytest.mark.parametrize(
-    "levels,inp,exp_tail",
-    (
+@pytest.mark.parametrize("levels", [("scenario",), ("scenario", "model")])
+def test_database_passes_config(levels):
+    tdb = ScmDatabase("root_dir", levels=levels, backend_config={"test": "example"})
+    assert tdb._backend.kwargs["levels"] == levels
+    assert tdb._backend.kwargs["test"] == "example"
+
+
+@pytest.mark.parametrize("cfg_name", ["levels", "root_dir"])
+def test_database_invalid_config(cfg_name):
+    msg = "backend_config cannot contain key of `{}`".format(cfg_name)
+    with pytest.raises(ValueError, match=msg):
+        ScmDatabase("root_dir", backend_config={cfg_name: "test"})
+
+
+def test_database_custom_backend():
+    backend = DummyBackend()
+    tdb = ScmDatabase("root_dir", backend=backend)
+
+    assert tdb._backend == backend
+
+
+def test_database_custom_backend_invalid():
+    class WrongBackend(dict):
+        pass
+
+    backend = WrongBackend()
+    msg = "Backend should be an instance of scmdata.database.DatabaseBackend"
+    with pytest.raises(ValueError, match=msg):
+        ScmDatabase("root_dir", backend=backend)
+
+
+def test_database_custom_backend_missing():
+    msg = "Unknown database backend: other"
+    with pytest.raises(ValueError, match=msg):
+        ScmDatabase("root_dir", backend="other")
+
+
+class TestNetCDFBackend:
+    @pytest.mark.parametrize(
+        "levels,inp,exp_tail",
         (
-            ["climate_model", "variable", "region", "scenario"],
-            {
-                "climate_model": "cm",
-                "variable": "v",
-                "region": "r",
-                "scenario": "s",
-                "ensemble_member": "em",
-            },
-            os.path.join("cm", "v", "r", "s", "cm__v__r__s.nc"),
-        ),
-        (
-            ["climate_model", "variable", "region", "scenario"],
-            {
-                "climate_model": "cm_a",
-                "variable": "v",
-                "region": "r",
-                "scenario": "s",
-                "ensemble_member": "em",
-            },
-            os.path.join("cm_a", "v", "r", "s", "cm_a__v__r__s.nc"),
-        ),
-        (
-            ["climate_model", "variable", "region", "scenario", "ensemble_member"],
-            {
-                "climate_model": "cm",
-                "variable": "v",
-                "region": "r",
-                "scenario": "s",
-                "ensemble_member": "em",
-            },
-            os.path.join("cm", "v", "r", "s", "em", "cm__v__r__s__em.nc"),
-        ),
-        (
-            ["climate_model", "ensemble_member"],
-            {
-                "climate_model": "cm",
-                "variable": "v",
-                "region": "r",
-                "scenario": "s",
-                "ensemble_member": 1,
-            },
-            os.path.join("cm", "1", "cm__1.nc"),
-        ),
-        (
-            ["climate_model", "variable", "region", "scenario"],
-            {"climate_model": "cm", "variable": "v", "region": "r", "scenario": "s"},
-            os.path.join("cm", "v", "r", "s", "cm__v__r__s.nc"),
-        ),
-        (
-            ["climate_model", "variable", "region", "scenario", "ensemble_member"],
-            {
-                "climate_model": "MAGICC 7.1.0",
-                "variable": "Emissions|CO2",
-                "region": "World|R5.2OECD90",
-                "scenario": "1pctCO2-bgc",
-                "ensemble_member": "001",
-            },
-            os.path.join(
-                "MAGICC-7.1.0",
-                "Emissions-CO2",
-                "World-R5.2OECD90",
-                "1pctCO2-bgc",
-                "001",
-                "MAGICC-7.1.0__Emissions-CO2__World-R5.2OECD90__1pctCO2-bgc__001.nc",
+            (
+                ["climate_model", "variable", "region", "scenario"],
+                {
+                    "climate_model": "cm",
+                    "variable": "v",
+                    "region": "r",
+                    "scenario": "s",
+                    "ensemble_member": "em",
+                },
+                os.path.join("cm", "v", "r", "s", "cm__v__r__s.nc"),
+            ),
+            (
+                ["climate_model", "variable", "region", "scenario"],
+                {
+                    "climate_model": "cm_a",
+                    "variable": "v",
+                    "region": "r",
+                    "scenario": "s",
+                    "ensemble_member": "em",
+                },
+                os.path.join("cm_a", "v", "r", "s", "cm_a__v__r__s.nc"),
+            ),
+            (
+                ["climate_model", "variable", "region", "scenario", "ensemble_member"],
+                {
+                    "climate_model": "cm",
+                    "variable": "v",
+                    "region": "r",
+                    "scenario": "s",
+                    "ensemble_member": "em",
+                },
+                os.path.join("cm", "v", "r", "s", "em", "cm__v__r__s__em.nc"),
+            ),
+            (
+                ["climate_model", "ensemble_member"],
+                {
+                    "climate_model": "cm",
+                    "variable": "v",
+                    "region": "r",
+                    "scenario": "s",
+                    "ensemble_member": 1,
+                },
+                os.path.join("cm", "1", "cm__1.nc"),
+            ),
+            (
+                ["climate_model", "variable", "region", "scenario"],
+                {
+                    "climate_model": "cm",
+                    "variable": "v",
+                    "region": "r",
+                    "scenario": "s",
+                },
+                os.path.join("cm", "v", "r", "s", "cm__v__r__s.nc"),
+            ),
+            (
+                ["climate_model", "variable", "region", "scenario", "ensemble_member"],
+                {
+                    "climate_model": "MAGICC 7.1.0",
+                    "variable": "Emissions|CO2",
+                    "region": "World|R5.2OECD90",
+                    "scenario": "1pctCO2-bgc",
+                    "ensemble_member": "001",
+                },
+                os.path.join(
+                    "MAGICC-7.1.0",
+                    "Emissions-CO2",
+                    "World-R5.2OECD90",
+                    "1pctCO2-bgc",
+                    "001",
+                    "MAGICC-7.1.0__Emissions-CO2__World-R5.2OECD90__1pctCO2-bgc__001.nc",
+                ),
+            ),
+            (
+                ["climate_model", "variable", "region", "scenario"],
+                {
+                    "climate_model": "MAGICC7.1.0",
+                    "variable": "Emissions|CO2",
+                    "region": "World|R5.2OECD90",
+                    "scenario": "1pctCO2-bgc",
+                },
+                os.path.join(
+                    "MAGICC7.1.0",
+                    "Emissions-CO2",
+                    "World-R5.2OECD90",
+                    "1pctCO2-bgc",
+                    "MAGICC7.1.0__Emissions-CO2__World-R5.2OECD90__1pctCO2-bgc.nc",
+                ),
             ),
         ),
-        (
-            ["climate_model", "variable", "region", "scenario"],
-            {
-                "climate_model": "MAGICC7.1.0",
-                "variable": "Emissions|CO2",
-                "region": "World|R5.2OECD90",
-                "scenario": "1pctCO2-bgc",
-            },
-            os.path.join(
-                "MAGICC7.1.0",
-                "Emissions-CO2",
-                "World-R5.2OECD90",
-                "1pctCO2-bgc",
-                "MAGICC7.1.0__Emissions-CO2__World-R5.2OECD90__1pctCO2-bgc.nc",
-            ),
-        ),
-    ),
-)
-def test_get_out_filepath(levels, inp, exp_tail, tdb):
-    tdb.levels = levels
-    res = tdb._get_out_filepath(**inp)
-    exp = os.path.join(tdb._root_dir, exp_tail)
-
-    assert res == exp
-
-
-def test_get_out_filepath_not_all_values(tdb):
-    with pytest.raises(ValueError, match=": climate_model"):
-        tdb._get_out_filepath(other="test")
-
-
-@patch("scmdata.database.ensure_dir_exists")
-@patch.object(ScmDatabase, "_get_out_filepath")
-@patch.object(ScmRun, "to_nc")
-def test_save_to_database_single_file(
-    mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
-):
-    tout_file = "test_out.nc"
-    mock_get_out_filepath.return_value = tout_file
-    inp_scmrun = start_scmrun.filter(climate_model="cmodel_a")
-
-    tdb._save_to_database_single_file(inp_scmrun)
-
-    mock_get_out_filepath.assert_called_once()
-    mock_get_out_filepath.assert_called_with(
-        climate_model=inp_scmrun.get_unique_meta("climate_model", no_duplicates=True),
-        variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
-        region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
-        scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
     )
+    def test_get_out_filepath(self, levels, inp, exp_tail):
+        root_dir = "/tmp/example"
+        backend = NetCDFBackend(levels=levels, root_dir=root_dir)
+        res = backend._get_out_filepath(**inp)
+        exp = os.path.join(root_dir, exp_tail)
 
-    mock_ensure_dir_exists.assert_called_once()
-    mock_ensure_dir_exists.assert_called_with(tout_file)
+        assert res == exp
 
-    mock_to_nc.assert_called_once()
-    mock_to_nc.assert_called_with(tout_file, dimensions=[])
+    def test_get_out_filepath_not_all_values(self):
+        backend = NetCDFBackend(levels=["climate_model"], root_dir="")
+        with pytest.raises(KeyError, match=": climate_model"):
+            backend._get_out_filepath(other="test")
 
+    def test_netcdf_save_missing_meta(self, tdb, start_scmrun):
+        with tempfile.TemporaryDirectory() as tempdir:
+            backend = NetCDFBackend(levels=tdb.levels, root_dir=tempdir)
 
-@patch("scmdata.database.ensure_dir_exists")
-@patch.object(ScmDatabase, "_get_out_filepath")
-@patch.object(ScmRun, "to_nc")
-def test_save_to_database_single_file_non_unique_meta(
-    mock_to_nc, mock_get_out_filepath, mock_ensure_dir_exists, tdb, start_scmrun
-):
-    tout_file = "test_out.nc"
-    mock_get_out_filepath.return_value = tout_file
-    inp_scmrun = start_scmrun
-    inp_scmrun["ensemble_member"] = [0, 1]
-    inp_scmrun["climate_model"] = "cmodel_a"
+            start_scmrun["variable"] = ["variable_a", "variable_b"]
+            run = start_scmrun.drop_meta("climate_model")
 
-    tdb._save_to_database_single_file(inp_scmrun)
+            # TODO: make missing key exceptions consistent
+            msg = "Level climate_model not found"
+            with pytest.raises(KeyError, match=msg):
+                backend.save(run)
 
-    mock_get_out_filepath.assert_called_once()
-    mock_get_out_filepath.assert_called_with(
-        climate_model=inp_scmrun.get_unique_meta("climate_model", no_duplicates=True),
-        variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
-        region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
-        scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
-    )
+    def test_netcdf_save_duplicate_meta(self, tdb, start_scmrun):
+        with tempfile.TemporaryDirectory() as tempdir:
+            backend = NetCDFBackend(levels=("climate_model",), root_dir=tempdir)
+            msg = re.escape(
+                "`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])"
+            )
+            with pytest.raises(ValueError, match=msg):
+                backend.save(start_scmrun)
 
-    mock_ensure_dir_exists.assert_called_once()
-    mock_ensure_dir_exists.assert_called_with(tout_file)
+    @patch.object(ScmRun, "to_nc")
+    def test_netcdf_save(self, mock_to_nc, tdb, start_scmrun):
+        with tempfile.TemporaryDirectory() as tempdir:
+            backend = NetCDFBackend(levels=tdb.levels, root_dir=tempdir)
 
-    mock_to_nc.assert_called_once()
-    mock_to_nc.assert_called_with(tout_file, dimensions=["ensemble_member"])
+            with patch.object(backend, "_get_out_filepath") as mock_get_out_filepath:
+                out_fname = os.path.join(tempdir, "test-level", "out.nc")
+                mock_get_out_filepath.return_value = out_fname
+                inp_scmrun = start_scmrun.filter(climate_model="cmodel_a")
+
+                backend.save(inp_scmrun)
+
+                mock_get_out_filepath.assert_called_once()
+                mock_get_out_filepath.assert_called_with(
+                    climate_model=inp_scmrun.get_unique_meta(
+                        "climate_model", no_duplicates=True
+                    ),
+                    variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
+                    region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
+                    scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
+                )
+
+                assert os.path.exists(os.path.dirname(out_fname))
+                mock_to_nc.assert_called_once()
+                inp_scmrun.to_nc.assert_called_with(out_fname, dimensions=[])
+
+    @patch("scmdata.database.ensure_dir_exists")
+    @patch.object(ScmRun, "to_nc")
+    def test_netcdf_save_non_unique_meta(
+        self, mock_to_nc, mock_ensure_dir_exists, tdb, start_scmrun
+    ):
+        with tempfile.TemporaryDirectory() as tempdir:
+            backend = NetCDFBackend(levels=tdb.levels, root_dir=tempdir)
+
+            with patch.object(backend, "_get_out_filepath") as mock_get_out_filepath:
+                out_fname = os.path.join(tempdir, "test-level", "out.nc")
+                mock_get_out_filepath.return_value = out_fname
+
+                inp_scmrun = start_scmrun
+                inp_scmrun["ensemble_member"] = [0, 1]
+                inp_scmrun["climate_model"] = "cmodel_a"
+
+                backend.save(inp_scmrun)
+
+                mock_get_out_filepath.assert_called_once()
+                mock_get_out_filepath.assert_called_with(
+                    climate_model=inp_scmrun.get_unique_meta(
+                        "climate_model", no_duplicates=True
+                    ),
+                    variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
+                    region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
+                    scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
+                )
+
+                mock_ensure_dir_exists.assert_called_once()
+                mock_ensure_dir_exists.assert_called_with(out_fname)
+
+                mock_to_nc.assert_called_once()
+                mock_to_nc.assert_called_with(out_fname, dimensions=["ensemble_member"])
 
 
 def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
@@ -213,11 +302,11 @@ def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
             "`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])"
         ),
     ):
-        tdb._save_to_database_single_file(start_scmrun)
+        tdb._backend.save(start_scmrun)
 
 
-@patch.object(ScmDatabase, "_save_to_database_single_file")
-def test_database_save(mock_save_to_database_single_file, tdb, start_scmrun):
+def test_database_save(tdb, start_scmrun):
+    tdb._backend = DummyBackend(levels=tdb.levels)
     tdb.save(start_scmrun)
 
     expected_calls = len(
@@ -227,7 +316,7 @@ def test_database_save(mock_save_to_database_single_file, tdb, start_scmrun):
             )
         )
     )
-    assert mock_save_to_database_single_file.call_count == expected_calls
+    assert len(tdb._backend.keys) == expected_calls
 
 
 @pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\" .")
