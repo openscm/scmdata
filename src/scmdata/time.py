@@ -129,7 +129,7 @@ class TimePoints:
 
         Returns
         -------
-        :class:`pd.Index`
+        :class:`pandas.Index`
             :class:`pandas.Index` of :class:`numpy.dtype` :class:`object` with name ``"time"``
             made from the time points represented as :class:`datetime.datetime`.
         """
