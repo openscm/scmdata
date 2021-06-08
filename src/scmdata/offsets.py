@@ -38,8 +38,9 @@ def generate_range(
 
     Yields
     ------
-    :class:`cftime.datetime`
-        Next datetime in the range
+    :class:`cftime.DatetimeGregorian`
+        Next datetime in the range (we use the Gregorian calendar as it is
+        cftime's default)
 
     Raises
     ------
@@ -62,12 +63,12 @@ def generate_range(
     ... )
 
     >>> pprint([d for d in g])
-    [cftime.datetime(2001, 1, 1, 0, 0),
-     cftime.datetime(2002, 1, 1, 0, 0),
-     cftime.datetime(2003, 1, 1, 0, 0),
-     cftime.datetime(2004, 1, 1, 0, 0),
-     cftime.datetime(2005, 1, 1, 0, 0),
-     cftime.datetime(2006, 1, 1, 0, 0)]
+    [cftime.DatetimeGregorian(2001, 1, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2002, 1, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2003, 1, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2004, 1, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2005, 1, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2006, 1, 1, 0, 0, 0, 0)]
 
     In this example the first timestep is rolled back to 31st Dec 2000 whilst the last
     is extended to 31st Dec 2005.
@@ -78,12 +79,12 @@ def generate_range(
     ...     to_offset("A"),
     ... )
     >>> pprint([d for d in g])
-    [cftime.datetime(2000, 12, 31, 0, 0),
-     cftime.datetime(2001, 12, 31, 0, 0),
-     cftime.datetime(2002, 12, 31, 0, 0),
-     cftime.datetime(2003, 12, 31, 0, 0),
-     cftime.datetime(2004, 12, 31, 0, 0),
-     cftime.datetime(2005, 12, 31, 0, 0)]
+    [cftime.DatetimeGregorian(2000, 12, 31, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2001, 12, 31, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2002, 12, 31, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2003, 12, 31, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2004, 12, 31, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2005, 12, 31, 0, 0, 0, 0)]
 
     In this example the first timestep is already on the offset so stays there, the last
     timestep is to 1st Sep 2005.
@@ -94,24 +95,24 @@ def generate_range(
     ...     to_offset("QS"),
     ... )
     >>> pprint([d for d in g])
-    [cftime.datetime(2001, 4, 1, 0, 0),
-     cftime.datetime(2001, 7, 1, 0, 0),
-     cftime.datetime(2001, 10, 1, 0, 0),
-     cftime.datetime(2002, 1, 1, 0, 0),
-     cftime.datetime(2002, 4, 1, 0, 0),
-     cftime.datetime(2002, 7, 1, 0, 0),
-     cftime.datetime(2002, 10, 1, 0, 0),
-     cftime.datetime(2003, 1, 1, 0, 0),
-     cftime.datetime(2003, 4, 1, 0, 0),
-     cftime.datetime(2003, 7, 1, 0, 0),
-     cftime.datetime(2003, 10, 1, 0, 0),
-     cftime.datetime(2004, 1, 1, 0, 0),
-     cftime.datetime(2004, 4, 1, 0, 0),
-     cftime.datetime(2004, 7, 1, 0, 0),
-     cftime.datetime(2004, 10, 1, 0, 0),
-     cftime.datetime(2005, 1, 1, 0, 0),
-     cftime.datetime(2005, 4, 1, 0, 0),
-     cftime.datetime(2005, 7, 1, 0, 0)]
+    [cftime.DatetimeGregorian(2001, 4, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2001, 7, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2001, 10, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2002, 1, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2002, 4, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2002, 7, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2002, 10, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2003, 1, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2003, 4, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2003, 7, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2003, 10, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2004, 1, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2004, 4, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2004, 7, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2004, 10, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2005, 1, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2005, 4, 1, 0, 0, 0, 0),
+     cftime.DatetimeGregorian(2005, 7, 1, 0, 0, 0, 0)]
     """
     # Uses the Gregorian calendar - allows for adding/subtracting datetime.timedelta in range calc
     start_cf = cftime.DatetimeGregorian(*start.timetuple()[:6])
@@ -121,4 +122,4 @@ def generate_range(
         offset.rollback(start_cf), offset.rollforward(end_cf), freq=offset
     )
 
-    return [cftime.datetime(*dt.timetuple()[:6]) for dt in res]
+    return [cftime.DatetimeGregorian(*dt.timetuple()[:6]) for dt in res]

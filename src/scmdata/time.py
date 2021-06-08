@@ -137,14 +137,14 @@ class TimePoints:
 
     def as_cftime(self) -> list:
         """
-        Get as cftime datetimes
+        Get as :class:`cftime.DatetimeGregorian`
 
         Returns
         -------
-        list of cftime.datetime
+        list of cftime.DatetimeGregorian
         """
         return [
-            cftime.datetime(*dt.timetuple()[:6]) for dt in self._values.astype(object)
+            cftime.DatetimeGregorian(*dt.timetuple()[:6]) for dt in self._values.astype(object)
         ]
 
     def years(self) -> np.ndarray:
