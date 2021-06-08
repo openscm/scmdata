@@ -3055,11 +3055,9 @@ def test_drop_meta_nonunique():
         start.drop_meta("new_meta")
 
 
-@pytest.mark.parametrize("output_cls", (
-    None,
-    cftime.DatetimeGregorian,
-    cftime.Datetime360Day,
-))
+@pytest.mark.parametrize(
+    "output_cls", (None, cftime.DatetimeGregorian, cftime.Datetime360Day,)
+)
 def test_time_as_cftime(scm_run, output_cls):
     if output_cls is None:
         res = scm_run.time_points.as_cftime()

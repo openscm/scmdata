@@ -143,10 +143,7 @@ class TimePoints:
         -------
         list of `date_cls`
         """
-        return [
-            date_cls(*dt.timetuple()[:6])
-            for dt in self._values.astype(object)
-        ]
+        return [date_cls(*dt.timetuple()[:6]) for dt in self._values.astype(object)]
 
     def years(self) -> np.ndarray:
         """
