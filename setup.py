@@ -49,9 +49,13 @@ REQUIREMENTS_PLOTTING = ["matplotlib", "nc-time-axis", "seaborn"]
 REQUIREMENTS_NOTEBOOKS = (
     ["notebook", "ipywidgets"] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
 )
-REQUIREMENTS_TESTS = (
-    ["codecov", "nbval", "pytest>=5.0.0, <6", "pytest-benchmark", "pytest-cov"]
-)
+REQUIREMENTS_TESTS = [
+    "codecov",
+    "nbval",
+    "pytest>=5.0.0, <6",
+    "pytest-benchmark",
+    "pytest-cov",
+]
 REQUIREMENTS_DOCS = ["sphinx>2.1", "sphinx_rtd_theme"]
 REQUIREMENTS_DEPLOY = ["twine>=1.11.0", "setuptools>=41.2", "wheel>=0.31.0"]
 

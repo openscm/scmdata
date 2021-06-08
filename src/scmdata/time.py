@@ -144,7 +144,8 @@ class TimePoints:
         list of cftime.DatetimeGregorian
         """
         return [
-            cftime.DatetimeGregorian(*dt.timetuple()[:6]) for dt in self._values.astype(object)
+            cftime.DatetimeGregorian(*dt.timetuple()[:6])
+            for dt in self._values.astype(object)
         ]
 
     def years(self) -> np.ndarray:
