@@ -135,16 +135,16 @@ class TimePoints:
         """
         return pd.Index(self._values.astype(object), dtype=object, name="time")
 
-    def as_cftime(self) -> list:
+    def as_cftime(self, date_cls=cftime.DatetimeGregorian) -> list:
         """
         Get as :class:`cftime.DatetimeGregorian`
 
         Returns
         -------
-        list of cftime.DatetimeGregorian
+        list of `date_cls`
         """
         return [
-            cftime.DatetimeGregorian(*dt.timetuple()[:6])
+            date_cls(*dt.timetuple()[:6])
             for dt in self._values.astype(object)
         ]
 

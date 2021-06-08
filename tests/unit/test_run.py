@@ -7,6 +7,7 @@ import warnings
 from datetime import datetime
 from unittest.mock import patch
 
+import cftime
 import numpy as np
 import pandas as pd
 import pytest
@@ -3052,3 +3053,13 @@ def test_drop_meta_nonunique():
 
     with pytest.raises(NonUniqueMetadataError):
         start.drop_meta("new_meta")
+
+
+@pytest.mark.parametrize("output_cls", (
+    cftime.DatetimeGregorian,
+    cftime.Datetime360Day,
+))
+def test_time_as_cftime(scm_run, output_cls):
+    res = scm_run.time_points.as_cftime(date_cls=output_cls)
+
+    assert all([isinstance(v, output_cls) for v in res])
