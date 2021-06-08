@@ -45,7 +45,12 @@ REQUIREMENTS_OPTIONAL = [
     "scipy",
     "xlrd<=1.2.0",  # support reading excel
 ]
-REQUIREMENTS_PLOTTING = ["matplotlib", "nc-time-axis", "seaborn"]
+REQUIREMENTS_PLOTTING = [
+    "cftime<1.5",  # cftime 1.5 incompatible with nc-time-axis
+    "matplotlib",
+    "nc-time-axis",
+    "seaborn",
+]
 REQUIREMENTS_NOTEBOOKS = (
     ["notebook", "ipywidgets"] + REQUIREMENTS_PLOTTING + REQUIREMENTS_OPTIONAL
 )
