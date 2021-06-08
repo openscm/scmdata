@@ -37,10 +37,13 @@ def generate_range(
     offset:
         Offset object for determining the timesteps.
 
+    date_cls : :class:`cftime.datetime`
+            The time points will be returned as instances of ``date_cls``
+
     Yields
     ------
     :class:`cftime.datetime`
-        Next datetime in the range (the exact class is specified by `date_cls`)
+        Next datetime in the range (the exact class is specified by ``date_cls``)
 
     Raises
     ------

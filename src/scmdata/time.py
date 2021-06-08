@@ -129,7 +129,7 @@ class TimePoints:
 
         Returns
         -------
-        :class:`pandas.Index`
+        :class:`pd.Index`
             :class:`pandas.Index` of :class:`numpy.dtype` :class:`object` with name ``"time"``
             made from the time points represented as :class:`datetime.datetime`.
         """
@@ -137,11 +137,17 @@ class TimePoints:
 
     def as_cftime(self, date_cls=cftime.DatetimeGregorian) -> list:
         """
-        Get as :class:`cftime.DatetimeGregorian`
+        Format time points as :class:`cftime.datetime`
+
+        Parameters
+        ----------
+        date_cls : :class:`cftime.datetime`
+            The time points will be returned as instances of ``date_cls``
 
         Returns
         -------
-        list of `date_cls`
+        list of :class:`cftime.datetime`
+            Time points as a list of ``date_cls`` objects
         """
         return [date_cls(*dt.timetuple()[:6]) for dt in self._values.astype(object)]
 
