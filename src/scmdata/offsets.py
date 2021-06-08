@@ -15,6 +15,7 @@ def generate_range(
     start: cftime.datetime,
     end: cftime.datetime,
     offset: cftime_offsets.BaseCFTimeOffset,
+    date_cls: cftime.datetime = cftime.DatetimeGregorian,
 ) -> Iterable[cftime.datetime]:
     """
     Generate a range of datetime objects between start and end, using offset to
@@ -38,9 +39,8 @@ def generate_range(
 
     Yields
     ------
-    :class:`cftime.DatetimeGregorian`
-        Next datetime in the range (we use the Gregorian calendar as it is
-        cftime's default)
+    :class:`cftime.datetime`
+        Next datetime in the range (the exact class is specified by `date_cls`)
 
     Raises
     ------
@@ -114,7 +114,8 @@ def generate_range(
      cftime.DatetimeGregorian(2005, 4, 1, 0, 0, 0, 0),
      cftime.DatetimeGregorian(2005, 7, 1, 0, 0, 0, 0)]
     """
-    # Uses the Gregorian calendar - allows for adding/subtracting datetime.timedelta in range calc
+    # Uses the Gregorian calendar - allows for adding/subtracting
+    # datetime.timedelta in range calc
     start_cf = cftime.DatetimeGregorian(*start.timetuple()[:6])
     end_cf = cftime.DatetimeGregorian(*end.timetuple()[:6])
 
@@ -122,4 +123,4 @@ def generate_range(
         offset.rollback(start_cf), offset.rollforward(end_cf), freq=offset
     )
 
-    return [cftime.DatetimeGregorian(*dt.timetuple()[:6]) for dt in res]
+    return [date_cls(*dt.timetuple()[:6]) for dt in res]
