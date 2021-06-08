@@ -1,12 +1,13 @@
 import re
 from unittest.mock import MagicMock, call
 
-import matplotlib.axes
-import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
 from scmdata import ScmRun
+
+maxes = pytest.importorskip("matplotlib.axes")
+plt = pytest.importorskip("matplotlib.pyplot")
 
 sample_quantiles_plumes = pytest.mark.parametrize(
     "quantiles_plumes", ((((0.05, 0.95), 0.5), ((0.5,), 1.0),), (((0.17, 0.83), 0.7),),)
@@ -16,7 +17,7 @@ sample_quantiles_plumes = pytest.mark.parametrize(
 def test_plumeplot_default(plumeplot_scmrun):
     res = plumeplot_scmrun.plumeplot()
     assert isinstance(res, tuple)
-    assert isinstance(res[0], matplotlib.axes.Axes)
+    assert isinstance(res[0], maxes.Axes)
     assert isinstance(res[1], list)
 
 
