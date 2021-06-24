@@ -1528,12 +1528,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             groupby functions can be found at <https://pandas.pydata.org/pandas-docs/
             stable/reference/groupby.html>`_.
 
-            If a function is provided, will be applied to each group. The function must
-            take a dataframe as it's first argument and return a DataFrame, Series or scalar.
+            If a function is provided, it will be applied to each group. The function must
+            take a dataframe as its first argument and return a DataFrame, Series or scalar.
 
             Note that quantile means the value of the data at a given point in the cumulative
             distribution of values at each point in the timeseries, for each timeseries
-            once the groupby is applied. As a result, using ``q=0.5`` is is the same as
+            once the groupby is applied. As a result, using ``q=0.5`` is the same as
             taking the median and not the same as taking the mean/average.
 
         na_override: [int, float]
