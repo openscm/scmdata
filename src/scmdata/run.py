@@ -1525,8 +1525,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
             If a string is provided the equivalent pandas
             function is used. Additional information about the arguments for the pandas
-            groupby functions can be found at <https://xarray.pydata.org/en/stable/termi
-            nology.html>`_.
+            groupby functions can be found at <https://pandas.pydata.org/pandas-docs/
+            stable/reference/groupby.html>`_.
 
             If a function is provided, will be applied to each group. The function must
             take a dataframe as it's first argument and return a DataFrame, Series or scalar.
@@ -1581,6 +1581,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             "cummin",
             "cumprod",
             "cumsum",
+            "first",
             "last",
             "max",
             "mean",
@@ -1588,8 +1589,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             "min",
             "prod",
             "rank",
-            "pct_change",
-            "rank" "std",
+            "std",
             "sum",
             "var",
             "quantile",
