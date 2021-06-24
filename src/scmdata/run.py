@@ -1523,10 +1523,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         operation : str or func
             The operation to perform.
 
-            If a string is provided the equivalent pandas
-            function is used. Additional information about the arguments for the pandas
-            groupby functions can be found at <https://pandas.pydata.org/pandas-docs/
-            stable/reference/groupby.html>`_.
+            If a string is provided, the equivalent pandas groupby function is used. Note
+            that not all groupby functions are available as some do not make sense for
+            this particular application. Additional information about the arguments for
+            the pandas groupby functions can be found at <https://pandas.pydata.org/pan
+            das-docs/stable/reference/groupby.html>`_.
 
             If a function is provided, it will be applied to each group. The function must
             take a dataframe as its first argument and return a DataFrame, Series or scalar.
@@ -1557,7 +1558,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Raises
         ------
         ValueError
-            If the operation is not one of ['median', 'mean', 'quantile']
+            If the operation is not an allowed operation
 
             If the value of na_override clashes with any existing metadata
         """
@@ -1573,6 +1574,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         group_cols = list(set(ts.index.names) - set(cols))
         grouper = ts.groupby(group_cols)
 
+        # This is a subset of the available functions
         #  https://pandas.pydata.org/pandas-docs/stable/reference/groupby.html
         allowed_pd_ops = [
             "count",
