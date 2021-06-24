@@ -45,6 +45,7 @@ _logger = getLogger(__name__)
 
 
 MetadataType = Dict[str, Union[str, int, float]]
+ApplyCallable = Callable[[pd.DataFrame], Union[pd.DataFrame, pd.Series, float]]
 
 
 def _read_file(  # pylint: disable=missing-return-doc
@@ -1506,7 +1507,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     def process_over(
         self,
         cols: Union[str, List[str]],
-        operation: str,
+        operation: Union[str, ApplyCallable],
         na_override=-1e6,
         **kwargs: Any,
     ) -> pd.DataFrame:
@@ -1519,9 +1520,18 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             Columns to perform the operation on. The timeseries will be grouped by all
             other columns in :attr:`meta`.
 
-        operation : ['median', 'mean', 'quantile']
-            The operation to perform. This uses the equivalent pandas function. Note
-            that quantile means the value of the data at a given point in the cumulative
+        operation : str or func
+            The operation to perform.
+
+            If a string is provided the equivalent pandas
+            function is used. Additional information about the arguments for the pandas
+            groupby functions can be found at <https://xarray.pydata.org/en/stable/termi
+            nology.html>`_.
+
+            If a function is provided, will be applied to each group. The function must
+            take a dataframe as it's first argument and return a DataFrame, Series or scalar.
+
+            Note that quantile means the value of the data at a given point in the cumulative
             distribution of values at each point in the timeseries, for each timeseries
             once the groupby is applied. As a result, using ``q=0.5`` is is the same as
             taking the median and not the same as taking the mean/average.
@@ -1563,14 +1573,34 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         group_cols = list(set(ts.index.names) - set(cols))
         grouper = ts.groupby(group_cols)
 
-        if operation == "median":
-            res = grouper.median(**kwargs)
-        elif operation == "mean":
-            res = grouper.mean(**kwargs)
-        elif operation == "quantile":
-            res = grouper.quantile(**kwargs)
+        #  https://pandas.pydata.org/pandas-docs/stable/reference/groupby.html
+        allowed_pd_ops = [
+            "count",
+            "cumcount",
+            "cummax",
+            "cummin",
+            "cumprod",
+            "cumsum",
+            "last",
+            "max",
+            "mean",
+            "median",
+            "min",
+            "prod",
+            "rank",
+            "pct_change",
+            "rank" "std",
+            "sum",
+            "var",
+        ]
+
+        if isinstance(operation, str):
+            if operation not in allowed_pd_ops:
+                raise ValueError("invalid process_over operation")
+            grouper_func = getattr(grouper, operation)
+            res = grouper_func(**kwargs)
         else:
-            raise ValueError("operation must be one of ['median', 'mean', 'quantile']")
+            res = grouper.apply(operation, **kwargs)
 
         if na_override is not None:
             idx_df = res.index.to_frame()
