@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#158 <https://github.com/openscm/scmdata/pull/158>`_) Return :class:`cftime.DatetimeGregorian` rather than :class:`cftime.datetime` from :meth:`scmdata.time.TimePoints.as_cftime` and :func:`scmdata.offsets.generate_range` to ensure better interoperability with other libraries (e.g. xarray's plotting functionality). Add ``date_cls`` argument to :meth:`scmdata.time.TimePoints.as_cftime` and :func:`scmdata.offsets.generate_range` so that the output date type can be user specified.
 - (`#148 <https://github.com/openscm/scmdata/pull/148>`_) Refactor :class:`scmdata.database.ScmDatabase` to be able to use custom backends
 - (`#157 <https://github.com/openscm/scmdata/pull/157>`_) Add ``disable_tqdm`` parameter to :meth:`scmdata.database.ScmDatabase.load` and :meth:`scmdata.database.ScmDatabase.save` to disable displaying progress bars
 - (`#156 <https://github.com/openscm/scmdata/pull/156>`_) Fix :mod:`pandas` and :mod:`xarray` documentation links

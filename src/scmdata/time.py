@@ -135,17 +135,21 @@ class TimePoints:
         """
         return pd.Index(self._values.astype(object), dtype=object, name="time")
 
-    def as_cftime(self) -> list:
+    def as_cftime(self, date_cls=cftime.DatetimeGregorian) -> list:
         """
-        Get as cftime datetimes
+        Format time points as :class:`cftime.datetime`
+
+        Parameters
+        ----------
+        date_cls : :class:`cftime.datetime`
+            The time points will be returned as instances of ``date_cls``
 
         Returns
         -------
-        list of cftime.datetime
+        list of :class:`cftime.datetime`
+            Time points as a list of ``date_cls`` objects
         """
-        return [
-            cftime.datetime(*dt.timetuple()[:6]) for dt in self._values.astype(object)
-        ]
+        return [date_cls(*dt.timetuple()[:6]) for dt in self._values.astype(object)]
 
     def years(self) -> np.ndarray:
         """

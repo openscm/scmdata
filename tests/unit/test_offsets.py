@@ -1,3 +1,4 @@
+import cftime
 import pytest
 from cftime import datetime
 
@@ -62,6 +63,9 @@ def test_month_start():
 
 
 @pytest.mark.parametrize(
+    "output_cls", (None, cftime.DatetimeGregorian, cftime.Datetime360Day,)
+)
+@pytest.mark.parametrize(
     "start,end",
     (
         [datetime(2000, 2, 12), datetime(2001, 2, 12)],
@@ -70,13 +74,18 @@ def test_month_start():
         [datetime(2000, 2, 12), datetime(2001, 2, 12)],
     ),
 )
-def test_generate_range(start, end):
+def test_generate_range(start, end, output_cls):
     offset = to_offset("AS")
     start = start
     end = end
 
-    res = generate_range(start, end, offset)
-    exp = [datetime(y, 1, 1) for y in range(start.year, end.year + 2)]
+    if output_cls is None:
+        res = generate_range(start, end, offset)
+        output_cls = cftime.DatetimeGregorian
+    else:
+        res = generate_range(start, end, offset, date_cls=output_cls)
+
+    exp = [output_cls(y, 1, 1) for y in range(start.year, end.year + 2)]
 
     assert list(res) == exp
 
