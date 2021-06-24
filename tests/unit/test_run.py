@@ -1230,8 +1230,70 @@ def test_median_over(test_processing_scm_df):
     pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
 
 
+def test_arb_function_over(test_processing_scm_df):
+    def same(df):
+        return df
+
+    obs = test_processing_scm_df.process_over("scenario", same)
+
+    pd.testing.assert_frame_equal(
+        test_processing_scm_df.timeseries(), obs, check_like=True
+    )
+
+    def add_2(df):
+        return df + 2
+
+    obs = test_processing_scm_df.process_over("scenario", add_2)
+    pd.testing.assert_frame_equal(
+        (test_processing_scm_df + 2).timeseries(), obs, check_like=True
+    )
+
+
+def test_arb_function_returns_none(test_processing_scm_df):
+    def add_2_only_coal(df):
+        variable = df.index.get_level_values("variable").unique()[0]
+        if variable == "Primary Energy|Coal":
+            return df + 2
+        # implicit return None for any other variables
+
+    obs = test_processing_scm_df.process_over("scenario", add_2_only_coal)
+    exp = (
+        test_processing_scm_df.filter(variable="Primary Energy|Coal") + 2
+    ).timeseries()
+    pd.testing.assert_frame_equal(
+        exp, obs, check_like=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        "count",
+        "cumcount",
+        "cummax",
+        "cummin",
+        "cumprod",
+        "cumsum",
+        "last",
+        "max",
+        "mean",
+        "median",
+        "min",
+        "prod",
+        "rank",
+        "pct_change",
+        "rank" "std",
+        "sum",
+        "var",
+    ],
+)
+def test_process_over_works(operation, test_processing_scm_df):
+    obs = test_processing_scm_df.process_over("scenario", "median")
+    assert isinstance(obs, pd.DataFrame)
+
+
 def test_process_over_unrecognised_operation_error(scm_run):
-    error_msg = re.escape("operation must be one of ['median', 'mean', 'quantile']")
+    error_msg = re.escape("invalid process_over operation")
     with pytest.raises(ValueError, match=error_msg):
         scm_run.process_over("scenario", "junk")
 

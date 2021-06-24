@@ -1592,6 +1592,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             "rank" "std",
             "sum",
             "var",
+            "quantile",
         ]
 
         if isinstance(operation, str):
@@ -1607,6 +1608,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             idx_df[idx_df == na_override] = np.nan
             res.index = pd.MultiIndex.from_frame(idx_df)
 
+        res = res.reorder_levels(sorted(res.index.names))
         return res
 
     def quantiles_over(
