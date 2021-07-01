@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.11.0
+-------
+
 - (`#159 <https://github.com/openscm/scmdata/pull/159>`_) Allow access to more functions in :class:`scmdata.run.BaseScmRun.process_over`, including arbitrary functions
 - (`#158 <https://github.com/openscm/scmdata/pull/158>`_) Return :class:`cftime.DatetimeGregorian` rather than :class:`cftime.datetime` from :meth:`scmdata.time.TimePoints.as_cftime` and :func:`scmdata.offsets.generate_range` to ensure better interoperability with other libraries (e.g. xarray's plotting functionality). Add ``date_cls`` argument to :meth:`scmdata.time.TimePoints.as_cftime` and :func:`scmdata.offsets.generate_range` so that the output date type can be user specified.
 - (`#148 <https://github.com/openscm/scmdata/pull/148>`_) Refactor :class:`scmdata.database.ScmDatabase` to be able to use custom backends
