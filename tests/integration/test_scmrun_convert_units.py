@@ -26,7 +26,7 @@ def test_convert_to_scen_units():
         ),
         ("Emissions|BC", "Mt BC/yr", "Mt BC/yr", 1, None),
         ("Emissions|OC", "Mt OC/yr", "Mt OC/yr", 1, None),
-        ("Emissions|NH3", "Mt NH3/yr", "Mt N/yr", 14 / (14 + 3), None),
+        ("Emissions|NH3", "Mt NH3/yr", "Mt N/yr", 14 / (14 + 3), "NH3_conversions"),
         ("Emissions|CF4", "Mt CF4/yr", "kt CF4/yr", 1000, None),
         ("Emissions|HFC4310mee", "kt HFC4310mee/yr", "kt HFC4310/yr", 1, None),
         ("Emissions|SF6", "t SF6/yr", "kt SF6/yr", 1 / 1000, None),

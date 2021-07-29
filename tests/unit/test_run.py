@@ -1138,7 +1138,9 @@ def test_quantile_over_lower(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "quantile", q=0)
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(
+        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+    )
 
 
 def test_quantile_over_upper(test_processing_scm_df):
@@ -1158,7 +1160,9 @@ def test_quantile_over_upper(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over(["model", "scenario"], "quantile", q=1)
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(
+        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+    )
 
 
 def test_mean_over(test_processing_scm_df):
@@ -1197,7 +1201,9 @@ def test_mean_over(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "mean")
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(
+        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+    )
 
 
 def test_median_over(test_processing_scm_df):
@@ -1227,7 +1233,9 @@ def test_median_over(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "median")
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(
+        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+    )
 
 
 def test_arb_function_over(test_processing_scm_df):

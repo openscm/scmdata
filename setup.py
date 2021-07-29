@@ -42,8 +42,8 @@ REQUIREMENTS = [
 ]
 REQUIREMENTS_OPTIONAL = [
     "netCDF4",
+    "openpyxl",  # support reading excel
     "scipy",
-    "xlrd<=1.2.0",  # support reading excel
 ]
 REQUIREMENTS_PLOTTING = [
     "matplotlib",
