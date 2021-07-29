@@ -2558,7 +2558,7 @@ def test_init_no_file():
 
 @pytest.mark.xfail(
     _check_pandas_less_110(),
-    reason="pandas<=1.1.0 gets confused about how to read xlsx files"
+    reason="pandas<=1.1.0 gets confused about how to read xlsx files",
 )
 @pytest.mark.parametrize(
     ("test_file", "test_kwargs"),
