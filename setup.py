@@ -33,9 +33,9 @@ CLASSIFIERS = [
 REQUIREMENTS = [
     "cftime",
     "numpy",
-    "openscm-units>=0.2,<0.3",
-    "pandas>=1.0.4,<1.2",
-    "pint-pandas==0.1.0",
+    "openscm-units",
+    "pandas>=1.0.4",
+    "pint-pandas",
     "python-dateutil",
     "tqdm",
     "xarray",
@@ -46,9 +46,9 @@ REQUIREMENTS_OPTIONAL = [
     "xlrd<=1.2.0",  # support reading excel
 ]
 REQUIREMENTS_PLOTTING = [
-    "cftime<1.5",  # cftime 1.5 incompatible with nc-time-axis
     "matplotlib",
-    "nc-time-axis",
+    "cftime>=1.5",
+    "nc-time-axis>=1.3",
     "seaborn",
 ]
 REQUIREMENTS_NOTEBOOKS = (
