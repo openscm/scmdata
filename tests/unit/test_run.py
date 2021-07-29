@@ -18,7 +18,11 @@ from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.errors import MissingRequiredColumnError, NonUniqueMetadataError
 from scmdata.run import BaseScmRun, ScmRun, run_append
-from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
+from scmdata.testing import (
+    _check_pandas_less_110,
+    _check_pandas_less_120,
+    assert_scmdf_almost_equal,
+)
 
 
 def test_init_df_year_converted_to_datetime(test_pd_df):
@@ -2557,8 +2561,8 @@ def test_init_no_file():
 
 
 @pytest.mark.xfail(
-    _check_pandas_less_110(),
-    reason="pandas<=1.1.0 gets confused about how to read xlsx files",
+    _check_pandas_less_120(),
+    reason="pandas<1.2.0 gets confused about how to read xlsx files",
 )
 @pytest.mark.parametrize(
     ("test_file", "test_kwargs"),
