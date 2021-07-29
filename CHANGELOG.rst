@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#161 <https://github.com/openscm/scmdata/pull/161>`_) Loosen requirements
+
 v0.11.0
 -------
 
