@@ -18,7 +18,11 @@ from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.errors import MissingRequiredColumnError, NonUniqueMetadataError
 from scmdata.run import BaseScmRun, ScmRun, run_append
-from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
+from scmdata.testing import (
+    _check_pandas_less_110,
+    _check_pandas_less_120,
+    assert_scmdf_almost_equal,
+)
 
 
 def test_init_df_year_converted_to_datetime(test_pd_df):
@@ -1138,7 +1142,9 @@ def test_quantile_over_lower(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "quantile", q=0)
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(
+        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+    )
 
 
 def test_quantile_over_upper(test_processing_scm_df):
@@ -1158,7 +1164,9 @@ def test_quantile_over_upper(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over(["model", "scenario"], "quantile", q=1)
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(
+        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+    )
 
 
 def test_mean_over(test_processing_scm_df):
@@ -1197,7 +1205,9 @@ def test_mean_over(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "mean")
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(
+        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+    )
 
 
 def test_median_over(test_processing_scm_df):
@@ -1227,7 +1237,9 @@ def test_median_over(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "median")
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(
+        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+    )
 
 
 def test_arb_function_over(test_processing_scm_df):
@@ -2548,6 +2560,10 @@ def test_init_no_file():
         ScmRun(fname)
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_120(),
+    reason="pandas<1.2.0 gets confused about how to read xlsx files",
+)
 @pytest.mark.parametrize(
     ("test_file", "test_kwargs"),
     [

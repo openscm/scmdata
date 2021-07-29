@@ -13,6 +13,10 @@ def _check_pandas_less_110():
     return packaging.version.parse(pd.__version__) < packaging.version.Version("1.1.0")
 
 
+def _check_pandas_less_120():
+    return packaging.version.parse(pd.__version__) < packaging.version.Version("1.2.0")
+
+
 def _assert_frame_equal(left, right, **kwargs):
     if _check_pandas_less_110():
         kwargs.pop("rtol", None)
