@@ -11,20 +11,13 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9]
 
     steps:
     - name: Setup python
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    # no windows wheel for Python 3.6 cftime 1.3.1
-    # https://github.com/Unidata/cftime/issues/224
-    - name: Install cftime 1.3.0 (${{ runner.os }})
-      if: startsWith(runner.os, 'Windows') && endsWith(matrix.python-version, '3.6')
-      run: |
-        pip install --upgrade --user pip wheel
-        pip install cftime==1.3.0
     - name: Install package
     # avoid installing pre-releases of non-scmdata packages
       run: |
