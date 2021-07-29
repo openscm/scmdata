@@ -33,10 +33,12 @@ REQUIREMENTS = [
     "cftime",
     "numpy",
     "openscm-units",
+    "packaging",
     "pandas>=1.0.4",
     "pint-pandas",
     "python-dateutil",
     "tqdm",
+    "six",
     "xarray",
 ]
 REQUIREMENTS_OPTIONAL = [
