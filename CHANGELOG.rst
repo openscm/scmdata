@@ -1,6 +1,9 @@
 Changelog
 =========
 
+- (`#162 <https://github.com/openscm/scmdata/pull/162>`_) Fix bug which led to a bad read in when the saved data that spanned from before year 1000
+- (`#162 <https://github.com/openscm/scmdata/pull/162>`_) Allowed :meth:`scmdata.ScmRun.plumeplot` to handle the case where not all data will make complete plumes or have a best-estimate line if ``pre_calculated`` is ``True``. This allows a dataset with one source that has a best-estimate only to be plotted at the same time as a dataset which has a range too with only a single call to :meth:`scmdata.ScmRun.plumeplot`.
+
 v0.12.0
 -------
 
