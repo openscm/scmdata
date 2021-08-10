@@ -234,6 +234,7 @@ def plumeplot(  # pragma: no cover
 
     quantile_labels = {}
     plotted_hues = []
+    plotted_styles = []
     for q, alpha in quantiles_plumes:
         for hdf in _pdf.groupby(hue_var):
             hue_value = hdf.get_unique_meta(hue_var, no_duplicates=True)
@@ -256,7 +257,9 @@ def plumeplot(  # pragma: no cover
                 if missing_quantile:
                     continue
 
-                plotted_hues.append(hue_value)
+                if hue_value not in plotted_hues:
+                    plotted_hues.append(hue_value)
+
                 xaxis = hsdf.timeseries(time_axis=time_axis).columns.tolist()
                 if palette is not None:
                     try:
@@ -287,6 +290,9 @@ def plumeplot(  # pragma: no cover
                         _palette[hue_value] = p.get_facecolor()[0]
 
                 elif len(q) == 1:
+                    if style_value not in plotted_styles:
+                        plotted_styles.append(style_value)
+
                     _plotted_lines = True
 
                     if dashes is not None:
@@ -336,7 +342,7 @@ def plumeplot(  # pragma: no cover
     # Fake the line handles for the legend
     hue_val_lines = [
         mlines.Line2D([0], [0], color=_palette[hue_value], label=hue_value)
-        for hue_value in set(plotted_hues)
+        for hue_value in plotted_hues
     ]
 
     legend_items = [
@@ -356,7 +362,7 @@ def plumeplot(  # pragma: no cover
                 color="gray",
                 linewidth=linewidth,
             )
-            for style_value in self.get_unique_meta(style_var)
+            for style_value in plotted_styles
         ]
         legend_items += [
             mpatches.Patch(alpha=0, label=style_label),

@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from scmdata import ScmRun
+from scmdata.testing import _check_pandas_less_110
 
 maxes = pytest.importorskip("matplotlib.axes")
 plt = pytest.importorskip("matplotlib.pyplot")
@@ -37,6 +38,9 @@ def test_plumeplot_pre_calculated(plumeplot_scmrun, quantiles_plumes):
     )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 spews warnings everywhere"
+)
 def test_plumeplot_pre_calculated_no_plume_for_one(plumeplot_scmrun):
     quantiles_plumes = (((0.05, 0.95), 0.5), ((0.5,), 1.0))
     quantiles = [v for qv in quantiles_plumes for v in qv[0]]
@@ -84,6 +88,9 @@ def test_plumeplot_pre_calculated_no_median_for_one(plumeplot_scmrun):
         )
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 spews warnings everywhere"
+)
 def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other(
     plumeplot_scmrun,
 ):
@@ -98,7 +105,7 @@ def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other(
     ).filter(climate_model="a_model_2", quantile=0.5, keep=False)
 
     with pytest.warns(UserWarning) as record:
-        summary_stats.plumeplot(
+        _, lh = summary_stats.plumeplot(
             quantiles_plumes=quantiles_plumes, pre_calculated=True,
         )
 
@@ -114,6 +121,44 @@ def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other(
     assert (
         record[2].message.args[0]
         == "Quantile 0.5 not available for a_scenario_2 Surface Air Temperature Change"
+    )
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 spews warnings everywhere"
+)
+def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other_different_styles(
+    plumeplot_scmrun,
+):
+    quantiles_plumes = (((0.05, 0.95), 0.5), ((0.5,), 1.0))
+    quantiles = [v for qv in quantiles_plumes for v in qv[0]]
+    summary_stats = ScmRun(
+        plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
+    )
+    # drop out the plume for one of the climate models
+    summary_stats = summary_stats.filter(
+        climate_model="a_model", quantile=[0.05, 0.95], keep=False
+    ).filter(climate_model="a_model_2", quantile=0.5, keep=False)
+
+    with pytest.warns(UserWarning) as record:
+        summary_stats.plumeplot(
+            quantiles_plumes=quantiles_plumes,
+            pre_calculated=True,
+            style_var="climate_model",
+        )
+
+    assert len(record) == 3
+    assert (
+        record[0].message.args[0]
+        == "Quantile 0.05 not available for a_scenario a_model"
+    )
+    assert (
+        record[1].message.args[0]
+        == "Quantile 0.95 not available for a_scenario a_model"
+    )
+    assert (
+        record[2].message.args[0]
+        == "Quantile 0.5 not available for a_scenario_2 a_model_2"
     )
 
 
