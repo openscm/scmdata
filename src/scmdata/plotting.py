@@ -233,6 +233,7 @@ def plumeplot(  # pragma: no cover
     _plotted_lines = False
 
     quantile_labels = {}
+    plotted_hues = []
     for q, alpha in quantiles_plumes:
         for hdf in _pdf.groupby(hue_var):
             hue_value = hdf.get_unique_meta(hue_var, no_duplicates=True)
@@ -240,7 +241,22 @@ def plumeplot(  # pragma: no cover
 
             for hsdf in hdf.groupby(style_var):
                 style_value = hsdf.get_unique_meta(style_var, no_duplicates=True)
+                quantiles = hsdf.get_unique_meta("quantile")
 
+                missing_quantile = False
+                for qt in q:
+                    if qt not in quantiles:
+                        warnings.warn(
+                            "Quantile {} not available for {} {}".format(
+                                qt, hue_value, style_value
+                            )
+                        )
+                        missing_quantile = True
+
+                if missing_quantile:
+                    continue
+
+                plotted_hues.append(hue_value)
                 xaxis = hsdf.timeseries(time_axis=time_axis).columns.tolist()
                 if palette is not None:
                     try:
@@ -254,6 +270,7 @@ def plumeplot(  # pragma: no cover
 
                 if len(q) == 2:
                     label = "{:.0f}th - {:.0f}th".format(q[0] * 100, q[1] * 100)
+
                     p = ax.fill_between(
                         xaxis,
                         _get_1d_or_raise(
@@ -304,6 +321,9 @@ def plumeplot(  # pragma: no cover
                     if dashes is None:
                         _dashes[style_value] = p.get_linestyle()
 
+                    if palette is None:
+                        _palette[hue_value] = p.get_color()
+
                 else:
                     raise ValueError(
                         "quantiles to plot must be of length one or two, "
@@ -316,7 +336,7 @@ def plumeplot(  # pragma: no cover
     # Fake the line handles for the legend
     hue_val_lines = [
         mlines.Line2D([0], [0], color=_palette[hue_value], label=hue_value)
-        for hue_value in self.get_unique_meta(hue_var)
+        for hue_value in set(plotted_hues)
     ]
 
     legend_items = [
