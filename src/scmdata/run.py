@@ -173,9 +173,6 @@ def _format_data(  # pylint: disable=missing-return-doc
     else:
         df, meta = _format_wide_data(df, required_cols)
 
-    # sort data
-    df.sort_index(inplace=True)
-
     return df, meta
 
 
@@ -486,6 +483,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         _df = _df.astype(float)
         self._df = _df
         self._df.index = self._time_points.to_index()
+        self._df = self._df.sort_index()
         self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
 
     def copy(self):

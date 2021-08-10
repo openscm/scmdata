@@ -1,0 +1,3 @@
+model,scenario,region,variable,unit,climate_model,1,5,10,50,100,500,1000,2020
+model,scenario,World,Emissions|BC,Mt BC / yr,unspecified,0.0,0.106998,0.1333826,0.15984677,0.18639296,0.21302373,0.23974168,0.26654951
+model,scenario,World,Emissions|C2F6,kt C2F6 / yr,unspecified,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0

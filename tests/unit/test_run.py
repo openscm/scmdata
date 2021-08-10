@@ -2592,6 +2592,13 @@ def test_read_from_disk(test_file, test_kwargs, test_data_path):
     )
 
 
+def test_read_from_disk_different_number_of_digits_years(test_data_path):
+    loaded = ScmRun(os.path.join(test_data_path, "different_number_of_digits_years.csv"))
+
+    # make sure data sorts correctly
+    assert loaded["year"].iloc[-1] == loaded["year"].max()
+
+
 def test_read_from_disk_incorrect_labels():
     fname = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),

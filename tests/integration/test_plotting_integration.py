@@ -37,6 +37,19 @@ def test_plumeplot_pre_calculated(plumeplot_scmrun, quantiles_plumes):
     )
 
 
+@sample_quantiles_plumes
+def test_plumeplot_pre_calculated_some_missing(plumeplot_scmrun, quantiles_plumes):
+    quantiles = [v for qv in quantiles_plumes for v in qv[0]]
+    summary_stats = ScmRun(
+        plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
+    )
+    import pdb
+    pdb.set_trace()
+    summary_stats.plumeplot(
+        quantiles_plumes=quantiles_plumes, pre_calculated=True,
+    )
+
+
 def test_plumeplot_warns_dashes_without_lines(scm_run):
     warn_msg = re.escape(
         "`dashes` was passed but no lines were plotted, the style "
