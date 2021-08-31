@@ -1204,7 +1204,17 @@ def test_adjust_median_to_target_process_over(process_over):
     )
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
-    assert False, "check that std unchanged"
+
+    if process_over is None:
+        process_over = []
+    elif isinstance(process_over, str):
+        process_over = [process_over]
+
+    groups = list(set(res.meta.columns) - set(process_over))
+
+    pdt.assert_frame_equal(
+        exp.timeseries().groupby(groups).std(), res.timeseries().groupby(groups).std(),
+    )
 
 
 def test_adjust_median_to_target_check_groups_identical():

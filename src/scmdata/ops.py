@@ -928,6 +928,8 @@ def adjust_median_to_target(
             current_medians, current_medians.iloc[0], **check_groups_identical_kwargs
         )
 
+    # have to align ourselves, see
+    # https://github.com/pandas-dev/pandas/issues/43321
     cm_aligned, ts_aligned = current_medians.align(self.timeseries(), axis=0)
     shifted = ts_aligned.subtract(cm_aligned, axis=0) + target
 
