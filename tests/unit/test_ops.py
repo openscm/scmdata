@@ -1231,5 +1231,4 @@ def test_adjust_median_to_target_check_groups_identical_kwargs_passing():
             check_groups_identical_kwargs=check_groups_identical_kwargs,
         )
 
-        # first two arguments are the medians of the timeseries
-        mock_npt.assert_called_with(2.5, 4.5, **check_groups_identical_kwargs)
+        assert  mock_npt.call_args_list[0][1] == check_groups_identical_kwargs

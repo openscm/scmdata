@@ -8,6 +8,7 @@ to handle unit conversions automatically
 import warnings
 
 import numpy as np
+import numpy.testing as npt
 import pandas as pd
 import pint_pandas
 from openscm_units import unit_registry
@@ -862,6 +863,82 @@ def _calculate_linear_regression(in_scmrun):
     return times_numpy, times_in_s, time_unit, gradients, intercepts, meta
 
 
+def adjust_median_to_target(
+    self,
+    target,
+    evaluation_period,
+    process_over=None,
+    check_groups_identical=False,
+    check_groups_identical_kwargs=None,
+):
+    """
+    Adjust the median of (an ensemble of) timeseries to a specified target
+
+    Parameters
+    ----------
+    target : float
+        Value to which the median of each (group of) timeseries should be adjusted
+
+    evaluation_period : list[int]
+        Period over which the median should be evaluated
+
+    process_over : list
+        Metadata to treat as 'ensemble members' i.e. all other columns in the metadata of ``self`` will be used to group the timeseries before calculating the median. If not supplied, timeseries will not be grouped.
+
+    check_groups_identical : bool
+        Should we check that the median of each group is the same before making the adjustment?
+
+    check_groups_identical_kwargs : dict
+        Only used if ``check_groups_identical`` is ``True``, in which case these are passed through to `np.testing.assert_allclose`
+
+    Raises
+    ------
+    NotImplementedError
+        ``evaluation_period`` is based on times not years
+
+    AssertionError
+        If ``check_groups_identical`` is ``True`` and the median of each
+        group is not the same before making the adjustment.
+
+    Returns
+    -------
+    :class:`ScmRun <scmdata.run.ScmRun>`
+        Timeseries adjusted to have the intended median
+    """
+    if check_groups_identical_kwargs is None:
+        check_groups_identical_kwargs = {}
+
+    if isinstance(process_over, str):
+        process_over = [process_over]
+    elif process_over is None:
+        process_over = []
+
+    out = []
+
+    groups = list(set(self.meta.columns) - set(process_over))
+
+    current_medians = (
+        self
+        .filter(year=evaluation_period)
+        .timeseries()
+        .mean(axis=1)
+        .groupby(groups)
+        .median()
+    )
+
+    if check_groups_identical:
+        npt.assert_allclose(
+            current_medians,
+            current_medians.iloc[0],
+            **check_groups_identical_kwargs
+        )
+
+    cm_aligned, ts_aligned = current_medians.align(self.timeseries(), axis=0)
+    shifted = ts_aligned.subtract(cm_aligned, axis=0) + target
+
+    return type(self)(shifted)
+
+
 def inject_ops_methods(cls):
     """
     Inject the operation methods
@@ -882,6 +959,7 @@ def inject_ops_methods(cls):
         ("linear_regression_gradient", linear_regression_gradient),
         ("linear_regression_intercept", linear_regression_intercept),
         ("linear_regression_scmrun", linear_regression_scmrun),
+        ("adjust_median_to_target", adjust_median_to_target),
     ]
 
     for name, f in methods:
