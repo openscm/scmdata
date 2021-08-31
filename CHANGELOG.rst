@@ -5,6 +5,7 @@ master
 ------
 
 - (`#163 <https://github.com/openscm/scmdata/pull/163>`_) Added :meth:`scmdata.ScmRun.adjust_median_to_target` to allow for the median of an ensemble of timeseries to be adjusted to a given value
+- (`#163 <https://github.com/openscm/scmdata/pull/163>`_) Update ``scmdata.plotting.RCMIP_SCENARIO_COLOURS`` to new AR6 colours
 
 v0.12.1
 -------
