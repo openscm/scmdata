@@ -1084,14 +1084,17 @@ def test_missing_ops(op, other):
             op(ts)
 
 
-@pytest.mark.parametrize("evaluation_period,exp_shift", (
-    ([2000, 2010], 1.5),
-    (range(2000, 2010 + 1), 1.5),
-    ([2010, 2020], 2.5),
-    (range(2010, 2020 + 1), 2.5),
-    ([2000, 2010, 2020], 2),
-    (range(2000, 2020 + 1), 2),
-))
+@pytest.mark.parametrize(
+    "evaluation_period,exp_shift",
+    (
+        ([2000, 2010], 1.5),
+        (range(2000, 2010 + 1), 1.5),
+        ([2010, 2020], 2.5),
+        (range(2010, 2020 + 1), 2.5),
+        ([2000, 2010, 2020], 2),
+        (range(2000, 2020 + 1), 2),
+    ),
+)
 @pytest.mark.parametrize("target_median", (0.43, 1.0))
 def test_adjust_median_to_target_single_ts(evaluation_period, exp_shift, target_median):
     start = get_ts(
@@ -1107,21 +1110,28 @@ def test_adjust_median_to_target_single_ts(evaluation_period, exp_shift, target_
 
     exp = start.copy() - exp_shift + target_median
 
-    res = start.adjust_median_to_target(target_median, evaluation_period, process_over="ensemble_member")
+    res = start.adjust_median_to_target(
+        target_median, evaluation_period, process_over="ensemble_member"
+    )
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
 
-@pytest.mark.parametrize("evaluation_period,exp_shift", (
-    ([2000, 2010], 2.75),
-    (range(2000, 2010 + 1), 2.75),
-    ([2010, 2020], 3.75),
-    (range(2010, 2020 + 1), 3.75),
-    ([2000, 2010, 2020], 9.5 / 3),
-    (range(2000, 2020 + 1), 9.5 / 3),
-))
+@pytest.mark.parametrize(
+    "evaluation_period,exp_shift",
+    (
+        ([2000, 2010], 2.75),
+        (range(2000, 2010 + 1), 2.75),
+        ([2010, 2020], 3.75),
+        (range(2010, 2020 + 1), 3.75),
+        ([2000, 2010, 2020], 9.5 / 3),
+        (range(2000, 2020 + 1), 9.5 / 3),
+    ),
+)
 @pytest.mark.parametrize("target_median", (0.43, 1.0))
-def test_adjust_median_to_target_multiple_ts(evaluation_period, exp_shift, target_median):
+def test_adjust_median_to_target_multiple_ts(
+    evaluation_period, exp_shift, target_median
+):
     start = get_ts(
         np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T,
         [2000, 2010, 2020],
@@ -1136,18 +1146,24 @@ def test_adjust_median_to_target_multiple_ts(evaluation_period, exp_shift, targe
     exp = start.copy() - exp_shift + target_median
 
     res = start.adjust_median_to_target(
-        target_median,
-        evaluation_period,
-        process_over="ensemble_member",
-
+        target_median, evaluation_period, process_over="ensemble_member",
     )
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
 
-
-@pytest.mark.parametrize("process_over", ("not supplied", None, "ensemble_member", ["ensemble_member"],
-    "scenario", ["scenario"], ["scenario", "ensemble_member"]))
+@pytest.mark.parametrize(
+    "process_over",
+    (
+        "not supplied",
+        None,
+        "ensemble_member",
+        ["ensemble_member"],
+        "scenario",
+        ["scenario"],
+        ["scenario", "ensemble_member"],
+    ),
+)
 def test_adjust_median_to_target_process_over(process_over):
     evaluation_period = [2000, 2010]
     target_median = 1.0
@@ -1162,30 +1178,33 @@ def test_adjust_median_to_target_process_over(process_over):
     )
     index = [2000, 2010, 2020]
     start = get_ts(
-        np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T,
-        index,
-        **get_ts_kwargs
+        np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T, index, **get_ts_kwargs
     )
 
-    if process_over is None or process_over == "not supplied" or process_over in ["scenario", ["scenario"]]:
+    if (
+        process_over is None
+        or process_over == "not supplied"
+        or process_over in ["scenario", ["scenario"]]
+    ):
         exp = get_ts(
             np.array([[0.5, 1.5, 2.5], [0.25, 1.75, 2.25], [0.5, 1.5, 2.5]]).T,
             index,
             **get_ts_kwargs
         )
 
-    elif process_over in ["ensemble_member", ["ensemble_member"], ["scenario", "ensemble_member"]]:
+    elif process_over in [
+        "ensemble_member",
+        ["ensemble_member"],
+        ["scenario", "ensemble_member"],
+    ]:
         exp = start - 1.75
 
-
     res = start.adjust_median_to_target(
-        target_median,
-        evaluation_period,
-        process_over=process_over,
-
+        target_median, evaluation_period, process_over=process_over,
     )
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+    assert False, "check that std unchanged"
 
 
 def test_adjust_median_to_target_check_groups_identical():
@@ -1201,10 +1220,7 @@ def test_adjust_median_to_target_check_groups_identical():
     )
     with pytest.raises(AssertionError):
         start.adjust_median_to_target(
-            0.1,
-            [2010, 2020],
-            process_over="scenario",
-            check_groups_identical=True,
+            0.1, [2010, 2020], process_over="scenario", check_groups_identical=True,
         )
 
 
@@ -1231,4 +1247,4 @@ def test_adjust_median_to_target_check_groups_identical_kwargs_passing():
             check_groups_identical_kwargs=check_groups_identical_kwargs,
         )
 
-        assert  mock_npt.call_args_list[0][1] == check_groups_identical_kwargs
+        assert mock_npt.call_args_list[0][1] == check_groups_identical_kwargs

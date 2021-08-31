@@ -918,8 +918,7 @@ def adjust_median_to_target(
     groups = list(set(self.meta.columns) - set(process_over))
 
     current_medians = (
-        self
-        .filter(year=evaluation_period)
+        self.filter(year=evaluation_period)
         .timeseries()
         .mean(axis=1)
         .groupby(groups)
@@ -928,9 +927,7 @@ def adjust_median_to_target(
 
     if check_groups_identical:
         npt.assert_allclose(
-            current_medians,
-            current_medians.iloc[0],
-            **check_groups_identical_kwargs
+            current_medians, current_medians.iloc[0], **check_groups_identical_kwargs
         )
 
     cm_aligned, ts_aligned = current_medians.align(self.timeseries(), axis=0)
