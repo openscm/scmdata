@@ -913,8 +913,6 @@ def adjust_median_to_target(
     elif process_over is None:
         process_over = []
 
-    out = []
-
     groups = list(set(self.meta.columns) - set(process_over))
 
     current_medians = (
