@@ -27,18 +27,23 @@ except ImportError:  # pragma: no cover
     has_seaborn = False
 
 
+# Copying https://github.com/IAMconsortium/pyam/blob/main/pyam/plotting.py
 RCMIP_SCENARIO_COLOURS = {
     "historical": "black",
-    "ssp119": "#1e9583",
-    "ssp126": "#1d3354",
-    "ssp245": "#e9dc3d",
-    "ssp370": "#f11111",
+    "ssp119": "#00a9cf",
+    "ssp126": "#003466",
+    "ssp245": "#f69320",
+    "ssp370": "#df0000",
     "ssp370-lowNTCF-aerchemmip": "tab:pink",
-    "ssp370-lowNTCF-gidden": "tab:red",
-    "ssp434": "#63bce4",
-    "ssp460": "#e78731",
-    "ssp534-over": "#996dc8",
-    "ssp585": "#830b22",
+    "ssp370-lowNTCF-gidden": "#e61d25",
+    "ssp434": "#2274ae",
+    "ssp460": "#b0724e",
+    "ssp534-over": "#92397a",
+    "ssp585": "#980002",
+    "rcp26": "#003466",
+    "rcp45": "#709fcc",
+    "rcp60": "#c37900",
+    "rcp85": "#980002",
 }
 
 
