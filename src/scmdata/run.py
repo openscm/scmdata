@@ -1266,7 +1266,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         extrapolation_type: str = "linear",
     ):
         """
-        Interpolate the dataframe onto a new time frame.
+        Interpolate the data onto a new time frame.
 
         Parameters
         ----------
@@ -1337,7 +1337,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Examples
         --------
-        Resample a dataframe to annual values
+        Resample a run to annual values
 
         >>> scm_df = ScmRun(
         ...     pd.Series([1, 2, 10], index=(2000, 2001, 2009)),
@@ -1537,7 +1537,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         na_override: [int, float]
             Convert any nan value in the timeseries meta to this value during processsing.
-            The meta values converted back to nan's before the dataframe is returned. This
+            The meta values converted back to nan's before the run is returned. This
             should not need to be changed unless the existing metadata clashes with the
             default na_override value.
 
@@ -1875,7 +1875,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         **kwargs: Any,
     ):
         """
-        Append additional data to the current dataframe.
+        Append additional data to the current data.
 
         For details, see :func:`run_append`.
 
@@ -1927,6 +1927,20 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             metadata=metadata,
         )
 
+# scenario_emms = emissions.convert_unit(PLOT_UNIT).timeseries(
+#     drop_all_nan_times=True, time_axis="year"
+# )
+# historical_emms_to_join = (
+#     historical_emms.filter(year=range(scenario_emms.columns.min(), 3000), keep=False)
+#     .convert_unit(PLOT_UNIT)
+#     .timeseries(time_axis="year", meta=["variable", "region", "unit"])
+# )
+# display(historical_emms_to_join.head())
+#     ha, sa = historical_emms_to_join.align(scenario_emms)
+# ha = ha.dropna(how="all", axis="columns")
+# sa = sa.dropna(how="all", axis="columns")
+# plot_emissions = scmdata.ScmRun(pd.concat([ha, sa], axis=1))
+# plot_emissions.lineplot(style="variable")
     def to_iamdataframe(self) -> LongDatetimeIamDataFrame:  # pragma: no cover
         """
         Convert to a :class:`LongDatetimeIamDataFrame` instance.
