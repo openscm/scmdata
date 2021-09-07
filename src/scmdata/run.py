@@ -1927,6 +1927,38 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             metadata=metadata,
         )
 
+    def append_timewise(
+        self,
+        other,
+        align_columns,
+    ):
+        """
+        Append timeseries along the time axis
+
+        ``other`` is joined in time.
+
+        TODO:
+        - use some set of index to make the join
+        - test join future, past and both
+
+        Parameters
+        ----------
+        other : :obj:`scmdata.ScmRun`
+            :obj:`scmdata.ScmRun` containing the timeseries to append
+
+        align_columns : list
+            Columns used to align ``other`` and ``self`` when joining
+        """
+        ts_self = self.timeseries()
+        ts_other = other.timeseries(align_columns)
+
+        ts_other_aligned, ts_self_aligned = ts_other.align(ts_self)
+        ts_self_aligned = ts_self_aligned.dropna(how="all", axis="columns")
+        ts_other_aligned = ts_other_aligned.dropna(how="all", axis="columns")
+
+        out = pd.concat([ts_other_aligned, ts_self_aligned], axis=1)
+
+        return type(self)(out)
 # scenario_emms = emissions.convert_unit(PLOT_UNIT).timeseries(
 #     drop_all_nan_times=True, time_axis="year"
 # )

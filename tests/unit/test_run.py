@@ -1837,11 +1837,13 @@ def test_append_timewise(scm_run):
     history["scenario"] = "history"
     history["model"] = "test"
 
-    res = base.append_timewise(history)
+    res = base.append_timewise(history, align_columns=["variable", "unit"])
 
     assert_scmdf_almost_equal(res, start)
 
 # Tests to write:
+# - align_columns works as intended
+# - align_columns error messages are sensible
 # - can join one history to multiple scenarios
 
 def test_interpolate(combo_df):
