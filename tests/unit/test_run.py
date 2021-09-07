@@ -1823,6 +1823,27 @@ def test_append_inplace_preexisting_nan(scm_run):
     )
 
 
+def test_append_timewise(scm_run):
+    start = (
+        scm_run
+        .filter(scenario="a_scenario")
+        .interpolate([dt.datetime(y, 1, 1) for y in range(2005, 2015 + 1)])
+    )
+
+    join_year = 2010
+
+    base = start.filter(year=range(join_year, 2100))
+    history = start.filter(year=range(1, join_year))
+    history["scenario"] = "history"
+    history["model"] = "test"
+
+    res = base.append_timewise(history)
+
+    assert_scmdf_almost_equal(res, start)
+
+# Tests to write:
+# - can join one history to multiple scenarios
+
 def test_interpolate(combo_df):
     combo, df = combo_df
     target_time_points = combo.target
