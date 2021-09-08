@@ -51,6 +51,7 @@ def test_init_df_year_converted_to_datetime(test_pd_df):
         "time_col_index",
         "time_col_str_simple",
         "time_col_str_complex",
+        "time_col_reversed",
         "str_times",
     ],
 )
@@ -91,6 +92,8 @@ def test_init_df_formats(test_pd_run_df, in_format):
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
         test_init["time"] = test_init["year"].apply(lambda x: "{}/1/1".format(x))
         test_init = test_init.drop("year", axis="columns")
+    elif in_format == "time_col_reversed":
+        test_init = test_pd_run_df[test_pd_run_df.columns[::-1]]
     elif in_format == "str_times":
         test_init = test_pd_run_df.copy()
         test_init.columns = test_init.columns.map(
@@ -103,6 +106,8 @@ def test_init_df_formats(test_pd_run_df, in_format):
         res["time"].unique()
         == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
+    assert "Start: 2005" in res.__repr__()
+    assert "End: 2015" in res.__repr__()
 
     res_df = res.timeseries()
     res_df.columns = res_df.columns.map(lambda x: x.year)
@@ -1829,7 +1834,8 @@ def test_append_inplace_preexisting_nan(scm_run):
         check_dtype=False,
     )
 
-
+# Tests to write:
+# - duplicate times should raise in constructor too
 @pytest.mark.parametrize("join_year", (2010, 2012))
 @pytest.mark.parametrize("join_past", (True, False))
 def test_append_timewise(join_year, join_past, scm_run_interpolated):
@@ -1992,8 +1998,6 @@ def test_append_timewise_no_match(scm_run_interpolated):
             res_vals = df.values.squeeze()
             npt.assert_allclose(res_vals, np.broadcast_to(exp_vals, res_vals.shape))
 
-# Tests to write:
-# - duplicate times should raise in constructor too
 
 def test_interpolate(combo_df):
     combo, df = combo_df
