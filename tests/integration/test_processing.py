@@ -127,3 +127,5 @@ def test_exceedance_probabilities_over_time(
         index=exp_idx,
         columns=test_processing_scm_df.time_points.to_index(),
     )
+
+    pdt.assert_frame_equal(res, exp, check_like=True)
