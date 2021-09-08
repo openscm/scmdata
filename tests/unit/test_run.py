@@ -27,10 +27,13 @@ from scmdata.testing import (
 
 @pytest.fixture
 def scm_run_interpolated(scm_run):
-    return scm_run.interpolate([
-        dt.datetime(y, 1, 1)
-        for y in range(scm_run["year"].min(), scm_run["year"].max() + 1)
-    ])
+    return scm_run.interpolate(
+        [
+            dt.datetime(y, 1, 1)
+            for y in range(scm_run["year"].min(), scm_run["year"].max() + 1)
+        ]
+    )
+
 
 def test_init_df_year_converted_to_datetime(test_pd_df):
     res = ScmRun(test_pd_df)
@@ -1834,6 +1837,7 @@ def test_append_inplace_preexisting_nan(scm_run):
         check_dtype=False,
     )
 
+
 # Tests to write:
 # - duplicate times should raise in constructor too
 @pytest.mark.parametrize("join_year", (2010, 2012))
@@ -1905,14 +1909,13 @@ def test_append_timewise_align_columns_one_to_many(scm_run_interpolated):
 
     assert_scmdf_almost_equal(
         res.filter(year=range(join_year, 3000)),
-        start.filter(year=range(join_year, 3000))
+        start.filter(year=range(join_year, 3000)),
     )
 
     for _, row in res.filter(year=range(1, join_year)).timeseries().iterrows():
         # check that history has been written into all timeseries
         npt.assert_allclose(
-            row.values.squeeze(),
-            history.values.squeeze(),
+            row.values.squeeze(), history.values.squeeze(),
         )
 
 
@@ -1929,10 +1932,12 @@ def test_append_timewise_align_columns_many_to_many(scm_run_interpolated):
     # unchanged after join year
     assert_scmdf_almost_equal(
         res.filter(year=range(join_year, 3000)),
-        start.filter(year=range(join_year, 3000))
+        start.filter(year=range(join_year, 3000)),
     )
 
-    for scenario, df in res.filter(year=range(1, join_year)).timeseries().groupby("scenario"):
+    for scenario, df in (
+        res.filter(year=range(1, join_year)).timeseries().groupby("scenario")
+    ):
         # check that correct history has been written into all timeseries
         exp_vals = history.filter(scenario=scenario).values.squeeze()
         res_vals = df.values.squeeze()
@@ -1946,8 +1951,7 @@ def test_append_timewise_ambiguous_history(scm_run_interpolated):
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run_interpolated.append_timewise(
-            scm_run_interpolated,
-            align_columns=["variable"],
+            scm_run_interpolated, align_columns=["variable"],
         )
 
 
@@ -1959,9 +1963,7 @@ def test_append_timewise_overlapping_times(scm_run_interpolated):
     other["scenario"] = "other"
     other["model"] = "test"
 
-    error_msg = re.escape(
-        "``self`` and ``other`` have overlapping times: ['2008"
-    )
+    error_msg = re.escape("``self`` and ``other`` have overlapping times: ['2008")
     with pytest.raises(ValueError, match=error_msg):
         base.append_timewise(other, align_columns=["variable", "unit"])
 
@@ -1971,7 +1973,9 @@ def test_append_timewise_no_match(scm_run_interpolated):
 
     join_year = 2010
     base = start.filter(year=range(join_year, 3000))
-    other = start.filter(year=range(1, join_year), variable="Primary Energy", scenario="a_scenario")
+    other = start.filter(
+        year=range(1, join_year), variable="Primary Energy", scenario="a_scenario"
+    )
     other["scenario"] = "other"
     other["model"] = "test"
 
@@ -1985,7 +1989,9 @@ def test_append_timewise_no_match(scm_run_interpolated):
         allow_unordered=True,
     )
 
-    for variable, df in res.filter(year=range(1, join_year)).timeseries().groupby("variable"):
+    for variable, df in (
+        res.filter(year=range(1, join_year)).timeseries().groupby("variable")
+    ):
         # check that correct other has been written into all timeseries
         exp_vals = other.filter(variable=variable)
         if exp_vals.empty:

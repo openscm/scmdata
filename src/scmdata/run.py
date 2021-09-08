@@ -1930,9 +1930,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         )
 
     def append_timewise(
-        self,
-        other,
-        align_columns,
+        self, other, align_columns,
     ):
         """
         Append timeseries along the time axis
@@ -1967,7 +1965,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         # if ts_other_aligned.isnull().any(axis=1):
         #     warning?
 
-        overlapping_times = ts_self_aligned.columns.intersection(ts_other_aligned.columns)
+        overlapping_times = ts_self_aligned.columns.intersection(
+            ts_other_aligned.columns
+        )
         if not overlapping_times.empty:
             raise ValueError(
                 "``self`` and ``other`` have overlapping times: {}".format(
