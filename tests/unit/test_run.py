@@ -1898,8 +1898,7 @@ def test_append_timewise_extra_col_in_hist(scm_run_interpolated):
 
 
 @pytest.mark.xfail(
-    _check_pandas_less_120(),
-    reason="pandas<1.2.0 can't align properly",
+    _check_pandas_less_120(), reason="pandas<1.2.0 can't align properly",
 )
 def test_append_timewise_align_columns_one_to_many(scm_run_interpolated):
     start = scm_run_interpolated.copy()
@@ -1924,8 +1923,7 @@ def test_append_timewise_align_columns_one_to_many(scm_run_interpolated):
 
 
 @pytest.mark.xfail(
-    _check_pandas_less_120(),
-    reason="pandas<1.2.0 can't align properly",
+    _check_pandas_less_120(), reason="pandas<1.2.0 can't align properly",
 )
 def test_append_timewise_align_columns_many_to_many(scm_run_interpolated):
     start = scm_run_interpolated.copy()
