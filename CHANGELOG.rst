@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#165 <https://github.com/openscm/scmdata/pull/165>`_) Add :func:`scmdata.processing.calculate_crossing_times`
 - (`#164 <https://github.com/openscm/scmdata/pull/164>`_) Added :meth:`scmdata.ScmRun.append_timewise` to allow appending of data along the time axis with broadcasting along multiple meta dimensions
 - (`#164 <https://github.com/openscm/scmdata/pull/164>`_) Sort time axis internally (ensures that :meth:`scmdata.ScmRun.__repr__` renders properly)
 - (`#164 <https://github.com/openscm/scmdata/pull/164>`_) Added :class:`scmdata.errors.DuplicateTimesError`, raised when duplicate times are passed to :class:`scmdata.ScmRun`
