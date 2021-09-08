@@ -418,6 +418,10 @@ def test_init_with_copy_dataframe(copy_data, test_pd_df):
     _check_copy(res._df, test_pd_df, True)
 
 
+# TODO: test initi with duplicate time columns
+
+
+
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
     df = ScmRun(test_pd_df).to_iamdataframe()
 
