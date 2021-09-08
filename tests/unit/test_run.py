@@ -150,13 +150,13 @@ def test_init_df_missing_time_columns_error(test_pd_df):
 
 def test_init_df_missing_col_error(test_pd_df):
     test_pd_df = test_pd_df.drop("model", axis="columns")
-    error_msg = re.escape("missing required columns `['model']`!")
+    error_msg = re.escape("Missing required columns `['model']`!")
     with pytest.raises(MissingRequiredColumnError, match=error_msg):
         ScmRun(test_pd_df)
 
 
 def test_init_ts_missing_col_error(test_ts):
-    error_msg = re.escape("missing required columns `['model']`!")
+    error_msg = re.escape("Missing required columns `['model']`!")
     with pytest.raises(MissingRequiredColumnError, match=error_msg):
         ScmRun(
             test_ts,
@@ -183,7 +183,7 @@ def test_init_required_cols(test_pd_df):
     del test_pd_df["climate_model"]
 
     assert not all([c in test_pd_df.columns for c in MyRun.required_cols])
-    error_msg = re.escape("missing required columns `['climate_model']`!")
+    error_msg = re.escape("Missing required columns `['climate_model']`!")
     with pytest.raises(
         MissingRequiredColumnError, match=error_msg,
     ):
@@ -423,8 +423,19 @@ def test_init_with_copy_dataframe(copy_data, test_pd_df):
 
 
 def test_init_duplicate_columns(test_pd_df):
-    with pytest.raises(DuplicateTimesError):
-        ScmRun(pd.concat([test_pd_df, test_pd_df[2015]], axis=1))
+    exp_msg = (
+        "Duplicate times (numbers show how many times the given " "time is repeated)"
+    )
+    inp = pd.concat([test_pd_df, test_pd_df[2015]], axis=1)
+    with pytest.raises(DuplicateTimesError) as exc_info:
+        ScmRun(inp)
+
+    error_msg = exc_info.value.args[0]
+    assert error_msg.startswith(exp_msg)
+    pd.testing.assert_index_equal(
+        pd.Index([2005, 2010, 2015, 2015], dtype="object", name="time"),
+        exc_info.value.time_index,
+    )
 
 
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
@@ -1649,8 +1660,16 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     expected = test_append_scm_runs["expected"]
 
     if duplicate_msg and not isinstance(duplicate_msg, str):
-        with pytest.raises(NonUniqueMetadataError):
+        exp_msg = (
+            "Duplicate metadata (numbers show how many times the given "
+            "metadata is repeated)."
+        )
+        with pytest.raises(NonUniqueMetadataError) as exc_info:
             base.append(other, duplicate_msg=duplicate_msg)
+
+        error_msg = exc_info.value.args[0]
+        assert error_msg.startswith(exp_msg)
+        pd.testing.assert_frame_equal(base.meta.append(other.meta), exc_info.value.meta)
 
         return
 
@@ -1777,9 +1796,9 @@ def get_append_col_order_time_dfs(base):
 
 
 def test_append_column_order_time_interpolation(scm_run):
-    base, other, other_2, exp = get_append_col_order_time_dfs(scm_run)
+    _, other, other_2, exp = get_append_col_order_time_dfs(scm_run)
 
-    res = run_append([scm_run, other, other_2], duplicate_msg="warn")
+    res = run_append([scm_run, other, other_2], duplicate_msg=False)
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
@@ -2804,7 +2823,7 @@ def test_read_from_disk_incorrect_labels():
         "rcp26_emissions_capitalised.csv",
     )
 
-    exp_msg = "missing required columns"
+    exp_msg = "Missing required columns"
 
     with pytest.raises(MissingRequiredColumnError) as exc_info:
         ScmRun(fname)

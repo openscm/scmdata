@@ -6,6 +6,8 @@ master
 
 - (`#164 <https://github.com/openscm/scmdata/pull/164>`_) Added :meth:`scmdata.ScmRun.append_timewise` to allow appending of data along the time axis with broadcasting along multiple meta dimensions
 - (`#164 <https://github.com/openscm/scmdata/pull/164>`_) Sort time axis internally (ensures that :meth:`scmdata.ScmRun.__repr__` renders properly)
+- (`#164 <https://github.com/openscm/scmdata/pull/164>`_) Added :class:`scmdata.errors.DuplicateTimesError`, raised when duplicate times are passed to :class:`scmdata.ScmRun`
+- (`#164 <https://github.com/openscm/scmdata/pull/164>`_) Unified capitalisation of error messages in ``scmdata.errors`` and added the ``meta`` table to ``exc_info`` of :class:`NonUniqueMetadataError`
 - (`#163 <https://github.com/openscm/scmdata/pull/163>`_) Added :meth:`scmdata.ScmRun.adjust_median_to_target` to allow for the median of an ensemble of timeseries to be adjusted to a given value
 - (`#163 <https://github.com/openscm/scmdata/pull/163>`_) Update ``scmdata.plotting.RCMIP_SCENARIO_COLOURS`` to new AR6 colours
 

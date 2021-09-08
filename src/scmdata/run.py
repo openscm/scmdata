@@ -1979,7 +1979,6 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         except DuplicateTimesError as exc:
             raise ValueError("``self`` and ``other`` have overlapping times") from exc
 
-
     def to_iamdataframe(self) -> LongDatetimeIamDataFrame:  # pragma: no cover
         """
         Convert to a :class:`LongDatetimeIamDataFrame` instance.
