@@ -22,7 +22,11 @@ from openscm_units import unit_registry as ur
 
 from ._base import OpsMixin
 from ._xarray import inject_xarray_methods
-from .errors import MissingRequiredColumnError, NonUniqueMetadataError
+from .errors import (
+    DuplicateTimesError,
+    MissingRequiredColumnError,
+    NonUniqueMetadataError,
+)
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,
@@ -478,12 +482,17 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
             (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
 
-        self._time_points = TimePoints(_df.index.values)
+        if _df.index.duplicated().any():
+            raise DuplicateTimesError(_df.index)
+
+        # use :class:`TimePoints` to sort times before continuing
+        _df.index = TimePoints(_df.index.values).to_index()
+        _df = _df.sort_index()
 
         _df = _df.astype(float)
         self._df = _df
-        self._df.index = self._time_points.to_index()
-        self._df = self._df.sort_index()
+        # set time points using the sorted times
+        self._time_points = TimePoints(_df.index.values)
         self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
 
     def copy(self):
@@ -1266,7 +1275,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         extrapolation_type: str = "linear",
     ):
         """
-        Interpolate the dataframe onto a new time frame.
+        Interpolate the data onto a new time frame.
 
         Parameters
         ----------
@@ -1337,7 +1346,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Examples
         --------
-        Resample a dataframe to annual values
+        Resample a run to annual values
 
         >>> scm_df = ScmRun(
         ...     pd.Series([1, 2, 10], index=(2000, 2001, 2009)),
@@ -1537,7 +1546,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         na_override: [int, float]
             Convert any nan value in the timeseries meta to this value during processsing.
-            The meta values converted back to nan's before the dataframe is returned. This
+            The meta values converted back to nan's before the run is returned. This
             should not need to be changed unless the existing metadata clashes with the
             default na_override value.
 
@@ -1875,7 +1884,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         **kwargs: Any,
     ):
         """
-        Append additional data to the current dataframe.
+        Append additional data to the current data.
 
         For details, see :func:`run_append`.
 
@@ -1926,6 +1935,49 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             duplicate_msg=duplicate_msg,
             metadata=metadata,
         )
+
+    def append_timewise(
+        self, other, align_columns,
+    ):
+        """
+        Append timeseries along the time axis
+
+        Parameters
+        ----------
+        other : :obj:`scmdata.ScmRun`
+            :obj:`scmdata.ScmRun` containing the timeseries to append
+
+        align_columns : list
+            Columns used to align ``other`` and ``self`` when joining
+
+        Returns
+        -------
+        :obj:`scmdata.ScmRun`
+            Result of joining ``self`` and ``other`` along the time axis
+        """
+        ts_self = self.timeseries()
+        try:
+            ts_other = other.timeseries(meta=align_columns)
+        except NonUniqueMetadataError as exc:
+            error_msg = (
+                "Calling ``other.timeseries(meta=align_columns)`` must "
+                "result in umabiguous timeseries"
+            )
+            raise ValueError(error_msg) from exc
+
+        ts_other_aligned, ts_self_aligned = ts_other.align(ts_self)
+        ts_self_aligned = ts_self_aligned.dropna(how="all", axis="columns")
+        ts_other_aligned = ts_other_aligned.dropna(how="all", axis="columns")
+
+        # if ts_other_aligned.isnull().any(axis=1):
+        #     warning?
+
+        out = pd.concat([ts_other_aligned, ts_self_aligned], axis=1)
+
+        try:
+            return type(self)(out)
+        except DuplicateTimesError as exc:
+            raise ValueError("``self`` and ``other`` have overlapping times") from exc
 
     def to_iamdataframe(self) -> LongDatetimeIamDataFrame:  # pragma: no cover
         """

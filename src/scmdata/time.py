@@ -107,6 +107,11 @@ class TimePoints:
         ----------
         values
             Time points array to handle
+
+        Notes
+        -----
+        Time points are stored as provided. The user should sort them first if
+        sorting is desired.
         """
         self._values = _format_datetime(np.asarray(values))
 

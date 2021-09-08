@@ -16,13 +16,27 @@ from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.errors import MissingRequiredColumnError, NonUniqueMetadataError
+from scmdata.errors import (
+    DuplicateTimesError,
+    MissingRequiredColumnError,
+    NonUniqueMetadataError,
+)
 from scmdata.run import BaseScmRun, ScmRun, run_append
 from scmdata.testing import (
     _check_pandas_less_110,
     _check_pandas_less_120,
     assert_scmdf_almost_equal,
 )
+
+
+@pytest.fixture
+def scm_run_interpolated(scm_run):
+    return scm_run.interpolate(
+        [
+            dt.datetime(y, 1, 1)
+            for y in range(scm_run["year"].min(), scm_run["year"].max() + 1)
+        ]
+    )
 
 
 def test_init_df_year_converted_to_datetime(test_pd_df):
@@ -44,6 +58,7 @@ def test_init_df_year_converted_to_datetime(test_pd_df):
         "time_col_index",
         "time_col_str_simple",
         "time_col_str_complex",
+        "time_col_reversed",
         "str_times",
     ],
 )
@@ -84,6 +99,8 @@ def test_init_df_formats(test_pd_run_df, in_format):
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
         test_init["time"] = test_init["year"].apply(lambda x: "{}/1/1".format(x))
         test_init = test_init.drop("year", axis="columns")
+    elif in_format == "time_col_reversed":
+        test_init = test_pd_run_df[test_pd_run_df.columns[::-1]]
     elif in_format == "str_times":
         test_init = test_pd_run_df.copy()
         test_init.columns = test_init.columns.map(
@@ -96,6 +113,8 @@ def test_init_df_formats(test_pd_run_df, in_format):
         res["time"].unique()
         == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
+    assert "Start: 2005" in res.__repr__()
+    assert "End: 2015" in res.__repr__()
 
     res_df = res.timeseries()
     res_df.columns = res_df.columns.map(lambda x: x.year)
@@ -131,13 +150,13 @@ def test_init_df_missing_time_columns_error(test_pd_df):
 
 def test_init_df_missing_col_error(test_pd_df):
     test_pd_df = test_pd_df.drop("model", axis="columns")
-    error_msg = re.escape("missing required columns `['model']`!")
+    error_msg = re.escape("Missing required columns `['model']`!")
     with pytest.raises(MissingRequiredColumnError, match=error_msg):
         ScmRun(test_pd_df)
 
 
 def test_init_ts_missing_col_error(test_ts):
-    error_msg = re.escape("missing required columns `['model']`!")
+    error_msg = re.escape("Missing required columns `['model']`!")
     with pytest.raises(MissingRequiredColumnError, match=error_msg):
         ScmRun(
             test_ts,
@@ -164,7 +183,7 @@ def test_init_required_cols(test_pd_df):
     del test_pd_df["climate_model"]
 
     assert not all([c in test_pd_df.columns for c in MyRun.required_cols])
-    error_msg = re.escape("missing required columns `['climate_model']`!")
+    error_msg = re.escape("Missing required columns `['climate_model']`!")
     with pytest.raises(
         MissingRequiredColumnError, match=error_msg,
     ):
@@ -401,6 +420,22 @@ def test_init_with_copy_dataframe(copy_data, test_pd_df):
 
     # an incoming pandas DF no longer references the original
     _check_copy(res._df, test_pd_df, True)
+
+
+def test_init_duplicate_columns(test_pd_df):
+    exp_msg = (
+        "Duplicate times (numbers show how many times the given " "time is repeated)"
+    )
+    inp = pd.concat([test_pd_df, test_pd_df[2015]], axis=1)
+    with pytest.raises(DuplicateTimesError) as exc_info:
+        ScmRun(inp)
+
+    error_msg = exc_info.value.args[0]
+    assert error_msg.startswith(exp_msg)
+    pd.testing.assert_index_equal(
+        pd.Index([2005, 2010, 2015, 2015], dtype="object", name="time"),
+        exc_info.value.time_index,
+    )
 
 
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
@@ -1625,8 +1660,16 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     expected = test_append_scm_runs["expected"]
 
     if duplicate_msg and not isinstance(duplicate_msg, str):
-        with pytest.raises(NonUniqueMetadataError):
+        exp_msg = (
+            "Duplicate metadata (numbers show how many times the given "
+            "metadata is repeated)."
+        )
+        with pytest.raises(NonUniqueMetadataError) as exc_info:
             base.append(other, duplicate_msg=duplicate_msg)
+
+        error_msg = exc_info.value.args[0]
+        assert error_msg.startswith(exp_msg)
+        pd.testing.assert_frame_equal(base.meta.append(other.meta), exc_info.value.meta)
 
         return
 
@@ -1753,9 +1796,9 @@ def get_append_col_order_time_dfs(base):
 
 
 def test_append_column_order_time_interpolation(scm_run):
-    base, other, other_2, exp = get_append_col_order_time_dfs(scm_run)
+    _, other, other_2, exp = get_append_col_order_time_dfs(scm_run)
 
-    res = run_append([scm_run, other, other_2], duplicate_msg="warn")
+    res = run_append([scm_run, other, other_2], duplicate_msg=False)
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
@@ -1821,6 +1864,177 @@ def test_append_inplace_preexisting_nan(scm_run):
         check_like=True,
         check_dtype=False,
     )
+
+
+@pytest.mark.parametrize("join_year", (2010, 2012))
+@pytest.mark.parametrize("join_past", (True, False))
+def test_append_timewise(join_year, join_past, scm_run_interpolated):
+    start = scm_run_interpolated.filter(scenario="a_scenario")
+
+    if join_past:
+        base = start.filter(year=range(join_year, 2100))
+        other = start.filter(year=range(1, join_year))
+    else:
+        other = start.filter(year=range(join_year, 2100))
+        base = start.filter(year=range(1, join_year))
+
+    other["scenario"] = "other"
+    other["model"] = "test"
+
+    res = base.append_timewise(other, align_columns=["variable", "unit"])
+
+    assert_scmdf_almost_equal(res, start)
+    assert (res.timeseries().columns == start.timeseries().columns).all()
+    assert (res.timeseries().columns == res.timeseries().columns.sort_values()).all()
+    assert "Start: 2005" in res.__repr__()
+
+
+def test_append_timewise_future_and_past(scm_run_interpolated):
+    start = scm_run_interpolated.filter(scenario="a_scenario")
+
+    base = start.filter(year=range(2008, 2011))
+    other = start.filter(year=base["year"].tolist(), keep=False)
+    other["scenario"] = "other"
+    other["model"] = "test"
+
+    res = base.append_timewise(other, align_columns=["variable", "unit"])
+
+    assert_scmdf_almost_equal(res, start)
+    assert (res.timeseries().columns == start.timeseries().columns).all()
+    assert (res.timeseries().columns == res.timeseries().columns.sort_values()).all()
+    assert "Start: 2005" in res.__repr__()
+
+
+def test_append_timewise_extra_col_in_hist(scm_run_interpolated):
+    start = scm_run_interpolated.filter(scenario="a_scenario")
+
+    join_year = 2010
+
+    base = start.filter(year=range(join_year, 2100))
+    history = start.filter(year=range(1, join_year))
+    history["scenario"] = "history"
+    history["model"] = "test"
+    history["extra_col"] = "tester"
+
+    res = base.append_timewise(history, align_columns=["variable", "unit", "extra_col"])
+
+    exp = start.copy()
+    exp["extra_col"] = "tester"
+    assert_scmdf_almost_equal(res, exp)
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_120(), reason="pandas<1.2.0 can't align properly",
+)
+def test_append_timewise_align_columns_one_to_many(scm_run_interpolated):
+    start = scm_run_interpolated.copy()
+
+    join_year = 2010
+
+    base = start.filter(year=range(join_year, 2100))
+    history = start.filter(scenario="a_scenario2", year=range(1, join_year))
+
+    res = base.append_timewise(history, align_columns=["unit"])
+
+    assert_scmdf_almost_equal(
+        res.filter(year=range(join_year, 3000)),
+        start.filter(year=range(join_year, 3000)),
+    )
+
+    for _, row in res.filter(year=range(1, join_year)).timeseries().iterrows():
+        # check that history has been written into all timeseries
+        npt.assert_allclose(
+            row.values.squeeze(), history.values.squeeze(),
+        )
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_120(), reason="pandas<1.2.0 can't align properly",
+)
+def test_append_timewise_align_columns_many_to_many(scm_run_interpolated):
+    start = scm_run_interpolated.copy()
+
+    join_year = 2010
+
+    base = start.filter(year=range(join_year, 2100))
+    history = start.filter(variable="Primary Energy", year=range(1, join_year))
+
+    res = base.append_timewise(history, align_columns=["scenario"])
+
+    # unchanged after join year
+    assert_scmdf_almost_equal(
+        res.filter(year=range(join_year, 3000)),
+        start.filter(year=range(join_year, 3000)),
+    )
+
+    for scenario, df in (
+        res.filter(year=range(1, join_year)).timeseries().groupby("scenario")
+    ):
+        # check that correct history has been written into all timeseries
+        exp_vals = history.filter(scenario=scenario).values.squeeze()
+        res_vals = df.values.squeeze()
+        npt.assert_allclose(res_vals, np.broadcast_to(exp_vals, res_vals.shape))
+
+
+def test_append_timewise_ambiguous_history(scm_run_interpolated):
+    error_msg = re.escape(
+        "Calling ``other.timeseries(meta=align_columns)`` must "
+        "result in umabiguous timeseries"
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scm_run_interpolated.append_timewise(
+            scm_run_interpolated, align_columns=["variable"],
+        )
+
+
+def test_append_timewise_overlapping_times(scm_run_interpolated):
+    start = scm_run_interpolated.filter(scenario="a_scenario")
+
+    base = start.filter(year=range(1, 2011))
+    other = start.filter(year=range(2008, 3000))
+    other["scenario"] = "other"
+    other["model"] = "test"
+
+    error_msg = re.escape("``self`` and ``other`` have overlapping times")
+    with pytest.raises(ValueError, match=error_msg):
+        base.append_timewise(other, align_columns=["variable", "unit"])
+
+
+def test_append_timewise_no_match(scm_run_interpolated):
+    start = scm_run_interpolated.copy()
+
+    join_year = 2010
+    base = start.filter(year=range(join_year, 3000))
+    other = start.filter(
+        year=range(1, join_year), variable="Primary Energy", scenario="a_scenario"
+    )
+    other["scenario"] = "other"
+    other["model"] = "test"
+
+    res = base.append_timewise(other, align_columns=["variable", "unit"])
+
+    # unchanged after join year
+    assert_scmdf_almost_equal(
+        res.filter(year=range(join_year, 3000)),
+        start.filter(year=range(join_year, 3000)),
+        check_ts_names=False,
+        allow_unordered=True,
+    )
+
+    for variable, df in (
+        res.filter(year=range(1, join_year)).timeseries().groupby("variable")
+    ):
+        # check that correct other has been written into all timeseries
+        exp_vals = other.filter(variable=variable)
+        if exp_vals.empty:
+            # no other provided hence get nans in output
+            # question for Jared: should we raise a warning when this happens?
+            assert df.isnull().all().all()
+
+        else:
+            exp_vals = exp_vals.values.squeeze()
+            res_vals = df.values.squeeze()
+            npt.assert_allclose(res_vals, np.broadcast_to(exp_vals, res_vals.shape))
 
 
 def test_interpolate(combo_df):
@@ -2609,7 +2823,7 @@ def test_read_from_disk_incorrect_labels():
         "rcp26_emissions_capitalised.csv",
     )
 
-    exp_msg = "missing required columns"
+    exp_msg = "Missing required columns"
 
     with pytest.raises(MissingRequiredColumnError) as exc_info:
         ScmRun(fname)
