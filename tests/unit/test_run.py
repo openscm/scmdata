@@ -16,7 +16,7 @@ from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.errors import MissingRequiredColumnError, NonUniqueMetadataError
+from scmdata.errors import DuplicateTimesError, MissingRequiredColumnError, NonUniqueMetadataError
 from scmdata.run import BaseScmRun, ScmRun, run_append
 from scmdata.testing import (
     _check_pandas_less_110,
@@ -418,8 +418,9 @@ def test_init_with_copy_dataframe(copy_data, test_pd_df):
     _check_copy(res._df, test_pd_df, True)
 
 
-# TODO: test initi with duplicate time columns
-
+def test_init_duplicate_columns(test_pd_df):
+    with pytest.raises(DuplicateTimesError):
+        ScmRun(pd.concat([test_pd_df, test_pd_df[2015]], axis=1))
 
 
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type):

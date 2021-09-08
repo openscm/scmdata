@@ -37,3 +37,9 @@ class MissingRequiredColumnError(ValueError):
         msg = "missing required columns `{}`!".format(columns)
 
         super().__init__(msg)
+
+
+class DuplicateTimesError(ValueError):
+    """
+    Error raised when times are duplicated
+    """
