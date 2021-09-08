@@ -25,6 +25,13 @@ from scmdata.testing import (
 )
 
 
+@pytest.fixture
+def scm_run_interpolated(scm_run):
+    return scm_run.interpolate([
+        dt.datetime(y, 1, 1)
+        for y in range(scm_run["year"].min(), scm_run["year"].max() + 1)
+    ])
+
 def test_init_df_year_converted_to_datetime(test_pd_df):
     res = ScmRun(test_pd_df)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
@@ -1823,12 +1830,8 @@ def test_append_inplace_preexisting_nan(scm_run):
     )
 
 
-def test_append_timewise(scm_run):
-    start = (
-        scm_run
-        .filter(scenario="a_scenario")
-        .interpolate([dt.datetime(y, 1, 1) for y in range(2005, 2015 + 1)])
-    )
+def test_append_timewise(scm_run_interpolated):
+    start = scm_run_interpolated.filter(scenario="a_scenario")
 
     join_year = 2010
 
@@ -1842,11 +1845,8 @@ def test_append_timewise(scm_run):
     assert_scmdf_almost_equal(res, start)
 
 
-def test_append_timewise_align_columns_one_to_many(scm_run):
-    start = (
-        scm_run
-        .interpolate([dt.datetime(y, 1, 1) for y in range(2005, 2015 + 1)])
-    )
+def test_append_timewise_align_columns_one_to_many(scm_run_interpolated):
+    start = scm_run_interpolated.copy()
 
     join_year = 2010
 
@@ -1868,8 +1868,30 @@ def test_append_timewise_align_columns_one_to_many(scm_run):
         )
 
 
+def test_append_timewise_align_columns_many_to_many(scm_run_interpolated):
+    start = scm_run_interpolated.copy()
+
+    join_year = 2010
+
+    base = start.filter(year=range(join_year, 2100))
+    history = start.filter(variable="Primary Energy", year=range(1, join_year))
+
+    res = base.append_timewise(history, align_columns=["scenario"])
+
+    # unchanged after join year
+    assert_scmdf_almost_equal(
+        res.filter(year=range(join_year, 3000)),
+        start.filter(year=range(join_year, 3000))
+    )
+
+    for scenario, df in res.filter(year=range(1, join_year)).timeseries().groupby("scenario"):
+        # check that correct history has been written into all timeseries
+        exp_vals = history.filter(scenario=scenario).values.squeeze()
+        res_vals = df.values.squeeze()
+        npt.assert_allclose(res_vals, np.broadcast_to(exp_vals, res_vals.shape))
+
+
 # Tests to write:
-# - align_columns works as intended
 # - align_columns error messages are sensible
 # - can join one history to multiple scenarios
 
