@@ -1841,6 +1841,33 @@ def test_append_timewise(scm_run):
 
     assert_scmdf_almost_equal(res, start)
 
+
+def test_append_timewise_align_columns_one_to_many(scm_run):
+    start = (
+        scm_run
+        .interpolate([dt.datetime(y, 1, 1) for y in range(2005, 2015 + 1)])
+    )
+
+    join_year = 2010
+
+    base = start.filter(year=range(join_year, 2100))
+    history = start.filter(scenario="a_scenario2", year=range(1, join_year))
+
+    res = base.append_timewise(history, align_columns=["unit"])
+
+    assert_scmdf_almost_equal(
+        res.filter(year=range(join_year, 3000)),
+        start.filter(year=range(join_year, 3000))
+    )
+
+    for _, row in res.filter(year=range(1, join_year)).timeseries().iterrows():
+        # check that history has been written into all timeseries
+        npt.assert_allclose(
+            row.values.squeeze(),
+            history.values.squeeze(),
+        )
+
+
 # Tests to write:
 # - align_columns works as intended
 # - align_columns error messages are sensible
