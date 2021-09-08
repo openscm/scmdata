@@ -1943,9 +1943,57 @@ def test_append_timewise_ambiguous_history(scm_run_interpolated):
             scm_run_interpolated,
             align_columns=["variable"],
         )
+
+
+def test_append_timewise_overlapping_times(scm_run_interpolated):
+    start = scm_run_interpolated.filter(scenario="a_scenario")
+
+    base = start.filter(year=range(1, 2011))
+    other = start.filter(year=range(2008, 3000))
+    other["scenario"] = "other"
+    other["model"] = "test"
+
+    error_msg = re.escape(
+        "``self`` and ``other`` have overlapping times: ['2008"
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        base.append_timewise(other, align_columns=["variable", "unit"])
+
+
+def test_append_timewise_no_match(scm_run_interpolated):
+    start = scm_run_interpolated.copy()
+
+    join_year = 2010
+    base = start.filter(year=range(join_year, 3000))
+    other = start.filter(year=range(1, join_year), variable="Primary Energy", scenario="a_scenario")
+    other["scenario"] = "other"
+    other["model"] = "test"
+
+    res = base.append_timewise(other, align_columns=["variable", "unit"])
+
+    # unchanged after join year
+    assert_scmdf_almost_equal(
+        res.filter(year=range(join_year, 3000)),
+        start.filter(year=range(join_year, 3000)),
+        check_ts_names=False,
+        allow_unordered=True,
+    )
+
+    for variable, df in res.filter(year=range(1, join_year)).timeseries().groupby("variable"):
+        # check that correct other has been written into all timeseries
+        exp_vals = other.filter(variable=variable)
+        if exp_vals.empty:
+            # no other provided hence get nans in output
+            # question for Jared: should we raise a warning when this happens?
+            assert df.isnull().all().all()
+
+        else:
+            exp_vals = exp_vals.values.squeeze()
+            res_vals = df.values.squeeze()
+            npt.assert_allclose(res_vals, np.broadcast_to(exp_vals, res_vals.shape))
+
 # Tests to write:
-# - test overlapping times
-# - test nan for misalignment
+# - duplicate times should raise in constructor too
 
 def test_interpolate(combo_df):
     combo, df = combo_df

@@ -1962,6 +1962,17 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ts_self_aligned = ts_self_aligned.dropna(how="all", axis="columns")
         ts_other_aligned = ts_other_aligned.dropna(how="all", axis="columns")
 
+        # if ts_other_aligned.isnull().any(axis=1):
+        #     warning?
+
+        overlapping_times = ts_self_aligned.columns.intersection(ts_other_aligned.columns)
+        if not overlapping_times.empty:
+            raise ValueError(
+                "``self`` and ``other`` have overlapping times: {}".format(
+                    overlapping_times.values
+                )
+            )
+
         out = pd.concat([ts_other_aligned, ts_self_aligned], axis=1)
 
         return type(self)(out)
