@@ -1972,8 +1972,8 @@ def test_append_timewise_overlapping_times(scm_run_interpolated):
     other["scenario"] = "other"
     other["model"] = "test"
 
-    error_msg = re.escape("``self`` and ``other`` have overlapping times: ['2008")
-    with pytest.raises(DuplicateTimesError, match=error_msg):
+    error_msg = re.escape("``self`` and ``other`` have overlapping times")
+    with pytest.raises(ValueError, match=error_msg):
         base.append_timewise(other, align_columns=["variable", "unit"])
 
 

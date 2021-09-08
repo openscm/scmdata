@@ -33,8 +33,8 @@ class MissingRequiredColumnError(ValueError):
     """
 
     def __init__(self, columns):
-        self.columns = columns
-        msg = "missing required columns `{}`!".format(columns)
+        # self.columns = columns
+        msg = "Missing required columns `{}`!".format(columns)
 
         super().__init__(msg)
 
@@ -43,3 +43,13 @@ class DuplicateTimesError(ValueError):
     """
     Error raised when times are duplicated
     """
+    def __init__(self, time_index):
+        dup = time_index.value_counts()
+        dup = dup[dup > 1]
+
+        msg = (
+            "Duplicate times (numbers show how many times the given time is "
+            "repeated):\n{}".format(dup)
+        )
+
+        super().__init__(msg)

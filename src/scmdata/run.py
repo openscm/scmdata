@@ -22,7 +22,7 @@ from openscm_units import unit_registry as ur
 
 from ._base import OpsMixin
 from ._xarray import inject_xarray_methods
-from .errors import MissingRequiredColumnError, NonUniqueMetadataError
+from .errors import DuplicateTimesError, MissingRequiredColumnError, NonUniqueMetadataError
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,
@@ -477,6 +477,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 raise TypeError(error_msg)
 
             (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
+
+        if _df.index.duplicated().any():
+            raise DuplicateTimesError(_df.index)
 
         # use :class:`TimePoints` to sort times before continuing
         _df.index = TimePoints(_df.index.values).to_index()
@@ -1965,19 +1968,13 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         # if ts_other_aligned.isnull().any(axis=1):
         #     warning?
 
-        overlapping_times = ts_self_aligned.columns.intersection(
-            ts_other_aligned.columns
-        )
-        if not overlapping_times.empty:
-            raise ValueError(
-                "``self`` and ``other`` have overlapping times: {}".format(
-                    overlapping_times.values
-                )
-            )
-
         out = pd.concat([ts_other_aligned, ts_self_aligned], axis=1)
 
-        return type(self)(out)
+        try:
+            return type(self)(out)
+        except DuplicateTimesError as exc:
+            raise ValueError("``self`` and ``other`` have overlapping times") from exc
+
 
     def to_iamdataframe(self) -> LongDatetimeIamDataFrame:  # pragma: no cover
         """
