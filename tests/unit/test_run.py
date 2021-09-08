@@ -1830,7 +1830,46 @@ def test_append_inplace_preexisting_nan(scm_run):
     )
 
 
-def test_append_timewise(scm_run_interpolated):
+@pytest.mark.parametrize("join_year", (2010, 2012))
+@pytest.mark.parametrize("join_past", (True, False))
+def test_append_timewise(join_year, join_past, scm_run_interpolated):
+    start = scm_run_interpolated.filter(scenario="a_scenario")
+
+    if join_past:
+        base = start.filter(year=range(join_year, 2100))
+        other = start.filter(year=range(1, join_year))
+    else:
+        other = start.filter(year=range(join_year, 2100))
+        base = start.filter(year=range(1, join_year))
+
+    other["scenario"] = "other"
+    other["model"] = "test"
+
+    res = base.append_timewise(other, align_columns=["variable", "unit"])
+
+    assert_scmdf_almost_equal(res, start)
+    assert (res.timeseries().columns == start.timeseries().columns).all()
+    assert (res.timeseries().columns == res.timeseries().columns.sort_values()).all()
+    assert "Start: 2005" in res.__repr__()
+
+
+def test_append_timewise_future_and_past(scm_run_interpolated):
+    start = scm_run_interpolated.filter(scenario="a_scenario")
+
+    base = start.filter(year=range(2008, 2011))
+    other = start.filter(year=base["year"].tolist(), keep=False)
+    other["scenario"] = "other"
+    other["model"] = "test"
+
+    res = base.append_timewise(other, align_columns=["variable", "unit"])
+
+    assert_scmdf_almost_equal(res, start)
+    assert (res.timeseries().columns == start.timeseries().columns).all()
+    assert (res.timeseries().columns == res.timeseries().columns.sort_values()).all()
+    assert "Start: 2005" in res.__repr__()
+
+
+def test_append_timewise_extra_col_in_hist(scm_run_interpolated):
     start = scm_run_interpolated.filter(scenario="a_scenario")
 
     join_year = 2010
@@ -1839,10 +1878,13 @@ def test_append_timewise(scm_run_interpolated):
     history = start.filter(year=range(1, join_year))
     history["scenario"] = "history"
     history["model"] = "test"
+    history["extra_col"] = "tester"
 
-    res = base.append_timewise(history, align_columns=["variable", "unit"])
+    res = base.append_timewise(history, align_columns=["variable", "unit", "extra_col"])
 
-    assert_scmdf_almost_equal(res, start)
+    exp = start.copy()
+    exp["extra_col"] = "tester"
+    assert_scmdf_almost_equal(res, exp)
 
 
 def test_append_timewise_align_columns_one_to_many(scm_run_interpolated):
@@ -1891,9 +1933,19 @@ def test_append_timewise_align_columns_many_to_many(scm_run_interpolated):
         npt.assert_allclose(res_vals, np.broadcast_to(exp_vals, res_vals.shape))
 
 
+def test_append_timewise_ambiguous_history(scm_run_interpolated):
+    error_msg = re.escape(
+        "Calling ``other.timeseries(meta=align_columns)`` must "
+        "result in umabiguous timeseries"
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scm_run_interpolated.append_timewise(
+            scm_run_interpolated,
+            align_columns=["variable"],
+        )
 # Tests to write:
-# - align_columns error messages are sensible
-# - can join one history to multiple scenarios
+# - test overlapping times
+# - test nan for misalignment
 
 def test_interpolate(combo_df):
     combo, df = combo_df

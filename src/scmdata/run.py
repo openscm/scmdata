@@ -1935,12 +1935,6 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         Append timeseries along the time axis
 
-        ``other`` is joined in time.
-
-        TODO:
-        - use some set of index to make the join
-        - test join future, past and both
-
         Parameters
         ----------
         other : :obj:`scmdata.ScmRun`
@@ -1948,9 +1942,21 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         align_columns : list
             Columns used to align ``other`` and ``self`` when joining
+
+        Returns
+        -------
+        :obj:`scmdata.ScmRun`
+            Result of joining ``self`` and ``other`` along the time axis
         """
         ts_self = self.timeseries()
-        ts_other = other.timeseries(align_columns)
+        try:
+            ts_other = other.timeseries(meta=align_columns)
+        except NonUniqueMetadataError as exc:
+            error_msg = (
+                "Calling ``other.timeseries(meta=align_columns)`` must "
+                "result in umabiguous timeseries"
+            )
+            raise ValueError(error_msg) from exc
 
         ts_other_aligned, ts_self_aligned = ts_other.align(ts_self)
         ts_self_aligned = ts_self_aligned.dropna(how="all", axis="columns")
@@ -1959,20 +1965,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         out = pd.concat([ts_other_aligned, ts_self_aligned], axis=1)
 
         return type(self)(out)
-# scenario_emms = emissions.convert_unit(PLOT_UNIT).timeseries(
-#     drop_all_nan_times=True, time_axis="year"
-# )
-# historical_emms_to_join = (
-#     historical_emms.filter(year=range(scenario_emms.columns.min(), 3000), keep=False)
-#     .convert_unit(PLOT_UNIT)
-#     .timeseries(time_axis="year", meta=["variable", "region", "unit"])
-# )
-# display(historical_emms_to_join.head())
-#     ha, sa = historical_emms_to_join.align(scenario_emms)
-# ha = ha.dropna(how="all", axis="columns")
-# sa = sa.dropna(how="all", axis="columns")
-# plot_emissions = scmdata.ScmRun(pd.concat([ha, sa], axis=1))
-# plot_emissions.lineplot(style="variable")
+
     def to_iamdataframe(self) -> LongDatetimeIamDataFrame:  # pragma: no cover
         """
         Convert to a :class:`LongDatetimeIamDataFrame` instance.
