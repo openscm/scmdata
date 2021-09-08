@@ -22,7 +22,11 @@ from openscm_units import unit_registry as ur
 
 from ._base import OpsMixin
 from ._xarray import inject_xarray_methods
-from .errors import DuplicateTimesError, MissingRequiredColumnError, NonUniqueMetadataError
+from .errors import (
+    DuplicateTimesError,
+    MissingRequiredColumnError,
+    NonUniqueMetadataError,
+)
 from .filters import (
     HIERARCHY_SEPARATOR,
     datetime_match,

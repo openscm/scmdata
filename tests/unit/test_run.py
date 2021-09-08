@@ -16,7 +16,11 @@ from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError
 
-from scmdata.errors import DuplicateTimesError, MissingRequiredColumnError, NonUniqueMetadataError
+from scmdata.errors import (
+    DuplicateTimesError,
+    MissingRequiredColumnError,
+    NonUniqueMetadataError,
+)
 from scmdata.run import BaseScmRun, ScmRun, run_append
 from scmdata.testing import (
     _check_pandas_less_110,
