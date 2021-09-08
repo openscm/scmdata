@@ -51,14 +51,14 @@ def test_processing_scm_df():
         (
             1.5,
             [
-                pd.NA,  # never crosses
-                pd.NA,  # never crosses
+                np.nan,  # never crosses
+                np.nan,  # never crosses
                 dt.datetime(2100, 1, 1),  # doesn't cross 1.5 until 2100
                 dt.datetime(2007, 1, 1),  # 2007 is first year to actually exceed 1.5
                 dt.datetime(2006, 1, 1),
             ],
         ),
-        (2.0, [pd.NA, pd.NA, pd.NA, pd.NA, pd.NA]),
+        (2.0, [np.nan, np.nan, np.nan, np.nan, np.nan]),
     ),
 )
 @pytest.mark.parametrize(
