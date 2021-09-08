@@ -4,7 +4,6 @@ Miscellaneous functions for processing :class:`scmdata.ScmRun`
 These functions are intended to be able to be used directly with
 :meth:`scmdata.ScmRun.process_over`.
 """
-import numpy as np
 import pandas as pd
 
 # exceedance probabilities
@@ -29,7 +28,8 @@ def calculate_crossing_times(ts, threshold, return_year=True):
     Returns
     -------
     :class:`pd.Series`
-        Crossing time for ``ts``, using the index of ``ts`` as the output's index. If the threshold is not crossed, ``pd.NA`` is returned.
+        Crossing time for ``ts``, using the index of ``ts`` as the output's
+        index. If the threshold is not crossed, ``pd.NA`` is returned.
 
     Raises
     ------

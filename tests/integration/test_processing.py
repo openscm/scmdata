@@ -1,5 +1,4 @@
 import datetime as dt
-import re
 
 import numpy as np
 import pandas as pd
@@ -28,7 +27,7 @@ def test_processing_scm_df():
             "climate_model": ["a_model"],
             "scenario": ["a_scenario"],
             "region": ["World"],
-            "variable": ["Surface Air Temperature Change",],
+            "variable": ["Surface Air Temperature Change"],
             "unit": ["K"],
             "ensemble_member": range(data.shape[1]),
         },
@@ -59,7 +58,7 @@ def test_processing_scm_df():
                 dt.datetime(2006, 1, 1),
             ],
         ),
-        (2.0, [pd.NA, pd.NA, pd.NA, pd.NA, pd.NA,]),
+        (2.0, [pd.NA, pd.NA, pd.NA, pd.NA, pd.NA]),
     ),
 )
 @pytest.mark.parametrize(
