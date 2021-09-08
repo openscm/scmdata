@@ -35,6 +35,14 @@ def calculate_crossing_times(ts, threshold, return_year=True):
     ------
     ValueError
         ``ts`` has more than one timeseries i.e. ``ts.shape[0] > 1``
+
+    Notes
+    -----
+    This function only returns times that are in the columns of ``ts``. If you
+    want a finer resolution then you should interpolate your data first. For
+    example, if you have data on a ten-year timestep but want crossing times on
+    an annual resolution, interpolate (or resample) to annual data before
+    calling ``calculate_crossing_times``.
     """
     if ts.shape[0] > 1:
         raise ValueError(
