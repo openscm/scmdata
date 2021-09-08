@@ -97,3 +97,33 @@ def test_crossing_times_ensemble_group(test_processing_scm_df):
             scmdata.processing.calculate_crossing_times,
             threshold=1.5,
         )
+
+
+@pytest.mark.parametrize(
+    "threshold,exp_vals",
+    (
+        (1.0, [0.8, 1.0, 1.0, 1.0]),
+        (1.5, [0.0, 0.2, 0.4, 0.4]),
+        (2.0, [0.0, 0.0, 0.0, 0.0]),
+    ),
+)
+def test_exceedance_probabilities_over_time(
+    threshold, exp_vals, test_processing_scm_df
+):
+    res = test_processing_scm_df.process_over(
+        "ensemble_member",
+        scmdata.processing.calculate_exceedance_probabilities_over_time,
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        test_processing_scm_df.meta.drop(
+            "ensemble_member", axis="columns"
+        ).drop_duplicates()
+    )
+
+    exp = pd.DataFrame(
+        np.array(exp_vals)[np.newaxis, :],
+        index=exp_idx,
+        columns=test_processing_scm_df.time_points.to_index(),
+    )
