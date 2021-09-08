@@ -1843,8 +1843,6 @@ def test_append_inplace_preexisting_nan(scm_run):
     )
 
 
-# Tests to write:
-# - duplicate times should raise in constructor too
 @pytest.mark.parametrize("join_year", (2010, 2012))
 @pytest.mark.parametrize("join_past", (True, False))
 def test_append_timewise(join_year, join_past, scm_run_interpolated):
@@ -1975,7 +1973,7 @@ def test_append_timewise_overlapping_times(scm_run_interpolated):
     other["model"] = "test"
 
     error_msg = re.escape("``self`` and ``other`` have overlapping times: ['2008")
-    with pytest.raises(ValueError, match=error_msg):
+    with pytest.raises(DuplicateTimesError, match=error_msg):
         base.append_timewise(other, align_columns=["variable", "unit"])
 
 
