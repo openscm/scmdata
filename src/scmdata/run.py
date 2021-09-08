@@ -478,12 +478,14 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
             (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
 
-        self._time_points = TimePoints(_df.index.values)
+        # use :class:`TimePoints` to sort times before continuing
+        _df.index = TimePoints(_df.index.values).to_index()
+        _df = _df.sort_index()
 
         _df = _df.astype(float)
         self._df = _df
-        self._df.index = self._time_points.to_index()
-        self._df = self._df.sort_index()
+        # set time points using the sorted times
+        self._time_points = TimePoints(_df.index.values)
         self._meta = pd.MultiIndex.from_frame(_meta.astype("category"))
 
     def copy(self):
