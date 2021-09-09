@@ -278,3 +278,20 @@ def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
             scmdata.processing.calculate_exceedance_probabilities,
             threshold=1.5,
         )
+
+
+def test_calculate_summary_stats(test_processing_scm_df_multi_climate_model):
+    res = scmdata.processing.calculate_summary_stats(
+        test_processing_scm_df_multi_climate_model,
+        ["ensemble_member", "variable", "unit", "region"],
+        [
+            (
+                "Exceedance Probability|{}C".format(t),
+                scmdata.processing.calculate_exceedance_probabilities,
+                {"threshold": t},
+            )
+            for t in np.arange(1.5, 4.01, 0.25)
+        ]
+    )
+
+    assert False, "add tests"

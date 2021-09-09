@@ -176,3 +176,16 @@ def calculate_exceedance_probabilities_over_time(ts, threshold, group_cols):
         raise AssertionError("How did we end up with more than one output timeseries?")
 
     return out
+
+
+
+def calculate_summary_stats(run, process_over, operations):
+    out = {}
+
+    for name, func, kwargs in operations:
+        res = run.process_over(process_over, func, **kwargs)
+        out[name] = res
+
+    out = pd.DataFrame(out)
+
+    return out
