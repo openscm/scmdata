@@ -5,8 +5,8 @@ These functions are intended to be able to be used directly with
 :meth:`scmdata.ScmRun.process_over`.
 """
 import numpy as np
+import pandas as pd
 
-# exceedance probabilities
 # categorisation
 
 
@@ -68,6 +68,49 @@ def calculate_crossing_times(ts, threshold, group_cols, return_year=True):
     return crossing_time
 
 
+def calculate_exceedance_probabilities(ts, threshold, group_cols):
+    """
+    Calculate exceedance probability over all time
+
+    Parameters
+    ----------
+    ts : :class:`pd.DataFrame`
+        Ensemble of which to calculate the exceedance probability
+
+    threshold : float
+        Value to use as the threshold for exceedance
+
+    group_cols : list[str]
+        Columns to use for grouping the output (not used for this function
+        except for checking)
+
+    Returns
+    -------
+    :class:`pd.Series`
+        Exceedance probability over all time over all members of ``ts``
+
+    Raises
+    ------
+    ValueError
+        ``ts`` has more than one variable (TODO: test this)
+
+    Notes
+    -----
+    See the notes of
+    :func:`scmdata.processing.calculate_exceedance_probabilities_over_time`
+    for an explanation of how the two calculations differ. For most purposes,
+    this is the correct function to use.
+    """
+    ts_gt_threshold = ts > threshold
+    out = ts_gt_threshold.any(axis=1).groupby(group_cols).sum() / ts_gt_threshold.shape[0]
+
+    unexpected_output = not isinstance(out, pd.Series) or out.shape[0] > 1
+    if unexpected_output:  # pragma: no cover # emergency valve
+        raise AssertionError("How did we end up with more than one output timeseries?")
+
+    return float(out)
+
+
 def calculate_exceedance_probabilities_over_time(ts, threshold, group_cols):
     """
     Calculate exceedance probability at each point in time
@@ -92,7 +135,7 @@ def calculate_exceedance_probabilities_over_time(ts, threshold, group_cols):
     Raises
     ------
     ValueError
-        ``ts`` has more than one timeseries i.e. ``ts.shape[0] > 1``
+        ``ts`` has more than one variable (TODO: test this)
 
     Notes
     -----
@@ -104,8 +147,8 @@ def calculate_exceedance_probabilities_over_time(ts, threshold, group_cols):
     then dividing by the number of ensemble members. In general, this function
     will produce a maximum exceedance probability which is equal to or less
     than the output of
-    :func:`scmdata.processingcalculate_exceedance_probabilities`. In our
-    opinion, :func:`scmdata.processingcalculate_exceedance_probabilities` is
+    :func:`scmdata.processing.calculate_exceedance_probabilities`. In our
+    opinion, :func:`scmdata.processing.calculate_exceedance_probabilities` is
     the correct function to use if you want to know the exceedance probability
     of a scenario. This function gives a sense of how the exceedance
     probability evolves over time but, as we said, will generally slightly

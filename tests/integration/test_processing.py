@@ -183,5 +183,33 @@ def test_exceedance_probabilities_over_time_multiple_grouping(test_processing_sc
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
 
+@pytest.mark.parametrize(
+    "threshold,exp_val",
+    (
+        (1.0, 1.0),
+        (1.5, 0.6),
+        (2.0, 0.0),
+    ),
+)
+def test_exceedance_probabilities(
+    threshold, exp_val, test_processing_scm_df
+):
+    res = test_processing_scm_df.process_over(
+        "ensemble_member",
+        scmdata.processing.calculate_exceedance_probabilities,
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        test_processing_scm_df.meta.drop(
+            "ensemble_member", axis="columns"
+        ).drop_duplicates()
+    )
+
+    exp = pd.Series(exp_val, index=exp_idx)
+
+    pdt.assert_series_equal(res, exp)
+
 # TODO:
-# - write all time exceedance prob calculation and tests (should return a series)
+# - test group by climate model
+# - test group by climate model and ensemble member
