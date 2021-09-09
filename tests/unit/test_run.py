@@ -1278,7 +1278,7 @@ def test_median_over(test_processing_scm_df):
 
 
 def test_arb_function_over(test_processing_scm_df):
-    def same(df):
+    def same(df, group_cols):
         return df
 
     obs = test_processing_scm_df.process_over("scenario", same)
@@ -1287,7 +1287,7 @@ def test_arb_function_over(test_processing_scm_df):
         test_processing_scm_df.timeseries(), obs, check_like=True
     )
 
-    def add_2(df):
+    def add_2(df, group_cols):
         return df + 2
 
     obs = test_processing_scm_df.process_over("scenario", add_2)
@@ -1297,7 +1297,7 @@ def test_arb_function_over(test_processing_scm_df):
 
 
 def test_arb_function_returns_none(test_processing_scm_df):
-    def add_2_only_coal(df):
+    def add_2_only_coal(df, group_cols):
         variable = df.index.get_level_values("variable").unique()[0]
         if variable == "Primary Energy|Coal":
             return df + 2

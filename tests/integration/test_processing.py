@@ -139,7 +139,9 @@ def test_exceedance_probabilities_over_time(
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
 
-def test_exceedance_probabilities_over_time_multiple_res(test_processing_scm_df_multi_climate_model):
+def test_exceedance_probabilities_over_time_multiple_res(
+    test_processing_scm_df_multi_climate_model,
+):
     start = test_processing_scm_df_multi_climate_model.copy()
     threshold = 1.5
     exp_vals = np.array([[0, 1, 2, 2], [1, 2, 3, 3]]) / 5
@@ -154,14 +156,14 @@ def test_exceedance_probabilities_over_time_multiple_res(test_processing_scm_df_
         start.meta.drop(["ensemble_member"], axis="columns").drop_duplicates()
     )
 
-    exp = pd.DataFrame(
-        exp_vals, index=exp_idx, columns=start.time_points.to_index(),
-    )
+    exp = pd.DataFrame(exp_vals, index=exp_idx, columns=start.time_points.to_index(),)
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
 
-def test_exceedance_probabilities_over_time_multiple_grouping(test_processing_scm_df_multi_climate_model):
+def test_exceedance_probabilities_over_time_multiple_grouping(
+    test_processing_scm_df_multi_climate_model,
+):
     start = test_processing_scm_df_multi_climate_model.copy()
     threshold = 1.5
     exp_vals = np.array([1, 3, 5, 5]) / 10
@@ -179,25 +181,16 @@ def test_exceedance_probabilities_over_time_multiple_grouping(test_processing_sc
     )
 
     exp = pd.DataFrame(
-        exp_vals[np.newaxis, :],
-        index=exp_idx,
-        columns=start.time_points.to_index(),
+        exp_vals[np.newaxis, :], index=exp_idx, columns=start.time_points.to_index(),
     )
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
 
 @pytest.mark.parametrize(
-    "threshold,exp_val",
-    (
-        (1.0, 1.0),
-        (1.5, 0.6),
-        (2.0, 0.0),
-    ),
+    "threshold,exp_val", ((1.0, 1.0), (1.5, 0.6), (2.0, 0.0),),
 )
-def test_exceedance_probabilities(
-    threshold, exp_val, test_processing_scm_df
-):
+def test_exceedance_probabilities(threshold, exp_val, test_processing_scm_df):
     res = test_processing_scm_df.process_over(
         "ensemble_member",
         scmdata.processing.calculate_exceedance_probabilities,
@@ -215,7 +208,9 @@ def test_exceedance_probabilities(
     pdt.assert_series_equal(res, exp)
 
 
-def test_exceedance_probabilities_multiple_res(test_processing_scm_df_multi_climate_model):
+def test_exceedance_probabilities_multiple_res(
+    test_processing_scm_df_multi_climate_model,
+):
     start = test_processing_scm_df_multi_climate_model.copy()
     threshold = 1.5
     exp_vals = [0.6, 0.8]
@@ -227,9 +222,7 @@ def test_exceedance_probabilities_multiple_res(test_processing_scm_df_multi_clim
     )
 
     exp_idx = pd.MultiIndex.from_frame(
-        start.meta.drop(
-            "ensemble_member", axis="columns"
-        ).drop_duplicates()
+        start.meta.drop("ensemble_member", axis="columns").drop_duplicates()
     )
 
     exp = pd.Series(exp_vals, index=exp_idx)
@@ -237,7 +230,9 @@ def test_exceedance_probabilities_multiple_res(test_processing_scm_df_multi_clim
     pdt.assert_series_equal(res, exp)
 
 
-def test_exceedance_probabilities_multiple_grouping(test_processing_scm_df_multi_climate_model):
+def test_exceedance_probabilities_multiple_grouping(
+    test_processing_scm_df_multi_climate_model,
+):
     start = test_processing_scm_df_multi_climate_model.copy()
     threshold = 1.5
     exp_vals = [0.7]

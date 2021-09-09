@@ -102,7 +102,9 @@ def calculate_exceedance_probabilities(ts, threshold, group_cols):
     this is the correct function to use.
     """
     ts_gt_threshold = ts > threshold
-    out = ts_gt_threshold.any(axis=1).groupby(group_cols).sum() / ts_gt_threshold.shape[0]
+    out = (
+        ts_gt_threshold.any(axis=1).groupby(group_cols).sum() / ts_gt_threshold.shape[0]
+    )
 
     unexpected_output = not isinstance(out, pd.Series) or out.shape[0] > 1
     if unexpected_output:  # pragma: no cover # emergency valve
