@@ -257,6 +257,3 @@ def test_exceedance_probabilities_multiple_grouping(test_processing_scm_df_multi
     exp = pd.Series(exp_vals, index=exp_idx)
 
     pdt.assert_series_equal(res, exp)
-
-# TODO:
-# - test output naming of exceedance probabilities (default is to use threshold and "Exceedance probability" but allow user overrides)
