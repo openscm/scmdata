@@ -14,7 +14,7 @@ def test_processing_scm_df():
     data = np.array(
         [
             [1, 1.1, 1.2, 1.1],
-            [1.1, 1.2, 1.3, 1.3],
+            [1.1, 1.2, 1.3, 1.41],
             [1.3, 1.4, 1.5, 1.6],
             [1.3, 1.5, 1.6, 1.2],
             [1.48, 1.51, 1.72, 1.56],
@@ -33,6 +33,14 @@ def test_processing_scm_df():
         },
         index=[2005, 2006, 2007, 2100],
     )
+
+
+@pytest.fixture()
+def test_processing_scm_df_multi_climate_model(test_processing_scm_df):
+    other = test_processing_scm_df + 0.1
+    other["climate_model"] = "z_model"
+
+    return test_processing_scm_df.append(other)
 
 
 @pytest.mark.parametrize(
@@ -131,12 +139,10 @@ def test_exceedance_probabilities_over_time(
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
 
-def test_exceedance_probabilities_over_time_multiple_res(test_processing_scm_df):
-    other = test_processing_scm_df + 0.1
-    other["climate_model"] = "z_model"
-    start = test_processing_scm_df.append(other)
+def test_exceedance_probabilities_over_time_multiple_res(test_processing_scm_df_multi_climate_model):
+    start = test_processing_scm_df_multi_climate_model.copy()
     threshold = 1.5
-    exp_vals = np.array([[0, 1, 2, 2], [1, 2, 3, 2]]) / 5
+    exp_vals = np.array([[0, 1, 2, 2], [1, 2, 3, 3]]) / 5
 
     res = start.process_over(
         ["ensemble_member"],
@@ -149,18 +155,16 @@ def test_exceedance_probabilities_over_time_multiple_res(test_processing_scm_df)
     )
 
     exp = pd.DataFrame(
-        exp_vals, index=exp_idx, columns=test_processing_scm_df.time_points.to_index(),
+        exp_vals, index=exp_idx, columns=start.time_points.to_index(),
     )
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
 
-def test_exceedance_probabilities_over_time_multiple_grouping(test_processing_scm_df):
-    other = test_processing_scm_df + 0.1
-    other["climate_model"] = "z_model"
-    start = test_processing_scm_df.append(other)
+def test_exceedance_probabilities_over_time_multiple_grouping(test_processing_scm_df_multi_climate_model):
+    start = test_processing_scm_df_multi_climate_model.copy()
     threshold = 1.5
-    exp_vals = np.array([1, 3, 5, 4]) / 10
+    exp_vals = np.array([1, 3, 5, 5]) / 10
 
     res = start.process_over(
         ["climate_model", "ensemble_member"],
@@ -177,7 +181,7 @@ def test_exceedance_probabilities_over_time_multiple_grouping(test_processing_sc
     exp = pd.DataFrame(
         exp_vals[np.newaxis, :],
         index=exp_idx,
-        columns=test_processing_scm_df.time_points.to_index(),
+        columns=start.time_points.to_index(),
     )
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
@@ -210,7 +214,49 @@ def test_exceedance_probabilities(
 
     pdt.assert_series_equal(res, exp)
 
+
+def test_exceedance_probabilities_multiple_res(test_processing_scm_df_multi_climate_model):
+    start = test_processing_scm_df_multi_climate_model.copy()
+    threshold = 1.5
+    exp_vals = [0.6, 0.8]
+
+    res = start.process_over(
+        ["ensemble_member"],
+        scmdata.processing.calculate_exceedance_probabilities,
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        start.meta.drop(
+            "ensemble_member", axis="columns"
+        ).drop_duplicates()
+    )
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+
+    pdt.assert_series_equal(res, exp)
+
+
+def test_exceedance_probabilities_multiple_grouping(test_processing_scm_df_multi_climate_model):
+    start = test_processing_scm_df_multi_climate_model.copy()
+    threshold = 1.5
+    exp_vals = [0.7]
+
+    res = start.process_over(
+        ["ensemble_member", "climate_model"],
+        scmdata.processing.calculate_exceedance_probabilities,
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        start.meta.drop(
+            ["ensemble_member", "climate_model"], axis="columns"
+        ).drop_duplicates()
+    )
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+
+    pdt.assert_series_equal(res, exp)
+
 # TODO:
-# - test group by climate model
-# - test group by climate model and ensemble member
 # - test output naming of exceedance probabilities (default is to use threshold and "Exceedance probability" but allow user overrides)
