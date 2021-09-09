@@ -10,7 +10,7 @@ import numpy as np
 # categorisation
 
 
-def calculate_crossing_times(ts, threshold, return_year=True):
+def calculate_crossing_times(ts, threshold, group_cols, return_year=True):
     """
     Calculate the time at which each timeseries crosses a given threshold
 
@@ -21,6 +21,10 @@ def calculate_crossing_times(ts, threshold, return_year=True):
 
     threshold : float
         Value to use as the threshold for crossing
+
+    group_cols : list[str]
+        Columns to use for grouping the output (not used for this function
+        except for checking) (TODO: test this)
 
     return_year : bool
         If ``True``, return the year instead of the datetime
@@ -64,7 +68,7 @@ def calculate_crossing_times(ts, threshold, return_year=True):
     return crossing_time
 
 
-def calculate_exceedance_probabilities_over_time(ts, threshold):
+def calculate_exceedance_probabilities_over_time(ts, threshold, group_cols):
     """
     Calculate exceedance probability at each point in time
 
@@ -75,6 +79,10 @@ def calculate_exceedance_probabilities_over_time(ts, threshold):
 
     threshold : float
         Value to use as the threshold for exceedance
+
+    group_cols : list[str]
+        Columns to use for grouping the output (not used for this function
+        except for checking)
 
     Returns
     -------
@@ -103,4 +111,10 @@ def calculate_exceedance_probabilities_over_time(ts, threshold):
     probability evolves over time but, as we said, will generally slightly
     underestimate the exceedance probability over all time.
     """
-    pass
+    ts_gt_threshold = ts > threshold
+    out = ts_gt_threshold.groupby(group_cols).sum() / ts_gt_threshold.shape[0]
+
+    if out.shape[0] > 1:  # pragma: no cover # emergency valve
+        raise AssertionError("How did we end up with more than one output timeseries?")
+
+    return out

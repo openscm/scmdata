@@ -1523,7 +1523,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Parameters
         ----------
-        cols
+        cols : str, list[str]
             Columns to perform the operation on. The timeseries will be grouped by all
             other columns in :attr:`meta`.
 
@@ -1537,14 +1537,15 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             das-docs/stable/reference/groupby.html>`_.
 
             If a function is provided, it will be applied to each group. The function must
-            take a dataframe as its first argument and return a DataFrame, Series or scalar.
+            take a a dataframe as its first argument and ``group_cols`` as a keyword argument
+            (``group_cols`` is passed through) and return a DataFrame, Series or scalar.
 
             Note that quantile means the value of the data at a given point in the cumulative
             distribution of values at each point in the timeseries, for each timeseries
             once the groupby is applied. As a result, using ``q=0.5`` is the same as
             taking the median and not the same as taking the mean/average.
 
-        na_override: [int, float]
+        na_override : [int, float]
             Convert any nan value in the timeseries meta to this value during processsing.
             The meta values converted back to nan's before the run is returned. This
             should not need to be changed unless the existing metadata clashes with the
@@ -1612,7 +1613,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             grouper_func = getattr(grouper, operation)
             res = grouper_func(**kwargs)
         else:
-            res = grouper.apply(operation, **kwargs)
+            res = grouper.apply(operation, group_cols=group_cols, **kwargs)
 
         if na_override is not None:
             idx_df = res.index.to_frame()

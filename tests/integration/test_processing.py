@@ -128,4 +128,60 @@ def test_exceedance_probabilities_over_time(
         columns=test_processing_scm_df.time_points.to_index(),
     )
 
-    pdt.assert_frame_equal(res, exp, check_like=True)
+    pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
+
+
+def test_exceedance_probabilities_over_time_multiple_res(test_processing_scm_df):
+    other = test_processing_scm_df + 0.1
+    other["climate_model"] = "z_model"
+    start = test_processing_scm_df.append(other)
+    threshold = 1.5
+    exp_vals = np.array([[0, 1, 2, 2], [1, 2, 3, 2]]) / 5
+
+    res = start.process_over(
+        ["ensemble_member"],
+        scmdata.processing.calculate_exceedance_probabilities_over_time,
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        start.meta.drop(["ensemble_member"], axis="columns").drop_duplicates()
+    )
+
+    exp = pd.DataFrame(
+        exp_vals, index=exp_idx, columns=test_processing_scm_df.time_points.to_index(),
+    )
+
+    pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
+
+
+def test_exceedance_probabilities_over_time_multiple_grouping(test_processing_scm_df):
+    other = test_processing_scm_df + 0.1
+    other["climate_model"] = "z_model"
+    start = test_processing_scm_df.append(other)
+    threshold = 1.5
+    exp_vals = np.array([1, 3, 5, 4]) / 10
+
+    res = start.process_over(
+        ["climate_model", "ensemble_member"],
+        scmdata.processing.calculate_exceedance_probabilities_over_time,
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        start.meta.drop(
+            ["climate_model", "ensemble_member"], axis="columns"
+        ).drop_duplicates()
+    )
+
+    exp = pd.DataFrame(
+        exp_vals[np.newaxis, :],
+        index=exp_idx,
+        columns=test_processing_scm_df.time_points.to_index(),
+    )
+
+    pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
+
+
+# TODO:
+# - write all time exceedance prob calculation and tests (should return a series)
