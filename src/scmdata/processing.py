@@ -23,8 +23,8 @@ def calculate_crossing_times(ts, threshold, group_cols, return_year=True):
         Value to use as the threshold for crossing
 
     group_cols : list[str]
-        Columns to use for grouping the output (not used for this function
-        except for checking) (TODO: test this)
+        Not used but required to match the :meth:`scmdata.ScmRun.process_over`
+        interface. (@jared not sure if there's a better solution to this...)
 
     return_year : bool
         If ``True``, return the year instead of the datetime
@@ -68,6 +68,16 @@ def calculate_crossing_times(ts, threshold, group_cols, return_year=True):
     return crossing_time
 
 
+def _assert_only_one_value(ts, col, err_msg_supp=""):
+    unique_vals = ts.index.get_level_values("variable").unique()
+
+    if len(unique_vals) > 1:
+        raise ValueError(
+            "More than one value for {}. "
+            "This is unlikely to be what you want.".format(col)
+        )
+
+
 def calculate_exceedance_probabilities(ts, threshold, group_cols):
     """
     Calculate exceedance probability over all time
@@ -92,7 +102,7 @@ def calculate_exceedance_probabilities(ts, threshold, group_cols):
     Raises
     ------
     ValueError
-        ``ts`` has more than one variable (TODO: test this)
+        ``ts`` has more than one variable
 
     Notes
     -----
@@ -101,6 +111,7 @@ def calculate_exceedance_probabilities(ts, threshold, group_cols):
     for an explanation of how the two calculations differ. For most purposes,
     this is the correct function to use.
     """
+    _assert_only_one_value(ts, "variable")
     ts_gt_threshold = ts > threshold
     out = (
         ts_gt_threshold.any(axis=1).groupby(group_cols).sum() / ts_gt_threshold.shape[0]
@@ -137,7 +148,7 @@ def calculate_exceedance_probabilities_over_time(ts, threshold, group_cols):
     Raises
     ------
     ValueError
-        ``ts`` has more than one variable (TODO: test this)
+        ``ts`` has more than one variable
 
     Notes
     -----
@@ -156,6 +167,8 @@ def calculate_exceedance_probabilities_over_time(ts, threshold, group_cols):
     probability evolves over time but, as we said, will generally slightly
     underestimate the exceedance probability over all time.
     """
+    _assert_only_one_value(ts, "variable")
+
     ts_gt_threshold = ts > threshold
     out = ts_gt_threshold.groupby(group_cols).sum() / ts_gt_threshold.shape[0]
 

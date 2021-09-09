@@ -187,6 +187,19 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
 
+def test_exceedance_probabilities_over_time_multiple_variables(test_processing_scm_df):
+    test_processing_scm_df["variable"] = [
+        str(i) for i in range(test_processing_scm_df.shape[0])
+    ]
+
+    with pytest.raises(ValueError):
+        test_processing_scm_df.process_over(
+            ["ensemble_member", "variable"],
+            scmdata.processing.calculate_exceedance_probabilities_over_time,
+            threshold=1.5,
+        )
+
+
 @pytest.mark.parametrize(
     "threshold,exp_val", ((1.0, 1.0), (1.5, 0.6), (2.0, 0.0),),
 )
@@ -252,3 +265,16 @@ def test_exceedance_probabilities_multiple_grouping(
     exp = pd.Series(exp_vals, index=exp_idx)
 
     pdt.assert_series_equal(res, exp)
+
+
+def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
+    test_processing_scm_df["variable"] = [
+        str(i) for i in range(test_processing_scm_df.shape[0])
+    ]
+
+    with pytest.raises(ValueError):
+        test_processing_scm_df.process_over(
+            ["ensemble_member", "variable"],
+            scmdata.processing.calculate_exceedance_probabilities,
+            threshold=1.5,
+        )
