@@ -1550,16 +1550,17 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             should not need to be changed unless the existing metadata clashes with the
             default na_override value.
 
-            This functionality is disabled if na_override is None, but may result incorrect
+            This functionality is disabled if na_override is None, but may result in incorrect
             results if the timeseries meta includes any nan's.
 
         **kwargs
-            Keyword arguments to pass to the pandas operation
+            Keyword arguments to pass ``operation`` (or the pandas operation if ``operation``
+            is a string)
 
         Returns
         -------
         :class:`pandas.DataFrame`
-            The quantiles of the timeseries, grouped by all columns in :attr:`meta`
+            The result of ``operation``, grouped by all columns in :attr:`meta`
             other than :obj:`cols`
 
         Raises
@@ -1578,6 +1579,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                     "na_override clashes with existing meta: {}".format(na_override)
                 )
             ts.index = pd.MultiIndex.from_frame(ts_idx.fillna(na_override))
+
         group_cols = list(set(ts.index.names) - set(cols))
         grouper = ts.groupby(group_cols)
 

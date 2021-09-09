@@ -34,6 +34,7 @@ SCMData
    scmdata.offsets
    scmdata.ops
    scmdata.plotting
+   scmdata.processing
    scmdata.run
    scmdata.testing
    scmdata.time
