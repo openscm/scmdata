@@ -213,3 +213,4 @@ def test_exceedance_probabilities(
 # TODO:
 # - test group by climate model
 # - test group by climate model and ensemble member
+# - test output naming of exceedance probabilities (default is to use threshold and "Exceedance probability" but allow user overrides)
