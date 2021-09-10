@@ -272,10 +272,22 @@ def calculate_summary_stats(
     if exceedance_probabilities_naming_base is None:
         exceedance_probabilities_naming_base = _DEFAULT_EXCEEDANCE_PROB_OUTPUT_BASE
 
+    scmrun_exceedance_prob = scmrun.filter(
+        variable=exceedance_probabilities_variable, log_if_empty=False,
+    )
+    if scmrun_exceedance_prob.empty:
+        msg = (
+            "exceedance_probabilities_variable `{}` is not available. "
+            "Available vars:{}".format(
+                exceedance_probabilities_variable, scmrun.get_unique_meta("variable")
+            )
+        )
+        raise ValueError(msg)
+
     exceedance_prob_calls = [
         (
             calculate_exceedance_probabilities,
-            [scmrun, t, process_over_cols],
+            [scmrun_exceedance_prob, t, process_over_cols],
             {"output_name": exceedance_probabilities_naming_base.format(t)},
         )
         for t in exceedance_probabilities_thresholds

@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 
 import numpy as np
 import pandas as pd
@@ -358,8 +359,6 @@ def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
         )
 
 
-# TODO, test:
-# exceedance_probabilities_variable
 @pytest.mark.parametrize(
     "exceedance_probabilities_thresholds,exp_exceedance_prob_thresholds",
     ((None, [1.5, 2.0, 2.5]), ([1.0, 1.5, 2.0, 2.5], [1.0, 1.5, 2.0, 2.5]),),
@@ -379,6 +378,13 @@ def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
         ("Exceedance Probability|{:.2f}C", "Exceedance Probability|{:.2f}C"),
     ),
 )
+@pytest.mark.parametrize(
+    "exceedance_probabilities_variable,exp_exceedance_probabilities_variable",
+    (
+        (None, "Surface Air Temperature Change"),
+        ("Surface Temperature", "Surface Temperature"),
+    ),
+)
 @pytest.mark.parametrize("progress", (True, False))
 def test_calculate_summary_stats(
     exceedance_probabilities_thresholds,
@@ -386,6 +392,8 @@ def test_calculate_summary_stats(
     index,
     exceedance_probabilities_output_name,
     exp_exceedance_probabilities_output_name,
+    exceedance_probabilities_variable,
+    exp_exceedance_probabilities_variable,
     progress,
     test_processing_scm_df_multi_climate_model,
 ):
@@ -418,10 +426,17 @@ def test_calculate_summary_stats(
         call_kwargs[
             "exceedance_probabilities_thresholds"
         ] = exceedance_probabilities_thresholds
+
     if exceedance_probabilities_output_name is not None:
         call_kwargs[
             "exceedance_probabilities_naming_base"
         ] = exceedance_probabilities_output_name
+
+    if exceedance_probabilities_variable is not None:
+        inp["variable"] = exceedance_probabilities_variable
+        call_kwargs[
+            "exceedance_probabilities_variable"
+        ] = exceedance_probabilities_variable
 
     res = scmdata.processing.calculate_summary_stats(
         inp, index, progress=progress, **call_kwargs,
@@ -436,3 +451,20 @@ def test_calculate_summary_stats(
     tmp["statistic"] = tmp["statistic"] + " (" + tmp["unit"] + ")"
     tmp = tmp.drop("unit", axis="columns")
     tmp.pivot_table(index=set(index) - {"unit"}, columns=["statistic"], values="value")
+
+
+def test_calculate_summary_stats_no_exceedance_probability_var(
+    test_processing_scm_df_multi_climate_model,
+):
+    error_msg = re.escape(
+        "exceedance_probabilities_variable `junk` is not available. "
+        "Available vars:{}".format(
+            test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
+        )
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scmdata.processing.calculate_summary_stats(
+            test_processing_scm_df_multi_climate_model,
+            ["model", "scenario"],
+            exceedance_probabilities_variable="junk",
+        )
