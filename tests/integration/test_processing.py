@@ -55,6 +55,16 @@ def _get_calculate_crossing_times_call_kwargs(return_year):
 
     return call_kwargs
 
+
+def _get_expected_crossing_times(exp_vals, conv_to_year):
+    if conv_to_year:
+        exp_vals = [v if pd.isnull(v) else v.year for v in exp_vals]
+    else:
+        exp_vals = [pd.NaT if pd.isnull(v) else v for v in exp_vals]
+
+    return exp_vals
+
+
 @pytest.mark.parametrize(
     "threshold,exp_vals",
     (
@@ -90,10 +100,7 @@ def test_crossing_times(
         test_processing_scm_df, threshold=threshold, **call_kwargs,
     )
 
-    if conv_to_year:
-        exp_vals = [v if pd.isnull(v) else v.year for v in exp_vals]
-    else:
-        exp_vals = [pd.NaT if pd.isnull(v) else v for v in exp_vals]
+    exp_vals = _get_expected_crossing_times(exp_vals, conv_to_year)
 
     exp = pd.Series(exp_vals, pd.MultiIndex.from_frame(test_processing_scm_df.meta))
 
@@ -128,14 +135,31 @@ def test_crossing_times_multi_climate_model(
         **call_kwargs,
     )
 
-    if conv_to_year:
-        exp_vals = [v if pd.isnull(v) else v.year for v in exp_vals]
-    else:
-        exp_vals = [pd.NaT if pd.isnull(v) else v for v in exp_vals]
+    exp_vals = _get_expected_crossing_times(exp_vals, conv_to_year)
 
     exp = pd.Series(exp_vals, pd.MultiIndex.from_frame(test_processing_scm_df_multi_climate_model.meta))
 
     pdt.assert_series_equal(res, exp)
+
+
+output_name_options = pytest.mark.parametrize(
+    "output_name", (None, "test", "test other")
+)
+
+
+def _get_calculate_exceedance_probs_call_kwargs(output_name):
+    call_kwargs = {}
+    if output_name is not None:
+        call_kwargs["output_name"] = output_name
+
+    return call_kwargs
+
+
+def _get_calculate_exeedance_probs_expected_name(output_name, threshold):
+    if output_name is not None:
+        return output_name
+
+    return "{} exceedance probability".format(threshold)
 
 
 @pytest.mark.parametrize(
@@ -146,13 +170,16 @@ def test_crossing_times_multi_climate_model(
         (2.0, [0.0, 0.0, 0.0, 0.0]),
     ),
 )
+@output_name_options
 def test_exceedance_probabilities_over_time(
-    threshold, exp_vals, test_processing_scm_df
+    output_name, threshold, exp_vals, test_processing_scm_df
 ):
+    call_kwargs = _get_calculate_exceedance_probs_call_kwargs(output_name)
     res = scmdata.processing.calculate_exceedance_probabilities_over_time(
         test_processing_scm_df,
         cols="ensemble_member",
         threshold=threshold,
+        **call_kwargs,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -166,8 +193,13 @@ def test_exceedance_probabilities_over_time(
         index=exp_idx,
         columns=test_processing_scm_df.time_points.to_index(),
     )
+    exp.index = exp.index.set_level(
+        [_get_calculate_exeedance_probs_expected_name(output_name, threshold)],
+        level="variable",
+    )
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
+    assert res.index.get_level_values("unit").unique().tolist() == ["dimensionless"]
 
 
 def test_exceedance_probabilities_over_time_multiple_res(
@@ -234,11 +266,14 @@ def test_exceedance_probabilities_over_time_multiple_variables(test_processing_s
 @pytest.mark.parametrize(
     "threshold,exp_val", ((1.0, 1.0), (1.5, 0.6), (2.0, 0.0),),
 )
-def test_exceedance_probabilities(threshold, exp_val, test_processing_scm_df):
+@output_name_options
+def test_exceedance_probabilities(output_name, threshold, exp_val, test_processing_scm_df):
+    call_kwargs = _get_calculate_exceedance_probs_call_kwargs(output_name)
     res = scmdata.processing.calculate_exceedance_probabilities(
         test_processing_scm_df,
         cols="ensemble_member",
         threshold=threshold,
+        **call_kwargs
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -248,8 +283,13 @@ def test_exceedance_probabilities(threshold, exp_val, test_processing_scm_df):
     )
 
     exp = pd.Series(exp_val, index=exp_idx)
+    exp.index = exp.index.set_level(
+        [_get_calculate_exeedance_probs_expected_name(output_name, threshold)],
+        level="variable",
+    )
 
     pdt.assert_series_equal(res, exp)
+    assert res.index.get_level_values("unit").unique().tolist() == ["dimensionless"]
 
 
 def test_exceedance_probabilities_multiple_res(
