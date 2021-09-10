@@ -234,7 +234,9 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
     exp_vals = np.array([1, 3, 5, 5]) / 10
 
     res = scmdata.processing.calculate_exceedance_probabilities_over_time(
-        start, process_over_cols=["climate_model", "ensemble_member"], threshold=threshold,
+        start,
+        process_over_cols=["climate_model", "ensemble_member"],
+        threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -261,7 +263,9 @@ def test_exceedance_probabilities_over_time_multiple_variables(test_processing_s
 
     with pytest.raises(ValueError):
         scmdata.processing.calculate_exceedance_probabilities_over_time(
-            test_processing_scm_df, process_over_cols=["ensemble_member", "variable"], threshold=1.5,
+            test_processing_scm_df,
+            process_over_cols=["ensemble_member", "variable"],
+            threshold=1.5,
         )
 
 
@@ -323,7 +327,9 @@ def test_exceedance_probabilities_multiple_grouping(
     exp_vals = [0.7]
 
     res = scmdata.processing.calculate_exceedance_probabilities(
-        start, process_over_cols=["ensemble_member", "climate_model"], threshold=threshold,
+        start,
+        process_over_cols=["ensemble_member", "climate_model"],
+        threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -346,25 +352,33 @@ def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
 
     with pytest.raises(ValueError):
         scmdata.processing.calculate_exceedance_probabilities(
-            test_processing_scm_df, process_over_cols=["ensemble_member", "variable"], threshold=1.5,
+            test_processing_scm_df,
+            process_over_cols=["ensemble_member", "variable"],
+            threshold=1.5,
         )
 
 
 # TODO, test:
 # exceedance_probabilities_variable
-@pytest.mark.parametrize("exceedance_probabilities_thresholds,exp_exceedance_prob_thresholds", (
-    (None, [1.5, 2.0, 2.5]),
-    ([1.0, 1.5, 2.0, 2.5], [1.0, 1.5, 2.0, 2.5]),
-))
-@pytest.mark.parametrize("index", (
-    ["climate_model", "model", "scenario", "region"],
-    ["climate_model", "scenario", "region"],
-    ["climate_model", "model", "scenario", "region", "unit"],
-))
-@pytest.mark.parametrize("exceedance_probabilities_output_name,exp_exceedance_probabilities_output_name", (
-    (None, "{} exceedance probability"),
-    ("Exceedance Probability|{:.2f}C", "Exceedance Probability|{:.2f}C"),
-))
+@pytest.mark.parametrize(
+    "exceedance_probabilities_thresholds,exp_exceedance_prob_thresholds",
+    ((None, [1.5, 2.0, 2.5]), ([1.0, 1.5, 2.0, 2.5], [1.0, 1.5, 2.0, 2.5]),),
+)
+@pytest.mark.parametrize(
+    "index",
+    (
+        ["climate_model", "model", "scenario", "region"],
+        ["climate_model", "scenario", "region"],
+        ["climate_model", "model", "scenario", "region", "unit"],
+    ),
+)
+@pytest.mark.parametrize(
+    "exceedance_probabilities_output_name,exp_exceedance_probabilities_output_name",
+    (
+        (None, "{} exceedance probability"),
+        ("Exceedance Probability|{:.2f}C", "Exceedance Probability|{:.2f}C"),
+    ),
+)
 @pytest.mark.parametrize("progress", (True, False))
 def test_calculate_summary_stats(
     exceedance_probabilities_thresholds,
@@ -394,7 +408,6 @@ def test_calculate_summary_stats(
         )
         exp.append(tmp)
 
-
     exp = pd.DataFrame(exp).T
     exp.columns.name = "statistic"
     exp = exp.stack("statistic")
@@ -402,15 +415,16 @@ def test_calculate_summary_stats(
 
     call_kwargs = {}
     if exceedance_probabilities_thresholds is not None:
-        call_kwargs["exceedance_probabilities_thresholds"] = exceedance_probabilities_thresholds
+        call_kwargs[
+            "exceedance_probabilities_thresholds"
+        ] = exceedance_probabilities_thresholds
     if exceedance_probabilities_output_name is not None:
-        call_kwargs["exceedance_probabilities_naming_base"] = exceedance_probabilities_output_name
+        call_kwargs[
+            "exceedance_probabilities_naming_base"
+        ] = exceedance_probabilities_output_name
 
     res = scmdata.processing.calculate_summary_stats(
-        inp,
-        index,
-        progress=progress,
-        **call_kwargs,
+        inp, index, progress=progress, **call_kwargs,
     )
 
     pdt.assert_series_equal(res, exp)
@@ -421,8 +435,4 @@ def test_calculate_summary_stats(
     tmp = res.to_frame().reset_index()
     tmp["statistic"] = tmp["statistic"] + " (" + tmp["unit"] + ")"
     tmp = tmp.drop("unit", axis="columns")
-    tmp.pivot_table(
-        index=set(index) - {"unit"},
-        columns=["statistic"],
-        values="value"
-    )
+    tmp.pivot_table(index=set(index) - {"unit"}, columns=["statistic"], values="value")

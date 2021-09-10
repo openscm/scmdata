@@ -6,8 +6,8 @@ These functions are intended to be able to be used directly with
 """
 import numpy as np
 import pandas as pd
-
 import tqdm.autonotebook as tqdman
+
 # categorisation
 # peak warming
 # year of peak warming
@@ -93,7 +93,9 @@ def _set_index_level_to(inp, col, val):
     return inp
 
 
-def calculate_exceedance_probabilities(scmrun, threshold, process_over_cols, output_name=None):
+def calculate_exceedance_probabilities(
+    scmrun, threshold, process_over_cols, output_name=None
+):
     """
     Calculate exceedance probability over all time
 
@@ -274,7 +276,7 @@ def calculate_summary_stats(
         (
             calculate_exceedance_probabilities,
             [scmrun, t, process_over_cols],
-            {"output_name": exceedance_probabilities_naming_base.format(t)}
+            {"output_name": exceedance_probabilities_naming_base.format(t)},
         )
         for t in exceedance_probabilities_thresholds
     ]
@@ -285,10 +287,7 @@ def calculate_summary_stats(
     else:
         iterator = func_calls_args_kwargs
 
-    out = pd.DataFrame([
-        func(*args, **kwargs)
-        for func, args, kwargs in iterator
-    ]).T
+    out = pd.DataFrame([func(*args, **kwargs) for func, args, kwargs in iterator]).T
     out.columns.name = "statistic"
     out = out.stack("statistic")
     out.name = "value"
