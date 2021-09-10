@@ -137,3 +137,175 @@ def test_crossing_times_multi_climate_model(
 
     pdt.assert_series_equal(res, exp)
 
+
+@pytest.mark.parametrize(
+    "threshold,exp_vals",
+    (
+        (1.0, [0.8, 1.0, 1.0, 1.0]),
+        (1.5, [0.0, 0.2, 0.4, 0.4]),
+        (2.0, [0.0, 0.0, 0.0, 0.0]),
+    ),
+)
+def test_exceedance_probabilities_over_time(
+    threshold, exp_vals, test_processing_scm_df
+):
+    res = scmdata.processing.calculate_exceedance_probabilities_over_time(
+        test_processing_scm_df,
+        cols="ensemble_member",
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        test_processing_scm_df.meta.drop(
+            "ensemble_member", axis="columns"
+        ).drop_duplicates()
+    )
+
+    exp = pd.DataFrame(
+        np.array(exp_vals)[np.newaxis, :],
+        index=exp_idx,
+        columns=test_processing_scm_df.time_points.to_index(),
+    )
+
+    pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
+
+
+def test_exceedance_probabilities_over_time_multiple_res(
+    test_processing_scm_df_multi_climate_model,
+):
+    start = test_processing_scm_df_multi_climate_model.copy()
+    threshold = 1.5
+    exp_vals = np.array([[0, 1, 2, 2], [1, 2, 3, 3]]) / 5
+
+    res = scmdata.processing.calculate_exceedance_probabilities_over_time(
+        start,
+        cols=["ensemble_member"],
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        start.meta.drop(["ensemble_member"], axis="columns").drop_duplicates()
+    )
+
+    exp = pd.DataFrame(exp_vals, index=exp_idx, columns=start.time_points.to_index(),)
+
+    pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
+
+
+def test_exceedance_probabilities_over_time_multiple_grouping(
+    test_processing_scm_df_multi_climate_model,
+):
+    start = test_processing_scm_df_multi_climate_model.copy()
+    threshold = 1.5
+    exp_vals = np.array([1, 3, 5, 5]) / 10
+
+    res = scmdata.processing.calculate_exceedance_probabilities_over_time(
+        start,
+        cols=["climate_model", "ensemble_member"],
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        start.meta.drop(
+            ["climate_model", "ensemble_member"], axis="columns"
+        ).drop_duplicates()
+    )
+
+    exp = pd.DataFrame(
+        exp_vals[np.newaxis, :], index=exp_idx, columns=start.time_points.to_index(),
+    )
+
+    pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
+
+
+def test_exceedance_probabilities_over_time_multiple_variables(test_processing_scm_df):
+    test_processing_scm_df["variable"] = [
+        str(i) for i in range(test_processing_scm_df.shape[0])
+    ]
+
+    with pytest.raises(ValueError):
+        scmdata.processing.calculate_exceedance_probabilities_over_time(
+            test_processing_scm_df,
+            cols=["ensemble_member", "variable"],
+            threshold=1.5,
+        )
+
+
+@pytest.mark.parametrize(
+    "threshold,exp_val", ((1.0, 1.0), (1.5, 0.6), (2.0, 0.0),),
+)
+def test_exceedance_probabilities(threshold, exp_val, test_processing_scm_df):
+    res = scmdata.processing.calculate_exceedance_probabilities(
+        test_processing_scm_df,
+        cols="ensemble_member",
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        test_processing_scm_df.meta.drop(
+            "ensemble_member", axis="columns"
+        ).drop_duplicates()
+    )
+
+    exp = pd.Series(exp_val, index=exp_idx)
+
+    pdt.assert_series_equal(res, exp)
+
+
+def test_exceedance_probabilities_multiple_res(
+    test_processing_scm_df_multi_climate_model,
+):
+    start = test_processing_scm_df_multi_climate_model.copy()
+    threshold = 1.5
+    exp_vals = [0.6, 0.8]
+
+    res = scmdata.processing.calculate_exceedance_probabilities(
+        start,
+        cols=["ensemble_member"],
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        start.meta.drop("ensemble_member", axis="columns").drop_duplicates()
+    )
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+
+    pdt.assert_series_equal(res, exp)
+
+
+def test_exceedance_probabilities_multiple_grouping(
+    test_processing_scm_df_multi_climate_model,
+):
+    start = test_processing_scm_df_multi_climate_model.copy()
+    threshold = 1.5
+    exp_vals = [0.7]
+
+    res = scmdata.processing.calculate_exceedance_probabilities(
+        start,
+        cols=["ensemble_member", "climate_model"],
+        threshold=threshold,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(
+        start.meta.drop(
+            ["ensemble_member", "climate_model"], axis="columns"
+        ).drop_duplicates()
+    )
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+
+    pdt.assert_series_equal(res, exp)
+
+
+def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
+    test_processing_scm_df["variable"] = [
+        str(i) for i in range(test_processing_scm_df.shape[0])
+    ]
+
+    with pytest.raises(ValueError):
+        scmdata.processing.calculate_exceedance_probabilities(
+            test_processing_scm_df,
+            cols=["ensemble_member", "variable"],
+            threshold=1.5,
+        )
