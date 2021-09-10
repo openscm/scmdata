@@ -71,29 +71,17 @@ def test_crossing_times(
     if return_year is not None:
         call_kwargs["return_year"] = return_year
 
-    res = test_processing_scm_df.process_over(
-        [],
-        scmdata.processing.calculate_crossing_times,
+    res = scmdata.processing.calculate_crossing_times(
+        test_processing_scm_df,
         threshold=threshold,
         **call_kwargs,
     )
 
     if conv_to_year:
         exp_vals = [v if pd.isnull(v) else v.year for v in exp_vals]
+    else:
+        exp_vals = [pd.NaT if pd.isnull(v) else v for v in exp_vals]
 
     exp = pd.Series(exp_vals, pd.MultiIndex.from_frame(test_processing_scm_df.meta),)
 
     pdt.assert_series_equal(res, exp)
-
-
-def test_crossing_times_ensemble_group(test_processing_scm_df):
-    error_msg = (
-        "Only one timeseries should be provided at a time. Received 5:\n"
-        "\\s*climate_model"
-    )
-    with pytest.raises(ValueError, match=error_msg):
-        test_processing_scm_df.process_over(
-            "ensemble_member",
-            scmdata.processing.calculate_crossing_times,
-            threshold=1.5,
-        )
