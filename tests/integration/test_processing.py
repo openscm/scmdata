@@ -365,12 +365,14 @@ def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
     (None, "{} exceedance probability"),
     ("Exceedance Probability|{:.2f}C", "Exceedance Probability|{:.2f}C"),
 ))
+@pytest.mark.parametrize("progress", (True, False))
 def test_calculate_summary_stats(
     exceedance_probabilities_thresholds,
     exp_exceedance_prob_thresholds,
     index,
     exceedance_probabilities_output_name,
     exp_exceedance_probabilities_output_name,
+    progress,
     test_processing_scm_df_multi_climate_model,
 ):
     inp = test_processing_scm_df_multi_climate_model.copy()
@@ -407,6 +409,7 @@ def test_calculate_summary_stats(
     res = scmdata.processing.calculate_summary_stats(
         inp,
         index,
+        progress=progress,
         **call_kwargs,
     )
 

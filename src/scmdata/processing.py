@@ -7,6 +7,7 @@ These functions are intended to be able to be used directly with
 import numpy as np
 import pandas as pd
 
+import tqdm.autonotebook as tqdman
 # categorisation
 # peak warming
 # year of peak warming
@@ -221,6 +222,7 @@ def calculate_summary_stats(
     exceedance_probabilities_thresholds=[1.5, 2.0, 2.5],
     exceedance_probabilities_variable="Surface Air Temperature Change",
     exceedance_probabilities_naming_base=None,
+    progress=False,
 ):
     """
     Calculate common summary statistics
@@ -229,6 +231,10 @@ def calculate_summary_stats(
     ----------
     scmrun : :class:`scmdata.ScmRun`
         Data of which to calculate the stats
+
+    index : list[str]
+        Columns to use in the index of the output (unit is added if not
+        included)
 
     exceedance_probabilities_threshold : list[float]
         Thresholds to use for exceedance probabilities
@@ -245,9 +251,8 @@ def calculate_summary_stats(
         :func:`scmdata.processing.calculate_exceedance_probabilities` will be
         used.
 
-    index : list[str]
-        Columns to use in the index of the output (unit is added if not
-        included)
+    progress : bool
+        Should a progress bar be shown whilst the calculations are done?
 
     Returns
     -------
@@ -275,9 +280,14 @@ def calculate_summary_stats(
     ]
     func_calls_args_kwargs = exceedance_prob_calls
 
+    if progress:
+        iterator = tqdman.tqdm(func_calls_args_kwargs)
+    else:
+        iterator = func_calls_args_kwargs
+
     out = pd.DataFrame([
         func(*args, **kwargs)
-        for func, args, kwargs in func_calls_args_kwargs
+        for func, args, kwargs in iterator
     ]).T
     out.columns.name = "statistic"
     out = out.stack("statistic")
