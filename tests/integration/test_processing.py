@@ -523,6 +523,7 @@ def test_peak_time_multi_variable(return_year, conv_to_year, test_processing_scm
         ("Surface Temperature", "Surface Temperature"),
     ),
 )
+# TODO: test all the peak input arguments
 @pytest.mark.parametrize("progress", (True, False))
 def test_calculate_summary_stats(
     exceedance_probabilities_thresholds,
