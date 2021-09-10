@@ -130,14 +130,15 @@ def test_crossing_times_multi_climate_model(
     ]
 
     res = scmdata.processing.calculate_crossing_times(
-        test_processing_scm_df_multi_climate_model,
-        threshold=threshold,
-        **call_kwargs,
+        test_processing_scm_df_multi_climate_model, threshold=threshold, **call_kwargs,
     )
 
     exp_vals = _get_expected_crossing_times(exp_vals, conv_to_year)
 
-    exp = pd.Series(exp_vals, pd.MultiIndex.from_frame(test_processing_scm_df_multi_climate_model.meta))
+    exp = pd.Series(
+        exp_vals,
+        pd.MultiIndex.from_frame(test_processing_scm_df_multi_climate_model.meta),
+    )
 
     pdt.assert_series_equal(res, exp)
 
@@ -196,10 +197,7 @@ def test_exceedance_probabilities_over_time(
     exp.index = exp.index.set_levels(
         [_get_calculate_exeedance_probs_expected_name(output_name, threshold)],
         level="variable",
-    ).set_levels(
-        ["dimensionless"],
-        level="unit",
-    )
+    ).set_levels(["dimensionless"], level="unit",)
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
@@ -212,9 +210,7 @@ def test_exceedance_probabilities_over_time_multiple_res(
     exp_vals = np.array([[0, 1, 2, 2], [1, 2, 3, 3]]) / 5
 
     res = scmdata.processing.calculate_exceedance_probabilities_over_time(
-        start,
-        cols=["ensemble_member"],
-        threshold=threshold,
+        start, cols=["ensemble_member"], threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -225,10 +221,7 @@ def test_exceedance_probabilities_over_time_multiple_res(
     exp.index = exp.index.set_levels(
         [_get_calculate_exeedance_probs_expected_name(None, threshold)],
         level="variable",
-    ).set_levels(
-        ["dimensionless"],
-        level="unit",
-    )
+    ).set_levels(["dimensionless"], level="unit",)
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
@@ -241,9 +234,7 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
     exp_vals = np.array([1, 3, 5, 5]) / 10
 
     res = scmdata.processing.calculate_exceedance_probabilities_over_time(
-        start,
-        cols=["climate_model", "ensemble_member"],
-        threshold=threshold,
+        start, cols=["climate_model", "ensemble_member"], threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -258,10 +249,7 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
     exp.index = exp.index.set_levels(
         [_get_calculate_exeedance_probs_expected_name(None, threshold)],
         level="variable",
-    ).set_levels(
-        ["dimensionless"],
-        level="unit",
-    )
+    ).set_levels(["dimensionless"], level="unit",)
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
@@ -273,9 +261,7 @@ def test_exceedance_probabilities_over_time_multiple_variables(test_processing_s
 
     with pytest.raises(ValueError):
         scmdata.processing.calculate_exceedance_probabilities_over_time(
-            test_processing_scm_df,
-            cols=["ensemble_member", "variable"],
-            threshold=1.5,
+            test_processing_scm_df, cols=["ensemble_member", "variable"], threshold=1.5,
         )
 
 
@@ -283,13 +269,15 @@ def test_exceedance_probabilities_over_time_multiple_variables(test_processing_s
     "threshold,exp_val", ((1.0, 1.0), (1.5, 0.6), (2.0, 0.0),),
 )
 @output_name_options
-def test_exceedance_probabilities(output_name, threshold, exp_val, test_processing_scm_df):
+def test_exceedance_probabilities(
+    output_name, threshold, exp_val, test_processing_scm_df
+):
     call_kwargs = _get_calculate_exceedance_probs_call_kwargs(output_name)
     res = scmdata.processing.calculate_exceedance_probabilities(
         test_processing_scm_df,
         cols="ensemble_member",
         threshold=threshold,
-        **call_kwargs
+        **call_kwargs,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -300,10 +288,7 @@ def test_exceedance_probabilities(output_name, threshold, exp_val, test_processi
 
     exp = pd.Series(exp_val, index=exp_idx)
     exp.name = _get_calculate_exeedance_probs_expected_name(output_name, threshold)
-    exp.index = exp.index.set_levels(
-        ["dimensionless"],
-        level="unit",
-    )
+    exp.index = exp.index.set_levels(["dimensionless"], level="unit",)
 
     pdt.assert_series_equal(res, exp)
 
@@ -316,9 +301,7 @@ def test_exceedance_probabilities_multiple_res(
     exp_vals = [0.6, 0.8]
 
     res = scmdata.processing.calculate_exceedance_probabilities(
-        start,
-        cols=["ensemble_member"],
-        threshold=threshold,
+        start, cols=["ensemble_member"], threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -327,10 +310,7 @@ def test_exceedance_probabilities_multiple_res(
 
     exp = pd.Series(exp_vals, index=exp_idx)
     exp.name = _get_calculate_exeedance_probs_expected_name(None, threshold)
-    exp.index = exp.index.set_levels(
-        ["dimensionless"],
-        level="unit",
-    )
+    exp.index = exp.index.set_levels(["dimensionless"], level="unit",)
 
     pdt.assert_series_equal(res, exp)
 
@@ -343,9 +323,7 @@ def test_exceedance_probabilities_multiple_grouping(
     exp_vals = [0.7]
 
     res = scmdata.processing.calculate_exceedance_probabilities(
-        start,
-        cols=["ensemble_member", "climate_model"],
-        threshold=threshold,
+        start, cols=["ensemble_member", "climate_model"], threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -356,10 +334,7 @@ def test_exceedance_probabilities_multiple_grouping(
 
     exp = pd.Series(exp_vals, index=exp_idx)
     exp.name = _get_calculate_exeedance_probs_expected_name(None, threshold)
-    exp.index = exp.index.set_levels(
-        ["dimensionless"],
-        level="unit",
-    )
+    exp.index = exp.index.set_levels(["dimensionless"], level="unit",)
 
     pdt.assert_series_equal(res, exp)
 
@@ -371,7 +346,5 @@ def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
 
     with pytest.raises(ValueError):
         scmdata.processing.calculate_exceedance_probabilities(
-            test_processing_scm_df,
-            cols=["ensemble_member", "variable"],
-            threshold=1.5,
+            test_processing_scm_df, cols=["ensemble_member", "variable"], threshold=1.5,
         )

@@ -16,6 +16,7 @@ def _get_ts_gt_threshold(scmrun, threshold):
 
     return timeseries > threshold
 
+
 def calculate_crossing_times(scmrun, threshold, return_year=True):
     """
     Calculate the time at which each timeseries crosses a given threshold
@@ -131,10 +132,7 @@ def calculate_exceedance_probabilities(scmrun, threshold, cols, output_name=None
     timeseries_gt_threshold = _get_ts_gt_threshold(scmrun, threshold)
     group_cols = list(scmrun.get_meta_columns_except(cols))
 
-    out = _get_exceedance_fraction(
-        timeseries_gt_threshold.any(axis=1),
-        group_cols,
-    )
+    out = _get_exceedance_fraction(timeseries_gt_threshold.any(axis=1), group_cols,)
 
     if not isinstance(out, pd.Series):  # pragma: no cover # emergency valve
         raise AssertionError("How did we end up without a series?")
@@ -146,7 +144,9 @@ def calculate_exceedance_probabilities(scmrun, threshold, cols, output_name=None
     return out
 
 
-def calculate_exceedance_probabilities_over_time(scmrun, threshold, cols, output_name=None):
+def calculate_exceedance_probabilities_over_time(
+    scmrun, threshold, cols, output_name=None
+):
     """
     Calculate exceedance probability at each point in time
 
@@ -199,10 +199,7 @@ def calculate_exceedance_probabilities_over_time(scmrun, threshold, cols, output
     timeseries_gt_threshold = _get_ts_gt_threshold(scmrun, threshold)
     group_cols = list(scmrun.get_meta_columns_except(cols))
 
-    out = _get_exceedance_fraction(
-        timeseries_gt_threshold,
-        group_cols,
-    )
+    out = _get_exceedance_fraction(timeseries_gt_threshold, group_cols,)
 
     if not isinstance(out, pd.DataFrame):  # pragma: no cover # emergency valve
         raise AssertionError("How did we end up without a dataframe?")
