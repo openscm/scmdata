@@ -74,7 +74,20 @@ def _get_exceedance_fraction(ts, group_cols):
     return out
 
 
-def calculate_exceedance_probabilities(scmrun, threshold, cols):
+def _get_exceedance_prob_output_name(output_name, threshold):
+    if output_name is None:
+        return "{} exceedance probability".format(threshold)
+
+    return output_name
+
+
+def _set_index_level_to(inp, col, val):
+    inp.index = inp.index.set_levels([val], level=col)
+
+    return inp
+
+
+def calculate_exceedance_probabilities(scmrun, threshold, cols, output_name=None):
     """
     Calculate exceedance probability over all time
 
@@ -90,6 +103,10 @@ def calculate_exceedance_probabilities(scmrun, threshold, cols):
         Columns to not use when grouping the timeseries (typically "run_id" or
         "ensemble_member" or similar)
 
+    output_name : str
+        If supplied, the name of the output series. If not supplied,
+        "{threshold} exceedance probability" will be used.
+
     Returns
     -------
     :class:`pd.Series`
@@ -99,7 +116,8 @@ def calculate_exceedance_probabilities(scmrun, threshold, cols):
     Raises
     ------
     ValueError
-        ``scmrun`` has more than one variable
+        ``scmrun`` has more than one variable or more than one unit (convert to
+        a single unit before calling this function if needed)
 
     Notes
     -----
@@ -109,6 +127,7 @@ def calculate_exceedance_probabilities(scmrun, threshold, cols):
     this is the correct function to use.
     """
     _assert_only_one_value(scmrun, "variable")
+    _assert_only_one_value(scmrun, "unit")
     timeseries_gt_threshold = _get_ts_gt_threshold(scmrun, threshold)
     group_cols = list(scmrun.get_meta_columns_except(cols))
 
@@ -120,10 +139,14 @@ def calculate_exceedance_probabilities(scmrun, threshold, cols):
     if not isinstance(out, pd.Series):  # pragma: no cover # emergency valve
         raise AssertionError("How did we end up without a series?")
 
+    output_name = _get_exceedance_prob_output_name(output_name, threshold)
+    out.name = output_name
+    out = _set_index_level_to(out, "unit", "dimensionless")
+
     return out
 
 
-def calculate_exceedance_probabilities_over_time(scmrun, threshold, cols):
+def calculate_exceedance_probabilities_over_time(scmrun, threshold, cols, output_name=None):
     """
     Calculate exceedance probability at each point in time
 
@@ -139,6 +162,10 @@ def calculate_exceedance_probabilities_over_time(scmrun, threshold, cols):
         Columns to not use when grouping the timeseries (typically "run_id" or
         "ensemble_member" or similar)
 
+    output_name : str
+        If supplied, the value to put in the "variable" columns of the output
+        series. If not supplied, "{threshold} exceedance probability" will be used.
+
     Returns
     -------
     :class:`pd.DataFrame`
@@ -147,7 +174,8 @@ def calculate_exceedance_probabilities_over_time(scmrun, threshold, cols):
     Raises
     ------
     ValueError
-        ``scmrun`` has more than one variable
+        ``scmrun`` has more than one variable or more than one unit (convert to
+        a single unit before calling this function if needed)
 
     Notes
     -----
@@ -167,6 +195,7 @@ def calculate_exceedance_probabilities_over_time(scmrun, threshold, cols):
     underestimate the exceedance probability over all time.
     """
     _assert_only_one_value(scmrun, "variable")
+    _assert_only_one_value(scmrun, "unit")
     timeseries_gt_threshold = _get_ts_gt_threshold(scmrun, threshold)
     group_cols = list(scmrun.get_meta_columns_except(cols))
 
@@ -177,5 +206,9 @@ def calculate_exceedance_probabilities_over_time(scmrun, threshold, cols):
 
     if not isinstance(out, pd.DataFrame):  # pragma: no cover # emergency valve
         raise AssertionError("How did we end up without a dataframe?")
+
+    output_name = _get_exceedance_prob_output_name(output_name, threshold)
+    out = _set_index_level_to(out, "variable", output_name)
+    out = _set_index_level_to(out, "unit", "dimensionless")
 
     return out

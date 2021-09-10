@@ -193,13 +193,15 @@ def test_exceedance_probabilities_over_time(
         index=exp_idx,
         columns=test_processing_scm_df.time_points.to_index(),
     )
-    exp.index = exp.index.set_level(
+    exp.index = exp.index.set_levels(
         [_get_calculate_exeedance_probs_expected_name(output_name, threshold)],
         level="variable",
+    ).set_levels(
+        ["dimensionless"],
+        level="unit",
     )
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
-    assert res.index.get_level_values("unit").unique().tolist() == ["dimensionless"]
 
 
 def test_exceedance_probabilities_over_time_multiple_res(
@@ -219,7 +221,14 @@ def test_exceedance_probabilities_over_time_multiple_res(
         start.meta.drop(["ensemble_member"], axis="columns").drop_duplicates()
     )
 
-    exp = pd.DataFrame(exp_vals, index=exp_idx, columns=start.time_points.to_index(),)
+    exp = pd.DataFrame(exp_vals, index=exp_idx, columns=start.time_points.to_index())
+    exp.index = exp.index.set_levels(
+        [_get_calculate_exeedance_probs_expected_name(None, threshold)],
+        level="variable",
+    ).set_levels(
+        ["dimensionless"],
+        level="unit",
+    )
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
@@ -245,6 +254,13 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
 
     exp = pd.DataFrame(
         exp_vals[np.newaxis, :], index=exp_idx, columns=start.time_points.to_index(),
+    )
+    exp.index = exp.index.set_levels(
+        [_get_calculate_exeedance_probs_expected_name(None, threshold)],
+        level="variable",
+    ).set_levels(
+        ["dimensionless"],
+        level="unit",
     )
 
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
@@ -283,13 +299,13 @@ def test_exceedance_probabilities(output_name, threshold, exp_val, test_processi
     )
 
     exp = pd.Series(exp_val, index=exp_idx)
-    exp.index = exp.index.set_level(
-        [_get_calculate_exeedance_probs_expected_name(output_name, threshold)],
-        level="variable",
+    exp.name = _get_calculate_exeedance_probs_expected_name(output_name, threshold)
+    exp.index = exp.index.set_levels(
+        ["dimensionless"],
+        level="unit",
     )
 
     pdt.assert_series_equal(res, exp)
-    assert res.index.get_level_values("unit").unique().tolist() == ["dimensionless"]
 
 
 def test_exceedance_probabilities_multiple_res(
@@ -310,6 +326,11 @@ def test_exceedance_probabilities_multiple_res(
     )
 
     exp = pd.Series(exp_vals, index=exp_idx)
+    exp.name = _get_calculate_exeedance_probs_expected_name(None, threshold)
+    exp.index = exp.index.set_levels(
+        ["dimensionless"],
+        level="unit",
+    )
 
     pdt.assert_series_equal(res, exp)
 
@@ -334,6 +355,11 @@ def test_exceedance_probabilities_multiple_grouping(
     )
 
     exp = pd.Series(exp_vals, index=exp_idx)
+    exp.name = _get_calculate_exeedance_probs_expected_name(None, threshold)
+    exp.index = exp.index.set_levels(
+        ["dimensionless"],
+        level="unit",
+    )
 
     pdt.assert_series_equal(res, exp)
 
