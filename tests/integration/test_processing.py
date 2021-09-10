@@ -353,6 +353,39 @@ def test_requires_preprocessing(test_processing_scm_df, col, func, kwargs):
         )
 
 
+def _get_calculate_peak_call_kwargs(output_name, variable):
+    if output_name is None:
+        return "Peak {}".format(variable)
+
+    return output_name
+
+
+# TODO:
+# - test variable output with multiple variables in peak (fine as row by row)
+
+@output_name_options
+def test_peak(output_name, test_processing_scm_df):
+    call_kwargs = _get_calculate_peak_call_kwargs(
+        output_name,
+        test_processing_scm_df.get_unique_meta("variable", True),
+    )
+
+    exp_val = []
+    res = scmdata.processing.calculate_peak(
+        test_processing_scm_df,
+        **call_kwargs,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(test_processing_scm_df.meta)
+
+    exp = pd.Series(exp_val, index=exp_idx)
+
+    pdt.assert_series_equal(res, exp)
+
+
+# TODO:
+# - add peaks to summary stats
+
 @pytest.mark.parametrize(
     "exceedance_probabilities_thresholds,exp_exceedance_prob_thresholds",
     ((None, [1.5, 2.0, 2.5]), ([1.0, 1.5, 2.0, 2.5], [1.0, 1.5, 2.0, 2.5]),),
