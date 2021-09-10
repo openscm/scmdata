@@ -225,7 +225,9 @@ def _set_peak_output_name(out, output_name, default_lead):
     else:
         idx = out.index.names
         out = out.reset_index()
-        out["variable"] = out["variable"].apply(lambda x: "{} {}".format(default_lead, x))
+        out["variable"] = out["variable"].apply(
+            lambda x: "{} {}".format(default_lead, x)
+        )
         out = out.set_index(idx)[0]
 
     return out
@@ -280,7 +282,9 @@ def calculate_peak_time(scmrun, output_name=None, return_year=True):
     if return_year:
         out = out.apply(lambda x: x.year)
 
-    out = _set_peak_output_name(out, output_name, "Year of peak" if return_year else "Time of peak")
+    out = _set_peak_output_name(
+        out, output_name, "Year of peak" if return_year else "Time of peak"
+    )
 
     return out
 
@@ -345,7 +349,6 @@ def calculate_summary_stats(
 
     process_over_cols = scmrun.get_meta_columns_except(_index)
 
-
     if exceedance_probabilities_naming_base is None:
         exceedance_probabilities_naming_base = _DEFAULT_EXCEEDANCE_PROB_OUTPUT_BASE
 
@@ -371,7 +374,6 @@ def calculate_summary_stats(
         for t in exceedance_probabilities_thresholds
     ]
 
-
     if peak_naming_base is None:
         peak_naming_base = "{} peak"
 
@@ -381,15 +383,10 @@ def calculate_summary_stats(
         else:
             peak_time_naming_base = "{} peak time"
 
-    scmrun_peak = scmrun.filter(
-        variable=peak_variable, log_if_empty=False,
-    )
+    scmrun_peak = scmrun.filter(variable=peak_variable, log_if_empty=False,)
     if scmrun_peak.empty:
-        msg = (
-            "peak_variable `{}` is not available. "
-            "Available variables:{}".format(
-                peak_variable, scmrun.get_unique_meta("variable")
-            )
+        msg = "peak_variable `{}` is not available. " "Available variables:{}".format(
+            peak_variable, scmrun.get_unique_meta("variable")
         )
         raise ValueError(msg)
 
@@ -423,7 +420,6 @@ def calculate_summary_stats(
         iterator = tqdman.tqdm(func_calls_args_kwargs)
     else:
         iterator = func_calls_args_kwargs
-
 
     def get_result(func, args, kwargs, name):
         res = func(*args, **kwargs)
