@@ -43,6 +43,14 @@ def test_groupby_all_except(scm_run, g):
     assert_scmdf_almost_equal(res, scm_run, check_ts_names=False)
 
 
+@group_tests
+def test_get_meta_columns_except(scm_run, g):
+    res = scm_run.get_meta_columns_except(g)
+
+    assert isinstance(res, list)
+    assert res == sorted(tuple(set(scm_run.meta.columns) - set(g)))
+
+
 def test_groupby_return_none(scm_run):
     def func(df):
         if df.get_unique_meta("variable", no_duplicates=True) == "Primary Energy":

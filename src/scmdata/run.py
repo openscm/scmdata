@@ -1739,8 +1739,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        tuple
-            Meta columns except the ones supplied
+        list
+            Meta columns except the ones supplied (sorted alphabetically)
         """
         not_group = self._check_groupby_input(not_group)
         group = sorted(tuple(set(self.meta.columns) - set(not_group)))
