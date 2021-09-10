@@ -4,9 +4,12 @@ from scmdata import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
 
 
-@pytest.mark.parametrize(
+group_tests = pytest.mark.parametrize(
     "g", (("variable",), ("variable", "scenario"), ("variable", "region"), ("model",),),
 )
+
+
+@group_tests
 def test_groupby(scm_run, g):
     # Check that the metadata for each group is unique for the dimensions being grouped
     # together
@@ -18,6 +21,24 @@ def test_groupby(scm_run, g):
         return df
 
     res = scm_run.groupby(*g).map(func)
+
+    assert isinstance(res, ScmRun)
+    assert_scmdf_almost_equal(res, scm_run, check_ts_names=False)
+
+
+@group_tests
+def test_groupby_all_except(scm_run, g):
+    # Check that the metadata for each group is unique for the dimensions not
+    # being grouped together
+    def func(df):
+        grouped = list(set(df.meta) - set(g))
+        sub_df = df.meta[grouped]
+
+        for c in grouped:
+            assert len(sub_df[c].unique()) == 1
+        return df
+
+    res = scm_run.groupby_all_except(*g).map(func)
 
     assert isinstance(res, ScmRun)
     assert_scmdf_almost_equal(res, scm_run, check_ts_names=False)
