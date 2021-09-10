@@ -1680,6 +1680,13 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return out
 
+    @staticmethod
+    def _check_groupby_input(v):
+        if len(v) == 1 and not isinstance(v[0], str):
+            v = tuple(v[0])
+
+        return v
+
     def groupby(self, *group):
         """
         Group the object by unique metadata
@@ -1716,10 +1723,31 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         -------
         :class:`RunGroupBy`
             See the documentation for :class:`RunGroupBy` for more information
-
         """
-        if len(group) == 1 and not isinstance(group[0], str):
-            group = tuple(group[0])
+        group = self._check_groupby_input(group)
+
+        return RunGroupBy(self, group)
+
+    def groupby_all_except(self, *not_group):
+        """
+        Group the object by unique metadata apart from the input columns
+
+        In other words, the groups are determined by all columns in
+        ``self.meta`` except for  those in ``not_group``
+
+        Parameters
+        ----------
+        not_group: str or list of str
+            Columns to exclude from the grouping
+
+        Returns
+        -------
+        :class:`RunGroupBy`
+            See the documentation for :class:`RunGroupBy` for more information
+        """
+        not_group = self._check_groupby_input(not_group)
+        group = tuple(set(self.meta.columns) - set(not_group))
+
         return RunGroupBy(self, group)
 
     def convert_unit(
