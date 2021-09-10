@@ -3,7 +3,6 @@ import pytest
 from scmdata import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
 
-
 group_tests = pytest.mark.parametrize(
     "g", (("variable",), ("variable", "scenario"), ("variable", "region"), ("model",),),
 )
