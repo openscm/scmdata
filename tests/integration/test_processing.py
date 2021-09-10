@@ -72,9 +72,7 @@ def test_crossing_times(
         call_kwargs["return_year"] = return_year
 
     res = scmdata.processing.calculate_crossing_times(
-        test_processing_scm_df,
-        threshold=threshold,
-        **call_kwargs,
+        test_processing_scm_df, threshold=threshold, **call_kwargs,
     )
 
     if conv_to_year:
