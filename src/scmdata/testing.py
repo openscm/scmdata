@@ -22,7 +22,7 @@ def _assert_frame_equal(left, right, **kwargs):
         kwargs.pop("rtol", None)
         kwargs.pop("atol", None)
 
-    pdt.assert_frame_equal(left, right, **kwargs)
+    pdt.assert_frame_equal(left.T, right.T, **kwargs)
 
 
 def assert_scmdf_almost_equal(

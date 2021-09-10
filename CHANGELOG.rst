@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#168 <https://github.com/openscm/scmdata/pull/168>`_) Improve the error messages when checking that :class:`scmdata.ScmRun` objects are identical
 - (`#165 <https://github.com/openscm/scmdata/pull/165>`_) Add :func:`scmdata.processing.calculate_crossing_times`
 - (`#164 <https://github.com/openscm/scmdata/pull/164>`_) Added :meth:`scmdata.ScmRun.append_timewise` to allow appending of data along the time axis with broadcasting along multiple meta dimensions
 - (`#164 <https://github.com/openscm/scmdata/pull/164>`_) Sort time axis internally (ensures that :meth:`scmdata.ScmRun.__repr__` renders properly)
