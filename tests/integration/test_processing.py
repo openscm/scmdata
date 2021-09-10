@@ -337,8 +337,6 @@ def test_exceedance_probabilities_multiple_grouping(
 @pytest.mark.parametrize("func,kwargs", (
     (scmdata.processing.calculate_exceedance_probabilities, {"threshold": 1.5}),
     (scmdata.processing.calculate_exceedance_probabilities_over_time, {"threshold": 1.5}),
-    (scmdata.processing.calculate_exceedance_peak, {}),
-    (scmdata.processing.calculate_exceedance_peak_time, {}),
 ))
 def test_requires_preprocessing(test_processing_scm_df, col, func, kwargs):
     test_processing_scm_df[col] = [
@@ -354,14 +352,12 @@ def test_requires_preprocessing(test_processing_scm_df, col, func, kwargs):
 
 
 def _get_calculate_peak_call_kwargs(output_name, variable):
-    if output_name is None:
-        return "Peak {}".format(variable)
+    call_kwargs = {}
+    if output_name is not None:
+        call_kwargs["output_name"] = output_name
 
-    return output_name
+    return call_kwargs
 
-
-# TODO:
-# - test variable output with multiple variables in peak (fine as row by row)
 
 @output_name_options
 def test_peak(output_name, test_processing_scm_df):
@@ -370,7 +366,7 @@ def test_peak(output_name, test_processing_scm_df):
         test_processing_scm_df.get_unique_meta("variable", True),
     )
 
-    exp_val = []
+    exp_vals = [1.2, 1.41, 1.6, 1.6, 1.72]
     res = scmdata.processing.calculate_peak(
         test_processing_scm_df,
         **call_kwargs,
@@ -378,7 +374,122 @@ def test_peak(output_name, test_processing_scm_df):
 
     exp_idx = pd.MultiIndex.from_frame(test_processing_scm_df.meta)
 
-    exp = pd.Series(exp_val, index=exp_idx)
+    exp = pd.Series(exp_vals, index=exp_idx)
+    if output_name is not None:
+        exp.index = exp.index.set_levels([output_name], level="variable")
+    else:
+        idx = exp.index.names
+        exp = exp.reset_index()
+        exp["variable"] = exp["variable"].apply(lambda x: "Peak {}".format(x))
+        exp = exp.set_index(idx)[0]
+
+    pdt.assert_series_equal(res, exp)
+
+
+def test_peak_multi_variable(test_processing_scm_df_multi_climate_model):
+    test_processing_scm_df_multi_climate_model["variable"] = [
+        str(i) for i in range(test_processing_scm_df_multi_climate_model.shape[0])
+    ]
+
+    exp_vals = [1.2, 1.41, 1.6, 1.6, 1.72, 1.3, 1.51, 1.7, 1.7, 1.82]
+    res = scmdata.processing.calculate_peak(
+        test_processing_scm_df_multi_climate_model,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(test_processing_scm_df_multi_climate_model.meta)
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+    idx = exp.index.names
+    exp = exp.reset_index()
+    exp["variable"] = exp["variable"].apply(lambda x: "Peak {}".format(x))
+    exp = exp.set_index(idx)[0]
+
+    pdt.assert_series_equal(res, exp)
+
+
+def _get_calculate_peak_time_call_kwargs(return_year, output_name):
+    call_kwargs = {}
+
+    if return_year is not None:
+        call_kwargs["return_year"] = return_year
+
+    if output_name is not None:
+        call_kwargs["output_name"] = output_name
+
+    return call_kwargs
+
+
+@output_name_options
+@crossing_times_year_conversions
+def test_peak_time(output_name, return_year, conv_to_year, test_processing_scm_df):
+    call_kwargs = _get_calculate_peak_time_call_kwargs(return_year, output_name)
+
+    exp_vals = [
+        dt.datetime(2007, 1, 1),
+        dt.datetime(2100, 1, 1),
+        dt.datetime(2100, 1, 1),
+        dt.datetime(2007, 1, 1),
+        dt.datetime(2007, 1, 1),
+    ]
+    res = scmdata.processing.calculate_peak_time(
+        test_processing_scm_df,
+        **call_kwargs,
+    )
+
+    exp_idx = pd.MultiIndex.from_frame(test_processing_scm_df.meta)
+
+    if conv_to_year:
+        exp_vals = [v.year if conv_to_year else v for v in exp_vals]
+        time_name = "Year"
+    else:
+        time_name = "Time"
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+    if output_name is not None:
+        exp.index = exp.index.set_levels([output_name], level="variable")
+    else:
+        idx = exp.index.names
+        exp = exp.reset_index()
+        exp["variable"] = exp["variable"].apply(lambda x: "{} of peak {}".format(time_name, x))
+        exp = exp.set_index(idx)[0]
+
+    pdt.assert_series_equal(res, exp)
+
+
+@crossing_times_year_conversions
+def test_peak_time_multi_variable(return_year, conv_to_year, test_processing_scm_df_multi_climate_model):
+    test_processing_scm_df_multi_climate_model["variable"] = [
+        str(i) for i in range(test_processing_scm_df_multi_climate_model.shape[0])
+    ]
+
+    call_kwargs = _get_calculate_peak_time_call_kwargs(return_year, None)
+
+    exp_vals = [
+        dt.datetime(2007, 1, 1),
+        dt.datetime(2100, 1, 1),
+        dt.datetime(2100, 1, 1),
+        dt.datetime(2007, 1, 1),
+        dt.datetime(2007, 1, 1),
+    ] * 2
+
+    res = scmdata.processing.calculate_peak_time(
+        test_processing_scm_df_multi_climate_model, **call_kwargs
+    )
+
+    if conv_to_year:
+        exp_vals = [v.year if conv_to_year else v for v in exp_vals]
+        time_name = "Year"
+    else:
+        time_name = "Time"
+
+    exp_idx = pd.MultiIndex.from_frame(test_processing_scm_df_multi_climate_model.meta)
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+    idx = exp.index.names
+    exp = exp.reset_index()
+
+    exp["variable"] = exp["variable"].apply(lambda x: "{} of peak {}".format(time_name, x))
+    exp = exp.set_index(idx)[0]
 
     pdt.assert_series_equal(res, exp)
 

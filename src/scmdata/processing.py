@@ -171,7 +171,8 @@ def calculate_exceedance_probabilities_over_time(
 
     output_name : str
         If supplied, the value to put in the "variable" columns of the output
-        series. If not supplied, "{threshold} exceedance probability" will be used.
+        :class:`pd.DataFrame`. If not supplied, "{threshold} exceedance
+        probability" will be used.
 
     Returns
     -------
@@ -217,6 +218,71 @@ def calculate_exceedance_probabilities_over_time(
 
     return out
 
+
+def _set_peak_output_name(out, output_name, default_lead):
+    if output_name is not None:
+        out = _set_index_level_to(out, "variable", output_name)
+    else:
+        idx = out.index.names
+        out = out.reset_index()
+        out["variable"] = out["variable"].apply(lambda x: "{} {}".format(default_lead, x))
+        out = out.set_index(idx)[0]
+
+    return out
+
+
+def calculate_peak(scmrun, output_name=None):
+    """
+    Calculate peak i.e. maximum of each timeseries
+
+    Parameters
+    ----------
+    scmrun : :class:`scmdata.ScmRun`
+        Ensemble of which to calculate the exceedance probability over time
+
+    output_name : str
+        If supplied, the value to put in the "variable" columns of the output
+        series. If not supplied, "Peak {variable}" will be used.
+
+    Returns
+    -------
+    :class:`pd.Series`
+        Peak of each timeseries
+    """
+    out = scmrun.timeseries().max(axis=1)
+    out = _set_peak_output_name(out, output_name, "Peak")
+
+    return out
+
+
+def calculate_peak_time(scmrun, output_name=None, return_year=True):
+    """
+    Calculate peak time i.e. the time at which each timeseries reaches its maximum
+
+    Parameters
+    ----------
+    scmrun : :class:`scmdata.ScmRun`
+        Ensemble of which to calculate the exceedance probability over time
+
+    output_name : str
+        If supplied, the value to put in the "variable" columns of the output
+        series. If not supplied, "Peak {variable}" will be used.
+
+    return_year : bool
+        If ``True``, return the year instead of the datetime
+
+    Returns
+    -------
+    :class:`pd.Series`
+        Peak of each timeseries
+    """
+    out = scmrun.timeseries().idxmax(axis=1)
+    if return_year:
+        out = out.apply(lambda x: x.year)
+
+    out = _set_peak_output_name(out, output_name, "Year of peak" if return_year else "Time of peak")
+
+    return out
 
 def calculate_summary_stats(
     scmrun,
