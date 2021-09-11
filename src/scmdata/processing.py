@@ -431,6 +431,9 @@ def calculate_summary_stats(
         get_result(func, args, kwargs, name).reorder_levels(_index)
         for func, args, kwargs, name in iterator
     ]
+    if not peak_return_year:
+        series = [s.astype("object") for s in series]
+
     out = pd.DataFrame(series).T
 
     out.columns.name = "statistic"

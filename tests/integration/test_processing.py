@@ -507,35 +507,123 @@ def test_peak_time_multi_variable(
     ),
 )
 @pytest.mark.parametrize(
-    ",".join(['exceedance_probabilities_thresholds',
- 'exp_exceedance_prob_thresholds',
- 'exceedance_probabilities_output_name',
- 'exp_exceedance_probabilities_output_name',
- 'exceedance_probabilities_variable',
- 'exp_exceedance_probabilities_variable']),
+    ",".join(
+        [
+            "exceedance_probabilities_thresholds",
+            "exp_exceedance_prob_thresholds",
+            "exceedance_probabilities_output_name",
+            "exp_exceedance_probabilities_output_name",
+            "exceedance_probabilities_variable",
+            "exp_exceedance_probabilities_variable",
+        ]
+    ),
     (
-        (None, [1.5, 2.0, 2.5], None, "{} exceedance probability", None, "Surface Air Temperature Change"),
-        ([1.0, 1.5, 2.0, 2.5], [1.0, 1.5, 2.0, 2.5], "Exceedance Probability|{:.2f}C", "Exceedance Probability|{:.2f}C", "Surface Temperature", "Surface Temperature"),
+        (
+            None,
+            [1.5, 2.0, 2.5],
+            None,
+            "{} exceedance probability",
+            None,
+            "Surface Air Temperature Change",
+        ),
+        (
+            [1.0, 1.5, 2.0, 2.5],
+            [1.0, 1.5, 2.0, 2.5],
+            "Exceedance Probability|{:.2f}C",
+            "Exceedance Probability|{:.2f}C",
+            "Surface Temperature",
+            "Surface Temperature",
+        ),
     ),
 )
 @pytest.mark.parametrize(
-    ",".join(['peak_variable',
- 'exp_peak_variable',
- 'peak_quantiles',
- 'exp_peak_quantiles',
- 'peak_naming_base',
- 'exp_peak_naming_base',
- 'peak_time_naming_base',
- 'exp_peak_time_naming_base',
- 'peak_return_year',
- 'exp_peak_return_year']),
+    ",".join(
+        [
+            "peak_variable",
+            "exp_peak_variable",
+            "peak_quantiles",
+            "exp_peak_quantiles",
+            "peak_naming_base",
+            "exp_peak_naming_base",
+            "peak_time_naming_base",
+            "exp_peak_time_naming_base",
+            "peak_return_year",
+            "exp_peak_return_year",
+        ]
+    ),
     (
-        ("Surface Temperature", "Surface Temperature", None, [0.05, 0.17, 0.5, 0.83, 0.95], None, "{} peak", None, "{} peak year", None, True),
-        ("Surface Temperature", "Surface Temperature", None, [0.05, 0.17, 0.5, 0.83, 0.95], None, "{} peak", "test {}", "test {}", None, True),
-        ("Surface Temperature", "Surface Temperature", None, [0.05, 0.17, 0.5, 0.83, 0.95], None, "{} peak", None, "{} peak year", True, True),
-        (None, "Surface Air Temperature Change", [0.05, 0.95], [0.05, 0.95], "test {}", "test {}", "test {}", "test {}", True, True),
-        (None, "Surface Air Temperature Change", [0.05, 0.95], [0.05, 0.95], "test {}", "test {}", None, "{} peak time", False, False),
-        (None, "Surface Air Temperature Change", [0.05, 0.95], [0.05, 0.95], "test {}", "test {}", "test {}", "test {}", False, False),
+        (
+            "Surface Temperature",
+            "Surface Temperature",
+            None,
+            [0.05, 0.17, 0.5, 0.83, 0.95],
+            None,
+            "{} peak",
+            None,
+            "{} peak year",
+            None,
+            True,
+        ),
+        (
+            "Surface Temperature",
+            "Surface Temperature",
+            None,
+            [0.05, 0.17, 0.5, 0.83, 0.95],
+            None,
+            "{} peak",
+            "test {}",
+            "test {}",
+            None,
+            True,
+        ),
+        (
+            "Surface Temperature",
+            "Surface Temperature",
+            None,
+            [0.05, 0.17, 0.5, 0.83, 0.95],
+            None,
+            "{} peak",
+            None,
+            "{} peak year",
+            True,
+            True,
+        ),
+        (
+            None,
+            "Surface Air Temperature Change",
+            [0.05, 0.95],
+            [0.05, 0.95],
+            "test {}",
+            "test {}",
+            "test peak {}",
+            "test peak {}",
+            True,
+            True,
+        ),
+        (
+            None,
+            "Surface Air Temperature Change",
+            [0.05, 0.95],
+            [0.05, 0.95],
+            "test {}",
+            "test {}",
+            None,
+            "{} peak time",
+            False,
+            False,
+        ),
+        (
+            None,
+            "Surface Air Temperature Change",
+            [0.05, 0.95],
+            [0.05, 0.95],
+            "test {}",
+            "test {}",
+            "test peak {}",
+            "test peak {}",
+            False,
+            False,
+        ),
     ),
 )
 @pytest.mark.parametrize("progress", (True, False))
@@ -593,7 +681,9 @@ def test_calculate_summary_stats(
         exp.append(peak_q)
         exp.append(peak_time_q)
 
-    exp = pd.DataFrame([v.reorder_levels(exp_index) for v in exp]).T
+    dtype = "object" if not exp_peak_return_year else None
+    exp = [v.reorder_levels(exp_index).astype(dtype) for v in exp]
+    exp = pd.DataFrame(exp).T
     exp.columns.name = "statistic"
     exp = exp.stack("statistic")
     exp.name = "value"
@@ -608,7 +698,6 @@ def test_calculate_summary_stats(
         call_kwargs[
             "exceedance_probabilities_naming_base"
         ] = exceedance_probabilities_output_name
-
 
     inp_renamed = inp.copy()
     inp_renamed["variable"] = exp_exceedance_probabilities_variable
@@ -662,7 +751,7 @@ def test_calculate_summary_stats_no_exceedance_probability_var(
 ):
     error_msg = re.escape(
         "exceedance_probabilities_variable `junk` is not available. "
-        "Available vars:{}".format(
+        "Available variables:{}".format(
             test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
         )
     )
@@ -671,4 +760,21 @@ def test_calculate_summary_stats_no_exceedance_probability_var(
             test_processing_scm_df_multi_climate_model,
             ["model", "scenario"],
             exceedance_probabilities_variable="junk",
+        )
+
+
+def test_calculate_summary_stats_no_peak_variable(
+    test_processing_scm_df_multi_climate_model,
+):
+    error_msg = re.escape(
+        "peak_variable `junk` is not available. "
+        "Available variables:{}".format(
+            test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
+        )
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scmdata.processing.calculate_summary_stats(
+            test_processing_scm_df_multi_climate_model,
+            ["model", "scenario"],
+            peak_variable="junk",
         )
