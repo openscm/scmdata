@@ -9,6 +9,7 @@ import pytest
 import scmdata.processing
 from scmdata import ScmRun
 from scmdata.errors import NonUniqueMetadataError
+from scmdata.testing import _check_pandas_less_120
 
 
 @pytest.fixture(scope="function")
@@ -498,6 +499,10 @@ def test_peak_time_multi_variable(
     pdt.assert_series_equal(res, exp)
 
 
+@pytest.mark.xfail(
+    _check_pandas_less_120(),
+    reason="pandas<1.2.0 can't handle non-numeric types in pivot",
+)
 @pytest.mark.parametrize(
     "index",
     (
