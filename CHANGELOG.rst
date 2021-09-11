@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#171 <https://github.com/openscm/scmdata/pull/171>`_) Add :func:`scmdata.processing.calculate_exceedance_probabilities`, :func:`scmdata.processing.calculate_exceedance_probabilities_over_time` and :meth:`scmdata.ScmRun.get_meta_columns_except`
 - (`#170 <https://github.com/openscm/scmdata/pull/170>`_) Added :meth:`scmdata.ScmRun.groupby_all_except` to allow greather use of the concept of grouping by columns except a given set
 - (`#169 <https://github.com/openscm/scmdata/pull/169>`_) Make :func:`scmdata.processing.calculate_crossing_times` able to be used as a standalone function rather than being intended to be called via :meth:`scmdata.ScmRun.process_over`
 - (`#168 <https://github.com/openscm/scmdata/pull/168>`_) Improve the error messages when checking that :class:`scmdata.ScmRun` objects are identical

@@ -1728,6 +1728,25 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return RunGroupBy(self, group)
 
+    def get_meta_columns_except(self, *not_group):
+        """
+        Get columns in meta except a set
+
+        Parameters
+        ----------
+        not_group: str or list of str
+            Columns to exclude from the grouping
+
+        Returns
+        -------
+        list
+            Meta columns except the ones supplied (sorted alphabetically)
+        """
+        not_group = self._check_groupby_input(not_group)
+        group = sorted(tuple(set(self.meta.columns) - set(not_group)))
+
+        return group
+
     def groupby_all_except(self, *not_group):
         """
         Group the object by unique metadata apart from the input columns
@@ -1745,8 +1764,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         :class:`RunGroupBy`
             See the documentation for :class:`RunGroupBy` for more information
         """
-        not_group = self._check_groupby_input(not_group)
-        group = tuple(set(self.meta.columns) - set(not_group))
+        group = self.get_meta_columns_except(not_group)
 
         return RunGroupBy(self, group)
 
