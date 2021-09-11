@@ -8,6 +8,7 @@ import pytest
 
 import scmdata.processing
 from scmdata import ScmRun
+from scmdata.errors import NonUniqueMetadataError
 
 
 @pytest.fixture(scope="function")
@@ -497,14 +498,6 @@ def test_peak_time_multi_variable(
     pdt.assert_series_equal(res, exp)
 
 
-# TODO:
-# - add peaks to summary stats
-
-
-@pytest.mark.parametrize(
-    "exceedance_probabilities_thresholds,exp_exceedance_prob_thresholds",
-    ((None, [1.5, 2.0, 2.5]), ([1.0, 1.5, 2.0, 2.5], [1.0, 1.5, 2.0, 2.5]),),
-)
 @pytest.mark.parametrize(
     "index",
     (
@@ -514,20 +507,37 @@ def test_peak_time_multi_variable(
     ),
 )
 @pytest.mark.parametrize(
-    "exceedance_probabilities_output_name,exp_exceedance_probabilities_output_name",
+    ",".join(['exceedance_probabilities_thresholds',
+ 'exp_exceedance_prob_thresholds',
+ 'exceedance_probabilities_output_name',
+ 'exp_exceedance_probabilities_output_name',
+ 'exceedance_probabilities_variable',
+ 'exp_exceedance_probabilities_variable']),
     (
-        (None, "{} exceedance probability"),
-        ("Exceedance Probability|{:.2f}C", "Exceedance Probability|{:.2f}C"),
+        (None, [1.5, 2.0, 2.5], None, "{} exceedance probability", None, "Surface Air Temperature Change"),
+        ([1.0, 1.5, 2.0, 2.5], [1.0, 1.5, 2.0, 2.5], "Exceedance Probability|{:.2f}C", "Exceedance Probability|{:.2f}C", "Surface Temperature", "Surface Temperature"),
     ),
 )
 @pytest.mark.parametrize(
-    "exceedance_probabilities_variable,exp_exceedance_probabilities_variable",
+    ",".join(['peak_variable',
+ 'exp_peak_variable',
+ 'peak_quantiles',
+ 'exp_peak_quantiles',
+ 'peak_naming_base',
+ 'exp_peak_naming_base',
+ 'peak_time_naming_base',
+ 'exp_peak_time_naming_base',
+ 'peak_return_year',
+ 'exp_peak_return_year']),
     (
-        (None, "Surface Air Temperature Change"),
-        ("Surface Temperature", "Surface Temperature"),
+        ("Surface Temperature", "Surface Temperature", None, [0.05, 0.17, 0.5, 0.83, 0.95], None, "{} peak", None, "{} peak year", None, True),
+        ("Surface Temperature", "Surface Temperature", None, [0.05, 0.17, 0.5, 0.83, 0.95], None, "{} peak", "test {}", "test {}", None, True),
+        ("Surface Temperature", "Surface Temperature", None, [0.05, 0.17, 0.5, 0.83, 0.95], None, "{} peak", None, "{} peak year", True, True),
+        (None, "Surface Air Temperature Change", [0.05, 0.95], [0.05, 0.95], "test {}", "test {}", "test {}", "test {}", True, True),
+        (None, "Surface Air Temperature Change", [0.05, 0.95], [0.05, 0.95], "test {}", "test {}", None, "{} peak time", False, False),
+        (None, "Surface Air Temperature Change", [0.05, 0.95], [0.05, 0.95], "test {}", "test {}", "test {}", "test {}", False, False),
     ),
 )
-# TODO: test all the peak input arguments
 @pytest.mark.parametrize("progress", (True, False))
 def test_calculate_summary_stats(
     exceedance_probabilities_thresholds,
@@ -537,6 +547,16 @@ def test_calculate_summary_stats(
     exp_exceedance_probabilities_output_name,
     exceedance_probabilities_variable,
     exp_exceedance_probabilities_variable,
+    peak_quantiles,
+    exp_peak_quantiles,
+    peak_variable,
+    exp_peak_variable,
+    peak_naming_base,
+    exp_peak_naming_base,
+    peak_time_naming_base,
+    exp_peak_time_naming_base,
+    peak_return_year,
+    exp_peak_return_year,
     progress,
     test_processing_scm_df_multi_climate_model,
 ):
@@ -559,7 +579,21 @@ def test_calculate_summary_stats(
         )
         exp.append(tmp)
 
-    exp = pd.DataFrame(exp).T
+    peaks = scmdata.processing.calculate_peak(inp)
+    peak_times = scmdata.processing.calculate_peak_time(
+        inp, return_year=exp_peak_return_year
+    )
+    for q in exp_peak_quantiles:
+        peak_q = peaks.groupby(exp_index).quantile(q)
+        peak_q.name = exp_peak_naming_base.format(q)
+
+        peak_time_q = peak_times.groupby(exp_index).quantile(q)
+        peak_time_q.name = exp_peak_time_naming_base.format(q)
+
+        exp.append(peak_q)
+        exp.append(peak_time_q)
+
+    exp = pd.DataFrame([v.reorder_levels(exp_index) for v in exp]).T
     exp.columns.name = "statistic"
     exp = exp.stack("statistic")
     exp.name = "value"
@@ -575,17 +609,44 @@ def test_calculate_summary_stats(
             "exceedance_probabilities_naming_base"
         ] = exceedance_probabilities_output_name
 
+
+    inp_renamed = inp.copy()
+    inp_renamed["variable"] = exp_exceedance_probabilities_variable
     if exceedance_probabilities_variable is not None:
-        inp["variable"] = exceedance_probabilities_variable
         call_kwargs[
             "exceedance_probabilities_variable"
         ] = exceedance_probabilities_variable
 
+    if peak_quantiles is not None:
+        call_kwargs["peak_quantiles"] = peak_quantiles
+
+    tmp = inp.copy()
+    tmp["variable"] = exp_peak_variable
+    try:
+        inp_renamed = inp_renamed.append(tmp)
+    except NonUniqueMetadataError:
+        # variable already included
+        pass
+    if peak_variable is not None:
+        call_kwargs["peak_variable"] = peak_variable
+
+    if peak_naming_base is not None:
+        call_kwargs["peak_naming_base"] = peak_naming_base
+
+    if peak_time_naming_base is not None:
+        call_kwargs["peak_time_naming_base"] = peak_time_naming_base
+
+    if peak_time_naming_base is not None:
+        call_kwargs["peak_time_naming_base"] = peak_time_naming_base
+
+    if peak_return_year is not None:
+        call_kwargs["peak_return_year"] = peak_return_year
+
     res = scmdata.processing.calculate_summary_stats(
-        inp, index, progress=progress, **call_kwargs,
+        inp_renamed, index, progress=progress, **call_kwargs,
     )
 
-    pdt.assert_series_equal(res, exp)
+    pdt.assert_series_equal(res.sort_index(), exp.sort_index())
 
     # then user can stack etc. if they want
     res.unstack(["statistic", "unit"])
