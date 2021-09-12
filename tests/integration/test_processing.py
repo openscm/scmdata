@@ -5,6 +5,7 @@ import re
 import numpy as np
 import pandas as pd
 import pandas.testing as pdt
+import pint.errors
 import pytest
 
 import scmdata.processing
@@ -352,7 +353,11 @@ def test_requires_preprocessing(test_processing_scm_df, col, func, kwargs):
         str(i) for i in range(test_processing_scm_df.shape[0])
     ]
 
-    with pytest.raises(ValueError):
+    error_msg = (
+        "More than one value for {}. "
+        "This is unlikely to be what you want.".format(col)
+    )
+    with pytest.raises(ValueError, match=error_msg):
         func(
             test_processing_scm_df,
             process_over_cols=["ensemble_member", col],
@@ -500,7 +505,7 @@ def test_peak_time_multi_variable(
     pdt.assert_series_equal(res, exp)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def sr15_inferred_temperature_quantiles(test_data_path):
     # fake the temperature quantiles in preparation for the categorisation tests
     # we do this as P33 is not included in the SR1.5 output, yet we need it for
@@ -524,7 +529,8 @@ def sr15_inferred_temperature_quantiles(test_data_path):
             cm_q.iloc[:, :] = 10
             for t in [2.0, 1.5]:
                 cm_ep_t = cm_ep.filter(variable="*{}*".format(t)).timeseries()
-                cm_ep_t_lt = cm_ep_t <= p
+                # null values in FaIR should be treated as being small
+                cm_ep_t_lt = (cm_ep_t <= p) | cm_ep_t.isnull()
                 cm_ep_t_lt = cm_ep_t_lt.reorder_levels(cm_q.index.names).sort_index()
                 cm_ep_t_lt.index = cm_q.index
                 cm_q[cm_ep_t_lt] = t
@@ -535,7 +541,7 @@ def sr15_inferred_temperature_quantiles(test_data_path):
     return out
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def sr15_temperatures_unmangled_names(sr15_inferred_temperature_quantiles):
     out = sr15_inferred_temperature_quantiles.copy()
     out["quantile"] = out["variable"].apply(
@@ -546,7 +552,8 @@ def sr15_temperatures_unmangled_names(sr15_inferred_temperature_quantiles):
     return out
 
 
-def test_categorisation_sr15(sr15_temperatures_unmangled_names):
+@pytest.mark.parametrize("unit", ("K", "mK"))
+def test_categorisation_sr15(unit, sr15_temperatures_unmangled_names):
     index = ["model", "scenario"]
     exp = (
         sr15_temperatures_unmangled_names.meta[index + ["category"]]
@@ -554,11 +561,15 @@ def test_categorisation_sr15(sr15_temperatures_unmangled_names):
         .set_index(index)["category"]
     )
 
-    inp = sr15_temperatures_unmangled_names.drop_meta(["category", "version"]).filter(
-        variable="*MAGICC*"
+    inp = (
+        sr15_temperatures_unmangled_names.drop_meta(["category", "version"])
+        .filter(variable="*MAGICC*")
+        .convert_unit(unit)
     )
 
-    res = scmdata.processing.categorisation_sr15(inp, index=index,)
+    res = scmdata.processing.categorisation_sr15(inp, index=index)
+
+    pdt.assert_series_equal(exp, res)
 
     category_counts = res.value_counts()
     assert category_counts["Above 2C"] == 189
@@ -569,11 +580,60 @@ def test_categorisation_sr15(sr15_temperatures_unmangled_names):
     assert category_counts["Below 1.5C"] == 9
 
 
-# test multiple variable failure
-# test unit conversion failures
+def test_categorisation_sr15_multimodel(sr15_temperatures_unmangled_names):
+    index = ["model", "scenario", "climate_model"]
+
+    inp = sr15_temperatures_unmangled_names.drop_meta(["category", "version"])
+    inp["climate_model"] = inp["variable"].apply(lambda x: x.split("|")[-1])
+    inp["variable"] = inp["variable"].apply(lambda x: "|".join(x.split("|")[:-1]))
+
+    res = scmdata.processing.categorisation_sr15(inp, index=index)
+
+    exp = pd.concat(
+        [
+            scmdata.processing.categorisation_sr15(inp_cm, index=index)
+            for inp_cm in inp.groupby("climate_model")
+        ]
+    )
+
+    pdt.assert_series_equal(exp.sort_index(), res.sort_index())
+
+    category_counts = res.groupby("climate_model").value_counts()
+
+    assert category_counts.loc["MAGICC6", "Above 2C"] == 189
+    assert category_counts.loc["MAGICC6", "Higher 2C"] == 58
+    assert category_counts.loc["MAGICC6", "Lower 2C"] == 74
+    assert category_counts.loc["MAGICC6", "1.5C high overshoot"] == 37
+    assert category_counts.loc["MAGICC6", "1.5C low overshoot"] == 44
+    assert category_counts.loc["MAGICC6", "Below 1.5C"] == 9
+
+    assert category_counts.loc["FAIR", "Above 2C"] == 134
+    assert category_counts.loc["FAIR", "Higher 2C"] == 14
+    assert category_counts.loc["FAIR", "Lower 2C"] == 80
+    assert category_counts.loc["FAIR", "1.5C high overshoot"] == 1
+    assert category_counts.loc["FAIR", "1.5C low overshoot"] == 22
+    assert category_counts.loc["FAIR", "Below 1.5C"] == 159
 
 
-# quantile over col is missing
+def test_categorisation_sr15_multi_variable(sr15_temperatures_unmangled_names):
+    inp = sr15_temperatures_unmangled_names.copy()
+    inp["variable"] = range(inp["variable"].shape[0])
+
+    error_msg = (
+        "More than one value for variable. " "This is unlikely to be what you want."
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scmdata.processing.categorisation_sr15(inp, index=["model", "scenario"])
+
+
+def test_categorisation_sr15_bad_unit(sr15_temperatures_unmangled_names):
+    inp = sr15_temperatures_unmangled_names.filter(variable="*MAGICC*").copy()
+    inp["unit"] = "GtC"
+
+    with pytest.raises(pint.errors.DimensionalityError):
+        scmdata.processing.categorisation_sr15(inp, index=["model", "scenario"])
+
+
 @pytest.mark.xfail(
     _check_pandas_less_120(),
     reason="pandas<1.2.0 can't handle non-numeric types in pivot",
@@ -777,11 +837,10 @@ def test_calculate_summary_stats(
         exp.append(peak_q)
         exp.append(peak_time_q)
 
-    inp_categories = scmdata.ScmRun(inp.quantiles_over("ensemble_member", quantiles=[0.33, 0.5, 0.66]))
-    sr15_cats = scmdata.processing.categorisation_sr15(
-        inp_categories,
-        exp_index,
+    inp_categories = scmdata.ScmRun(
+        inp.quantiles_over("ensemble_member", quantiles=[0.33, 0.5, 0.66])
     )
+    sr15_cats = scmdata.processing.categorisation_sr15(inp_categories, exp_index,)
     sr15_cats.name = "SR1.5 category"
     exp.append(sr15_cats)
 
@@ -834,7 +893,6 @@ def test_calculate_summary_stats(
     if peak_return_year is not None:
         call_kwargs["peak_return_year"] = peak_return_year
 
-
     tmp = inp.copy()
     tmp["variable"] = exp_categorisation_variable
     try:
@@ -848,7 +906,6 @@ def test_calculate_summary_stats(
 
     if categorisation_quantile_cols is not None:
         call_kwargs["categorisation_quantile_cols"] = categorisation_quantile_cols
-
 
     if exp_categorisation_quantile_cols != "ensemble_member":
         inp_renamed[exp_categorisation_quantile_cols] = inp_renamed["ensemble_member"]
@@ -900,4 +957,39 @@ def test_calculate_summary_stats_no_peak_variable(
             test_processing_scm_df_multi_climate_model,
             ["model", "scenario"],
             peak_variable="junk",
+        )
+
+
+def test_calculate_summary_stats_no_categorisation_variable(
+    test_processing_scm_df_multi_climate_model,
+):
+    error_msg = re.escape(
+        "categorisation_variable `junk` is not available. "
+        "Available variables:{}".format(
+            test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
+        )
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scmdata.processing.calculate_summary_stats(
+            test_processing_scm_df_multi_climate_model,
+            ["model", "scenario"],
+            categorisation_variable="junk",
+        )
+
+
+@pytest.mark.parametrize("dud_cols", ("junk", ["junk"], ["junk", "ensemble_member"]))
+def test_calculate_summary_stats_no_categorisation_quantile_cols(
+    test_processing_scm_df_multi_climate_model, dud_cols,
+):
+    error_msg = re.escape(
+        "categorisation_quantile_cols `{}` not in `scmrun`. "
+        "Available columns:{}".format(
+            dud_cols, test_processing_scm_df_multi_climate_model.meta.columns.tolist()
+        )
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scmdata.processing.calculate_summary_stats(
+            test_processing_scm_df_multi_climate_model,
+            ["model", "scenario"],
+            categorisation_quantile_cols=dud_cols,
         )

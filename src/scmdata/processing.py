@@ -512,35 +512,37 @@ def calculate_summary_stats(
     scmrun_categorisation = scmrun.filter(variable=categorisation_variable)
     if scmrun_categorisation.empty:
         # TODO: remove duplication
-        msg = "categorisation_variable `{}` is not available. " "Available variables:{}".format(
-            categorisation_variable, scmrun.get_unique_meta("variable")
+        msg = (
+            "categorisation_variable `{}` is not available. "
+            "Available variables:{}".format(
+                categorisation_variable, scmrun.get_unique_meta("variable")
+            )
         )
         raise ValueError(msg)
 
-    if isinstance(categorisation_quantile_cols, str):
-        categorisation_quantile_cols = [categorisation_quantile_cols]
+    _categorisation_quantile_cols = categorisation_quantile_cols
+    if isinstance(_categorisation_quantile_cols, str):
+        _categorisation_quantile_cols = [_categorisation_quantile_cols]
     if not all([v in scmrun_categorisation.meta for v in categorisation_quantile_cols]):
-        msg = "categorisation_quantile_cols `{}` not in `scmrun`. " "Available columns:{}".format(
-            categorisation_quantile_cols, scmrun.meta.columns.tolist()
+        msg = (
+            "categorisation_quantile_cols `{}` not in `scmrun`. "
+            "Available columns:{}".format(
+                categorisation_quantile_cols, scmrun.meta.columns.tolist()
+            )
         )
         raise ValueError(msg)
 
     scmrun_categorisation = ScmRun(
-        scmrun_categorisation
-        .quantiles_over(
-            cols=categorisation_quantile_cols,
-            quantiles=[0.33, 0.5, 0.66],
+        scmrun_categorisation.quantiles_over(
+            cols=categorisation_quantile_cols, quantiles=[0.33, 0.5, 0.66],
         )
     )
     categorisation_calls = [
-        (
-            categorisation_sr15,
-            [scmrun_categorisation, _index],
-            {},
-            "SR1.5 category",
-        )
+        (categorisation_sr15, [scmrun_categorisation, _index], {}, "SR1.5 category",)
     ]
-    func_calls_args_kwargs = exceedance_prob_calls + peak_calls + peak_time_calls + categorisation_calls
+    func_calls_args_kwargs = (
+        exceedance_prob_calls + peak_calls + peak_time_calls + categorisation_calls
+    )
 
     if progress:
         iterator = tqdman.tqdm(func_calls_args_kwargs)
