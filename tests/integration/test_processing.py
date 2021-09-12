@@ -830,24 +830,24 @@ def sr15_temperatures_unmangled_names(sr15_inferred_temperature_quantiles):
 
 
 def test_categorisation_sr15(sr15_temperatures_unmangled_names):
-    exp = sr15_temperatures_unmangled_names.meta[["model", "scenario", "category"]].drop_duplicates()["category"].value_counts()
-
-#     Above 2C               189
-# Lower 2C                74
-# Higher 2C               58
-# 1.5C low overshoot      44
-# 1.5C high overshoot     37
-# Below 1.5C               9
+    index = ["model", "scenario"]
+    exp = sr15_temperatures_unmangled_names.meta[index + ["category"]].drop_duplicates().set_index(index)["category"]
 
     inp = sr15_temperatures_unmangled_names.drop_meta(["category", "version"]).filter(variable="*MAGICC*")
 
-    res_raw = scmdata.processing.categorisation_sr15(
+    res = scmdata.processing.categorisation_sr15(
         inp,
-        index=["model", "scenario"],
+        index=index,
     )
-    res = res_raw["category"].value_counts()
 
-    pdt.assert_series_equal(res, exp)
+    category_counts = res.value_counts()
+    assert category_counts["Above 2C"] == 189
+    assert category_counts["Lower 2C"] == 74
+    assert category_counts["Higher 2C"] == 58
+    assert category_counts["1.5C low overshoot"] == 44
+    assert category_counts["1.5C high overshoot"] == 37
+    assert category_counts["Below 1.5C"] == 9
 
 # test multiple variable failure
 # test unit conversion failures
+# test summary stats
