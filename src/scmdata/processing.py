@@ -332,11 +332,9 @@ def categorisation_sr15(scmrun, index):
         ).format(available_quantiles)
         raise ValueError(msg)
 
-
     _assert_only_one_value(scmrun, "variable")
     scmrun = scmrun.convert_unit("K")
     scmrun["unit"] = ""
-
 
     categories = pd.Series(
         name="category",
@@ -382,6 +380,16 @@ def categorisation_sr15(scmrun, index):
 
 def _calculate_quantile_groupby(base, index, quantile):
     return base.groupby(index).quantile(quantile)
+
+
+def _raise_missing_variable_error(name, requested, scmrun):
+    msg = (
+        "{} `{}` is not available. "
+        "Available variables:{}".format(
+            name, requested, scmrun.get_unique_meta("variable")
+        )
+    )
+    raise ValueError(msg)
 
 
 def calculate_summary_stats(
@@ -471,13 +479,11 @@ def calculate_summary_stats(
         variable=exceedance_probabilities_variable, log_if_empty=False,
     )
     if scmrun_exceedance_prob.empty:
-        msg = (
-            "exceedance_probabilities_variable `{}` is not available. "
-            "Available variables:{}".format(
-                exceedance_probabilities_variable, scmrun.get_unique_meta("variable")
-            )
+        _raise_missing_variable_error(
+            "exceedance_probabilities_variable",
+            peak_variable,
+            scmrun
         )
-        raise ValueError(msg)
 
     exceedance_prob_calls = [
         (
@@ -500,10 +506,11 @@ def calculate_summary_stats(
 
     scmrun_peak = scmrun.filter(variable=peak_variable, log_if_empty=False,)
     if scmrun_peak.empty:
-        msg = "peak_variable `{}` is not available. " "Available variables:{}".format(
-            peak_variable, scmrun.get_unique_meta("variable")
+        _raise_missing_variable_error(
+            "peak_variable",
+            peak_variable,
+            scmrun
         )
-        raise ValueError(msg)
 
     # pre-calculate to avoid calculating multiple times
     peaks = calculate_peak(scmrun_peak)
@@ -531,19 +538,18 @@ def calculate_summary_stats(
 
     scmrun_categorisation = scmrun.filter(variable=categorisation_variable)
     if scmrun_categorisation.empty:
-        # TODO: remove duplication
-        msg = (
-            "categorisation_variable `{}` is not available. "
-            "Available variables:{}".format(
-                categorisation_variable, scmrun.get_unique_meta("variable")
-            )
+        _raise_missing_variable_error(
+            "categorisation_variable",
+            categorisation_variable,
+            scmrun
         )
-        raise ValueError(msg)
 
     _categorisation_quantile_cols = categorisation_quantile_cols
     if isinstance(_categorisation_quantile_cols, str):
         _categorisation_quantile_cols = [_categorisation_quantile_cols]
-    if not all([v in scmrun_categorisation.meta for v in _categorisation_quantile_cols]):
+    if not all(
+        [v in scmrun_categorisation.meta for v in _categorisation_quantile_cols]
+    ):
         msg = (
             "categorisation_quantile_cols `{}` not in `scmrun`. "
             "Available columns:{}".format(
