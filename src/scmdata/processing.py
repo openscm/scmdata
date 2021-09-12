@@ -383,11 +383,8 @@ def _calculate_quantile_groupby(base, index, quantile):
 
 
 def _raise_missing_variable_error(name, requested, scmrun):
-    msg = (
-        "{} `{}` is not available. "
-        "Available variables:{}".format(
-            name, requested, scmrun.get_unique_meta("variable")
-        )
+    msg = "{} `{}` is not available. " "Available variables:{}".format(
+        name, requested, scmrun.get_unique_meta("variable")
     )
     raise ValueError(msg)
 
@@ -481,8 +478,8 @@ def calculate_summary_stats(
     if scmrun_exceedance_prob.empty:
         _raise_missing_variable_error(
             "exceedance_probabilities_variable",
-            peak_variable,
-            scmrun
+            exceedance_probabilities_variable,
+            scmrun,
         )
 
     exceedance_prob_calls = [
@@ -506,11 +503,7 @@ def calculate_summary_stats(
 
     scmrun_peak = scmrun.filter(variable=peak_variable, log_if_empty=False,)
     if scmrun_peak.empty:
-        _raise_missing_variable_error(
-            "peak_variable",
-            peak_variable,
-            scmrun
-        )
+        _raise_missing_variable_error("peak_variable", peak_variable, scmrun)
 
     # pre-calculate to avoid calculating multiple times
     peaks = calculate_peak(scmrun_peak)
@@ -539,9 +532,7 @@ def calculate_summary_stats(
     scmrun_categorisation = scmrun.filter(variable=categorisation_variable)
     if scmrun_categorisation.empty:
         _raise_missing_variable_error(
-            "categorisation_variable",
-            categorisation_variable,
-            scmrun
+            "categorisation_variable", categorisation_variable, scmrun
         )
 
     _categorisation_quantile_cols = categorisation_quantile_cols
