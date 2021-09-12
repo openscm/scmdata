@@ -8,8 +8,6 @@ import numpy as np
 import pandas as pd
 import tqdm.autonotebook as tqdman
 
-# categorisation
-
 
 def _get_ts_gt_threshold(scmrun, threshold):
     timeseries = scmrun.timeseries()
@@ -286,6 +284,56 @@ def calculate_peak_time(scmrun, output_name=None, return_year=True):
 
     return out
 
+
+def categorisation_sr15(scmrun, index):
+    """
+    Categorise using the algorithm employed in SR1.5
+
+    For more information, see ``_ [TODO link to notebooks].
+
+    Parameters
+    ----------
+    scmrun : :class: `scmdata.ScmRun`
+        Data to use for the classification
+
+    index : list[str]
+        Columns in ``scmrun.meta`` to use as the index of the output
+
+    Returns
+    -------
+    :class: `pd.Series`
+        Categorisation of the timeseries
+
+    Raises
+    ------
+    ValueError
+        More than one variable or one unit is in ``scmrun``
+
+    DimensionalityError
+        The units cannot be converted to kelvin
+    """
+    _assert_only_one_value(scmrun, "variable")
+    scmrun = scmrun.convert_unit("K")
+
+    categories = pd.Series(
+        name="category",
+        index=pd.MultiIndex.from_frame(scmrun.meta[index].drop_duplicates()),
+        dtype="object",
+    )
+
+
+    def _get_comp_series(res):
+        reset_cols = list(set(res.index.names) - set(index))
+        out = res.reset_index(reset_cols, drop=True)
+
+        return out
+
+    import pdb
+    pdb.set_trace()
+    categories[_get_comp_series(calculate_peak(scmrun.filter(quantile=0.5)) > 2.0)] = "Above 2C"
+    import pdb
+    pdb.set_trace()
+    # eoc_2_lt_
 
 def _calculate_quantile_groupby(base, index, quantile):
     return base.groupby(index).quantile(quantile)

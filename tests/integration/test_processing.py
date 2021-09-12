@@ -786,22 +786,68 @@ def test_calculate_summary_stats_no_peak_variable(
         )
 
 
-def test_categorisation_sr15(test_data_dir):
-    import pdb
-    pdb.set_trace()
-    sr15_temperature_output = scmdata.ScmRun(
-        os.path.join(test_data_dir, "sr15-surface-temperature.csv"),
-        lowercase_cols=True
+
+@pytest.fixture
+def sr15_inferred_temperature_quantiles(test_data_path):
+    # fake the temperature quantiles in preparation for the categorisation tests
+    # we do this as P33 is not included in the SR1.5 output, yet we need it for
+    # the categorisation
+    sr15_output = scmdata.ScmRun(
+        os.path.join(test_data_path, "sr15", "sr15-output.csv"),
     )
+    sr15_exceedance_probs = sr15_output.filter(variable="*Exceedance*")
 
-    res_raw = scmdata.processing.categorisation_sr15(sr15_temperature_output)
+    out = []
+    for cm in ["MAGICC", "FAIR"]:
+        cm_ep = sr15_exceedance_probs.filter(variable="*{}*".format(cm))
+        cm_median = sr15_output.filter(variable="*{}*MED".format(cm)).timeseries()
+        for p in [0.67, 0.5, 0.34]:
+            quantile = 1 - p
+            cm_q = cm_median.reset_index()
+            cm_q["variable"] = cm_q["variable"].str.replace("MED", "P{}".format(int(np.round(quantile*100, 0))))
+            cm_q = cm_q.set_index(cm_median.index.names).sort_index()
+            cm_q.iloc[:, :] = 10
+            for t in [2.0, 1.5]:
+                cm_ep_t = cm_ep.filter(variable="*{}*".format(t)).timeseries()
+                cm_ep_t_lt = cm_ep_t <= p
+                cm_ep_t_lt = cm_ep_t_lt.reorder_levels(cm_q.index.names).sort_index()
+                cm_ep_t_lt.index = cm_q.index
+                cm_q[cm_ep_t_lt] = t
 
-    exp = pd.read_csv(os.path.join(test_data_dir, "sr15_scenario_categories.csv"))
+            out.append(scmdata.ScmRun(cm_q))
 
-    res = res_raw["category"].value_counts().reset_index()
-    res.columns = res.columns.map({
-        "index": "category",
-        "category": "count",
-    })
+    out = scmdata.run_append(out)
+    return out
 
-    pdt.assert_frame_equal(res.set_index("category"), exp.set_index("category"), check_like=True)
+
+@pytest.fixture()
+def sr15_temperatures_unmangled_names(sr15_inferred_temperature_quantiles):
+    out = sr15_inferred_temperature_quantiles.copy()
+    out["quantile"] = out["variable"].apply(lambda x: float(x.split("|")[-1].strip("P")) / 100)
+    out["variable"] = out["variable"].apply(lambda x: "|".join(x.split("|")[:-1]))
+
+    return out
+
+
+def test_categorisation_sr15(sr15_temperatures_unmangled_names):
+    exp = sr15_temperatures_unmangled_names.meta[["model", "scenario", "category"]].drop_duplicates()["category"].value_counts()
+
+#     Above 2C               189
+# Lower 2C                74
+# Higher 2C               58
+# 1.5C low overshoot      44
+# 1.5C high overshoot     37
+# Below 1.5C               9
+
+    inp = sr15_temperatures_unmangled_names.drop_meta(["category", "version"]).filter(variable="*MAGICC*")
+
+    res_raw = scmdata.processing.categorisation_sr15(
+        inp,
+        index=["model", "scenario"],
+    )
+    res = res_raw["category"].value_counts()
+
+    pdt.assert_series_equal(res, exp)
+
+# test multiple variable failure
+# test unit conversion failures

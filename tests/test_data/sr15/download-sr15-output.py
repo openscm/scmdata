@@ -16,7 +16,7 @@ print("Querying data")
 
 variables_to_download = (
     "*Temperature|Global Mean*",
-    # "*Temperature|Exceed*",
+    "*Temperature|Exceed*",
 )
 out = []
 for v in variables_to_download:
