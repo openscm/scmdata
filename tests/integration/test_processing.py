@@ -917,13 +917,7 @@ def test_calculate_summary_stats(
 
     pdt.assert_series_equal(res.sort_index(), exp.sort_index())
 
-    # then user can stack etc. if they want
-    res.unstack(["statistic", "unit"])
-
-    tmp = res.to_frame().reset_index()
-    tmp["statistic"] = tmp["statistic"] + " (" + tmp["unit"] + ")"
-    tmp = tmp.drop("unit", axis="columns")
-    tmp.pivot_table(index=set(index) - {"unit"}, columns=["statistic"], values="value")
+    # then user can stack etc. if they want, see notebooks
 
 
 def test_calculate_summary_stats_no_exceedance_probability_var(
