@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import tqdm.autonotebook as tqdman
 
+from .run import ScmRun
+
 
 def _get_ts_gt_threshold(scmrun, threshold):
     timeseries = scmrun.timeseries()
@@ -314,6 +316,7 @@ def categorisation_sr15(scmrun, index):
     """
     _assert_only_one_value(scmrun, "variable")
     scmrun = scmrun.convert_unit("K")
+    scmrun["unit"] = ""
 
     categories = pd.Series(
         name="category",
@@ -323,7 +326,7 @@ def categorisation_sr15(scmrun, index):
 
     def _get_comp_series(res):
         reset_cols = list(set(res.index.names) - set(index))
-        out = res.reset_index(reset_cols, drop=True)
+        out = res.reset_index(reset_cols, drop=True).reorder_levels(index)
 
         return out
 
@@ -372,6 +375,8 @@ def calculate_summary_stats(
     peak_naming_base=None,
     peak_time_naming_base=None,
     peak_return_year=True,
+    categorisation_variable="Surface Air Temperature Change",
+    categorisation_quantile_cols=("ensemble_member",),
     progress=False,
 ):
     """
@@ -504,7 +509,38 @@ def calculate_summary_stats(
         for q in peak_quantiles
     ]
 
-    func_calls_args_kwargs = exceedance_prob_calls + peak_calls + peak_time_calls
+    scmrun_categorisation = scmrun.filter(variable=categorisation_variable)
+    if scmrun_categorisation.empty:
+        # TODO: remove duplication
+        msg = "categorisation_variable `{}` is not available. " "Available variables:{}".format(
+            categorisation_variable, scmrun.get_unique_meta("variable")
+        )
+        raise ValueError(msg)
+
+    if isinstance(categorisation_quantile_cols, str):
+        categorisation_quantile_cols = [categorisation_quantile_cols]
+    if not all([v in scmrun_categorisation.meta for v in categorisation_quantile_cols]):
+        msg = "categorisation_quantile_cols `{}` not in `scmrun`. " "Available columns:{}".format(
+            categorisation_quantile_cols, scmrun.meta.columns.tolist()
+        )
+        raise ValueError(msg)
+
+    scmrun_categorisation = ScmRun(
+        scmrun_categorisation
+        .quantiles_over(
+            cols=categorisation_quantile_cols,
+            quantiles=[0.33, 0.5, 0.66],
+        )
+    )
+    categorisation_calls = [
+        (
+            categorisation_sr15,
+            [scmrun_categorisation, _index],
+            {},
+            "SR1.5 category",
+        )
+    ]
+    func_calls_args_kwargs = exceedance_prob_calls + peak_calls + peak_time_calls + categorisation_calls
 
     if progress:
         iterator = tqdman.tqdm(func_calls_args_kwargs)
