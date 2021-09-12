@@ -786,7 +786,6 @@ def test_calculate_summary_stats_no_peak_variable(
         )
 
 
-
 @pytest.fixture
 def sr15_inferred_temperature_quantiles(test_data_path):
     # fake the temperature quantiles in preparation for the categorisation tests
@@ -804,7 +803,9 @@ def sr15_inferred_temperature_quantiles(test_data_path):
         for p in [0.67, 0.5, 0.34]:
             quantile = 1 - p
             cm_q = cm_median.reset_index()
-            cm_q["variable"] = cm_q["variable"].str.replace("MED", "P{}".format(int(np.round(quantile*100, 0))))
+            cm_q["variable"] = cm_q["variable"].str.replace(
+                "MED", "P{}".format(int(np.round(quantile * 100, 0)))
+            )
             cm_q = cm_q.set_index(cm_median.index.names).sort_index()
             cm_q.iloc[:, :] = 10
             for t in [2.0, 1.5]:
@@ -823,7 +824,9 @@ def sr15_inferred_temperature_quantiles(test_data_path):
 @pytest.fixture()
 def sr15_temperatures_unmangled_names(sr15_inferred_temperature_quantiles):
     out = sr15_inferred_temperature_quantiles.copy()
-    out["quantile"] = out["variable"].apply(lambda x: float(x.split("|")[-1].strip("P")) / 100)
+    out["quantile"] = out["variable"].apply(
+        lambda x: float(x.split("|")[-1].strip("P")) / 100
+    )
     out["variable"] = out["variable"].apply(lambda x: "|".join(x.split("|")[:-1]))
 
     return out
@@ -831,14 +834,17 @@ def sr15_temperatures_unmangled_names(sr15_inferred_temperature_quantiles):
 
 def test_categorisation_sr15(sr15_temperatures_unmangled_names):
     index = ["model", "scenario"]
-    exp = sr15_temperatures_unmangled_names.meta[index + ["category"]].drop_duplicates().set_index(index)["category"]
-
-    inp = sr15_temperatures_unmangled_names.drop_meta(["category", "version"]).filter(variable="*MAGICC*")
-
-    res = scmdata.processing.categorisation_sr15(
-        inp,
-        index=index,
+    exp = (
+        sr15_temperatures_unmangled_names.meta[index + ["category"]]
+        .drop_duplicates()
+        .set_index(index)["category"]
     )
+
+    inp = sr15_temperatures_unmangled_names.drop_meta(["category", "version"]).filter(
+        variable="*MAGICC*"
+    )
+
+    res = scmdata.processing.categorisation_sr15(inp, index=index,)
 
     category_counts = res.value_counts()
     assert category_counts["Above 2C"] == 189
@@ -847,6 +853,7 @@ def test_categorisation_sr15(sr15_temperatures_unmangled_names):
     assert category_counts["1.5C low overshoot"] == 44
     assert category_counts["1.5C high overshoot"] == 37
     assert category_counts["Below 1.5C"] == 9
+
 
 # test multiple variable failure
 # test unit conversion failures

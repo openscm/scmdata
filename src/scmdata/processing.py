@@ -321,7 +321,6 @@ def categorisation_sr15(scmrun, index):
         dtype="object",
     )
 
-
     def _get_comp_series(res):
         reset_cols = list(set(res.index.names) - set(index))
         out = res.reset_index(reset_cols, drop=True)
@@ -331,30 +330,32 @@ def categorisation_sr15(scmrun, index):
     peak_median = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.5)))
     peak_p33 = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.33)))
     peak_p66 = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.66)))
-    end_of_century_median = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.5, year=2100)))
+    end_of_century_median = _get_comp_series(
+        calculate_peak(scmrun.filter(quantile=0.5, year=2100))
+    )
     categories[peak_median > 2.0] = "Above 2C"
     categories[peak_median <= 1.5] = "Below 1.5C"
 
     overshoot_15 = (peak_median > 1.5) & (end_of_century_median <= 1.5)
     categories[
-        overshoot_15
-        & (peak_p33 <= 1.5)  # p exceed <= 0.67
-
+        overshoot_15 & (peak_p33 <= 1.5)  # p exceed <= 0.67
     ] = "1.5C low overshoot"
     categories[
-        overshoot_15
-        & (peak_p33 > 1.5)  # p exceed > 0.67
+        overshoot_15 & (peak_p33 > 1.5)  # p exceed > 0.67
     ] = "1.5C high overshoot"
 
     still_uncategorised = categories.isnull()
-    peak_p66_lte_2 = peak_p66 <= 2.0
-    categories[still_uncategorised & (peak_median <= 2.0) & ~peak_p66_lte_2] = "Higher 2C"
-    categories[still_uncategorised & peak_p66_lte_2] = "Lower 2C"  # p exceed < 0.34
+    peak_p66_lte_2 = peak_p66 <= 2.0  # p exceed < 0.34
+    categories[
+        still_uncategorised & (peak_median <= 2.0) & ~peak_p66_lte_2
+    ] = "Higher 2C"
+    categories[still_uncategorised & peak_p66_lte_2] = "Lower 2C"
 
     if categories.isnull().any():  # pragma: no cover # emergency valve
         raise AssertionError("Unclassified results?")
 
     return categories
+
 
 def _calculate_quantile_groupby(base, index, quantile):
     return base.groupby(index).quantile(quantile)

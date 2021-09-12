@@ -2,9 +2,9 @@ import os.path
 
 import pandas as pd
 import pyam
+
 import scmdata
 import scmdata.database
-
 
 out_path = os.path.join(".")
 
@@ -21,12 +21,7 @@ variables_to_download = (
 out = []
 for v in variables_to_download:
     print(f"Downloading {v}")
-    df = pyam.read_iiasa(
-        "iamc15",
-        variable=v,
-        region="World",
-        meta=["category"]
-    )
+    df = pyam.read_iiasa("iamc15", variable=v, region="World", meta=["category"])
 
     meta = df.meta.drop("exclude", axis="columns")
     df_with_meta = meta.join(df.timeseries().reset_index().set_index(meta.index.names))
