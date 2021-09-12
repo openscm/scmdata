@@ -293,12 +293,14 @@ def categorisation_sr15(scmrun, index):
     Categorise using the algorithm employed in SR1.5
 
     For more information, see
-    `https://data.ene.iiasa.ac.at/sr15_scenario_analysis/assessment/sr15_2.0_categories_indicators.html`_.
+    `the SR1.5 scenario analysis notebooks <https://data.ene.iiasa.ac.at/sr15_scenario_analysis/assessment/sr15_2.0_categories_indicators.html>`_.
 
     Parameters
     ----------
     scmrun : :class: `scmdata.ScmRun`
-        Data to use for the classification. The data must have a "quantile" column and it must have the 0.33, 0.5 and 0.66 quantiles calculated. This can be done with :meth:`scmdata.ScmRun.quantiles_over`.
+        Data to use for the classification. The data must have a "quantile"
+        column and it must have the 0.33, 0.5 and 0.66 quantiles calculated.
+        This can be done with :meth:`scmdata.ScmRun.quantiles_over`.
 
     index : list[str]
         Columns in ``scmrun.meta`` to use as the index of the output
