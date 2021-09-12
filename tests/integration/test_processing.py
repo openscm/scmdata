@@ -1,4 +1,5 @@
 import datetime as dt
+import os.path
 import re
 
 import numpy as np
@@ -783,3 +784,24 @@ def test_calculate_summary_stats_no_peak_variable(
             ["model", "scenario"],
             peak_variable="junk",
         )
+
+
+def test_categorisation_sr15(test_data_dir):
+    import pdb
+    pdb.set_trace()
+    sr15_temperature_output = scmdata.ScmRun(
+        os.path.join(test_data_dir, "sr15-surface-temperature.csv"),
+        lowercase_cols=True
+    )
+
+    res_raw = scmdata.processing.categorisation_sr15(sr15_temperature_output)
+
+    exp = pd.read_csv(os.path.join(test_data_dir, "sr15_scenario_categories.csv"))
+
+    res = res_raw["category"].value_counts().reset_index()
+    res.columns = res.columns.map({
+        "index": "category",
+        "category": "count",
+    })
+
+    pdt.assert_frame_equal(res.set_index("category"), exp.set_index("category"), check_like=True)
