@@ -10,7 +10,7 @@ import pytest
 
 import scmdata.processing
 from scmdata import ScmRun
-from scmdata.errors import NonUniqueMetadataError
+from scmdata.errors import MissingRequiredColumnError, NonUniqueMetadataError
 from scmdata.testing import _check_pandas_less_120
 
 
@@ -632,6 +632,31 @@ def test_categorisation_sr15_bad_unit(sr15_temperatures_unmangled_names):
 
     with pytest.raises(pint.errors.DimensionalityError):
         scmdata.processing.categorisation_sr15(inp, index=["model", "scenario"])
+
+
+def test_categorisation_sr15_no_quantile(sr15_temperatures_unmangled_names):
+    error_msg = (
+            "No `quantile` column, calculate quantiles using `.quantiles_over` "
+            "to calculate the 0.33, 0.5 and 0.66 quantiles before calling "
+            "this function"
+    )
+    with pytest.raises(MissingRequiredColumnError, match=error_msg):
+        scmdata.processing.categorisation_sr15(
+            sr15_temperatures_unmangled_names.filter(quantile=0.5).drop_meta("quantile"),
+            index=["model", "scenario"]
+        )
+
+
+def test_categorisation_sr15_missing_quantiles(sr15_temperatures_unmangled_names):
+    error_msg = re.escape(
+            "Not all required quantiles are available, we require the "
+            "0.33, 0.5 and 0.66 quantiles, available quantiles: `[0.5]`"
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scmdata.processing.categorisation_sr15(
+            sr15_temperatures_unmangled_names.filter(quantile=0.5),
+            index=["model", "scenario"]
+        )
 
 
 @pytest.mark.xfail(

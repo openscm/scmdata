@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import tqdm.autonotebook as tqdman
 
+from .errors import MissingRequiredColumnError
 from .run import ScmRun
 
 
@@ -315,9 +316,27 @@ def categorisation_sr15(scmrun, index):
     DimensionalityError
         The units cannot be converted to kelvin
     """
+    if "quantile" not in scmrun.meta:
+        raise MissingRequiredColumnError(
+            "No `quantile` column, calculate quantiles using `.quantiles_over` "
+            "to calculate the 0.33, 0.5 and 0.66 quantiles before calling "
+            "this function"
+        )
+
+    required_quantiles = [0.33, 0.5, 0.66]
+    available_quantiles = scmrun.get_unique_meta("quantile")
+    if not all([q in available_quantiles for q in required_quantiles]):
+        msg = (
+            "Not all required quantiles are available, we require the "
+            "0.33, 0.5 and 0.66 quantiles, available quantiles: `{}`"
+        ).format(available_quantiles)
+        raise ValueError(msg)
+
+
     _assert_only_one_value(scmrun, "variable")
     scmrun = scmrun.convert_unit("K")
     scmrun["unit"] = ""
+
 
     categories = pd.Series(
         name="category",
@@ -524,7 +543,7 @@ def calculate_summary_stats(
     _categorisation_quantile_cols = categorisation_quantile_cols
     if isinstance(_categorisation_quantile_cols, str):
         _categorisation_quantile_cols = [_categorisation_quantile_cols]
-    if not all([v in scmrun_categorisation.meta for v in categorisation_quantile_cols]):
+    if not all([v in scmrun_categorisation.meta for v in _categorisation_quantile_cols]):
         msg = (
             "categorisation_quantile_cols `{}` not in `scmrun`. "
             "Available columns:{}".format(
