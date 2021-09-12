@@ -292,8 +292,8 @@ def categorisation_sr15(scmrun, index):
     """
     Categorise using the algorithm employed in SR1.5
 
-    For more information, see
-    `the SR1.5 scenario analysis notebooks <https://data.ene.iiasa.ac.at/sr15_scenario_analysis/assessment/sr15_2.0_categories_indicators.html>`_.
+    For more information, see the SR1.5 scenario analysis
+    `notebook <data.ene.iiasa.ac.at/sr15_scenario_analysis/assessment/sr15_2.0_categories_indicators.html>`_.
 
     Parameters
     ----------
