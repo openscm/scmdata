@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 
 import numpy as np
 import pandas as pd
@@ -178,7 +179,7 @@ def test_exceedance_probabilities_over_time(
     call_kwargs = _get_calculate_exceedance_probs_call_kwargs(output_name)
     res = scmdata.processing.calculate_exceedance_probabilities_over_time(
         test_processing_scm_df,
-        cols="ensemble_member",
+        process_over_cols="ensemble_member",
         threshold=threshold,
         **call_kwargs,
     )
@@ -210,7 +211,7 @@ def test_exceedance_probabilities_over_time_multiple_res(
     exp_vals = np.array([[0, 1, 2, 2], [1, 2, 3, 3]]) / 5
 
     res = scmdata.processing.calculate_exceedance_probabilities_over_time(
-        start, cols=["ensemble_member"], threshold=threshold,
+        start, process_over_cols=["ensemble_member"], threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -234,7 +235,9 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
     exp_vals = np.array([1, 3, 5, 5]) / 10
 
     res = scmdata.processing.calculate_exceedance_probabilities_over_time(
-        start, cols=["climate_model", "ensemble_member"], threshold=threshold,
+        start,
+        process_over_cols=["climate_model", "ensemble_member"],
+        threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -261,7 +264,9 @@ def test_exceedance_probabilities_over_time_multiple_variables(test_processing_s
 
     with pytest.raises(ValueError):
         scmdata.processing.calculate_exceedance_probabilities_over_time(
-            test_processing_scm_df, cols=["ensemble_member", "variable"], threshold=1.5,
+            test_processing_scm_df,
+            process_over_cols=["ensemble_member", "variable"],
+            threshold=1.5,
         )
 
 
@@ -275,7 +280,7 @@ def test_exceedance_probabilities(
     call_kwargs = _get_calculate_exceedance_probs_call_kwargs(output_name)
     res = scmdata.processing.calculate_exceedance_probabilities(
         test_processing_scm_df,
-        cols="ensemble_member",
+        process_over_cols="ensemble_member",
         threshold=threshold,
         **call_kwargs,
     )
@@ -301,7 +306,7 @@ def test_exceedance_probabilities_multiple_res(
     exp_vals = [0.6, 0.8]
 
     res = scmdata.processing.calculate_exceedance_probabilities(
-        start, cols=["ensemble_member"], threshold=threshold,
+        start, process_over_cols=["ensemble_member"], threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -323,7 +328,9 @@ def test_exceedance_probabilities_multiple_grouping(
     exp_vals = [0.7]
 
     res = scmdata.processing.calculate_exceedance_probabilities(
-        start, cols=["ensemble_member", "climate_model"], threshold=threshold,
+        start,
+        process_over_cols=["ensemble_member", "climate_model"],
+        threshold=threshold,
     )
 
     exp_idx = pd.MultiIndex.from_frame(
@@ -346,5 +353,118 @@ def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
 
     with pytest.raises(ValueError):
         scmdata.processing.calculate_exceedance_probabilities(
-            test_processing_scm_df, cols=["ensemble_member", "variable"], threshold=1.5,
+            test_processing_scm_df,
+            process_over_cols=["ensemble_member", "variable"],
+            threshold=1.5,
+        )
+
+
+@pytest.mark.parametrize(
+    "exceedance_probabilities_thresholds,exp_exceedance_prob_thresholds",
+    ((None, [1.5, 2.0, 2.5]), ([1.0, 1.5, 2.0, 2.5], [1.0, 1.5, 2.0, 2.5]),),
+)
+@pytest.mark.parametrize(
+    "index",
+    (
+        ["climate_model", "model", "scenario", "region"],
+        ["climate_model", "scenario", "region"],
+        ["climate_model", "model", "scenario", "region", "unit"],
+    ),
+)
+@pytest.mark.parametrize(
+    "exceedance_probabilities_output_name,exp_exceedance_probabilities_output_name",
+    (
+        (None, "{} exceedance probability"),
+        ("Exceedance Probability|{:.2f}C", "Exceedance Probability|{:.2f}C"),
+    ),
+)
+@pytest.mark.parametrize(
+    "exceedance_probabilities_variable,exp_exceedance_probabilities_variable",
+    (
+        (None, "Surface Air Temperature Change"),
+        ("Surface Temperature", "Surface Temperature"),
+    ),
+)
+@pytest.mark.parametrize("progress", (True, False))
+def test_calculate_summary_stats(
+    exceedance_probabilities_thresholds,
+    exp_exceedance_prob_thresholds,
+    index,
+    exceedance_probabilities_output_name,
+    exp_exceedance_probabilities_output_name,
+    exceedance_probabilities_variable,
+    exp_exceedance_probabilities_variable,
+    progress,
+    test_processing_scm_df_multi_climate_model,
+):
+    inp = test_processing_scm_df_multi_climate_model.copy()
+
+    if "unit" not in index:
+        exp_index = index + ["unit"]
+    else:
+        exp_index = index
+
+    process_over_cols = inp.get_meta_columns_except(exp_index)
+
+    exp = []
+    for threshold in exp_exceedance_prob_thresholds:
+        tmp = scmdata.processing.calculate_exceedance_probabilities(
+            inp,
+            threshold,
+            process_over_cols,
+            exp_exceedance_probabilities_output_name.format(threshold),
+        )
+        exp.append(tmp)
+
+    exp = pd.DataFrame(exp).T
+    exp.columns.name = "statistic"
+    exp = exp.stack("statistic")
+    exp.name = "value"
+
+    call_kwargs = {}
+    if exceedance_probabilities_thresholds is not None:
+        call_kwargs[
+            "exceedance_probabilities_thresholds"
+        ] = exceedance_probabilities_thresholds
+
+    if exceedance_probabilities_output_name is not None:
+        call_kwargs[
+            "exceedance_probabilities_naming_base"
+        ] = exceedance_probabilities_output_name
+
+    if exceedance_probabilities_variable is not None:
+        inp["variable"] = exceedance_probabilities_variable
+        call_kwargs[
+            "exceedance_probabilities_variable"
+        ] = exceedance_probabilities_variable
+
+    res = scmdata.processing.calculate_summary_stats(
+        inp, index, progress=progress, **call_kwargs,
+    )
+
+    pdt.assert_series_equal(res, exp)
+
+    # then user can stack etc. if they want
+    res.unstack(["statistic", "unit"])
+
+    tmp = res.to_frame().reset_index()
+    tmp["statistic"] = tmp["statistic"] + " (" + tmp["unit"] + ")"
+    tmp = tmp.drop("unit", axis="columns")
+    tmp.pivot_table(index=set(index) - {"unit"}, columns=["statistic"], values="value")
+
+
+def test_calculate_summary_stats_no_exceedance_probability_var(
+    test_processing_scm_df_multi_climate_model,
+):
+    error_msg = re.escape(
+        "exceedance_probabilities_variable `junk` is not available. "
+        "Available vars:{}".format(
+            test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
+        )
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scmdata.processing.calculate_summary_stats(
+            test_processing_scm_df_multi_climate_model,
+            ["model", "scenario"],
+            exceedance_probabilities_variable="junk",
         )

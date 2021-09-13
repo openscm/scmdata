@@ -6,8 +6,11 @@ These functions are intended to be able to be used directly with
 """
 import numpy as np
 import pandas as pd
+import tqdm.autonotebook as tqdman
 
 # categorisation
+# peak warming
+# year of peak warming
 
 
 def _get_ts_gt_threshold(scmrun, threshold):
@@ -74,9 +77,12 @@ def _get_exceedance_fraction(ts, group_cols):
     return out
 
 
+_DEFAULT_EXCEEDANCE_PROB_OUTPUT_BASE = "{} exceedance probability"
+
+
 def _get_exceedance_prob_output_name(output_name, threshold):
     if output_name is None:
-        return "{} exceedance probability".format(threshold)
+        return _DEFAULT_EXCEEDANCE_PROB_OUTPUT_BASE.format(threshold)
 
     return output_name
 
@@ -87,7 +93,9 @@ def _set_index_level_to(inp, col, val):
     return inp
 
 
-def calculate_exceedance_probabilities(scmrun, threshold, cols, output_name=None):
+def calculate_exceedance_probabilities(
+    scmrun, threshold, process_over_cols, output_name=None
+):
     """
     Calculate exceedance probability over all time
 
@@ -99,7 +107,7 @@ def calculate_exceedance_probabilities(scmrun, threshold, cols, output_name=None
     threshold : float
         Value to use as the threshold for exceedance
 
-    cols : list[str]
+    process_over_cols : list[str]
         Columns to not use when grouping the timeseries (typically "run_id" or
         "ensemble_member" or similar)
 
@@ -129,7 +137,7 @@ def calculate_exceedance_probabilities(scmrun, threshold, cols, output_name=None
     _assert_only_one_value(scmrun, "variable")
     _assert_only_one_value(scmrun, "unit")
     timeseries_gt_threshold = _get_ts_gt_threshold(scmrun, threshold)
-    group_cols = list(scmrun.get_meta_columns_except(cols))
+    group_cols = list(scmrun.get_meta_columns_except(process_over_cols))
 
     out = _get_exceedance_fraction(timeseries_gt_threshold.any(axis=1), group_cols,)
 
@@ -144,7 +152,7 @@ def calculate_exceedance_probabilities(scmrun, threshold, cols, output_name=None
 
 
 def calculate_exceedance_probabilities_over_time(
-    scmrun, threshold, cols, output_name=None
+    scmrun, threshold, process_over_cols, output_name=None
 ):
     """
     Calculate exceedance probability at each point in time
@@ -157,7 +165,7 @@ def calculate_exceedance_probabilities_over_time(
     threshold : float
         Value to use as the threshold for exceedance
 
-    cols : list[str]
+    process_over_cols : list[str]
         Columns to not use when grouping the timeseries (typically "run_id" or
         "ensemble_member" or similar)
 
@@ -196,7 +204,7 @@ def calculate_exceedance_probabilities_over_time(
     _assert_only_one_value(scmrun, "variable")
     _assert_only_one_value(scmrun, "unit")
     timeseries_gt_threshold = _get_ts_gt_threshold(scmrun, threshold)
-    group_cols = list(scmrun.get_meta_columns_except(cols))
+    group_cols = list(scmrun.get_meta_columns_except(process_over_cols))
 
     out = _get_exceedance_fraction(timeseries_gt_threshold, group_cols,)
 
@@ -206,5 +214,94 @@ def calculate_exceedance_probabilities_over_time(
     output_name = _get_exceedance_prob_output_name(output_name, threshold)
     out = _set_index_level_to(out, "variable", output_name)
     out = _set_index_level_to(out, "unit", "dimensionless")
+
+    return out
+
+
+def calculate_summary_stats(
+    scmrun,
+    index,
+    exceedance_probabilities_thresholds=[1.5, 2.0, 2.5],
+    exceedance_probabilities_variable="Surface Air Temperature Change",
+    exceedance_probabilities_naming_base=None,
+    progress=False,
+):
+    """
+    Calculate common summary statistics
+
+    Parameters
+    ----------
+    scmrun : :class:`scmdata.ScmRun`
+        Data of which to calculate the stats
+
+    index : list[str]
+        Columns to use in the index of the output (unit is added if not
+        included)
+
+    exceedance_probabilities_threshold : list[float]
+        Thresholds to use for exceedance probabilities
+
+    exceedance_probabilities_variable : str
+        Variable to use for exceedance probability calculations
+
+    exceedance_probabilities_naming_base : str
+        String to use as the base for naming the exceedance probabilities. Each
+        exceedance probability output column will have a name given by
+        ``exceedance_probabilities_naming_base.format(threshold)`` where
+        threshold is the exceedance probability threshold to use. If not
+        supplied, the default output of
+        :func:`scmdata.processing.calculate_exceedance_probabilities` will be
+        used.
+
+    progress : bool
+        Should a progress bar be shown whilst the calculations are done?
+
+    Returns
+    -------
+    :class:`pd.DataFrame`
+        Summary statistics, with each column being a statistic and the index
+        being given by ``index``
+    """
+    if "unit" not in index:
+        _index = index + ["unit"]
+    else:
+        _index = index
+
+    process_over_cols = scmrun.get_meta_columns_except(_index)
+
+    if exceedance_probabilities_naming_base is None:
+        exceedance_probabilities_naming_base = _DEFAULT_EXCEEDANCE_PROB_OUTPUT_BASE
+
+    scmrun_exceedance_prob = scmrun.filter(
+        variable=exceedance_probabilities_variable, log_if_empty=False,
+    )
+    if scmrun_exceedance_prob.empty:
+        msg = (
+            "exceedance_probabilities_variable `{}` is not available. "
+            "Available vars:{}".format(
+                exceedance_probabilities_variable, scmrun.get_unique_meta("variable")
+            )
+        )
+        raise ValueError(msg)
+
+    exceedance_prob_calls = [
+        (
+            calculate_exceedance_probabilities,
+            [scmrun_exceedance_prob, t, process_over_cols],
+            {"output_name": exceedance_probabilities_naming_base.format(t)},
+        )
+        for t in exceedance_probabilities_thresholds
+    ]
+    func_calls_args_kwargs = exceedance_prob_calls
+
+    if progress:
+        iterator = tqdman.tqdm(func_calls_args_kwargs)
+    else:
+        iterator = func_calls_args_kwargs
+
+    out = pd.DataFrame([func(*args, **kwargs) for func, args, kwargs in iterator]).T
+    out.columns.name = "statistic"
+    out = out.stack("statistic")
+    out.name = "value"
 
     return out
