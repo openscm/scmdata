@@ -458,6 +458,18 @@ def calculate_summary_stats(
         If ``True``, return the year of the peak of ``peak_variable``,
         otherwise return full dates
 
+    categorisation_variable : str
+        Variable to use for categorisation. Note that this variable point to
+        timeseries that contain global-mean surface air temperatures  (GSAT)
+        relative to 1850-1900 (using another reference period will not break
+        this function, but is inconsistent with the original algorithm).
+
+    categorisation_quantile_cols : list[str]
+        Columns which represent individual ensemble members in the output (e.g.
+        ["ensemble_member"]). The quantiles are taking over these columns
+        before the data is passed to
+        :func:`scmdata.processing.categorisation_sr15`.
+
     progress : bool
         Should a progress bar be shown whilst the calculations are done?
 
