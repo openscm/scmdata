@@ -298,9 +298,12 @@ def categorisation_sr15(scmrun, index):
     Parameters
     ----------
     scmrun : :class: `scmdata.ScmRun`
-        Data to use for the classification. The data must have a "quantile"
-        column and it must have the 0.33, 0.5 and 0.66 quantiles calculated.
-        This can be done with :meth:`scmdata.ScmRun.quantiles_over`.
+        Data to use for the classification. This should contain global-mean
+        surface air temperatures  (GSAT) relative to 1850-1900 (using another
+        reference period will not break this function, but is inconsistent with
+        the original algorithm). The data must have a "quantile" column and it
+        must have the 0.33, 0.5 and 0.66 quantiles calculated. This can be done
+        with :meth:`scmdata.ScmRun.quantiles_over`.
 
     index : list[str]
         Columns in ``scmrun.meta`` to use as the index of the output
