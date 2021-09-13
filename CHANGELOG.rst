@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#175 <https://github.com/openscm/scmdata/pull/175>`_) Remove unused :obj:`scmdata.REQUIRED_COLS` (closes `#166 <https://github.com/openscm/scmdata/issues/166>`_)
 - (`#172 <https://github.com/openscm/scmdata/pull/172>`_) Add :func:`scmdata.processing.calculate_summary_stats`
 - (`#171 <https://github.com/openscm/scmdata/pull/171>`_) Add :func:`scmdata.processing.calculate_exceedance_probabilities`, :func:`scmdata.processing.calculate_exceedance_probabilities_over_time` and :meth:`scmdata.ScmRun.get_meta_columns_except`
 - (`#170 <https://github.com/openscm/scmdata/pull/170>`_) Added :meth:`scmdata.ScmRun.groupby_all_except` to allow greather use of the concept of grouping by columns except a given set
