@@ -1441,6 +1441,19 @@ def test_process_over_as_run_with_class(scm_run):
     assert res.get_unique_meta("extra", True) == "other"
 
 
+def test_process_over_as_run_with_metadata(scm_run):
+    scm_run.metadata = {"test": "example"}
+
+    res = scm_run.process_over(
+        ("variable",),
+        "median",
+        op_cols={"variable": "New Variable", "extra": "other"},
+        as_run=True,
+    )
+
+    assert res.metadata == scm_run.metadata
+
+
 def test_quantiles_over(test_processing_scm_df):
     exp = pd.DataFrame(
         [
