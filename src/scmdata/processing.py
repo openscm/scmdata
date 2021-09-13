@@ -9,8 +9,6 @@ import pandas as pd
 import tqdm.autonotebook as tqdman
 
 # categorisation
-# peak warming
-# year of peak warming
 
 
 def _get_ts_gt_threshold(scmrun, threshold):
@@ -296,10 +294,10 @@ def _calculate_quantile_groupby(base, index, quantile):
 def calculate_summary_stats(
     scmrun,
     index,
-    exceedance_probabilities_thresholds=[1.5, 2.0, 2.5],
+    exceedance_probabilities_thresholds=(1.5, 2.0, 2.5),
     exceedance_probabilities_variable="Surface Air Temperature Change",
     exceedance_probabilities_naming_base=None,
-    peak_quantiles=[0.05, 0.17, 0.5, 0.83, 0.95],
+    peak_quantiles=(0.05, 0.17, 0.5, 0.83, 0.95),
     peak_variable="Surface Air Temperature Change",
     peak_naming_base=None,
     peak_time_naming_base=None,
@@ -332,6 +330,28 @@ def calculate_summary_stats(
         supplied, the default output of
         :func:`scmdata.processing.calculate_exceedance_probabilities` will be
         used.
+
+    peak_quantiles : list[float]
+        Quantiles to report in peak calculations
+
+    peak_variable : str
+        Variable of which to calculate the peak
+
+    peak_naming_base : str
+        Base to use for naming the peak outputs. This is combined with the
+        quantile. If not supplied, ``"{} peak"`` is used so the outputs will be
+        named e.g. "0.05 peak", "0.5 peak", "0.95 peak".
+
+    peak_time_naming_base : str
+        Base to use for naming the peak time outputs. This is combined with the
+        quantile. If not supplied, ``"{} peak year"`` is used (unless
+        ``peak_return_year`` is ``False`` in which case ``"{} peak time"`` is
+        used) so the outputs will be named e.g. "0.05 peak year", "0.5 peak
+        year", "0.95 peak year".
+
+    peak_return_year : bool
+        If ``True``, return the year of the peak of ``peak_variable``,
+        otherwise return full dates
 
     progress : bool
         Should a progress bar be shown whilst the calculations are done?
