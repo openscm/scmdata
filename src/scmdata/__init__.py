@@ -8,6 +8,3 @@ del get_versions
 
 
 from scmdata.run import ScmRun, run_append  # noqa: F401, E402
-
-# TODO: remove in next major release
-REQUIRED_COLS = ScmRun.required_cols  # noqa
