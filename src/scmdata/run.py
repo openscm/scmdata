@@ -1570,7 +1570,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             If True, return the resulting timeseries as an :class:`scmdata.ScmRun` object,
             otherwise if False, a :class:`pandas.DataFrame` is returned. Some operations may not be
             able to be converted to a :class:`scmdata.ScmRun`. For example if the operation
-             returns scalar values rather than timeseries.
+            returns scalar values rather than timeseries.
 
             If a class is provided, the return value will be cast to this class.
         **kwargs
