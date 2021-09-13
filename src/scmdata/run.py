@@ -1562,8 +1562,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         op_cols: dict of str: str
             Dictionary containing any columns that should be overridden after processing.
 
-            If a required column from :class:`scmdata.ScmRun` is specified in `cols` and
-            `as_run=True`, an override must be provided for that column in `op_cols`
+            If a required column from :class:`scmdata.ScmRun` is specified in ``cols`` and
+            ``as_run=True``, an override must be provided for that column in ``op_cols``
             otherwise the conversion to :class:`scmdata.ScmRun` will fail.
 
         as_run: bool or subclass of BaseScmRun
@@ -1589,6 +1589,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             If the operation is not an allowed operation
 
             If the value of na_override clashes with any existing metadata
+
+        :class:`scmdata.errors.MissingRequiredColumnError`
+            If `as_run` is not False and the result does not have the required metadata
+            to convert to an :class`ScmRun <scmdata.ScmRun>`.
+            This can be resolved by specifying additional metadata via ``op_cols``
+
         """
         cols = [cols] if isinstance(cols, str) else cols
         ts = self.timeseries()
