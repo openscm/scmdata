@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 import tqdm.autonotebook as tqdman
 
-# categorisation
+from .errors import MissingRequiredColumnError
+from .run import ScmRun
 
 
 def _get_ts_gt_threshold(scmrun, threshold):
@@ -287,8 +288,110 @@ def calculate_peak_time(scmrun, output_name=None, return_year=True):
     return out
 
 
+def categorisation_sr15(scmrun, index):
+    """
+    Categorise using the algorithm employed in SR1.5
+
+    For more information, see the SR1.5 scenario analysis
+    `notebook <data.ene.iiasa.ac.at/sr15_scenario_analysis/assessment/sr15_2.0_categories_indicators.html>`_.
+
+    Parameters
+    ----------
+    scmrun : :class: `scmdata.ScmRun`
+        Data to use for the classification. This should contain global-mean
+        surface air temperatures  (GSAT) relative to 1850-1900 (using another
+        reference period will not break this function, but is inconsistent with
+        the original algorithm). The data must have a "quantile" column and it
+        must have the 0.33, 0.5 and 0.66 quantiles calculated. This can be done
+        with :meth:`scmdata.ScmRun.quantiles_over`.
+
+    index : list[str]
+        Columns in ``scmrun.meta`` to use as the index of the output
+
+    Returns
+    -------
+    :class: `pd.Series`
+        Categorisation of the timeseries
+
+    Raises
+    ------
+    ValueError
+        More than one variable or one unit is in ``scmrun``
+
+    DimensionalityError
+        The units cannot be converted to kelvin
+    """
+    if "quantile" not in scmrun.meta:
+        raise MissingRequiredColumnError(
+            "No `quantile` column, calculate quantiles using `.quantiles_over` "
+            "to calculate the 0.33, 0.5 and 0.66 quantiles before calling "
+            "this function"
+        )
+
+    required_quantiles = [0.33, 0.5, 0.66]
+    available_quantiles = scmrun.get_unique_meta("quantile")
+    if not all([q in available_quantiles for q in required_quantiles]):
+        msg = (
+            "Not all required quantiles are available, we require the "
+            "0.33, 0.5 and 0.66 quantiles, available quantiles: `{}`"
+        ).format(available_quantiles)
+        raise ValueError(msg)
+
+    _assert_only_one_value(scmrun, "variable")
+    scmrun = scmrun.convert_unit("K")
+    scmrun["unit"] = ""
+
+    categories = pd.Series(
+        name="category",
+        index=pd.MultiIndex.from_frame(scmrun.meta[index].drop_duplicates()),
+        dtype="object",
+    )
+
+    def _get_comp_series(res):
+        reset_cols = list(set(res.index.names) - set(index))
+        out = res.reset_index(reset_cols, drop=True).reorder_levels(index)
+
+        return out
+
+    peak_median = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.5)))
+    peak_p33 = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.33)))
+    peak_p66 = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.66)))
+    end_of_century_median = _get_comp_series(
+        calculate_peak(scmrun.filter(quantile=0.5, year=2100))
+    )
+    categories[peak_median > 2.0] = "Above 2C"
+    categories[peak_median <= 1.5] = "Below 1.5C"
+
+    overshoot_15 = (peak_median > 1.5) & (end_of_century_median <= 1.5)
+    categories[
+        overshoot_15 & (peak_p33 <= 1.5)  # p exceed <= 0.67
+    ] = "1.5C low overshoot"
+    categories[
+        overshoot_15 & (peak_p33 > 1.5)  # p exceed > 0.67
+    ] = "1.5C high overshoot"
+
+    still_uncategorised = categories.isnull()
+    peak_p66_lte_2 = peak_p66 <= 2.0  # p exceed < 0.34
+    categories[
+        still_uncategorised & (peak_median <= 2.0) & ~peak_p66_lte_2
+    ] = "Higher 2C"
+    categories[still_uncategorised & peak_p66_lte_2] = "Lower 2C"
+
+    if categories.isnull().any():  # pragma: no cover # emergency valve
+        raise AssertionError("Unclassified results?")
+
+    return categories
+
+
 def _calculate_quantile_groupby(base, index, quantile):
     return base.groupby(index).quantile(quantile)
+
+
+def _raise_missing_variable_error(name, requested, scmrun):
+    msg = "{} `{}` is not available. " "Available variables:{}".format(
+        name, requested, scmrun.get_unique_meta("variable")
+    )
+    raise ValueError(msg)
 
 
 def calculate_summary_stats(
@@ -302,6 +405,8 @@ def calculate_summary_stats(
     peak_naming_base=None,
     peak_time_naming_base=None,
     peak_return_year=True,
+    categorisation_variable="Surface Air Temperature Change",
+    categorisation_quantile_cols=("ensemble_member",),
     progress=False,
 ):
     """
@@ -376,13 +481,11 @@ def calculate_summary_stats(
         variable=exceedance_probabilities_variable, log_if_empty=False,
     )
     if scmrun_exceedance_prob.empty:
-        msg = (
-            "exceedance_probabilities_variable `{}` is not available. "
-            "Available variables:{}".format(
-                exceedance_probabilities_variable, scmrun.get_unique_meta("variable")
-            )
+        _raise_missing_variable_error(
+            "exceedance_probabilities_variable",
+            exceedance_probabilities_variable,
+            scmrun,
         )
-        raise ValueError(msg)
 
     exceedance_prob_calls = [
         (
@@ -405,10 +508,7 @@ def calculate_summary_stats(
 
     scmrun_peak = scmrun.filter(variable=peak_variable, log_if_empty=False,)
     if scmrun_peak.empty:
-        msg = "peak_variable `{}` is not available. " "Available variables:{}".format(
-            peak_variable, scmrun.get_unique_meta("variable")
-        )
-        raise ValueError(msg)
+        _raise_missing_variable_error("peak_variable", peak_variable, scmrun)
 
     # pre-calculate to avoid calculating multiple times
     peaks = calculate_peak(scmrun_peak)
@@ -434,7 +534,37 @@ def calculate_summary_stats(
         for q in peak_quantiles
     ]
 
-    func_calls_args_kwargs = exceedance_prob_calls + peak_calls + peak_time_calls
+    scmrun_categorisation = scmrun.filter(variable=categorisation_variable)
+    if scmrun_categorisation.empty:
+        _raise_missing_variable_error(
+            "categorisation_variable", categorisation_variable, scmrun
+        )
+
+    _categorisation_quantile_cols = categorisation_quantile_cols
+    if isinstance(_categorisation_quantile_cols, str):
+        _categorisation_quantile_cols = [_categorisation_quantile_cols]
+    if not all(
+        [v in scmrun_categorisation.meta for v in _categorisation_quantile_cols]
+    ):
+        msg = (
+            "categorisation_quantile_cols `{}` not in `scmrun`. "
+            "Available columns:{}".format(
+                categorisation_quantile_cols, scmrun.meta.columns.tolist()
+            )
+        )
+        raise ValueError(msg)
+
+    scmrun_categorisation = ScmRun(
+        scmrun_categorisation.quantiles_over(
+            cols=categorisation_quantile_cols, quantiles=[0.33, 0.5, 0.66],
+        )
+    )
+    categorisation_calls = [
+        (categorisation_sr15, [scmrun_categorisation, _index], {}, "SR1.5 category",)
+    ]
+    func_calls_args_kwargs = (
+        exceedance_prob_calls + peak_calls + peak_time_calls + categorisation_calls
+    )
 
     if progress:
         iterator = tqdman.tqdm(func_calls_args_kwargs)

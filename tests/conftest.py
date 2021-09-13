@@ -159,7 +159,7 @@ TEST_RUN_DF = pd.DataFrame(
 TEST_RUN_TS = np.array([[1, 6.0, 6], [0.5, 3, 3]]).T
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def test_data_path():
     return TEST_DATA
 
