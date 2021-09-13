@@ -1461,7 +1461,7 @@ def test_process_over_as_run_with_invalid_class(scm_run):
         ValueError,
         match="Invalid value for as_run. Expected True, False or class based on scmdata.run.BaseScmRun",
     ):
-        res = scm_run.process_over(("variable",), "median", as_run=pd.DataFrame)
+        scm_run.process_over(("variable",), "median", as_run=pd.DataFrame)
 
 
 def test_process_over_as_run_with_metadata(scm_run):
