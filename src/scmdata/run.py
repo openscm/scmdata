@@ -1568,7 +1568,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         as_run: bool or subclass of BaseScmRun
             If True, return the resulting timeseries as an :class:`scmdata.ScmRun` object,
-            otherwise if False, a :class:`pandas.DataFrame` is returned. Some operations may not be
+            otherwise if False, a :class:`pandas.DataFrame`or :class:`pandas.Series` is
+            returned (depending on the nature of the operation). Some operations may not be
             able to be converted to a :class:`scmdata.ScmRun`. For example if the operation
             returns scalar values rather than timeseries.
 
@@ -1579,7 +1580,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :class:`pandas.DataFrame` or :class:`scmdata.ScmRun`
+        :class:`pandas.DataFrame` or :class:`pandas.Series`  or :class:`scmdata.ScmRun`
             The result of ``operation``, grouped by all columns in :attr:`meta`
             other than :obj:`cols`
 
@@ -1589,6 +1590,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             If the operation is not an allowed operation
 
             If the value of na_override clashes with any existing metadata
+
+            If ``operation`` produces a :class:`pandas.Series`, but `as_run`` is True
+
+            If an invalid value for ``as_run`` is provided
 
         :class:`scmdata.errors.MissingRequiredColumnError`
             If `as_run` is not False and the result does not have the required metadata
@@ -1654,13 +1659,16 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         res = res.reorder_levels(sorted(res.index.names))
 
         if as_run:
-            try:
-                if issubclass(as_run, BaseScmRun):
-                    Cls = as_run
-                else:
-                    Cls = self.__class__
-            except TypeError:
+            if isinstance(res, pd.Series):
+                raise ValueError("Cannot convert pd.Series to ScmRun")
+            if isinstance(as_run, bool):
                 Cls = self.__class__
+            elif issubclass(as_run, BaseScmRun):
+                Cls = as_run
+            else:
+                raise ValueError(
+                    "Invalid value for as_run. Expected True, False or class based on scmdata.run.BaseScmRun"
+                )
 
             return Cls(res, metadata=self.metadata)
         else:

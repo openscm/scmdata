@@ -1415,6 +1415,21 @@ def test_process_over_as_run(scm_run):
     assert res.index.get_level_values("extra").unique() == ["other"]
 
 
+def test_process_over_as_run_returns_series(scm_run):
+    def total(g):
+        return g.sum().sum()
+
+    res = scm_run.process_over(
+        ("variable",), total, op_cols={"variable": "Variable"}, as_run=False,
+    )
+    assert isinstance(res, pd.Series)
+
+    with pytest.raises(ValueError, match="Cannot convert pd.Series to ScmRun"):
+        res = scm_run.process_over(
+            ("variable",), total, op_cols={"variable": "Variable"}, as_run=True,
+        )
+
+
 def test_process_over_as_run_with_class(scm_run):
     class CustomRun(BaseScmRun):
         required_cols = ("variable", "unit", "extra")
@@ -1439,6 +1454,14 @@ def test_process_over_as_run_with_class(scm_run):
 
     assert res.get_unique_meta("variable", True) == "New Variable"
     assert res.get_unique_meta("extra", True) == "other"
+
+
+def test_process_over_as_run_with_invalid_class(scm_run):
+    with pytest.raises(
+        ValueError,
+        match="Invalid value for as_run. Expected True, False or class based on scmdata.run.BaseScmRun",
+    ):
+        res = scm_run.process_over(("variable",), "median", as_run=pd.DataFrame)
 
 
 def test_process_over_as_run_with_metadata(scm_run):
