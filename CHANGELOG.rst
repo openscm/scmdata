@@ -1,6 +1,11 @@
 Changelog
 =========
 
+master
+------
+
+- (`#176 <https://github.com/openscm/scmdata/pull/176>`_) Add ``as_run`` argument to :func:`scmdata.ScmRun.process_over` (closes `#160 <https://github.com/openscm/scmdata/issues/160>`_)
+
 v0.13.0
 -------
 
