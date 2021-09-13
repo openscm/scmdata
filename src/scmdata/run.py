@@ -649,8 +649,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             "End: {}".format(self.time_points.values[-1]),
         ]
         time_str = _indent("\n".join(time_str))
-        return "<scmdata.ScmRun (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}".format(
-            len(self), len(self.time_points), time_str, meta_str
+        return "<{} (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}".format(
+            self.__class__.__name__,
+            len(self),
+            len(self.time_points),
+            time_str,
+            meta_str,
         )
 
     def _binary_op(
