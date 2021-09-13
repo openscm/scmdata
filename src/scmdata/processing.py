@@ -9,8 +9,6 @@ import pandas as pd
 import tqdm.autonotebook as tqdman
 
 # categorisation
-# peak warming
-# year of peak warming
 
 
 def _get_ts_gt_threshold(scmrun, threshold):
@@ -171,7 +169,8 @@ def calculate_exceedance_probabilities_over_time(
 
     output_name : str
         If supplied, the value to put in the "variable" columns of the output
-        series. If not supplied, "{threshold} exceedance probability" will be used.
+        :class:`pd.DataFrame`. If not supplied, "{threshold} exceedance
+        probability" will be used.
 
     Returns
     -------
@@ -218,12 +217,91 @@ def calculate_exceedance_probabilities_over_time(
     return out
 
 
+def _set_peak_output_name(out, output_name, default_lead):
+    if output_name is not None:
+        out = _set_index_level_to(out, "variable", output_name)
+    else:
+        idx = out.index.names
+        out = out.reset_index()
+        out["variable"] = out["variable"].apply(
+            lambda x: "{} {}".format(default_lead, x)
+        )
+        out = out.set_index(idx)[0]
+
+    return out
+
+
+def calculate_peak(scmrun, output_name=None):
+    """
+    Calculate peak i.e. maximum of each timeseries
+
+    Parameters
+    ----------
+    scmrun : :class:`scmdata.ScmRun`
+        Ensemble of which to calculate the exceedance probability over time
+
+    output_name : str
+        If supplied, the value to put in the "variable" columns of the output
+        series. If not supplied, "Peak {variable}" will be used.
+
+    Returns
+    -------
+    :class:`pd.Series`
+        Peak of each timeseries
+    """
+    out = scmrun.timeseries().max(axis=1)
+    out = _set_peak_output_name(out, output_name, "Peak")
+
+    return out
+
+
+def calculate_peak_time(scmrun, output_name=None, return_year=True):
+    """
+    Calculate peak time i.e. the time at which each timeseries reaches its maximum
+
+    Parameters
+    ----------
+    scmrun : :class:`scmdata.ScmRun`
+        Ensemble of which to calculate the exceedance probability over time
+
+    output_name : str
+        If supplied, the value to put in the "variable" columns of the output
+        series. If not supplied, "Peak {variable}" will be used.
+
+    return_year : bool
+        If ``True``, return the year instead of the datetime
+
+    Returns
+    -------
+    :class:`pd.Series`
+        Peak of each timeseries
+    """
+    out = scmrun.timeseries().idxmax(axis=1)
+    if return_year:
+        out = out.apply(lambda x: x.year)
+
+    out = _set_peak_output_name(
+        out, output_name, "Year of peak" if return_year else "Time of peak"
+    )
+
+    return out
+
+
+def _calculate_quantile_groupby(base, index, quantile):
+    return base.groupby(index).quantile(quantile)
+
+
 def calculate_summary_stats(
     scmrun,
     index,
-    exceedance_probabilities_thresholds=[1.5, 2.0, 2.5],
+    exceedance_probabilities_thresholds=(1.5, 2.0, 2.5),
     exceedance_probabilities_variable="Surface Air Temperature Change",
     exceedance_probabilities_naming_base=None,
+    peak_quantiles=(0.05, 0.17, 0.5, 0.83, 0.95),
+    peak_variable="Surface Air Temperature Change",
+    peak_naming_base=None,
+    peak_time_naming_base=None,
+    peak_return_year=True,
     progress=False,
 ):
     """
@@ -253,6 +331,28 @@ def calculate_summary_stats(
         :func:`scmdata.processing.calculate_exceedance_probabilities` will be
         used.
 
+    peak_quantiles : list[float]
+        Quantiles to report in peak calculations
+
+    peak_variable : str
+        Variable of which to calculate the peak
+
+    peak_naming_base : str
+        Base to use for naming the peak outputs. This is combined with the
+        quantile. If not supplied, ``"{} peak"`` is used so the outputs will be
+        named e.g. "0.05 peak", "0.5 peak", "0.95 peak".
+
+    peak_time_naming_base : str
+        Base to use for naming the peak time outputs. This is combined with the
+        quantile. If not supplied, ``"{} peak year"`` is used (unless
+        ``peak_return_year`` is ``False`` in which case ``"{} peak time"`` is
+        used) so the outputs will be named e.g. "0.05 peak year", "0.5 peak
+        year", "0.95 peak year".
+
+    peak_return_year : bool
+        If ``True``, return the year of the peak of ``peak_variable``,
+        otherwise return full dates
+
     progress : bool
         Should a progress bar be shown whilst the calculations are done?
 
@@ -278,7 +378,7 @@ def calculate_summary_stats(
     if scmrun_exceedance_prob.empty:
         msg = (
             "exceedance_probabilities_variable `{}` is not available. "
-            "Available vars:{}".format(
+            "Available variables:{}".format(
                 exceedance_probabilities_variable, scmrun.get_unique_meta("variable")
             )
         )
@@ -289,17 +389,73 @@ def calculate_summary_stats(
             calculate_exceedance_probabilities,
             [scmrun_exceedance_prob, t, process_over_cols],
             {"output_name": exceedance_probabilities_naming_base.format(t)},
+            exceedance_probabilities_naming_base.format(t),
         )
         for t in exceedance_probabilities_thresholds
     ]
-    func_calls_args_kwargs = exceedance_prob_calls
+
+    if peak_naming_base is None:
+        peak_naming_base = "{} peak"
+
+    if peak_time_naming_base is None:
+        if peak_return_year:
+            peak_time_naming_base = "{} peak year"
+        else:
+            peak_time_naming_base = "{} peak time"
+
+    scmrun_peak = scmrun.filter(variable=peak_variable, log_if_empty=False,)
+    if scmrun_peak.empty:
+        msg = "peak_variable `{}` is not available. " "Available variables:{}".format(
+            peak_variable, scmrun.get_unique_meta("variable")
+        )
+        raise ValueError(msg)
+
+    # pre-calculate to avoid calculating multiple times
+    peaks = calculate_peak(scmrun_peak)
+    peak_calls = [
+        (
+            _calculate_quantile_groupby,
+            [peaks, _index, q],
+            {},
+            peak_naming_base.format(q),
+        )
+        for q in peak_quantiles
+    ]
+
+    # pre-calculate to avoid calculating multiple times
+    peak_times = calculate_peak_time(scmrun_peak, return_year=peak_return_year)
+    peak_time_calls = [
+        (
+            _calculate_quantile_groupby,
+            [peak_times, _index, q],
+            {},
+            peak_time_naming_base.format(q),
+        )
+        for q in peak_quantiles
+    ]
+
+    func_calls_args_kwargs = exceedance_prob_calls + peak_calls + peak_time_calls
 
     if progress:
         iterator = tqdman.tqdm(func_calls_args_kwargs)
     else:
         iterator = func_calls_args_kwargs
 
-    out = pd.DataFrame([func(*args, **kwargs) for func, args, kwargs in iterator]).T
+    def get_result(func, args, kwargs, name):
+        res = func(*args, **kwargs)
+        res.name = name
+
+        return res
+
+    series = [
+        get_result(func, args, kwargs, name).reorder_levels(_index)
+        for func, args, kwargs, name in iterator
+    ]
+    if not peak_return_year:
+        series = [s.astype("object") for s in series]
+
+    out = pd.DataFrame(series).T
+
     out.columns.name = "statistic"
     out = out.stack("statistic")
     out.name = "value"

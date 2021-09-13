@@ -8,6 +8,8 @@ import pytest
 
 import scmdata.processing
 from scmdata import ScmRun
+from scmdata.errors import NonUniqueMetadataError
+from scmdata.testing import _check_pandas_less_120
 
 
 @pytest.fixture(scope="function")
@@ -257,19 +259,6 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
     pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
 
 
-def test_exceedance_probabilities_over_time_multiple_variables(test_processing_scm_df):
-    test_processing_scm_df["variable"] = [
-        str(i) for i in range(test_processing_scm_df.shape[0])
-    ]
-
-    with pytest.raises(ValueError):
-        scmdata.processing.calculate_exceedance_probabilities_over_time(
-            test_processing_scm_df,
-            process_over_cols=["ensemble_member", "variable"],
-            threshold=1.5,
-        )
-
-
 @pytest.mark.parametrize(
     "threshold,exp_val", ((1.0, 1.0), (1.5, 0.6), (2.0, 0.0),),
 )
@@ -346,22 +335,173 @@ def test_exceedance_probabilities_multiple_grouping(
     pdt.assert_series_equal(res, exp)
 
 
-def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
-    test_processing_scm_df["variable"] = [
+@pytest.mark.parametrize("col", ["unit", "variable"])
+@pytest.mark.parametrize(
+    "func,kwargs",
+    (
+        (scmdata.processing.calculate_exceedance_probabilities, {"threshold": 1.5}),
+        (
+            scmdata.processing.calculate_exceedance_probabilities_over_time,
+            {"threshold": 1.5},
+        ),
+    ),
+)
+def test_requires_preprocessing(test_processing_scm_df, col, func, kwargs):
+    test_processing_scm_df[col] = [
         str(i) for i in range(test_processing_scm_df.shape[0])
     ]
 
     with pytest.raises(ValueError):
-        scmdata.processing.calculate_exceedance_probabilities(
+        func(
             test_processing_scm_df,
-            process_over_cols=["ensemble_member", "variable"],
-            threshold=1.5,
+            process_over_cols=["ensemble_member", col],
+            **kwargs,
         )
 
 
-@pytest.mark.parametrize(
-    "exceedance_probabilities_thresholds,exp_exceedance_prob_thresholds",
-    ((None, [1.5, 2.0, 2.5]), ([1.0, 1.5, 2.0, 2.5], [1.0, 1.5, 2.0, 2.5]),),
+def _get_calculate_peak_call_kwargs(output_name, variable):
+    call_kwargs = {}
+    if output_name is not None:
+        call_kwargs["output_name"] = output_name
+
+    return call_kwargs
+
+
+@output_name_options
+def test_peak(output_name, test_processing_scm_df):
+    call_kwargs = _get_calculate_peak_call_kwargs(
+        output_name, test_processing_scm_df.get_unique_meta("variable", True),
+    )
+
+    exp_vals = [1.2, 1.41, 1.6, 1.6, 1.72]
+    res = scmdata.processing.calculate_peak(test_processing_scm_df, **call_kwargs,)
+
+    exp_idx = pd.MultiIndex.from_frame(test_processing_scm_df.meta)
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+    if output_name is not None:
+        exp.index = exp.index.set_levels([output_name], level="variable")
+    else:
+        idx = exp.index.names
+        exp = exp.reset_index()
+        exp["variable"] = exp["variable"].apply(lambda x: "Peak {}".format(x))
+        exp = exp.set_index(idx)[0]
+
+    pdt.assert_series_equal(res, exp)
+
+
+def test_peak_multi_variable(test_processing_scm_df_multi_climate_model):
+    test_processing_scm_df_multi_climate_model["variable"] = [
+        str(i) for i in range(test_processing_scm_df_multi_climate_model.shape[0])
+    ]
+
+    exp_vals = [1.2, 1.41, 1.6, 1.6, 1.72, 1.3, 1.51, 1.7, 1.7, 1.82]
+    res = scmdata.processing.calculate_peak(test_processing_scm_df_multi_climate_model,)
+
+    exp_idx = pd.MultiIndex.from_frame(test_processing_scm_df_multi_climate_model.meta)
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+    idx = exp.index.names
+    exp = exp.reset_index()
+    exp["variable"] = exp["variable"].apply(lambda x: "Peak {}".format(x))
+    exp = exp.set_index(idx)[0]
+
+    pdt.assert_series_equal(res, exp)
+
+
+def _get_calculate_peak_time_call_kwargs(return_year, output_name):
+    call_kwargs = {}
+
+    if return_year is not None:
+        call_kwargs["return_year"] = return_year
+
+    if output_name is not None:
+        call_kwargs["output_name"] = output_name
+
+    return call_kwargs
+
+
+@output_name_options
+@crossing_times_year_conversions
+def test_peak_time(output_name, return_year, conv_to_year, test_processing_scm_df):
+    call_kwargs = _get_calculate_peak_time_call_kwargs(return_year, output_name)
+
+    exp_vals = [
+        dt.datetime(2007, 1, 1),
+        dt.datetime(2100, 1, 1),
+        dt.datetime(2100, 1, 1),
+        dt.datetime(2007, 1, 1),
+        dt.datetime(2007, 1, 1),
+    ]
+    res = scmdata.processing.calculate_peak_time(test_processing_scm_df, **call_kwargs,)
+
+    exp_idx = pd.MultiIndex.from_frame(test_processing_scm_df.meta)
+
+    if conv_to_year:
+        exp_vals = [v.year if conv_to_year else v for v in exp_vals]
+        time_name = "Year"
+    else:
+        time_name = "Time"
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+    if output_name is not None:
+        exp.index = exp.index.set_levels([output_name], level="variable")
+    else:
+        idx = exp.index.names
+        exp = exp.reset_index()
+        exp["variable"] = exp["variable"].apply(
+            lambda x: "{} of peak {}".format(time_name, x)
+        )
+        exp = exp.set_index(idx)[0]
+
+    pdt.assert_series_equal(res, exp)
+
+
+@crossing_times_year_conversions
+def test_peak_time_multi_variable(
+    return_year, conv_to_year, test_processing_scm_df_multi_climate_model
+):
+    test_processing_scm_df_multi_climate_model["variable"] = [
+        str(i) for i in range(test_processing_scm_df_multi_climate_model.shape[0])
+    ]
+
+    call_kwargs = _get_calculate_peak_time_call_kwargs(return_year, None)
+
+    exp_vals = [
+        dt.datetime(2007, 1, 1),
+        dt.datetime(2100, 1, 1),
+        dt.datetime(2100, 1, 1),
+        dt.datetime(2007, 1, 1),
+        dt.datetime(2007, 1, 1),
+    ] * 2
+
+    res = scmdata.processing.calculate_peak_time(
+        test_processing_scm_df_multi_climate_model, **call_kwargs
+    )
+
+    if conv_to_year:
+        exp_vals = [v.year if conv_to_year else v for v in exp_vals]
+        time_name = "Year"
+    else:
+        time_name = "Time"
+
+    exp_idx = pd.MultiIndex.from_frame(test_processing_scm_df_multi_climate_model.meta)
+
+    exp = pd.Series(exp_vals, index=exp_idx)
+    idx = exp.index.names
+    exp = exp.reset_index()
+
+    exp["variable"] = exp["variable"].apply(
+        lambda x: "{} of peak {}".format(time_name, x)
+    )
+    exp = exp.set_index(idx)[0]
+
+    pdt.assert_series_equal(res, exp)
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_120(),
+    reason="pandas<1.2.0 can't handle non-numeric types in pivot",
 )
 @pytest.mark.parametrize(
     "index",
@@ -372,17 +512,123 @@ def test_exceedance_probabilities_multiple_variables(test_processing_scm_df):
     ),
 )
 @pytest.mark.parametrize(
-    "exceedance_probabilities_output_name,exp_exceedance_probabilities_output_name",
+    ",".join(
+        [
+            "exceedance_probabilities_thresholds",
+            "exp_exceedance_prob_thresholds",
+            "exceedance_probabilities_output_name",
+            "exp_exceedance_probabilities_output_name",
+            "exceedance_probabilities_variable",
+            "exp_exceedance_probabilities_variable",
+        ]
+    ),
     (
-        (None, "{} exceedance probability"),
-        ("Exceedance Probability|{:.2f}C", "Exceedance Probability|{:.2f}C"),
+        (
+            None,
+            [1.5, 2.0, 2.5],
+            None,
+            "{} exceedance probability",
+            None,
+            "Surface Air Temperature Change",
+        ),
+        (
+            [1.0, 1.5, 2.0, 2.5],
+            [1.0, 1.5, 2.0, 2.5],
+            "Exceedance Probability|{:.2f}C",
+            "Exceedance Probability|{:.2f}C",
+            "Surface Temperature",
+            "Surface Temperature",
+        ),
     ),
 )
 @pytest.mark.parametrize(
-    "exceedance_probabilities_variable,exp_exceedance_probabilities_variable",
+    ",".join(
+        [
+            "peak_variable",
+            "exp_peak_variable",
+            "peak_quantiles",
+            "exp_peak_quantiles",
+            "peak_naming_base",
+            "exp_peak_naming_base",
+            "peak_time_naming_base",
+            "exp_peak_time_naming_base",
+            "peak_return_year",
+            "exp_peak_return_year",
+        ]
+    ),
     (
-        (None, "Surface Air Temperature Change"),
-        ("Surface Temperature", "Surface Temperature"),
+        (
+            "Surface Temperature",
+            "Surface Temperature",
+            None,
+            [0.05, 0.17, 0.5, 0.83, 0.95],
+            None,
+            "{} peak",
+            None,
+            "{} peak year",
+            None,
+            True,
+        ),
+        (
+            "Surface Temperature",
+            "Surface Temperature",
+            None,
+            [0.05, 0.17, 0.5, 0.83, 0.95],
+            None,
+            "{} peak",
+            "test {}",
+            "test {}",
+            None,
+            True,
+        ),
+        (
+            "Surface Temperature",
+            "Surface Temperature",
+            None,
+            [0.05, 0.17, 0.5, 0.83, 0.95],
+            None,
+            "{} peak",
+            None,
+            "{} peak year",
+            True,
+            True,
+        ),
+        (
+            None,
+            "Surface Air Temperature Change",
+            [0.05, 0.95],
+            [0.05, 0.95],
+            "test {}",
+            "test {}",
+            "test peak {}",
+            "test peak {}",
+            True,
+            True,
+        ),
+        (
+            None,
+            "Surface Air Temperature Change",
+            [0.05, 0.95],
+            [0.05, 0.95],
+            "test {}",
+            "test {}",
+            None,
+            "{} peak time",
+            False,
+            False,
+        ),
+        (
+            None,
+            "Surface Air Temperature Change",
+            [0.05, 0.95],
+            [0.05, 0.95],
+            "test {}",
+            "test {}",
+            "test peak {}",
+            "test peak {}",
+            False,
+            False,
+        ),
     ),
 )
 @pytest.mark.parametrize("progress", (True, False))
@@ -394,6 +640,16 @@ def test_calculate_summary_stats(
     exp_exceedance_probabilities_output_name,
     exceedance_probabilities_variable,
     exp_exceedance_probabilities_variable,
+    peak_quantiles,
+    exp_peak_quantiles,
+    peak_variable,
+    exp_peak_variable,
+    peak_naming_base,
+    exp_peak_naming_base,
+    peak_time_naming_base,
+    exp_peak_time_naming_base,
+    peak_return_year,
+    exp_peak_return_year,
     progress,
     test_processing_scm_df_multi_climate_model,
 ):
@@ -416,6 +672,22 @@ def test_calculate_summary_stats(
         )
         exp.append(tmp)
 
+    peaks = scmdata.processing.calculate_peak(inp)
+    peak_times = scmdata.processing.calculate_peak_time(
+        inp, return_year=exp_peak_return_year
+    )
+    for q in exp_peak_quantiles:
+        peak_q = peaks.groupby(exp_index).quantile(q)
+        peak_q.name = exp_peak_naming_base.format(q)
+
+        peak_time_q = peak_times.groupby(exp_index).quantile(q)
+        peak_time_q.name = exp_peak_time_naming_base.format(q)
+
+        exp.append(peak_q)
+        exp.append(peak_time_q)
+
+    dtype = "object" if not exp_peak_return_year else None
+    exp = [v.reorder_levels(exp_index).astype(dtype) for v in exp]
     exp = pd.DataFrame(exp).T
     exp.columns.name = "statistic"
     exp = exp.stack("statistic")
@@ -432,17 +704,43 @@ def test_calculate_summary_stats(
             "exceedance_probabilities_naming_base"
         ] = exceedance_probabilities_output_name
 
+    inp_renamed = inp.copy()
+    inp_renamed["variable"] = exp_exceedance_probabilities_variable
     if exceedance_probabilities_variable is not None:
-        inp["variable"] = exceedance_probabilities_variable
         call_kwargs[
             "exceedance_probabilities_variable"
         ] = exceedance_probabilities_variable
 
+    if peak_quantiles is not None:
+        call_kwargs["peak_quantiles"] = peak_quantiles
+
+    tmp = inp.copy()
+    tmp["variable"] = exp_peak_variable
+    try:
+        inp_renamed = inp_renamed.append(tmp)
+    except NonUniqueMetadataError:
+        # variable already included
+        pass
+    if peak_variable is not None:
+        call_kwargs["peak_variable"] = peak_variable
+
+    if peak_naming_base is not None:
+        call_kwargs["peak_naming_base"] = peak_naming_base
+
+    if peak_time_naming_base is not None:
+        call_kwargs["peak_time_naming_base"] = peak_time_naming_base
+
+    if peak_time_naming_base is not None:
+        call_kwargs["peak_time_naming_base"] = peak_time_naming_base
+
+    if peak_return_year is not None:
+        call_kwargs["peak_return_year"] = peak_return_year
+
     res = scmdata.processing.calculate_summary_stats(
-        inp, index, progress=progress, **call_kwargs,
+        inp_renamed, index, progress=progress, **call_kwargs,
     )
 
-    pdt.assert_series_equal(res, exp)
+    pdt.assert_series_equal(res.sort_index(), exp.sort_index())
 
     # then user can stack etc. if they want
     res.unstack(["statistic", "unit"])
@@ -458,7 +756,7 @@ def test_calculate_summary_stats_no_exceedance_probability_var(
 ):
     error_msg = re.escape(
         "exceedance_probabilities_variable `junk` is not available. "
-        "Available vars:{}".format(
+        "Available variables:{}".format(
             test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
         )
     )
@@ -467,4 +765,21 @@ def test_calculate_summary_stats_no_exceedance_probability_var(
             test_processing_scm_df_multi_climate_model,
             ["model", "scenario"],
             exceedance_probabilities_variable="junk",
+        )
+
+
+def test_calculate_summary_stats_no_peak_variable(
+    test_processing_scm_df_multi_climate_model,
+):
+    error_msg = re.escape(
+        "peak_variable `junk` is not available. "
+        "Available variables:{}".format(
+            test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
+        )
+    )
+    with pytest.raises(ValueError, match=error_msg):
+        scmdata.processing.calculate_summary_stats(
+            test_processing_scm_df_multi_climate_model,
+            ["model", "scenario"],
+            peak_variable="junk",
         )

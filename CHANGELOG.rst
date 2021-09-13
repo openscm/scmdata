@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#173 <https://github.com/openscm/scmdata/pull/173>`_) Add :func:`scmdata.processing.calculate_peak` and :func:`scmdata.processing.calculate_peak_time` (also added functionality for these to :func:`scmdata.processing.calculate_summary_stats`)
 - (`#175 <https://github.com/openscm/scmdata/pull/175>`_) Remove unused :obj:`scmdata.REQUIRED_COLS` (closes `#166 <https://github.com/openscm/scmdata/issues/166>`_)
 - (`#172 <https://github.com/openscm/scmdata/pull/172>`_) Add :func:`scmdata.processing.calculate_summary_stats`
 - (`#171 <https://github.com/openscm/scmdata/pull/171>`_) Add :func:`scmdata.processing.calculate_exceedance_probabilities`, :func:`scmdata.processing.calculate_exceedance_probabilities_over_time` and :meth:`scmdata.ScmRun.get_meta_columns_except`
