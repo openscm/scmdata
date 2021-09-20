@@ -1593,7 +1593,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
             If ``operation`` produces a :class:`pandas.Series`, but `as_run`` is True
 
-            If an invalid value for ``as_run`` is provided
+            If ``as_run`` is not True, False or a subclass of :class:`scmdata.run.BaseScmRun`
 
         :class:`scmdata.errors.MissingRequiredColumnError`
             If `as_run` is not False and the result does not have the required metadata
