@@ -649,8 +649,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             "End: {}".format(self.time_points.values[-1]),
         ]
         time_str = _indent("\n".join(time_str))
-        return "<scmdata.ScmRun (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}".format(
-            len(self), len(self.time_points), time_str, meta_str
+        return "<{} (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}".format(
+            self.__class__.__name__,
+            len(self),
+            len(self.time_points),
+            time_str,
+            meta_str,
         )
 
     def _binary_op(
@@ -1516,6 +1520,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         cols: Union[str, List[str]],
         operation: Union[str, ApplyCallable],
         na_override=-1e6,
+        op_cols=None,
+        as_run=False,
         **kwargs: Any,
     ) -> pd.DataFrame:
         """
@@ -1553,13 +1559,28 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             This functionality is disabled if na_override is None, but may result in incorrect
             results if the timeseries meta includes any nan's.
 
+        op_cols: dict of str: str
+            Dictionary containing any columns that should be overridden after processing.
+
+            If a required column from :class:`scmdata.ScmRun` is specified in ``cols`` and
+            ``as_run=True``, an override must be provided for that column in ``op_cols``
+            otherwise the conversion to :class:`scmdata.ScmRun` will fail.
+
+        as_run: bool or subclass of BaseScmRun
+            If True, return the resulting timeseries as an :class:`scmdata.ScmRun` object,
+            otherwise if False, a :class:`pandas.DataFrame`or :class:`pandas.Series` is
+            returned (depending on the nature of the operation). Some operations may not be
+            able to be converted to a :class:`scmdata.ScmRun`. For example if the operation
+            returns scalar values rather than timeseries.
+
+            If a class is provided, the return value will be cast to this class.
         **kwargs
             Keyword arguments to pass ``operation`` (or the pandas operation if ``operation``
             is a string)
 
         Returns
         -------
-        :class:`pandas.DataFrame`
+        :class:`pandas.DataFrame` or :class:`pandas.Series`  or :class:`scmdata.ScmRun`
             The result of ``operation``, grouped by all columns in :attr:`meta`
             other than :obj:`cols`
 
@@ -1569,6 +1590,16 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             If the operation is not an allowed operation
 
             If the value of na_override clashes with any existing metadata
+
+            If ``operation`` produces a :class:`pandas.Series`, but `as_run`` is True
+
+            If ``as_run`` is not True, False or a subclass of :class:`scmdata.run.BaseScmRun`
+
+        :class:`scmdata.errors.MissingRequiredColumnError`
+            If `as_run` is not False and the result does not have the required metadata
+            to convert to an :class`ScmRun <scmdata.ScmRun>`.
+            This can be resolved by specifying additional metadata via ``op_cols``
+
         """
         cols = [cols] if isinstance(cols, str) else cols
         ts = self.timeseries()
@@ -1614,13 +1645,34 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         else:
             res = grouper.apply(operation, **kwargs)
 
+        if op_cols is not None:
+            idx_df = res.index.to_frame()
+            for column_name in op_cols:
+                idx_df[column_name] = op_cols[column_name]
+            res.index = pd.MultiIndex.from_frame(idx_df)
+
         if na_override is not None:
             idx_df = res.index.to_frame()
             idx_df[idx_df == na_override] = np.nan
             res.index = pd.MultiIndex.from_frame(idx_df)
 
         res = res.reorder_levels(sorted(res.index.names))
-        return res
+
+        if as_run:
+            if isinstance(res, pd.Series):
+                raise ValueError("Cannot convert pd.Series to ScmRun")
+            if isinstance(as_run, bool):
+                Cls = self.__class__
+            elif issubclass(as_run, BaseScmRun):
+                Cls = as_run
+            else:
+                raise ValueError(
+                    "Invalid value for as_run. Expected True, False or class based on scmdata.run.BaseScmRun"
+                )
+
+            return Cls(res, metadata=self.metadata)
+        else:
+            return res
 
     def quantiles_over(
         self,

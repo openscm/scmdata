@@ -1393,6 +1393,90 @@ def test_process_over_without_na_override(scm_run):
     assert len(res) == 0  # This result is incorrect due to the disabling na_override
 
 
+def test_process_over_as_run(scm_run):
+    with pytest.raises(MissingRequiredColumnError):
+        res = scm_run.process_over(("variable",), "median", as_run=True)
+
+    res = scm_run.process_over(
+        ("variable",),
+        "median",
+        op_cols={"variable": "New Variable", "extra": "other"},
+        as_run=True,
+    )
+
+    assert res.get_unique_meta("variable", True) == "New Variable"
+    assert res.get_unique_meta("extra", True) == "other"
+
+    # Ops cols are also processed if as_run=False
+    res = scm_run.process_over(
+        ("variable",), "median", op_cols={"variable": "New Variable", "extra": "other"},
+    )
+    assert res.index.get_level_values("variable").unique() == ["New Variable"]
+    assert res.index.get_level_values("extra").unique() == ["other"]
+
+
+def test_process_over_as_run_returns_series(scm_run):
+    def total(g):
+        return g.sum().sum()
+
+    res = scm_run.process_over(
+        ("variable",), total, op_cols={"variable": "Variable"}, as_run=False,
+    )
+    assert isinstance(res, pd.Series)
+
+    with pytest.raises(ValueError, match="Cannot convert pd.Series to ScmRun"):
+        res = scm_run.process_over(
+            ("variable",), total, op_cols={"variable": "Variable"}, as_run=True,
+        )
+
+
+def test_process_over_as_run_with_class(scm_run):
+    class CustomRun(BaseScmRun):
+        required_cols = ("variable", "unit", "extra")
+
+    with pytest.raises(MissingRequiredColumnError):
+        res = scm_run.process_over(("variable",), "median", as_run=CustomRun)
+
+    with pytest.raises(MissingRequiredColumnError):
+        # Should still complain about missing columns
+        res = scm_run.process_over(
+            ("variable",), "median", as_run=CustomRun, op_cols={"variable": "Variable"}
+        )
+
+    res = scm_run.process_over(
+        ("variable",),
+        "median",
+        op_cols={"variable": "New Variable", "extra": "other"},
+        as_run=CustomRun,
+    )
+    assert isinstance(res, BaseScmRun)
+    assert isinstance(res, CustomRun)
+
+    assert res.get_unique_meta("variable", True) == "New Variable"
+    assert res.get_unique_meta("extra", True) == "other"
+
+
+def test_process_over_as_run_with_invalid_class(scm_run):
+    with pytest.raises(
+        ValueError,
+        match="Invalid value for as_run. Expected True, False or class based on scmdata.run.BaseScmRun",
+    ):
+        scm_run.process_over(("variable",), "median", as_run=pd.DataFrame)
+
+
+def test_process_over_as_run_with_metadata(scm_run):
+    scm_run.metadata = {"test": "example"}
+
+    res = scm_run.process_over(
+        ("variable",),
+        "median",
+        op_cols={"variable": "New Variable", "extra": "other"},
+        as_run=True,
+    )
+
+    assert res.metadata == scm_run.metadata
+
+
 def test_quantiles_over(test_processing_scm_df):
     exp = pd.DataFrame(
         [
