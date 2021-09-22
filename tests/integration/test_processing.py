@@ -213,21 +213,21 @@ def _get_expected_crossing_time_quantiles(
     "interpolation,exp_interpolation",
     ((None, "linear"), ("linear", "linear"), ("nearest", "nearest"),),
 )
-@pytest.mark.parametrize("return_year", (True, False))
 def test_crossing_times_quantiles(
     groups,
     quantiles,
     exp_quantiles,
     interpolation,
     exp_interpolation,
-    return_year,
     test_processing_scm_df_multi_climate_model,
 ):
     threshold = 1.5
     crossing_times = scmdata.processing.calculate_crossing_times(
         test_processing_scm_df_multi_climate_model,
         threshold=threshold,
-        return_year=return_year,
+        # return_year False handled in
+        # test_crossing_times_quantiles_datetime_error
+        return_year=True,
     )
 
     exp = _get_expected_crossing_time_quantiles(
