@@ -63,8 +63,8 @@ def calculate_crossing_times_quantiles(
     crossing_times,
     groupby,
     quantiles=(0.05, 0.5, 0.95),
-    nan_fill_value=10**6,
-    out_nan_threshold=10**5,
+    nan_fill_value=10 ** 6,
+    out_nan_threshold=10 ** 5,
     interpolation="linear",
 ):
     """
@@ -159,8 +159,12 @@ def calculate_crossing_times_quantiles(
         )
 
     crossing_times_full = crossing_times.fillna(nan_fill_value)
-    crossing_times_quantiles = crossing_times_full.groupby(groupby).quantile(q=quantiles, interpolation=interpolation)
-    out = crossing_times_quantiles.where(crossing_times_quantiles < out_nan_threshold, other=pd.NA)
+    crossing_times_quantiles = crossing_times_full.groupby(groupby).quantile(
+        q=quantiles, interpolation=interpolation
+    )
+    out = crossing_times_quantiles.where(
+        crossing_times_quantiles < out_nan_threshold, other=pd.NA
+    )
     out.index = out.index.set_names("quantile", level=-1)
 
     return out

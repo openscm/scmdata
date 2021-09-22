@@ -112,16 +112,25 @@ def test_crossing_times(
     pdt.assert_series_equal(res, exp)
 
 
-@pytest.mark.parametrize("end_year", (
-    5000,
-    pytest.param(10 ** 3, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")),
-    pytest.param(10 ** 4, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")),
-))
+@pytest.mark.parametrize(
+    "end_year",
+    (
+        5000,
+        pytest.param(
+            10 ** 3, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")
+        ),
+        pytest.param(
+            10 ** 4, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")
+        ),
+    ),
+)
 @crossing_times_year_conversions
 def test_crossing_times_long_runs(
     end_year, return_year, conv_to_year, test_processing_scm_df
 ):
-    test_processing_scm_df = test_processing_scm_df.timeseries(time_axis="year").rename({2100: end_year}, axis="columns")
+    test_processing_scm_df = test_processing_scm_df.timeseries(time_axis="year").rename(
+        {2100: end_year}, axis="columns"
+    )
     test_processing_scm_df = scmdata.ScmRun(test_processing_scm_df)
 
     call_kwargs = _get_calculate_crossing_times_call_kwargs(return_year)
@@ -179,8 +188,9 @@ def test_crossing_times_multi_climate_model(
     pdt.assert_series_equal(res, exp)
 
 
-
-def _get_expected_crossing_time_quantiles(cts, groups, exp_quantiles, interpolation, nan_fill_value, nan_fill_threshold):
+def _get_expected_crossing_time_quantiles(
+    cts, groups, exp_quantiles, interpolation, nan_fill_value, nan_fill_threshold
+):
     cts = cts.fillna(nan_fill_value)
     cts_qs = cts.groupby(groups).quantile(q=exp_quantiles, interpolation=interpolation)
     out = cts_qs.where(cts_qs < nan_fill_threshold)
@@ -189,26 +199,45 @@ def _get_expected_crossing_time_quantiles(cts, groups, exp_quantiles, interpolat
     return out
 
 
-@pytest.mark.parametrize("groups", (["model", "scenario"], ["climate_model", "model", "scenario"]))
-@pytest.mark.parametrize("quantiles,exp_quantiles", (
-    (None, [0.05, 0.5, 0.95]),
-    ([0.05, 0.17, 0.5, 0.83, 0.95], [0.05, 0.17, 0.5, 0.83, 0.95]),
-))
-@pytest.mark.parametrize("interpolation,exp_interpolation", (
-    (None, "linear"),
-    ("linear", "linear"),
-    ("nearest", "nearest"),
-))
+@pytest.mark.parametrize(
+    "groups", (["model", "scenario"], ["climate_model", "model", "scenario"])
+)
+@pytest.mark.parametrize(
+    "quantiles,exp_quantiles",
+    (
+        (None, [0.05, 0.5, 0.95]),
+        ([0.05, 0.17, 0.5, 0.83, 0.95], [0.05, 0.17, 0.5, 0.83, 0.95]),
+    ),
+)
+@pytest.mark.parametrize(
+    "interpolation,exp_interpolation",
+    ((None, "linear"), ("linear", "linear"), ("nearest", "nearest"),),
+)
 @pytest.mark.parametrize("return_year", (True, False))
 def test_crossing_times_quantiles(
-    groups, quantiles, exp_quantiles, interpolation, exp_interpolation, return_year, test_processing_scm_df_multi_climate_model
+    groups,
+    quantiles,
+    exp_quantiles,
+    interpolation,
+    exp_interpolation,
+    return_year,
+    test_processing_scm_df_multi_climate_model,
 ):
     threshold = 1.5
     crossing_times = scmdata.processing.calculate_crossing_times(
-        test_processing_scm_df_multi_climate_model, threshold=threshold, return_year=return_year,
+        test_processing_scm_df_multi_climate_model,
+        threshold=threshold,
+        return_year=return_year,
     )
 
-    exp = _get_expected_crossing_time_quantiles(crossing_times, groups, exp_quantiles, exp_interpolation, nan_fill_value=10**6, nan_fill_threshold=10**5)
+    exp = _get_expected_crossing_time_quantiles(
+        crossing_times,
+        groups,
+        exp_quantiles,
+        exp_interpolation,
+        nan_fill_value=10 ** 6,
+        nan_fill_threshold=10 ** 5,
+    )
 
     call_kwargs = {"groupby": groups}
     if quantiles is not None:
@@ -224,52 +253,35 @@ def test_crossing_times_quantiles(
     pdt.assert_series_equal(res, exp)
 
 
-def test_crossing_times_quantiles_datetime_error(test_processing_scm_df_multi_climate_model):
+def test_crossing_times_quantiles_datetime_error(
+    test_processing_scm_df_multi_climate_model,
+):
     crossing_times = scmdata.processing.calculate_crossing_times(
         test_processing_scm_df_multi_climate_model, threshold=1.5, return_year=False,
     )
     with pytest.raises(NotImplementedError):
-        scmdata.processing.calculate_crossing_times_quantiles(crossing_times, ["model", "scenario"])
+        scmdata.processing.calculate_crossing_times_quantiles(
+            crossing_times, ["model", "scenario"]
+        )
 
 
-@pytest.mark.parametrize("nan_fill_value,out_nan_threshold,exp_vals", (
+@pytest.mark.parametrize(
+    "nan_fill_value,out_nan_threshold,exp_vals",
     (
-        None,
-        None,
-        [2025.4, 2027.0, np.nan]
+        (None, None, [2025.4, 2027.0, np.nan]),
+        (None, 10 ** 4, [2025.4, 2027.0, np.nan]),
+        (10 ** 5, 10 ** 4, [2025.4, 2027.0, np.nan]),
+        (10 ** 6, 10 ** 5, [2025.4, 2027.0, np.nan]),
+        (
+            # fill value less than threshold means calculated quantiles are used
+            3000,
+            10 ** 5,
+            [2025.4, 2027.0, 2805.4],
+        ),
+        (3000, 2806, [2025.4, 2027.0, 2805.4]),
+        (3000, 2805, [2025.4, 2027.0, np.nan]),
     ),
-    (
-        None,
-        10 ** 4,
-        [2025.4, 2027.0, np.nan]
-    ),
-    (
-        10 ** 5,
-        10 ** 4,
-        [2025.4, 2027.0, np.nan]
-    ),
-    (
-        10 ** 6,
-        10 ** 5,
-        [2025.4, 2027.0, np.nan]
-    ),
-    (
-        # fill value less than threshold means calculated quantiles are used
-        3000,
-        10 ** 5,
-        [2025.4, 2027.0, 2805.4]
-    ),
-    (
-        3000,
-        2806,
-        [2025.4, 2027.0, 2805.4]
-    ),
-    (
-        3000,
-        2805,
-        [2025.4, 2027.0, np.nan]
-    ),
-))
+)
 def test_crossing_times_quantiles_nan_fill_values(
     nan_fill_value, out_nan_threshold, exp_vals
 ):
@@ -310,15 +322,15 @@ def test_crossing_times_quantiles_nan_fill_values(
         crossing_times,
         ["climate_model", "scenario"],
         quantiles=(0.05, 0.5, 0.95),
-         **call_kwargs,
+        **call_kwargs,
     )
 
     exp = pd.Series(
         exp_vals,
         pd.MultiIndex.from_product(
             [["a_model"], ["a_scenario"], [0.05, 0.5, 0.95]],
-            names=["climate_model", "scenario", "quantile"]
-        )
+            names=["climate_model", "scenario", "quantile"],
+        ),
     )
 
     pdt.assert_series_equal(res, exp)
