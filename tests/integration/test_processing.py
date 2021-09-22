@@ -149,9 +149,9 @@ def test_crossing_times_multi_climate_model(
 
 
 
-def _get_expected_crossing_time_quantiles(cts, groups, exp_quantiles, nan_fill_value, nan_fill_threshold):
+def _get_expected_crossing_time_quantiles(cts, groups, exp_quantiles, interpolation, nan_fill_value, nan_fill_threshold):
     cts = cts.fillna(nan_fill_value)
-    cts_qs = cts.groupby(groups).quantile(q=exp_quantiles)
+    cts_qs = cts.groupby(groups).quantile(q=exp_quantiles, interpolation=interpolation)
     out = cts_qs.where(cts_qs < nan_fill_threshold)
     out.index = out.index.set_names("quantile", level=-1)
 
@@ -163,28 +163,37 @@ def _get_expected_crossing_time_quantiles(cts, groups, exp_quantiles, nan_fill_v
     (None, [0.05, 0.5, 0.95]),
     ([0.05, 0.17, 0.5, 0.83, 0.95], [0.05, 0.17, 0.5, 0.83, 0.95]),
 ))
+@pytest.mark.parametrize("interpolation,exp_interpolation", (
+    (None, "linear"),
+    ("linear", "linear"),
+    ("nearest", "nearest"),
+))
 @pytest.mark.parametrize("return_year", (True, False))
 def test_crossing_times_quantiles(
-    groups, quantiles, exp_quantiles, return_year, test_processing_scm_df_multi_climate_model
+    groups, quantiles, exp_quantiles, interpolation, exp_interpolation, return_year, test_processing_scm_df_multi_climate_model
 ):
     threshold = 1.5
     crossing_times = scmdata.processing.calculate_crossing_times(
         test_processing_scm_df_multi_climate_model, threshold=threshold, return_year=return_year,
     )
 
-    exp = _get_expected_crossing_time_quantiles(crossing_times, groups, exp_quantiles, nan_fill_value=10**6, nan_fill_threshold=10**5)
+    exp = _get_expected_crossing_time_quantiles(crossing_times, groups, exp_quantiles, exp_interpolation, nan_fill_value=10**6, nan_fill_threshold=10**5)
 
     call_kwargs = {"groupby": groups}
     if quantiles is not None:
         call_kwargs["quantiles"] = quantiles
 
+    if interpolation is not None:
+        call_kwargs["interpolation"] = interpolation
+
     res = scmdata.processing.calculate_crossing_times_quantiles(
         crossing_times, **call_kwargs
     )
 
-    pdt.assert_frame_equal(res, exp, check_like=True)
+    pdt.assert_series_equal(res, exp)
 
 
+# test if receives datetimes then not implemented error is raised
 # test adjust value
 
 

@@ -59,6 +59,99 @@ def calculate_crossing_times(scmrun, threshold, return_year=True):
     return out
 
 
+def calculate_crossing_times_quantiles(
+    crossing_times,
+    groupby,
+    quantiles=(0.05, 0.5, 0.95),
+    nan_fill_value=10**6,
+    out_nan_threshold=10**5,
+    interpolation="linear",
+):
+    """
+    Calculate quantiles of crossing times
+
+    This calculation is non-trivial because some timeseries may never cross
+    a given threshold. As a result, some care is required to return
+    sensible quantiles. In this function, the quantiles are calculated
+    as follows:
+
+        #. all nan values in ``crossing_times`` are filled with ``nan_fill_value``
+
+        #. quantiles are calculated using ``pd.groupby.quantile``
+
+        #. quantiles which never crossed are inferred by examining whether the
+           output values are greater than ``out_nan_threshold``. If the calculated
+           value is greater than ``out_nan_threshold`` then nan is returned for
+           this quantile.
+
+    Parameters
+    ----------
+    crossing_times : :class:`pd.Series`
+        Crossing times, can be calculated using
+        :func:`scmdata.processing.calculate_crossing_times`
+
+    groupby : list[str]
+        Columns to group the output by
+
+    quantiles : float
+        Quantiles to calculate
+
+    nan_fill_value : float
+        Value to use to fill in nan values before calculating the quantiles
+
+    out_nan_threshold : float
+        Threshold to decide whether a calculated quantile should be nan or not
+
+    interpolation : str
+        Interpolation to use when calculating the quantiles, see
+        :meth:`pandas.Series.quantile`
+
+    Returns
+    -------
+    :class:`pd.Series`
+        Crossing time quantiles
+
+    Examples
+    --------
+    >>> crossing_times = pd.Series(
+    ...     [pd.NA, pd.NA, 2100, 2007, 2006, pd.NA, 2100, 2007, 2006, 2006],
+    ...     index=pd.MultiIndex.from_product(
+    ...         [["a_scenario"], ["z_model", "x_model"], range(5)],
+    ...         names=["scenario", "climate_model", "ensemble_member"]
+    ...     )
+    ... )
+    >>> crossing_times
+    scenario    climate_model  ensemble_member
+    a_scenario  z_model        0                  <NA>
+                               1                  <NA>
+                               2                  2100
+                               3                  2007
+                               4                  2006
+                x_model        0                  <NA>
+                               1                  2100
+                               2                  2007
+                               3                  2006
+                               4                  2006
+    dtype: object
+    >>> scmdata.processing.calculate_crossing_times_quantiles(
+    ...     crossing_times, groupby=["climate_model", "scenario"]
+    ... )
+    climate_model  scenario    quantile
+    x_model        a_scenario  0.05        2006.0
+                               0.50        2007.0
+                               0.95           NaN
+    z_model        a_scenario  0.05        2006.2
+                               0.50        2100.0
+                               0.95           NaN
+    """
+    crossing_times_full = crossing_times.fillna(nan_fill_value)
+    crossing_times_quantiles = crossing_times_full.groupby(groupby).quantile(q=quantiles, interpolation=interpolation)
+    out = crossing_times_quantiles.where(crossing_times_quantiles < out_nan_threshold, other=pd.NA)
+    out.index = out.index.set_names("quantile", level=-1)
+
+    return out
+
+
 def _assert_only_one_value(scmrun, col):
     if len(scmrun.get_unique_meta(col)) > 1:
         raise ValueError(
