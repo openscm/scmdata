@@ -250,7 +250,12 @@ def test_crossing_times_quantiles(
         crossing_times, **call_kwargs
     )
 
-    pdt.assert_series_equal(res, exp)
+    if _check_pandas_less_120():
+        check_dtype = False
+    else:
+        check_dtype = True
+
+    pdt.assert_series_equal(res, exp, check_dtype=check_dtype)
 
 
 def test_crossing_times_quantiles_datetime_error(
@@ -333,7 +338,12 @@ def test_crossing_times_quantiles_nan_fill_values(
         ),
     )
 
-    pdt.assert_series_equal(res, exp)
+    if _check_pandas_less_120():
+        check_dtype = False
+    else:
+        check_dtype = True
+
+    pdt.assert_series_equal(res, exp, check_dtype=check_dtype)
 
 
 output_name_options = pytest.mark.parametrize(
