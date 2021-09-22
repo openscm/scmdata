@@ -193,7 +193,14 @@ def test_crossing_times_quantiles(
     pdt.assert_series_equal(res, exp)
 
 
-# test if receives datetimes then not implemented error is raised
+def test_crossing_times_quantiles_datetime_error(test_processing_scm_df_multi_climate_model):
+    crossing_times = scmdata.processing.calculate_crossing_times(
+        test_processing_scm_df_multi_climate_model, threshold=1.5, return_year=False,
+    )
+    with pytest.raises(NotImplementedError):
+        scmdata.processing.calculate_crossing_times_quantiles(crossing_times, ["model", "scenario"])
+
+# test what happens with really long runs and year return values
 # test adjust value
 
 

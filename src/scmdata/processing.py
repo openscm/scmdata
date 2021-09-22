@@ -111,6 +111,12 @@ def calculate_crossing_times_quantiles(
     :class:`pd.Series`
         Crossing time quantiles
 
+    Raises
+    ------
+    NotImplementedError
+        ``crossing_times`` contains datetime objects, please raise an issue
+        if this is your use case
+
     Examples
     --------
     >>> crossing_times = pd.Series(
@@ -144,6 +150,14 @@ def calculate_crossing_times_quantiles(
                                0.50        2100.0
                                0.95           NaN
     """
+    if pd.api.types.is_datetime64_any_dtype(crossing_times):
+        # the issue with datetimes is the fill value, pandas timestamps are
+        # somewhat limited so this is not so easy to implement
+        raise NotImplementedError(
+            "Calculating crossing time quantiles with datetimes is not yet "
+            "supported, please raise an issue to discuss your use case"
+        )
+
     crossing_times_full = crossing_times.fillna(nan_fill_value)
     crossing_times_quantiles = crossing_times_full.groupby(groupby).quantile(q=quantiles, interpolation=interpolation)
     out = crossing_times_quantiles.where(crossing_times_quantiles < out_nan_threshold, other=pd.NA)
