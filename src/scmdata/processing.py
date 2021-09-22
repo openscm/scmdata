@@ -114,8 +114,9 @@ def calculate_crossing_times_quantiles(
     Raises
     ------
     NotImplementedError
-        ``crossing_times`` contains datetime objects, please raise an issue
-        if this is your use case
+        ``crossing_times`` contains datetime objects, please raise an
+        `issue <https://github.com/openscm/scmdata/issues>`_ if this is your
+        use case.
 
     Examples
     --------
@@ -155,7 +156,8 @@ def calculate_crossing_times_quantiles(
         # somewhat limited so this is not so easy to implement
         raise NotImplementedError(
             "Calculating crossing time quantiles with datetimes is not yet "
-            "supported, please raise an issue to discuss your use case"
+            "supported, please raise an issue "
+            "(https://github.com/openscm/scmdata/issues) to discuss your use case"
         )
 
     crossing_times_full = crossing_times.fillna(nan_fill_value)
