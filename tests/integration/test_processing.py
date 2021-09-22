@@ -112,6 +112,37 @@ def test_crossing_times(
     pdt.assert_series_equal(res, exp)
 
 
+@pytest.mark.parametrize("end_year", (
+    5000,
+    pytest.param(10 ** 3, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")),
+    pytest.param(10 ** 4, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")),
+))
+@crossing_times_year_conversions
+def test_crossing_times_long_runs(
+    end_year, return_year, conv_to_year, test_processing_scm_df
+):
+    test_processing_scm_df = test_processing_scm_df.timeseries(time_axis="year").rename({2100: end_year}, axis="columns")
+    test_processing_scm_df = scmdata.ScmRun(test_processing_scm_df)
+
+    call_kwargs = _get_calculate_crossing_times_call_kwargs(return_year)
+    res = scmdata.processing.calculate_crossing_times(
+        test_processing_scm_df, threshold=1.5, **call_kwargs,
+    )
+
+    exp_vals = [
+        np.nan,
+        np.nan,
+        dt.datetime(end_year, 1, 1),
+        dt.datetime(2007, 1, 1),
+        dt.datetime(2006, 1, 1),
+    ]
+    exp_vals = _get_expected_crossing_times(exp_vals, conv_to_year)
+
+    exp = pd.Series(exp_vals, pd.MultiIndex.from_frame(test_processing_scm_df.meta))
+
+    pdt.assert_series_equal(res, exp)
+
+
 @crossing_times_year_conversions
 def test_crossing_times_multi_climate_model(
     return_year, conv_to_year, test_processing_scm_df_multi_climate_model
@@ -200,8 +231,97 @@ def test_crossing_times_quantiles_datetime_error(test_processing_scm_df_multi_cl
     with pytest.raises(NotImplementedError):
         scmdata.processing.calculate_crossing_times_quantiles(crossing_times, ["model", "scenario"])
 
-# test what happens with really long runs and year return values
-# test adjust value
+
+@pytest.mark.parametrize("nan_fill_value,out_nan_threshold,exp_vals", (
+    (
+        None,
+        None,
+        [2025.4, 2027.0, np.nan]
+    ),
+    (
+        None,
+        10 ** 4,
+        [2025.4, 2027.0, np.nan]
+    ),
+    (
+        10 ** 5,
+        10 ** 4,
+        [2025.4, 2027.0, np.nan]
+    ),
+    (
+        10 ** 6,
+        10 ** 5,
+        [2025.4, 2027.0, np.nan]
+    ),
+    (
+        # fill value less than threshold means calculated quantiles are used
+        3000,
+        10 ** 5,
+        [2025.4, 2027.0, 2805.4]
+    ),
+    (
+        3000,
+        2806,
+        [2025.4, 2027.0, 2805.4]
+    ),
+    (
+        3000,
+        2805,
+        [2025.4, 2027.0, np.nan]
+    ),
+))
+def test_crossing_times_quantiles_nan_fill_values(
+    nan_fill_value, out_nan_threshold, exp_vals
+):
+    data = np.array(
+        [
+            [1.3, 1.35, 1.5, 1.52],
+            [1.37, 1.43, 1.54, 1.58],
+            [1.48, 1.51, 1.72, 2.02],
+            [1.55, 1.65, 1.85, 2.1],
+            [1.42, 1.46, 1.55, 1.62],
+        ]
+    ).T
+    ensemble = scmdata.ScmRun(
+        data=data,
+        index=[2025, 2026, 2027, 2100],
+        columns={
+            "model": ["a_iam"],
+            "climate_model": ["a_model"],
+            "scenario": ["a_scenario"],
+            "region": ["World"],
+            "variable": ["Surface Air Temperature Change"],
+            "unit": ["K"],
+            "ensemble_member": range(data.shape[1]),
+        },
+    )
+
+    call_kwargs = {}
+    if nan_fill_value is not None:
+        call_kwargs["nan_fill_value"] = nan_fill_value
+
+    if out_nan_threshold is not None:
+        call_kwargs["out_nan_threshold"] = out_nan_threshold
+
+    crossing_times = scmdata.processing.calculate_crossing_times(
+        ensemble, threshold=1.53, return_year=True,
+    )
+    res = scmdata.processing.calculate_crossing_times_quantiles(
+        crossing_times,
+        ["climate_model", "scenario"],
+        quantiles=(0.05, 0.5, 0.95),
+         **call_kwargs,
+    )
+
+    exp = pd.Series(
+        exp_vals,
+        pd.MultiIndex.from_product(
+            [["a_model"], ["a_scenario"], [0.05, 0.5, 0.95]],
+            names=["climate_model", "scenario", "quantile"]
+        )
+    )
+
+    pdt.assert_series_equal(res, exp)
 
 
 output_name_options = pytest.mark.parametrize(
