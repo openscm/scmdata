@@ -60,7 +60,7 @@ docs: $(VENV_DIR)  ## build the docs
 
 .PHONY: test
 test:  $(VENV_DIR) ## run the full testsuite
-	$(VENV_DIR)/bin/pytest --cov -rfsxEX --cov-report term-missing
+	$(VENV_DIR)/bin/pytest --cov -r a -v --cov-report term-missing
 
 .PHONY: test-notebooks
 test-notebooks: $(VENV_DIR)  ## test the notebooks

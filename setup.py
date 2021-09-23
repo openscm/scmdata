@@ -46,6 +46,8 @@ REQUIREMENTS_OPTIONAL = [
     "openpyxl",  # support reading .xlsx
     "xlrd",  # support reading .xls
     "scipy",
+    "plotly",
+    "dash",
 ]
 REQUIREMENTS_PLOTTING = [
     "matplotlib",
