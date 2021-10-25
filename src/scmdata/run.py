@@ -446,7 +446,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         else:
             self._df = pd.DataFrame(dtype=float)
             self._meta = pd.MultiIndex.from_frame(
-                pd.DataFrame(columns=self.required_cols, dtype="category")
+                pd.DataFrame(data=[], columns=self.required_cols)
             )
             self._time_points = TimePoints([])
 

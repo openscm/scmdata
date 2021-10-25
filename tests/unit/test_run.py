@@ -442,7 +442,6 @@ def test_init_empty(scm_run):
     empty_run = ScmRun()
     assert empty_run.empty
 
-    # Check that it still works as expected
     assert empty_run.filter(test="anything").empty
 
     empty_run.append(scm_run, inplace=True)
@@ -1911,6 +1910,7 @@ def test_run_append_inplace_wrong_base(scm_run):
 
 def test_run_append_empty(scm_run):
     assert run_append([ScmRun()]).empty
+    assert run_append([ScmRun(), ScmRun()]).empty
 
     assert_scmdf_almost_equal(run_append([ScmRun(), scm_run]), scm_run)
 
