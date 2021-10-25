@@ -323,7 +323,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def __init__(
         self,
-        data: Any,
+        data: Any = None,
         index: Any = None,
         columns: Optional[Union[Dict[str, list], Dict[str, str]]] = None,
         metadata: Optional[MetadataType] = None,
@@ -352,6 +352,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             If a string is passed, data will be attempted to be read from file.
             Currently, reading from CSV, gzipped CSV and Excel formatted files is
             supported.
+
+            If no data is provided than any empty :class:`ScmRun <scmdata.run.ScmRun>`
+            object is created.
 
         index: np.ndarray
             If :obj:`index` is not ``None``, then the :obj:`index` is used as the timesteps
@@ -436,10 +439,16 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             self._time_points = TimePoints(data.time_points.values)
             if metadata is None:
                 metadata = data.metadata.copy()
-        else:
+        elif data is not None:
             if copy_data and hasattr(data, "copy"):
                 data = data.copy()
             self._init_timeseries(data, index, columns, copy_data=copy_data, **kwargs)
+        else:
+            self._df = pd.DataFrame(dtype=float)
+            self._meta = pd.MultiIndex.from_frame(
+                pd.DataFrame(columns=self.required_cols, dtype="category")
+            )
+            self._time_points = TimePoints([])
 
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)

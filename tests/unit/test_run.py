@@ -438,6 +438,17 @@ def test_init_duplicate_columns(test_pd_df):
     )
 
 
+def test_init_empty(scm_run):
+    empty_run = ScmRun()
+    assert empty_run.empty
+
+    # Check that it still works as expected
+    assert empty_run.filter(test="anything").empty
+
+    empty_run.append(scm_run, inplace=True)
+    assert not empty_run.empty
+
+
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
     df = ScmRun(test_pd_df).to_iamdataframe()
 
@@ -1896,6 +1907,12 @@ def test_run_append_inplace_wrong_base(scm_run):
     with pytest.raises(TypeError, match=error_msg):
         with warnings.catch_warnings(record=True):  # ignore warnings in this test
             run_append([scm_run.timeseries(), scm_run], inplace=True)
+
+
+def test_run_append_empty(scm_run):
+    assert run_append([ScmRun()]).empty
+
+    assert_scmdf_almost_equal(run_append([ScmRun(), scm_run]), scm_run)
 
 
 def test_append_chain_column_order_time_interpolation(scm_run):
