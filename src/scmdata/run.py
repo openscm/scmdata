@@ -353,7 +353,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             Currently, reading from CSV, gzipped CSV and Excel formatted files is
             supported.
 
-            If no data is provided than any empty :class:`ScmRun <scmdata.run.ScmRun>`
+            If no data is provided than an empty :class:`ScmRun <scmdata.run.ScmRun>`
             object is created.
 
         index: np.ndarray
@@ -653,10 +653,13 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             return "\n".join(lines)
 
         meta_str = _indent(self.meta.__repr__())
-        time_str = [
-            "Start: {}".format(self.time_points.values[0]),
-            "End: {}".format(self.time_points.values[-1]),
-        ]
+        if len(self.time_points):
+            time_str = [
+                "Start: {}".format(self.time_points.values[0]),
+                "End: {}".format(self.time_points.values[-1]),
+            ]
+        else:
+            time_str = ["Start: N/A", "End: N/A"]
         time_str = _indent("\n".join(time_str))
         return "<{} (timeseries: {}, timepoints: {})>\nTime:\n{}\nMeta:\n{}".format(
             self.__class__.__name__,

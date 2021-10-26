@@ -441,11 +441,21 @@ def test_init_duplicate_columns(test_pd_df):
 def test_init_empty(scm_run):
     empty_run = ScmRun()
     assert empty_run.empty
-
-    assert empty_run.filter(test="anything").empty
+    assert empty_run.filter(model="*").empty
 
     empty_run.append(scm_run, inplace=True)
     assert not empty_run.empty
+
+
+def test_repr_empty():
+    empty_run = ScmRun()
+    assert str(empty_run) == empty_run.__repr__()
+
+    repr = str(empty_run)
+    assert "Start: N/A" in repr
+    assert "End: N/A" in repr
+
+    assert "timeseries: 0, timepoints: 0" in repr
 
 
 def test_as_iam(test_iam_df, test_pd_df, iamdf_type):
