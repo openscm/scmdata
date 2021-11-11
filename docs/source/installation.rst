@@ -18,7 +18,7 @@ is the recommended method for installing scmdata for most users.
 
 .. code:: bash
 
-    conda install -c conda-forge netcdf-scm
+    conda install -c conda-forge scmdata
 
 Installing with pip
 -------------------
