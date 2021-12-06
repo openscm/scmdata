@@ -611,9 +611,11 @@ def _integrate_trapz(emissions):
     return out
 
 
-def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=None):
+def integrate(self, out_var=None, method="trapz", reference_year=None):
     """
     Integrate with respect to time
+
+    The values represent the integral up to and including the year of interest.
 
     Parameters
     ----------
