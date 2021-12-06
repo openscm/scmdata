@@ -632,15 +632,19 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=
         on the intended use-case.
 
         The available options are:
-        * 'sum' - calculate the cumulative sum of each timeseries. This
+
+        ``sum``
+         calculate the cumulative sum of each timeseries. This
          method is best used to integrate timeseries of emissions (or
          other piecewise constant timeseries) when the data are on annual time
          steps. This method requires timeseries on a uniform, annual interval.
-        * 'trapz' (default) - uses the trapezoid rule to approximate the integral
+
+        ``trapz`` (default)
+         uses the trapezoid rule to approximate the integral
          of a timeseries. This function should be used for piecewise-linear
          timeseries, i.e. concentrations or decadal estimates of emissions.
          This method handles non-uniform intervals without having to resample to
-          annual values.
+         annual values.
 
         If you wish to calculate cumulative emissions, the preferred approach
         should be to resample to annual values and then use the `sum` method.
@@ -652,7 +656,7 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=
 
     See Also
     --------
-    :method:`ScmRun.resample <scmdata.run.ScmRun.resample>`
+    :meth:`ScmRun.resample <scmdata.run.ScmRun.resample>`
 
     Returns
     -------
@@ -676,7 +680,7 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=
         raise ImportError("scipy is not installed. Run 'pip install scipy'")
 
     run = self
-    if reference_year:
+    if reference_year is not None:
         if reference_year not in run["year"].values:
             raise ValueError("Desired reference year is not present")
         run = run.filter(year=range(reference_year, run["year"].max() + 1))
