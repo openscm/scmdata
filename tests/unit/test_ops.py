@@ -576,7 +576,7 @@ def test_wrong_length_ops(op):
 # We can add initial back if use case arises. At the moment I can't see an easy
 # way to make the units behave.
 # @pytest.mark.parametrize("initial", (None, 0, 1, -1.345))
-def test_integration(out_var):
+def test_integration_trapz(out_var):
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[1, 2, 3], unit="GtC / yr")
 
@@ -597,7 +597,7 @@ def test_integration(out_var):
     )
 
 
-def test_integration_time_handling_big_jumps():
+def test_integration_trapz_time_handling_big_jumps():
     start = get_single_ts(data=[1, 2, 3], index=[10, 20, 50], unit="GtC / yr")
 
     res = start.integrate()
@@ -607,7 +607,7 @@ def test_integration_time_handling_big_jumps():
     )
 
 
-def test_integration_time_handling_all_over_jumps():
+def test_integration_trapz_time_handling_all_over_jumps():
     start = get_single_ts(
         data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC / yr"
     )
@@ -624,10 +624,17 @@ def test_integration_time_handling_all_over_jumps():
     )
 
 
-def test_integration_nan_handling():
+@pytest.mark.parametrize(
+    "method,exp",
+    [
+        ("sum", [1, 3, 6, np.nan, np.nan, np.nan, np.nan, np.nan]),
+        ("trapz", [0, 1.5, 4, np.nan, np.nan, np.nan, np.nan, np.nan]),
+    ],
+)
+def test_integration_nan_handling(method, exp):
     start = get_single_ts(
         data=[1, 2, 3, np.nan, 12, np.nan, 30, 40],
-        index=[10, 20, 50, 60, 70, 80, 90, 100],
+        index=[1, 2, 3, 4, 5, 6, 7, 8],
         unit="GtC / yr",
     )
 
@@ -638,19 +645,17 @@ def test_integration_nan_handling():
         ":meth:`interpolate`?"
     )
     with pytest.warns(UserWarning, match=warn_msg):
-        res = start.integrate()
+        res = start.integrate(method=method)
 
     npt.assert_allclose(
-        res.values.squeeze(),
-        [0, 15, 90, np.nan, np.nan, np.nan, np.nan, np.nan],
-        rtol=1e-3,
+        res.values.squeeze().round(1), exp, rtol=1e-3,
     )
 
 
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )
-def test_integration_multiple_ts():
+def test_integration_trapz_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
     start = get_multiple_ts(
         data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10]]).T,
@@ -678,6 +683,169 @@ def test_integration_multiple_ts():
         assert_scmdf_almost_equal(
             res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3
         )
+
+
+@pytest.mark.parametrize("out_var", (None, "new out var"))
+def test_integration_sum(out_var):
+    dat = [1, 2, 3]
+    start = get_single_ts(data=dat, index=[2020, 2021, 2022], unit="GtC / yr")
+
+    res = start.integrate(out_var=out_var, method="sum")
+
+    if out_var is None:
+        exp_var = ("Cumulative " + start["variable"]).values
+    else:
+        exp_var = out_var
+
+    exp = get_single_ts(
+        data=np.array([1, 3, 6]),
+        index=[2020, 2021, 2022],
+        variable=exp_var,
+        unit="gigatC",
+    )
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+def test_integration_sum_timesteps():
+    dat = [1, 2, 3]
+    start = get_single_ts(data=dat, index=[2020, 2021, 2024], unit="GtC / yr")
+
+    match = 'Annual data are required for "sum" integration'
+
+    with pytest.raises(ValueError, match=match):
+        start.integrate(method="sum")
+
+    start.resample("AS").integrate(method="sum")
+
+
+def test_integration_sum_nans():
+    # sum can handle starting with nans, tapz output will be all nans
+    dat = [np.nan, 1, 2, np.nan, 3, np.nan]
+    start = get_single_ts(data=dat, index=list(range(2019, 2024 + 1)), unit="GtC / yr")
+
+    res = start.integrate(method="sum")
+
+    exp_var = ("Cumulative " + start["variable"]).values
+
+    exp = get_single_ts(
+        data=np.array([np.nan, 1, 3, np.nan, np.nan, np.nan]),
+        index=list(range(2019, 2024 + 1)),
+        variable=exp_var,
+        unit="gigatC",
+    )
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+def test_integration_sum_multiple_ts():
+    variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
+    start = get_multiple_ts(
+        data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10]]).T,
+        index=[2020, 2021, 2022],
+        variable=variables,
+        unit=["Mt CO2 / yr", "W / m^2", "K"],
+    )
+
+    res = start.integrate(method="sum")
+
+    exp = get_single_ts(
+        data=np.array([[1, 3, 6], [-1, -3, -6], [0, 5, 15]]).T,
+        index=[2020, 2021, 2022],
+        variable=["Cumulative {}".format(v) for v in variables],
+        unit=["Mt CO2", "W / m^2 * yr", "K * yr"],
+    )
+
+    for v in variables:
+        cv = "Cumulative {}".format(v)
+        exp_comp = exp.filter(variable=cv)
+        res_comp = res.filter(variable=cv).convert_unit(
+            exp_comp.get_unique_meta("unit", no_duplicates=True),
+        )
+
+        assert_scmdf_almost_equal(
+            res_comp, exp_comp, allow_unordered=True, check_ts_names=False
+        )
+
+
+@pytest.mark.parametrize("out_unit", ["Gt C", "GtCO2", "Tg C"])
+@pytest.mark.parametrize("method", ["sum", "trapz"])
+def test_integration_units(out_unit, method):
+    dat = [1, 2, 3]
+    start = get_single_ts(data=dat, index=[2020, 2021, 2022], unit="GtC / yr")
+
+    res = start.integrate(method=method, out_unit=out_unit)
+
+    assert res.get_unique_meta("unit", True) == out_unit
+
+    if method == "sum":
+        # Only check the values of sum
+        exp = get_single_ts(
+            data=np.array([[1, 3, 6]]).T,
+            index=[2020, 2021, 2022],
+            variable="Cumulative Emissions|CO2",
+            unit="GtC",
+        ).convert_unit(out_unit)
+
+        assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+@pytest.mark.xfail(
+    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
+)
+@pytest.mark.parametrize("method", ["sum", "trapz"])
+def test_integration_reference_year(method):
+    reference_year = 2021
+
+    dat = [1, 2, 3]
+    start = get_single_ts(data=dat, index=[2020, 2021, 2022], unit="GtC / yr")
+
+    res = start.integrate(method=method, reference_year=reference_year)
+    assert res.get_unique_meta("reference_period_start_year", True) == reference_year
+    assert res.get_unique_meta("reference_period_end_year", True) == reference_year
+
+    assert res["year"].min() == reference_year
+
+    if method == "sum":
+        # Only check the values of sum
+        exp = get_single_ts(
+            data=np.array([[2, 5]]).T,
+            index=[2021, 2022],
+            variable="Cumulative Emissions|CO2",
+            unit="gigatC",
+        )
+
+        assert_scmdf_almost_equal(
+            res.drop_meta(["reference_period_start_year", "reference_period_end_year"]),
+            exp,
+            allow_unordered=True,
+            check_ts_names=False,
+        )
+    elif method == "trapz":
+        # Only check the values of sum
+        exp = get_single_ts(
+            data=np.array([[0.0, 2.5]]).T,
+            index=[2021, 2022],
+            variable="Cumulative Emissions|CO2",
+            unit="gigatC",
+        )
+
+        assert_scmdf_almost_equal(
+            res.drop_meta(["reference_period_start_year", "reference_period_end_year"]),
+            exp,
+            allow_unordered=True,
+            check_ts_names=False,
+            rtol=3,
+        )
+
+
+@pytest.mark.parametrize("reference_year", [0, 2019, 2030])
+@pytest.mark.parametrize("method", ["sum", "trapz"])
+def test_integration_reference_year_missing(method, reference_year):
+    dat = [1, 2, 3]
+    start = get_single_ts(data=dat, index=[2020, 2021, 2022], unit="GtC / yr")
+
+    match = "Desired reference year is not present"
+    with pytest.raises(ValueError, match=match):
+        start.integrate(method=method, reference_year=reference_year)
 
 
 @pytest.mark.xfail(

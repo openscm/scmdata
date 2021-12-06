@@ -560,10 +560,26 @@ def divide(self, other, op_cols, **kwargs):
 def _integrate_sum(emissions):
     time_unit = "a"
 
-    years = emissions["years"]
-    if years.df
+    # Check that all intervals are uniform and equal
+    years = emissions["year"]
+    if not (years.diff().iloc[1:] == 1).all():
+        raise ValueError(
+            'Annual data are required for "sum" integration. See ScmRun.resample'
+        )
 
     ts = emissions.timeseries()
+
+    # Find the first continuous set of valid values
+    # Values after this first set will be set to nan
+    # This ensures that any gaps in the data invalidates the cumulative sum
+    valid_mask = ~np.isnan(ts).values
+    first_nonnan = np.argmax(valid_mask, axis=1)
+
+    for i, valid_row in enumerate(valid_mask):
+        first = first_nonnan[i]
+        first_non_valid = np.argmax(~valid_row[first + 1 :])
+        if first_non_valid and (~valid_row[first + 1 :]).any():
+            ts.iloc[i, first + first_non_valid + 1 :] = np.nan
 
     out = pd.DataFrame(np.cumsum(ts, axis=1))
     out.index = ts.index
@@ -595,7 +611,7 @@ def _integrate_trapz(emissions):
     return out
 
 
-def integrate(self, out_var=None, out_unit=None, method="trapz", zero_year=None):
+def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=None):
     """
     Integrate with respect to time
 
@@ -624,9 +640,10 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", zero_year=None)
          of a timeseries. This method handles non-uniform intervals without
          having to resample to annual values.
 
-    zero_year: int
+    reference_year: int
         If provided, the integral shall be calculated with respect to the given
-        year.
+        year. Only values greater than or equal to ``reference_year`` will
+        be included in the results.
 
     See Also
     --------
@@ -653,7 +670,13 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", zero_year=None)
     if not has_scipy:
         raise ImportError("scipy is not installed. Run 'pip install scipy'")
 
-    if self.timeseries().isnull().sum().sum() > 0:
+    run = self
+    if reference_year:
+        if reference_year not in run["year"].values:
+            raise ValueError("Desired reference year is not present")
+        run = run.filter(year=range(reference_year, run["year"].max() + 1))
+
+    if run.timeseries().isnull().sum().sum() > 0:
         warnings.warn(
             "You are integrating data which contains nans so your result will "
             "also contain nans. Perhaps you want to remove the nans before "
@@ -662,9 +685,9 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", zero_year=None)
         )
 
     if method == "trapz":
-        out = _integrate_trapz(self)
+        out = _integrate_trapz(run)
     elif method == "sum":
-        out = _integrate_sum(self)
+        out = _integrate_sum(run)
     else:
         raise ValueError("Unknown method")
 
@@ -686,8 +709,9 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", zero_year=None)
     else:
         out["variable"] = out_var
 
-    if zero_year:
-        out = out.relative_to_ref_period_mean(zero_year)
+    if reference_year:
+        out["reference_period_start_year"] = reference_year
+        out["reference_period_end_year"] = reference_year
 
     return out
 
