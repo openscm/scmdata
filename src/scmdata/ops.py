@@ -633,17 +633,22 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=
 
         The available options are:
         * 'sum' - calculate the cumulative sum of each timeseries. This
-         method is best used to integrate emissions (or other piecewise
-         constant values) when the data are on annual time steps. This method
-         requires timeseries on a uniform, annual interval.
+         method is best used to integrate timeseries of emissions (or
+         other piecewise constant timeseries) when the data are on annual time
+         steps. This method requires timeseries on a uniform, annual interval.
         * 'trapz' (default) - uses the trapezoid rule to approximate the integral
-         of a timeseries. This method handles non-uniform intervals without
-         having to resample to annual values.
+         of a timeseries. This function should be used for piecewise-linear
+         timeseries, i.e. concentrations or decadal estimates of emissions.
+         This method handles non-uniform intervals without having to resample to
+          annual values.
+
+        If you wish to calculate cumulative emissions, the preferred approach
+        should be to resample to annual values and then use the `sum` method.
 
     reference_year: int
         If provided, the integral shall be calculated with respect to the given
-        year. Only values greater than or equal to ``reference_year`` will
-        be included in the results.
+        year. Only values for years greater than or equal to ``reference_year``
+        will  be included in the results.
 
     See Also
     --------
