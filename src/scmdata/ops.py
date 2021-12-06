@@ -569,19 +569,7 @@ def _integrate_sum(emissions):
 
     ts = emissions.timeseries()
 
-    # Find the first continuous set of valid values
-    # Values after this first set will be set to nan
-    # This ensures that any gaps in the data invalidates the cumulative sum
-    valid_mask = ~np.isnan(ts).values
-    first_nonnan = np.argmax(valid_mask, axis=1)
-
-    for i, valid_row in enumerate(valid_mask):
-        first = first_nonnan[i]
-        first_non_valid = np.argmax(~valid_row[first + 1 :])
-        if first_non_valid and (~valid_row[first + 1 :]).any():
-            ts.iloc[i, first + first_non_valid + 1 :] = np.nan
-
-    out = pd.DataFrame(np.cumsum(ts, axis=1))
+    out = ts.cumsum(skipna=False, axis=1)
     out.index = ts.index
     out.columns = ts.columns
 

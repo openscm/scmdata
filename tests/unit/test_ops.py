@@ -723,15 +723,17 @@ def test_integration_sum_nans():
     dat = [np.nan, 1, 2, np.nan, 3, np.nan]
     start = get_single_ts(data=dat, index=list(range(2019, 2024 + 1)), unit="GtC / yr")
 
-    res = start.integrate(method="sum")
+    res = start.integrate(method="sum", reference_year=2020)
 
     exp_var = ("Cumulative " + start["variable"]).values
 
     exp = get_single_ts(
-        data=np.array([np.nan, 1, 3, np.nan, np.nan, np.nan]),
-        index=list(range(2019, 2024 + 1)),
+        data=np.array([1, 3, np.nan, np.nan, np.nan]),
+        index=list(range(2020, 2024 + 1)),
         variable=exp_var,
         unit="gigatC",
+        reference_period_start_year=2020,
+        reference_period_end_year=2020,
     )
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
