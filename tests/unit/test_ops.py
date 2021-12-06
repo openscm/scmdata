@@ -848,6 +848,13 @@ def test_integration_reference_year_missing(method, reference_year):
         start.integrate(method=method, reference_year=reference_year)
 
 
+def test_integration_unknown_method():
+    start = get_single_ts(data=[1, 2, 3], index=[2020, 2021, 2022], unit="GtC / yr")
+
+    with pytest.raises(NotImplementedError, match="method unknown"):
+        start.integrate(method="unknown")
+
+
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )

@@ -622,11 +622,6 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=
         ``out_var``. Otherwise, the output variables are equal to the input
         variables, prefixed with "Cumulative ".
 
-    out_unit : str
-        If provided, the output will be converted to the target unit. The output
-        will have a different dimensionality than the input data so `out_unit`
-        should reflect this.
-
     method : str
         Method used to integrate. The selected methods have pros/cons depending
         on the intended use-case.
@@ -698,7 +693,7 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=
     elif method == "sum":
         out = _integrate_sum(run)
     else:
-        raise NotImpletemendError(f"method {method}")
+        raise NotImplementedError(f"method {method}")
 
     try:
         u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
@@ -707,11 +702,6 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=
     except ValueError:
         # more than one unit, don't try to clean up
         pass
-
-    if out_unit:
-        # This unit conversion is specified by the user so shouldn't be handled
-        # in the above exception handler
-        out = out.convert_unit(out_unit)
 
     if out_var is None:
         out["variable"] = "Cumulative " + out["variable"]
