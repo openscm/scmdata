@@ -719,7 +719,7 @@ def test_integration_sum_timesteps():
 
 
 def test_integration_sum_nans():
-    # sum can handle starting with nans, tapz output will be all nans
+    # sum can handle starting with nans, trapz output would be all nans
     dat = [np.nan, 1, 2, np.nan, 3, np.nan]
     start = get_single_ts(data=dat, index=list(range(2019, 2024 + 1)), unit="GtC / yr")
 

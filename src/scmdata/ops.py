@@ -564,7 +564,7 @@ def _integrate_sum(emissions):
     years = emissions["year"]
     if not (years.diff().iloc[1:] == 1).all():
         raise ValueError(
-            'Annual data are required for "sum" integration. See ScmRun.resample'
+            'Annual data are required for "sum" integration. Use ScmRun.resample first'
         )
 
     ts = emissions.timeseries()
@@ -642,7 +642,7 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=
         ``trapz`` (default)
          uses the trapezoid rule to approximate the integral
          of a timeseries. This function should be used for piecewise-linear
-         timeseries, i.e. concentrations or decadal estimates of emissions.
+         timeseries, e.g. concentrations or decadal estimates of emissions.
          This method handles non-uniform intervals without having to resample to
          annual values.
 
@@ -698,7 +698,7 @@ def integrate(self, out_var=None, out_unit=None, method="trapz", reference_year=
     elif method == "sum":
         out = _integrate_sum(run)
     else:
-        raise ValueError("Unknown method")
+        raise NotImpletemendError(f"method {method}")
 
     try:
         u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
