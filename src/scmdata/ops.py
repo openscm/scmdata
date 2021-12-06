@@ -557,7 +557,45 @@ def divide(self, other, op_cols, **kwargs):
     return type(self)(out)
 
 
-def integrate(self, out_var=None):
+def _integrate_sum(emissions):
+    time_unit = "a"
+
+    years = emissions["years"]
+    if years.df
+
+    ts = emissions.timeseries()
+
+    out = pd.DataFrame(np.cumsum(ts, axis=1))
+    out.index = ts.index
+    out.columns = ts.columns
+
+    out = type(emissions)(out)
+    out *= unit_registry(time_unit)
+    return out
+
+
+def _integrate_trapz(emissions):
+    time_unit = "s"
+    times_in_s = emissions.time_points.values.astype(
+        "datetime64[{}]".format(time_unit)
+    ).astype("int")
+    ts = emissions.timeseries()
+
+    # If required, we can remove the hard-coding of initial, it just requires
+    # some thinking about unit handling
+    _initial = 0.0
+    out = pd.DataFrame(
+        scipy.integrate.cumtrapz(y=ts, x=times_in_s, axis=1, initial=_initial)
+    )
+    out.index = ts.index
+    out.columns = ts.columns
+
+    out = type(emissions)(out)
+    out *= unit_registry(time_unit)
+    return out
+
+
+def integrate(self, out_var=None, out_unit=None, method="trapz", zero_year=None):
     """
     Integrate with respect to time
 
@@ -566,13 +604,45 @@ def integrate(self, out_var=None):
     out_var : str
         If provided, the variable column of the output is set equal to
         ``out_var``. Otherwise, the output variables are equal to the input
-        variables, prefixed with "Cumulative " .
+        variables, prefixed with "Cumulative ".
+
+    out_unit : str
+        If provided, the output will be converted to the target unit. The output
+        will have a different dimensionality than the input data so `out_unit`
+        should reflect this.
+
+    method : str
+        Method used to integrate. The selected methods have pros/cons depending
+        on the intended use-case.
+
+        The available options are:
+        * 'sum' - calculate the cumulative sum of each timeseries. This
+         method is best used to integrate emissions (or other piecewise
+         constant values) when the data are on annual time steps. This method
+         requires timeseries on a uniform, annual interval.
+        * 'trapz' (default) - uses the trapezoid rule to approximate the integral
+         of a timeseries. This method handles non-uniform intervals without
+         having to resample to annual values.
+
+    zero_year: int
+        If provided, the integral shall be calculated with respect to the given
+        year.
+
+    See Also
+    --------
+    :method:`ScmRun.resample <scmdata.run.ScmRun.resample>`
 
     Returns
     -------
     :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
         :class:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the integral of ``self`` with respect
         to time
+
+    Raises
+    ------
+    ValueError
+        If an unknown method is provided
+        Failed unit conversion
 
     Warns
     -----
@@ -583,44 +653,41 @@ def integrate(self, out_var=None):
     if not has_scipy:
         raise ImportError("scipy is not installed. Run 'pip install scipy'")
 
-    time_unit = "s"
-    times_in_s = self.time_points.values.astype(
-        "datetime64[{}]".format(time_unit)
-    ).astype("int")
-
-    ts = self.timeseries()
-    if ts.isnull().sum().sum() > 0:
+    if self.timeseries().isnull().sum().sum() > 0:
         warnings.warn(
             "You are integrating data which contains nans so your result will "
             "also contain nans. Perhaps you want to remove the nans before "
             "performing the integration using a combination of :meth:`filter` "
             "and :meth:`interpolate`?"
         )
-    # If required, we can remove the hard-coding of initial, it just requires
-    # some thinking about unit handling
-    _initial = 0.0
-    out = pd.DataFrame(
-        scipy.integrate.cumtrapz(y=ts, x=times_in_s, axis=1, initial=_initial)
-    )
-    out.index = ts.index
-    out.columns = ts.columns
 
-    out = type(self)(out)
-    out *= unit_registry(time_unit)
+    if method == "trapz":
+        out = _integrate_trapz(self)
+    elif method == "sum":
+        out = _integrate_sum(self)
+    else:
+        raise ValueError("Unknown method")
 
     try:
-        out_unit = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
-        out_unit = str(unit_registry(out_unit).to_reduced_units().units)
-        out = out.convert_unit(out_unit)
-
+        u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
+        u = str(unit_registry(u).to_reduced_units().units)
+        out = out.convert_unit(u)
     except ValueError:
         # more than one unit, don't try to clean up
         pass
+
+    if out_unit:
+        # This unit conversion is specified by the user so shouldn't be handled
+        # in the above exception handler
+        out = out.convert_unit(out_unit)
 
     if out_var is None:
         out["variable"] = "Cumulative " + out["variable"]
     else:
         out["variable"] = out_var
+
+    if zero_year:
+        out = out.relative_to_ref_period_mean(zero_year)
 
     return out
 
