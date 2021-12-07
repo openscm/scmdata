@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#184 <https://github.com/openscm/scmdata/pull/184>`_) Add :func:`scmdata.run.ScmRun.round`
 - (`#182 <https://github.com/openscm/scmdata/pull/182>`_) Updated incorrect `conda` install instructions
 
 v0.13.1

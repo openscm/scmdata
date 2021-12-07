@@ -299,6 +299,13 @@ def _from_ts(
     return df, meta
 
 
+def _get_target(run, inplace):
+    if inplace:
+        return run
+    else:
+        return run.copy()
+
+
 class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     """
     Base class of a data container for timeseries data
@@ -745,10 +752,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         KeyError
             If any of the columns do not exist in the meta :class:`DataFrame`
         """
-        if inplace:
-            ret = self
-        else:
-            ret = self.copy()
+        ret = _get_target(self, inplace)
 
         if isinstance(columns, str):
             columns = [columns]
@@ -1881,11 +1885,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             ``"unit_context"`` is already included in ``self``'s :meth:`meta_attributes`
             and it does not match ``context`` for the variables to be converted.
         """
-        # pylint: disable=protected-access
-        if inplace:
-            ret = self
-        else:
-            ret = self.copy()
+        ret = _get_target(self, inplace)
 
         to_convert_filtered = ret.filter(**kwargs, log_if_empty=False)
         to_not_convert_filtered = ret.filter(**kwargs, keep=False, log_if_empty=False)
@@ -2199,6 +2199,45 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 raise NotImplementedError  # pragma: no cover
 
             return type(self)(data, index=index, columns=meta)
+
+    def round(self, decimals=3, inplace=False):
+        """
+        Round data to a given number of decimal places.
+
+        For values exactly halfway between rounded decimal values, NumPy rounds
+        to the nearest even value. Thus 1.5 and 2.5 round to 2.0, -0.5 and 0.5
+        round to 0.0, etc.
+
+        Parameters
+        ----------
+        decimals : int
+            Number of decimal places to round each value to.
+
+        inplace : bool
+            If True, apply the conversion inplace and return None
+
+        Returns
+        -------
+        :class:`ScmRun <scmdata.run.ScmRun>`
+            If :obj:`inplace` is not ``False``, a new :class:`ScmRun <scmdata.run.ScmRun>` instance
+            with the rounded values.
+
+        """
+        ret = _get_target(self, inplace)
+
+        # Check if any values are smaller than half the smallest step
+        # They may be rounded down to zero
+        min_value = ret._df.abs().min().min()
+        if min_value <= 0.5 * 10 ** -decimals:
+            warnings.warn(
+                "There are small values which may be truncated during rounding. Either increase the number"
+                "of decimals or convert the units of the timeseries so that the quantities are larger."
+            )
+
+        ret._df = ret._df.round(decimals)
+
+        if not inplace:
+            return ret
 
 
 def _merge_metadata(metadata):
