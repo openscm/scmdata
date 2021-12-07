@@ -3485,32 +3485,26 @@ def test_time_as_cftime(scm_run, output_cls):
 def test_round():
     # There are some quirks with the rounding due to the algo used
 
-    run = ScmRun(
-        data=np.array([[3.6565, 5.51, 5.55, 5.45, 1]]).T,
-        index=[2000, 2025, 2030, 2035, 2040],
-        columns={
+    def compare(inp, exp, decimals=1):
+        cols = {
             "model": "model",
             "scenario": "scenario",
             "variable": "variable",
             "region": "region",
             "unit": "unit",
-        },
-    )
+        }
+        index = [2000, 2025, 2030, 2035, 2040]
+        run = ScmRun(data=np.array([inp]).T, index=index, columns=cols,)
 
-    res = run.round(1)
+        res = run.round(decimals)
 
-    exp = ScmRun(
-        data=np.array([[3.7, 5.5, 5.6, 5.4, 1.0]]).T,
-        index=[2000, 2025, 2030, 2035, 2040],
-        columns={
-            "model": "model",
-            "scenario": "scenario",
-            "variable": "variable",
-            "region": "region",
-            "unit": "unit",
-        },
-    )
-    assert_scmdf_almost_equal(res, exp)
+        exp = ScmRun(data=np.array([exp]).T, index=index, columns=cols,)
+        assert_scmdf_almost_equal(res, exp)
+
+    compare([3.6565, 5.51, 5.55, 5.45, 1], [3.7, 5.5, 5.6, 5.4, 1.0])
+    compare([-3.6565, -5.51, -5.55, -5.45, -1], [-3.7, -5.5, -5.6, -5.4, -1.0])
+    compare([-3.6565, -5.51, -5.55, -5.45, -1], [-4, -6, -6, -5.0, -1.0], decimals=0)
+    compare([3.6565, 5.51, 5.55, 5.45, 1], [3.6565, 5.51, 5.55, 5.45, 1.0], decimals=5)
 
 
 def test_round_warns_small():
@@ -3531,15 +3525,15 @@ def test_round_warns_small():
     with pytest.warns(UserWarning, match=match):
         res = run.round(1)
 
-        exp = ScmRun(
-            data=np.array([[3.7, 5.5, 5.6, 1.0, 0]]).T,
-            index=[2000, 2025, 2030, 2035, 2040],
-            columns={
-                "model": "model",
-                "scenario": "scenario",
-                "variable": "variable",
-                "region": "region",
-                "unit": "unit",
-            },
-        )
-        assert_scmdf_almost_equal(res, exp)
+    exp = ScmRun(
+        data=np.array([[3.7, 5.5, 5.6, 1.0, 0]]).T,
+        index=[2000, 2025, 2030, 2035, 2040],
+        columns={
+            "model": "model",
+            "scenario": "scenario",
+            "variable": "variable",
+            "region": "region",
+            "unit": "unit",
+        },
+    )
+    assert_scmdf_almost_equal(res, exp)
