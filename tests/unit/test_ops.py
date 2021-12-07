@@ -768,28 +768,6 @@ def test_integration_sum_multiple_ts():
         )
 
 
-@pytest.mark.parametrize("out_unit", ["Gt C", "GtCO2", "Tg C"])
-@pytest.mark.parametrize("method", ["sum", "trapz"])
-def test_integration_units(out_unit, method):
-    dat = [1, 2, 3]
-    start = get_single_ts(data=dat, index=[2020, 2021, 2022], unit="GtC / yr")
-
-    res = start.integrate(method=method, out_unit=out_unit)
-
-    assert res.get_unique_meta("unit", True) == out_unit
-
-    if method == "sum":
-        # Only check the values of sum
-        exp = get_single_ts(
-            data=np.array([[1, 3, 6]]).T,
-            index=[2020, 2021, 2022],
-            variable="Cumulative Emissions|CO2",
-            unit="GtC",
-        ).convert_unit(out_unit)
-
-        assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
-
-
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )
