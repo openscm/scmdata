@@ -2200,6 +2200,48 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
             return type(self)(data, index=index, columns=meta)
 
+    def round(self, decimals=3, inplace=False):
+        """
+        Round data to a given number of decimal places.
+
+        For values exactly halfway between rounded decimal values, NumPy rounds
+        to the nearest even value. Thus 1.5 and 2.5 round to 2.0, -0.5 and 0.5
+        round to 0.0, etc.
+
+        Parameters
+        ----------
+        decimals : int
+            Number of decimal places to round each value to.
+
+        inplace : bool
+            If True, apply the conversion inplace and return None
+
+        Returns
+        -------
+        :class:`ScmRun <scmdata.run.ScmRun>`
+            If :obj:`inplace` is not ``False``, a new :class:`ScmRun <scmdata.run.ScmRun>` instance
+            with the rounded values.
+
+        """
+        if inplace:
+            ret = self
+        else:
+            ret = self.copy()
+
+        # Check if any values are smaller than half the smallest step
+        # They may be rounded down to zero
+        min_value = ret._df.abs().min().min()
+        if min_value <= 0.5 * 10 ** -decimals:
+            warnings.warn(
+                "There are small values which may be truncated during rounding. Either increase the number"
+                "of decimals or convert the units of the timeseries so that the quantities are larger."
+            )
+
+        ret._df = ret._df.round(decimals)
+
+        if not inplace:
+            return ret
+
 
 def _merge_metadata(metadata):
     res = metadata[0].copy()
