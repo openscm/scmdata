@@ -299,6 +299,13 @@ def _from_ts(
     return df, meta
 
 
+def _get_target(run, inplace):
+    if inplace:
+        return run
+    else:
+        return run.copy()
+
+
 class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     """
     Base class of a data container for timeseries data
@@ -745,10 +752,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         KeyError
             If any of the columns do not exist in the meta :class:`DataFrame`
         """
-        if inplace:
-            ret = self
-        else:
-            ret = self.copy()
+        ret = _get_target(self, inplace)
 
         if isinstance(columns, str):
             columns = [columns]
@@ -1881,11 +1885,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             ``"unit_context"`` is already included in ``self``'s :meth:`meta_attributes`
             and it does not match ``context`` for the variables to be converted.
         """
-        # pylint: disable=protected-access
-        if inplace:
-            ret = self
-        else:
-            ret = self.copy()
+        ret = _get_target(self, inplace)
 
         to_convert_filtered = ret.filter(**kwargs, log_if_empty=False)
         to_not_convert_filtered = ret.filter(**kwargs, keep=False, log_if_empty=False)
@@ -2223,10 +2223,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             with the rounded values.
 
         """
-        if inplace:
-            ret = self
-        else:
-            ret = self.copy()
+        ret = _get_target(self, inplace)
 
         # Check if any values are smaller than half the smallest step
         # They may be rounded down to zero
