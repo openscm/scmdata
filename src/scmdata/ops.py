@@ -557,7 +557,7 @@ def divide(self, other, op_cols, **kwargs):
     return type(self)(out)
 
 
-def cumsum(self):
+def cumsum(self, out_var=None):
     """
     Integrate with respect to time using a cumulative sum
 
@@ -630,6 +630,20 @@ def cumsum(self):
 
     out = type(self)(out)
     out *= unit_registry(time_unit)
+
+    try:
+        u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
+        u = str(unit_registry(u).to_reduced_units().units)
+        out = out.convert_unit(u)
+    except ValueError:
+        # more than one unit, don't try to clean up
+        pass
+
+    if out_var is None:
+        out["variable"] = "Cumulative " + out["variable"]
+    else:
+        out["variable"] = out_var
+
     return out
 
 
@@ -760,7 +774,10 @@ def integrate(self, out_var=None):
         :func:`cumtrapz`.
     """
 
-    warnings.warn("Use lineplot instead", DeprecationWarning)
+    warnings.warn(
+        "integrate has been deprecated in preference of cumsum and cumtrapz",
+        DeprecationWarning,
+    )
 
     return cumtrapz(self, out_var)
 
@@ -1091,6 +1108,8 @@ def inject_ops_methods(cls):
         ("multiply", multiply),
         ("divide", divide),
         ("integrate", integrate),
+        ("cumsum", cumsum),
+        ("cumtrapz", cumtrapz),
         ("delta_per_delta_time", delta_per_delta_time),
         ("linear_regression", linear_regression),
         ("linear_regression_gradient", linear_regression_gradient),

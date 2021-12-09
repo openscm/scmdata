@@ -576,11 +576,11 @@ def test_wrong_length_ops(op):
 # We can add initial back if use case arises. At the moment I can't see an easy
 # way to make the units behave.
 # @pytest.mark.parametrize("initial", (None, 0, 1, -1.345))
-def test_integration_trapz(out_var):
+def test_cumtrapz(out_var):
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[1, 2, 3], unit="GtC / yr")
 
-    res = start.integrate(out_var=out_var)
+    res = start.cumtrapz(out_var=out_var)
 
     if out_var is None:
         exp_var = ("Cumulative " + start["variable"]).values
@@ -597,22 +597,22 @@ def test_integration_trapz(out_var):
     )
 
 
-def test_integration_trapz_time_handling_big_jumps():
+def test_cumtrapz_time_handling_big_jumps():
     start = get_single_ts(data=[1, 2, 3], index=[10, 20, 50], unit="GtC / yr")
 
-    res = start.integrate()
+    res = start.cumtrapz()
 
     npt.assert_allclose(
         res.values.squeeze(), [0, 15, 90], rtol=1e-3,
     )
 
 
-def test_integration_trapz_time_handling_all_over_jumps():
+def test_cumtrapz_time_handling_all_over_jumps():
     start = get_single_ts(
         data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC / yr"
     )
 
-    res = start.integrate()
+    res = start.cumtrapz()
 
     first = 0
     second = first + 1.5 * 0.1
@@ -627,8 +627,8 @@ def test_integration_trapz_time_handling_all_over_jumps():
 @pytest.mark.parametrize(
     "method,exp",
     [
-        ("sum", [1, 3, 6, np.nan, np.nan, np.nan, np.nan, np.nan]),
-        ("trapz", [0, 1.5, 4, np.nan, np.nan, np.nan, np.nan, np.nan]),
+        ("cumsum", [1, 3, 6, np.nan, np.nan, np.nan, np.nan, np.nan]),
+        ("cumtrapz", [0, 1.5, 4, np.nan, np.nan, np.nan, np.nan, np.nan]),
     ],
 )
 def test_integration_nan_handling(method, exp):
@@ -645,7 +645,8 @@ def test_integration_nan_handling(method, exp):
         ":meth:`interpolate`?"
     )
     with pytest.warns(UserWarning, match=warn_msg):
-        res = start.integrate(method=method)
+        f = getattr(start, method)
+        res = f()
 
     npt.assert_allclose(
         res.values.squeeze().round(1), exp, rtol=1e-3,
@@ -655,7 +656,7 @@ def test_integration_nan_handling(method, exp):
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )
-def test_integration_trapz_multiple_ts():
+def test_cumtrapz_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
     start = get_multiple_ts(
         data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10]]).T,
@@ -664,7 +665,7 @@ def test_integration_trapz_multiple_ts():
         unit=["Mt CO2 / yr", "W / m^2", "K"],
     )
 
-    res = start.integrate()
+    res = start.cumtrapz()
 
     exp = get_single_ts(
         data=np.array([[0, 7.5, 45], [0, -7.5, -45], [0, 12.5, 125]]).T,
@@ -686,11 +687,11 @@ def test_integration_trapz_multiple_ts():
 
 
 @pytest.mark.parametrize("out_var", (None, "new out var"))
-def test_integration_sum(out_var):
+def test_cumsum(out_var):
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[2020, 2021, 2022], unit="GtC / yr")
 
-    res = start.integrate(out_var=out_var, method="sum")
+    res = start.cumsum(out_var=out_var)
 
     if out_var is None:
         exp_var = ("Cumulative " + start["variable"]).values
@@ -706,39 +707,19 @@ def test_integration_sum(out_var):
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
 
-def test_integration_sum_timesteps():
+def test_cumsum_timesteps():
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[2020, 2021, 2024], unit="GtC / yr")
 
     match = 'Annual data are required for "sum" integration'
 
     with pytest.raises(ValueError, match=match):
-        start.integrate(method="sum")
+        start.cumsum()
 
-    start.resample("AS").integrate(method="sum")
-
-
-def test_integration_sum_nans():
-    # sum can handle starting with nans, trapz output would be all nans
-    dat = [np.nan, 1, 2, np.nan, 3, np.nan]
-    start = get_single_ts(data=dat, index=list(range(2019, 2024 + 1)), unit="GtC / yr")
-
-    res = start.integrate(method="sum", reference_year=2020)
-
-    exp_var = ("Cumulative " + start["variable"]).values
-
-    exp = get_single_ts(
-        data=np.array([1, 3, np.nan, np.nan, np.nan]),
-        index=list(range(2020, 2024 + 1)),
-        variable=exp_var,
-        unit="gigatC",
-        reference_period_start_year=2020,
-        reference_period_end_year=2020,
-    )
-    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+    start.resample("AS").cumsum()
 
 
-def test_integration_sum_multiple_ts():
+def test_cumsum_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
     start = get_multiple_ts(
         data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10]]).T,
@@ -747,7 +728,7 @@ def test_integration_sum_multiple_ts():
         unit=["Mt CO2 / yr", "W / m^2", "K"],
     )
 
-    res = start.integrate(method="sum")
+    res = start.cumsum()
 
     exp = get_single_ts(
         data=np.array([[1, 3, 6], [-1, -3, -6], [0, 5, 15]]).T,
@@ -768,71 +749,13 @@ def test_integration_sum_multiple_ts():
         )
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
-@pytest.mark.parametrize("method", ["sum", "trapz"])
-def test_integration_reference_year(method):
-    reference_year = 2021
-
+def test_integrate_deprecated():
     dat = [1, 2, 3]
-    start = get_single_ts(data=dat, index=[2020, 2021, 2022], unit="GtC / yr")
+    start = get_single_ts(data=dat, index=[2020, 2021, 2024], unit="GtC / yr")
 
-    res = start.integrate(method=method, reference_year=reference_year)
-    assert res.get_unique_meta("reference_period_start_year", True) == reference_year
-    assert res.get_unique_meta("reference_period_end_year", True) == reference_year
-
-    assert res["year"].min() == reference_year
-
-    if method == "sum":
-        # Only check the values of sum
-        exp = get_single_ts(
-            data=np.array([[2, 5]]).T,
-            index=[2021, 2022],
-            variable="Cumulative Emissions|CO2",
-            unit="gigatC",
-        )
-
-        assert_scmdf_almost_equal(
-            res.drop_meta(["reference_period_start_year", "reference_period_end_year"]),
-            exp,
-            allow_unordered=True,
-            check_ts_names=False,
-        )
-    elif method == "trapz":
-        # Only check the values of sum
-        exp = get_single_ts(
-            data=np.array([[0.0, 2.5]]).T,
-            index=[2021, 2022],
-            variable="Cumulative Emissions|CO2",
-            unit="gigatC",
-        )
-
-        assert_scmdf_almost_equal(
-            res.drop_meta(["reference_period_start_year", "reference_period_end_year"]),
-            exp,
-            allow_unordered=True,
-            check_ts_names=False,
-            rtol=3,
-        )
-
-
-@pytest.mark.parametrize("reference_year", [0, 2019, 2030])
-@pytest.mark.parametrize("method", ["sum", "trapz"])
-def test_integration_reference_year_missing(method, reference_year):
-    dat = [1, 2, 3]
-    start = get_single_ts(data=dat, index=[2020, 2021, 2022], unit="GtC / yr")
-
-    match = "Desired reference year is not present"
-    with pytest.raises(ValueError, match=match):
-        start.integrate(method=method, reference_year=reference_year)
-
-
-def test_integration_unknown_method():
-    start = get_single_ts(data=[1, 2, 3], index=[2020, 2021, 2022], unit="GtC / yr")
-
-    with pytest.raises(NotImplementedError, match="method unknown"):
-        start.integrate(method="unknown")
+    match = "integrate has been deprecated in preference of cumsum and cumtrapz"
+    with pytest.warns(DeprecationWarning, match=match):
+        start.integrate()
 
 
 @pytest.mark.xfail(
