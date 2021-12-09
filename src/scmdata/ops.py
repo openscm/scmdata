@@ -570,9 +570,12 @@ def cumsum(self, out_var=None):
     rule which assumes that the values change linearly between timesteps.
 
     This method requires data to be on an annual timeseries. :method:`scmdata.run.ScmRun.resample`
-    can be used to resample the data onto annual timesteps.
+    can be used to resample the data onto annual timesteps. The outputs contain
+    the cumulative sum from the first value up to and including the year of interest.
 
     If the timeseries are piecewise-linear, :meth:`cumtrapz` should be used instead.
+
+
 
     Parameters
     ----------
@@ -655,6 +658,10 @@ def cumtrapz(self, out_var=None):
     Concentrations, Effective Radiative Forcing, decadal means etc). This method
     handles non-uniform intervals without having to resample to annual values
     first.
+
+    The first timestep in the output will be zero, therefore
+    :meth:`scmdata.run.ScmRun.relative_to_ref_period` can be used to calculate an
+    integral relative to a reference year.
 
     Parameters
     ----------
