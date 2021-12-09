@@ -711,7 +711,7 @@ def test_cumsum_timesteps():
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[2020, 2021, 2024], unit="GtC / yr")
 
-    match = 'Annual data are required for "sum" integration'
+    match = 'Annual data are required for "cumsum" integration'
 
     with pytest.raises(ValueError, match=match):
         start.cumsum()
