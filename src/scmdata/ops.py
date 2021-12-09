@@ -557,7 +557,7 @@ def divide(self, other, op_cols, **kwargs):
     return type(self)(out)
 
 
-def cumsum(self, out_var=None):
+def cumsum(self, out_var=None, check_annual=True):
     """
     Integrate with respect to time using a cumulative sum
 
@@ -569,13 +569,18 @@ def cumsum(self, out_var=None):
     an alternative method for numerical integration, such as the trapizoidal
     rule which assumes that the values change linearly between timesteps.
 
-    This method requires data to be on an annual timeseries. :method:`scmdata.run.ScmRun.resample`
-    can be used to resample the data onto annual timesteps. The outputs contain
-    the cumulative sum from the first value up to and including the year of interest.
+    This method requires data to be on uniform annual intervals.
+    :method:`scmdata.run.ScmRun.resample` can be used to resample the data onto
+    annual timesteps.
+
+    The output timesteps are the same as the timesteps of the input, but since the
+    input timeseries are piecewise constant (i.e. a constant for a given year),
+    the output can be thought of as being a sum up to and including the last day
+    of a given year. The functionality to modify the output timesteps to an
+    arbitrary day/month of the year has not been implemented, if that would be
+    useful raise an issue on GitHub.
 
     If the timeseries are piecewise-linear, :meth:`cumtrapz` should be used instead.
-
-
 
     Parameters
     ----------
@@ -583,6 +588,10 @@ def cumsum(self, out_var=None):
         If provided, the variable column of the output is set equal to
         ``out_var``. Otherwise, the output variables are equal to the input
         variables, prefixed with "Cumulative ".
+
+    check_annual : bool
+        If True (default), check that the timeseries are on uniform annual
+        intervals.
 
     Returns
     -------
@@ -599,7 +608,7 @@ def cumsum(self, out_var=None):
     ValueError
         If an unknown method is provided
         Failed unit conversion
-        Non-annual timeseries
+        Non-annual timeseries and `check_annual` is False
 
     Warns
     -----
@@ -620,9 +629,9 @@ def cumsum(self, out_var=None):
 
     # Check that all intervals are uniform and equal
     years = self["year"]
-    if not (years.diff().iloc[1:] == 1).all():
+    if check_annual and not (years.diff().iloc[1:] == 1).all():
         raise ValueError(
-            'Annual data are required for "sum" integration. Use ScmRun.resample first'
+            'Annual data are required for "cumsum" integration. Use ScmRun.resample first'
         )
 
     ts = self.timeseries()
@@ -659,9 +668,10 @@ def cumtrapz(self, out_var=None):
     handles non-uniform intervals without having to resample to annual values
     first.
 
-    The first timestep in the output will be zero, therefore
-    :meth:`scmdata.run.ScmRun.relative_to_ref_period` can be used to calculate an
-    integral relative to a reference year.
+    The result will contain the same timesteps as the input timeseries, with the
+    first timestep being zero. Each subsequent value represents the integral
+    up to day and time of the timestep. The function :meth:`scmdata.run.ScmRun.relative_to_ref_period`
+    can be used to calculate an integral relative to a reference year.
 
     Parameters
     ----------
@@ -777,8 +787,8 @@ def integrate(self, out_var=None):
         The data being integrated contains nans. If this happens, the output
         data will also contain nans.
     DeprecationWarning
-        This function has been deprecated in preference to :func:`cumsum` and
-        :func:`cumtrapz`.
+        This function has been deprecated in preference to :meth:`cumsum` and
+        :meth:`cumtrapz`.
     """
 
     warnings.warn(
