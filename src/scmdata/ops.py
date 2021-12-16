@@ -773,8 +773,6 @@ def integrate(self, out_var=None):
     :meth:`cumsum`
     :meth:`cumtrapz`
 
-
-
     Raises
     ------
     ValueError
@@ -790,7 +788,6 @@ def integrate(self, out_var=None):
         This function has been deprecated in preference to :meth:`cumsum` and
         :meth:`cumtrapz`.
     """
-
     warnings.warn(
         "integrate has been deprecated in preference of cumsum and cumtrapz",
         DeprecationWarning,
