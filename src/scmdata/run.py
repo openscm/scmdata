@@ -108,7 +108,6 @@ def _read_pandas(
     OSError
         Path specified by :obj:`fname` does not exist
     """
-
     is_remote = pandas.io.common.is_url(fname)
     if not is_remote and not os.path.exists(fname):
         raise OSError("no data file `{}` found!".format(fname))
