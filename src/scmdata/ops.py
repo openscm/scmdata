@@ -570,7 +570,7 @@ def cumsum(self, out_var=None, check_annual=True):
     rule which assumes that the values change linearly between timesteps.
 
     This method requires data to be on uniform annual intervals.
-    :method:`scmdata.run.ScmRun.resample` can be used to resample the data onto
+    :meth:`scmdata.run.ScmRun.resample` can be used to resample the data onto
     annual timesteps.
 
     The output timesteps are the same as the timesteps of the input, but since the
