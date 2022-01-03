@@ -575,7 +575,7 @@ def cumsum(self, out_var=None, check_annual=True):
 
     The output timesteps are the same as the timesteps of the input, but since the
     input timeseries are piecewise constant (i.e. a constant for a given year),
-    the output can be thought of as being a sum up to and including the last day
+    the output can also be thought of as being a sum up to and including the last day
     of a given year. The functionality to modify the output timesteps to an
     arbitrary day/month of the year has not been implemented, if that would be
     useful raise an issue on GitHub.
@@ -601,14 +601,14 @@ def cumsum(self, out_var=None, check_annual=True):
 
     See Also
     --------
-    :meth:`cumtrapz`
+    :func:`cumtrapz`
 
     Raises
     ------
     ValueError
         If an unknown method is provided
         Failed unit conversion
-        Non-annual timeseries and `check_annual` is False
+        Non-annual timeseries and `check_annual` is True
 
     Warns
     -----
@@ -670,7 +670,7 @@ def cumtrapz(self, out_var=None):
 
     The result will contain the same timesteps as the input timeseries, with the
     first timestep being zero. Each subsequent value represents the integral
-    up to day and time of the timestep. The function :meth:`scmdata.run.ScmRun.relative_to_ref_period`
+    up to the day and time of the timestep. The function :meth:`scmdata.run.ScmRun.relative_to_ref_period`
     can be used to calculate an integral relative to a reference year.
 
     Parameters
@@ -701,7 +701,6 @@ def cumtrapz(self, out_var=None):
     UserWarning
         The data being integrated contains nans. If this happens, the output
         data will also contain nans.
-
     """
     if not has_scipy:
         raise ImportError("scipy is not installed. Run 'pip install scipy'")
