@@ -557,22 +557,144 @@ def divide(self, other, op_cols, **kwargs):
     return type(self)(out)
 
 
-def integrate(self, out_var=None):
+def cumsum(self, out_var=None, check_annual=True):
     """
-    Integrate with respect to time
+    Integrate with respect to time using a cumulative sum
+
+    This method should be used when dealing with piecewise-constant timeseries (
+    such as annual emissions) or step functions. In the case of annual emissions,
+    each timestep represents a total flux over a whole year, rather than an
+    average value or point in time estimate. When integrating, one
+    can sum up each individual year to get the cumulative total, rather than using
+    an alternative method for numerical integration, such as the trapizoidal
+    rule which assumes that the values change linearly between timesteps.
+
+    This method requires data to be on uniform annual intervals.
+    :meth:`scmdata.run.ScmRun.resample` can be used to resample the data onto
+    annual timesteps.
+
+    The output timesteps are the same as the timesteps of the input, but since the
+    input timeseries are piecewise constant (i.e. a constant for a given year),
+    the output can also be thought of as being a sum up to and including the last day
+    of a given year. The functionality to modify the output timesteps to an
+    arbitrary day/month of the year has not been implemented, if that would be
+    useful raise an issue on GitHub.
+
+    If the timeseries are piecewise-linear, :meth:`cumtrapz` should be used instead.
 
     Parameters
     ----------
     out_var : str
         If provided, the variable column of the output is set equal to
         ``out_var``. Otherwise, the output variables are equal to the input
-        variables, prefixed with "Cumulative " .
+        variables, prefixed with "Cumulative ".
+
+    check_annual : bool
+        If True (default), check that the timeseries are on uniform annual
+        intervals.
 
     Returns
     -------
     :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
         :class:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the integral of ``self`` with respect
         to time
+
+    See Also
+    --------
+    :func:`cumtrapz`
+
+    Raises
+    ------
+    ValueError
+        If an unknown method is provided
+        Failed unit conversion
+        Non-annual timeseries and `check_annual` is True
+
+    Warns
+    -----
+    UserWarning
+        The data being integrated contains nans. If this happens, the output
+        data will also contain nans.
+
+    """
+    time_unit = "a"
+
+    if self.timeseries().isnull().sum().sum() > 0:
+        warnings.warn(
+            "You are integrating data which contains nans so your result will "
+            "also contain nans. Perhaps you want to remove the nans before "
+            "performing the integration using a combination of :meth:`filter` "
+            "and :meth:`interpolate`?"
+        )
+
+    # Check that all intervals are uniform and equal
+    years = self["year"]
+    if check_annual and not (years.diff().iloc[1:] == 1).all():
+        raise ValueError(
+            'Annual data are required for "cumsum" integration. Use ScmRun.resample first'
+        )
+
+    ts = self.timeseries()
+
+    out = ts.cumsum(skipna=False, axis=1)
+    out.index = ts.index
+    out.columns = ts.columns
+
+    out = type(self)(out)
+    out *= unit_registry(time_unit)
+
+    try:
+        u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
+        u = str(unit_registry(u).to_reduced_units().units)
+        out = out.convert_unit(u)
+    except ValueError:
+        # more than one unit, don't try to clean up
+        pass
+
+    if out_var is None:
+        out["variable"] = "Cumulative " + out["variable"]
+    else:
+        out["variable"] = out_var
+
+    return out
+
+
+def cumtrapz(self, out_var=None):
+    """
+    Integrate with respect to time using the trapezoid rule
+
+    This method should be used when dealing with piecewise-linear timeseries (
+    Concentrations, Effective Radiative Forcing, decadal means etc). This method
+    handles non-uniform intervals without having to resample to annual values
+    first.
+
+    The result will contain the same timesteps as the input timeseries, with the
+    first timestep being zero. Each subsequent value represents the integral
+    up to the day and time of the timestep. The function :meth:`scmdata.run.ScmRun.relative_to_ref_period`
+    can be used to calculate an integral relative to a reference year.
+
+    Parameters
+    ----------
+    out_var : str
+        If provided, the variable column of the output is set equal to
+        ``out_var``. Otherwise, the output variables are equal to the input
+        variables, prefixed with "Cumulative ".
+
+    Returns
+    -------
+    :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
+        :class:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the integral of ``self`` with respect
+        to time
+
+    See Also
+    --------
+    :meth:`cumsum`
+
+    Raises
+    ------
+    ValueError
+        If an unknown method is provided
+        Failed unit conversion
 
     Warns
     -----
@@ -583,19 +705,20 @@ def integrate(self, out_var=None):
     if not has_scipy:
         raise ImportError("scipy is not installed. Run 'pip install scipy'")
 
-    time_unit = "s"
-    times_in_s = self.time_points.values.astype(
-        "datetime64[{}]".format(time_unit)
-    ).astype("int")
-
-    ts = self.timeseries()
-    if ts.isnull().sum().sum() > 0:
+    if self.timeseries().isnull().sum().sum() > 0:
         warnings.warn(
             "You are integrating data which contains nans so your result will "
             "also contain nans. Perhaps you want to remove the nans before "
             "performing the integration using a combination of :meth:`filter` "
             "and :meth:`interpolate`?"
         )
+
+    time_unit = "s"
+    times_in_s = self.time_points.values.astype(
+        "datetime64[{}]".format(time_unit)
+    ).astype("int")
+    ts = self.timeseries()
+
     # If required, we can remove the hard-coding of initial, it just requires
     # some thinking about unit handling
     _initial = 0.0
@@ -609,10 +732,9 @@ def integrate(self, out_var=None):
     out *= unit_registry(time_unit)
 
     try:
-        out_unit = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
-        out_unit = str(unit_registry(out_unit).to_reduced_units().units)
-        out = out.convert_unit(out_unit)
-
+        u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
+        u = str(unit_registry(u).to_reduced_units().units)
+        out = out.convert_unit(u)
     except ValueError:
         # more than one unit, don't try to clean up
         pass
@@ -623,6 +745,54 @@ def integrate(self, out_var=None):
         out["variable"] = out_var
 
     return out
+
+
+def integrate(self, out_var=None):
+    """
+    Integrate with respect to time
+
+    This function has been deprecated since the method of integration
+    depends on the type of data being integrated.
+
+    Parameters
+    ----------
+    out_var : str
+        If provided, the variable column of the output is set equal to
+        ``out_var``. Otherwise, the output variables are equal to the input
+        variables, prefixed with "Cumulative ".
+
+    Returns
+    -------
+    :class:`scmdata.ScmRun <scmdata.run.ScmRun>`
+        :class:`scmdata.ScmRun <scmdata.run.ScmRun>` containing the integral of ``self`` with respect
+        to time
+
+    See Also
+    --------
+    :meth:`cumsum`
+    :meth:`cumtrapz`
+
+    Raises
+    ------
+    ValueError
+        If an unknown method is provided
+        Failed unit conversion
+
+    Warns
+    -----
+    UserWarning
+        The data being integrated contains nans. If this happens, the output
+        data will also contain nans.
+    DeprecationWarning
+        This function has been deprecated in preference to :meth:`cumsum` and
+        :meth:`cumtrapz`.
+    """
+    warnings.warn(
+        "integrate has been deprecated in preference of cumsum and cumtrapz",
+        DeprecationWarning,
+    )
+
+    return cumtrapz(self, out_var)
 
 
 def delta_per_delta_time(self, out_var=None):
@@ -951,6 +1121,8 @@ def inject_ops_methods(cls):
         ("multiply", multiply),
         ("divide", divide),
         ("integrate", integrate),
+        ("cumsum", cumsum),
+        ("cumtrapz", cumtrapz),
         ("delta_per_delta_time", delta_per_delta_time),
         ("linear_regression", linear_regression),
         ("linear_regression_gradient", linear_regression_gradient),
