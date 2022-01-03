@@ -206,6 +206,17 @@ def test_init_unrecognised_type_error():
         ScmRun(fail_type)
 
 
+def test_init_remote_files():
+
+    remote_file = (
+        "https://rcmip-protocols-au.s3-ap-southeast-2.amazonaws.com"
+        "/v5.1.0/rcmip-emissions-annual-means-v5-1-0.csv"
+    )
+
+    run = ScmRun(remote_file, lowercase_cols=True)
+    assert not run.empty
+
+
 def test_init_ts_col_string(test_ts):
     res = ScmRun(
         test_ts,

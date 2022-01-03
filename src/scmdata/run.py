@@ -16,6 +16,7 @@ import cftime
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
+import pandas.io.common
 import pint
 from dateutil import parser
 from openscm_units import unit_registry as ur
@@ -107,7 +108,8 @@ def _read_pandas(
     OSError
         Path specified by :obj:`fname` does not exist
     """
-    if not os.path.exists(fname):
+    is_remote = pandas.io.common.is_url(fname)
+    if not is_remote and not os.path.exists(fname):
         raise OSError("no data file `{}` found!".format(fname))
 
     if fname.endswith("xlsx") or fname.endswith("xls"):
@@ -358,7 +360,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
             If a string is passed, data will be attempted to be read from file.
             Currently, reading from CSV, gzipped CSV and Excel formatted files is
-            supported.
+            supported. The string could be a URL in a format handled by pandas.
+            Valid URL schemes include http, ftp, s3, gs, and file if pandas>1.2
+            is used. For more information about the remote formats that can be read,
+            see the ``pd.read_csv`` documentation for the version of pandas
+            which is installed.
 
             If no data is provided than an empty :class:`ScmRun <scmdata.run.ScmRun>`
             object is created.
