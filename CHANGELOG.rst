@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.13.2
+-------
+
 - (`#185 <https://github.com/openscm/scmdata/pull/185>`_) Allow :class:`scmdata.run.ScmRun` to read remote files by providing a URL to the constructor
 - (`#183 <https://github.com/openscm/scmdata/pull/183>`_) Deprecate :func:`scmdata.ops.integrate`, replacing with to :func:`scmdata.ops.cumsum` and :func:`scmdata.ops.cumtrapz`
 - (`#184 <https://github.com/openscm/scmdata/pull/184>`_) Add :func:`scmdata.run.ScmRun.round`
