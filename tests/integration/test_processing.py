@@ -109,7 +109,7 @@ def test_crossing_times(
 
     exp = pd.Series(exp_vals, pd.MultiIndex.from_frame(test_processing_scm_df.meta))
 
-    pdt.assert_series_equal(res, exp)
+    pdt.assert_series_equal(res, exp, check_dtype=False)
 
 
 @pytest.mark.parametrize(

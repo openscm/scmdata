@@ -201,7 +201,7 @@ class TestNetCDFBackend:
         ),
     )
     def test_get_out_filepath(self, levels, inp, exp_tail):
-        root_dir = "/tmp/example"
+        root_dir = os.path.join(f"{os.sep}tmp", "example")
         backend = NetCDFBackend(levels=levels, root_dir=root_dir)
         res = backend._get_out_filepath(**inp)
         exp = os.path.join(root_dir, exp_tail)
