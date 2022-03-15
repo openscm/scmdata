@@ -683,7 +683,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         )
 
     def _binary_op(
-        self, other, f, reflexive=False, **kwargs,
+        self,
+        other,
+        f,
+        reflexive=False,
+        **kwargs,
     ) -> Callable[..., "ScmRun"]:
         if isinstance(other, ScmRun):
             return NotImplemented
@@ -1254,7 +1258,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         return self.timeseries().tail(*args, **kwargs)
 
     def get_unique_meta(
-        self, meta: str, no_duplicates: Optional[bool] = False,
+        self,
+        meta: str,
+        no_duplicates: Optional[bool] = False,
     ) -> Union[List[Any], Any]:
         """
         Get unique values in a metadata column.
@@ -2055,7 +2061,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         )
 
     def append_timewise(
-        self, other, align_columns,
+        self,
+        other,
+        align_columns,
     ):
         """
         Append timeseries along the time axis
@@ -2234,7 +2242,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         # Check if any values are smaller than half the smallest step
         # They may be rounded down to zero
         min_value = ret._df.abs().min().min()
-        if min_value <= 0.5 * 10 ** -decimals:
+        if min_value <= 0.5 * 10**-decimals:
             warnings.warn(
                 "There are small values which may be truncated during rounding. Either increase the number"
                 "of decimals or convert the units of the timeseries so that the quantities are larger."

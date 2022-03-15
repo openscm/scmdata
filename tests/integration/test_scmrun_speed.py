@@ -10,7 +10,7 @@ import scmdata
 import scmdata.testing
 
 
-@pytest.fixture(params=[10, 10 ** 2, 10 ** 3, 10 ** 3.5, 10 ** 4, 10 ** 4.5])
+@pytest.fixture(params=[10, 10**2, 10**3, 10**3.5, 10**4, 10**4.5])
 def big_scmrun(request):
     length = int(request.param)
     t_steps = 750
@@ -152,10 +152,10 @@ def test_interpolate(benchmark, big_scmrun):
     assert res.shape == (len(big_scmrun), 1000)
 
 
-@pytest.mark.parametrize("n_to_append", (10, 10 ** 2, 10 ** 3, 10 ** 4))
+@pytest.mark.parametrize("n_to_append", (10, 10**2, 10**3, 10**4))
 def test_append_multiple_same_time(benchmark, big_scmrun, n_to_append):
     total_size = n_to_append * big_scmrun.shape[0]
-    if total_size >= 10 ** 4:
+    if total_size >= 10**4:
         pytest.skip("this could be very slow...")
 
     to_append = []
@@ -176,7 +176,7 @@ def test_append_multiple_same_time(benchmark, big_scmrun, n_to_append):
 
 
 @pytest.mark.parametrize("n_models", (2, 3, 4))
-@pytest.mark.parametrize("n_ensemble_members", (10 ** 1, 20, 30))
+@pytest.mark.parametrize("n_ensemble_members", (10**1, 20, 30))
 def test_to_from_nc(benchmark, tmpdir, n_models, n_ensemble_members):
     t_steps = 75
 

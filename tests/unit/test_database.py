@@ -378,7 +378,12 @@ def test_database_loaded(tdb_with_data):
     )
 
     out_names = glob(
-        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+        os.path.join(
+            tdb_with_data._root_dir,
+            "**",
+            "*.nc",
+        ),
+        recursive=True,
     )
     assert len(out_names) == 2
 
@@ -426,7 +431,12 @@ def test_database_overwriting(tdb_with_data, start_scmrun):
     tdb_with_data.save(start_scmrun_2)
 
     out_names = glob(
-        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+        os.path.join(
+            tdb_with_data._root_dir,
+            "**",
+            "*.nc",
+        ),
+        recursive=True,
     )
     assert len(out_names) == 2
 
@@ -455,13 +465,23 @@ def test_database_save_duplicates(tdb_with_data, start_scmrun):
 
 def test_database_delete(tdb_with_data):
     out_names = glob(
-        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+        os.path.join(
+            tdb_with_data._root_dir,
+            "**",
+            "*.nc",
+        ),
+        recursive=True,
     )
     assert len(out_names) == 2
 
     tdb_with_data.delete(climate_model="cmodel_a")
     out_names = glob(
-        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+        os.path.join(
+            tdb_with_data._root_dir,
+            "**",
+            "*.nc",
+        ),
+        recursive=True,
     )
     assert len(out_names) == 1
     assert out_names[0].endswith("cmodel_b__variable.nc")

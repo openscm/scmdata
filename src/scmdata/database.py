@@ -23,7 +23,6 @@ import tqdm.autonotebook as tqdman
 
 from scmdata import ScmRun, run_append
 
-
 __is_windows__ = platform.system() == "Windows"
 
 
@@ -485,7 +484,10 @@ class ScmDatabase:
             [
                 self._backend.load(f)
                 for f in tqdman.tqdm(
-                    load_files, desc="Loading files", leave=False, disable=disable_tqdm,
+                    load_files,
+                    desc="Loading files",
+                    leave=False,
+                    disable=disable_tqdm,
                 )
             ]
         )

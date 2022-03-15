@@ -206,7 +206,10 @@ intersphinx_mapping = {
     "pyam": ("https://pyam-iamc.readthedocs.io/en/latest", None),
     "scmdata": ("https://scmdata.readthedocs.io/en/latest", None),
     "xarray": ("http://xarray.pydata.org/en/stable", None),
-    "pint": ("https://pint.readthedocs.io/en/latest", None,),
+    "pint": (
+        "https://pint.readthedocs.io/en/latest",
+        None,
+    ),
 }
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True

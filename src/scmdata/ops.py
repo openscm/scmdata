@@ -63,7 +63,9 @@ def prep_for_op(inp, op_cols, meta, ur=unit_registry):
     out = out.T
 
     if "unit" not in op_cols:
-        unit_level = out.columns.names.index("unit",)
+        unit_level = out.columns.names.index(
+            "unit",
+        )
         out = out.pint.quantify(level=unit_level)
 
     return out
@@ -891,7 +893,9 @@ def linear_regression(self):
 
     out = []
     for row_meta, gradient, intercept in zip(
-        meta.to_dict("records"), gradients, intercepts,
+        meta.to_dict("records"),
+        gradients,
+        intercepts,
     ):
         unit = row_meta.pop("unit")
 
