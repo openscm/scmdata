@@ -29,7 +29,7 @@ jobs:
     # TODO: add `pylint src`
     - name: Formatting and linters
       run: |
-        black --check src tests setup.py
+        black --check src tests setup.py --extend-exclude "_version.py"
         black-nb --check notebooks
         isort --check-only --quiet src tests setup.py
         pydocstyle src
@@ -213,7 +213,7 @@ jobs:
       run: |
           pytest notebooks -r a --nbval-lax --sanitize-with tests/notebook-tests.cfg --no-cov
     - name: Test notebooks strictly
-      if: matrix.python-version == 3.7
+      if: matrix.python-version == 3.9
       run: |
         pytest notebooks -r a --nbval --sanitize-with tests/notebook-tests.cfg --no-cov
 

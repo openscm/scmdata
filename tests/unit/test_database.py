@@ -321,8 +321,7 @@ def test_database_save(tdb, start_scmrun):
 
 @pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\" .")
 def test_database_save_weird(tdb, start_scmrun, ch):
-    # if __is_windows__ and ch in []:
-    weird_var_name = "variable" + ch
+    weird_var_name = "variable" + ch + "test"
     start_scmrun["variable"] = [weird_var_name, "other"]
     tdb.save(start_scmrun)
 
@@ -331,10 +330,43 @@ def test_database_save_weird(tdb, start_scmrun, ch):
         tdb.load(variable=weird_var_name), start_scmrun.filter(variable=weird_var_name)
     )
 
-    replace_ch = "-" if ch not in ".*" else ch
+    replace_ch = "-" if ch not in "." else ch
     exp = pd.DataFrame(
         [
-            ["cmodel_a", "variable" + replace_ch, "region", "scenario"],
+            ["cmodel_a", "variable" + replace_ch + "test", "region", "scenario"],
+            ["cmodel_b", "other", "region", "scenario"],
+        ],
+        columns=tdb.levels,
+    )
+
+    pd.testing.assert_frame_equal(tdb.available_data(), exp)
+
+
+# TODO: Extend to use "weird" characters at both start and end of name once #188 is resolved
+@pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\" .")
+def test_database_save_weird_end(tdb, start_scmrun, ch):
+    replace_ch = "-"
+    weird_var_name = "variable" + ch
+    expected_var_name = "variable" + replace_ch
+
+    start_scmrun["variable"] = [weird_var_name, "other"]
+
+    # Edge case to support windows
+    if ch == ".":
+        with pytest.raises(ValueError, match="Metadata cannot end in a '.'"):
+            tdb.save(start_scmrun)
+        return
+
+    tdb.save(start_scmrun)
+
+    assert len(start_scmrun.filter(variable=weird_var_name))
+    assert_scmdf_almost_equal(
+        tdb.load(variable=weird_var_name), start_scmrun.filter(variable=weird_var_name)
+    )
+
+    exp = pd.DataFrame(
+        [
+            ["cmodel_a", expected_var_name, "region", "scenario"],
             ["cmodel_b", "other", "region", "scenario"],
         ],
         columns=tdb.levels,

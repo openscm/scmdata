@@ -14,7 +14,6 @@ import itertools
 import os
 import os.path
 import pathlib
-import platform
 from abc import ABC, abstractmethod
 
 import pandas as pd
@@ -22,8 +21,6 @@ import six
 import tqdm.autonotebook as tqdman
 
 from scmdata import ScmRun, run_append
-
-__is_windows__ = platform.system() == "Windows"
 
 
 def ensure_dir_exists(fp):
@@ -55,12 +52,14 @@ def _check_is_subdir(root, d):
         raise AssertionError("{} not in {}".format(d, root))
 
 
-def _get_safe_filename(inp):
+def _get_safe_filename(inp, include_glob=False):
     def safe_char(c):
-        if c.isalnum() or c in "-*_." or c == os.sep:
+        accepted_chars = "-_."
+        if include_glob:
+            accepted_chars = accepted_chars + "*"
+
+        if c.isalnum() or c in accepted_chars or c == os.sep:
             return c
-        # if __is_windows__ and c in [":"]:
-        #     return c
 
         return "-"
 
@@ -165,6 +164,8 @@ class NetCDFBackend(DatabaseBackend):
         ValueError
             If non-unique metadata is found for each of :attr:`self.kwargs["levels"]`
 
+            If any metadata end with '.'
+
         KeyError
             If missing metadata is found for each of :attr:`self.kwargs["levels"]`
 
@@ -180,6 +181,10 @@ class NetCDFBackend(DatabaseBackend):
             for database_level in self.kwargs["levels"]
         }
 
+        # Windows does not support directories or filenames which end in a '.'
+        if any([level.endswith(".") for level in levels.values()]):
+            raise ValueError("Metadata cannot end in a '.'")
+
         return self._get_out_filepath(**levels)
 
     def _get_out_filepath(self, **data_levels):
@@ -189,13 +194,14 @@ class NetCDFBackend(DatabaseBackend):
                 raise KeyError("expected level: {}".format(database_level))
             out_levels.append(str(data_levels[database_level]))
 
-        out_path = os.path.join(self.kwargs["root_dir"], *out_levels)
+        out_path = os.path.join(*out_levels)
         out_fname = "__".join(out_levels) + ".nc"
-        out_fname = os.path.join(out_path, out_fname)
+        out_fname = _get_safe_filename(os.path.join(out_path, out_fname))
+        out_fname = os.path.join(self.kwargs["root_dir"], out_fname)
 
         _check_is_subdir(self.kwargs["root_dir"], out_fname)
 
-        return _get_safe_filename(out_fname)
+        return out_fname
 
     def save(self, sr):
         """
@@ -288,13 +294,16 @@ class NetCDFBackend(DatabaseBackend):
         # AND logic across levels, OR logic within levels
         level_options_product = itertools.product(*level_options)
         globs_to_check = [
-            _get_safe_filename(os.path.join(self.kwargs["root_dir"], *levels, "*.nc"))
+            _get_safe_filename(os.path.join(*levels, "*.nc"), include_glob=True)
             for levels in level_options_product
         ]
 
         load_files = [
             v
-            for vlist in [glob.glob(g, recursive=True) for g in globs_to_check]
+            for vlist in [
+                glob.glob(os.path.join(self.kwargs["root_dir"], g), recursive=True)
+                for g in globs_to_check
+            ]
             for v in vlist
         ]
 
