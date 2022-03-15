@@ -182,7 +182,7 @@ class NetCDFBackend(DatabaseBackend):
         }
 
         # Windows does not support directories or filenames which end in a '.'
-        if any([l.endswith(".") for l in levels.values()]):
+        if any([level.endswith(".") for level in levels.values()]):
             raise ValueError("Metadata cannot end in a '.'")
 
         return self._get_out_filepath(**levels)
