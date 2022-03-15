@@ -201,7 +201,7 @@ class TestNetCDFBackend:
         ),
     )
     def test_get_out_filepath(self, levels, inp, exp_tail):
-        root_dir = "/tmp/example"
+        root_dir = os.path.join(f"{os.sep}tmp", "example")
         backend = NetCDFBackend(levels=levels, root_dir=root_dir)
         res = backend._get_out_filepath(**inp)
         exp = os.path.join(root_dir, exp_tail)
@@ -321,7 +321,7 @@ def test_database_save(tdb, start_scmrun):
 
 @pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\" .")
 def test_database_save_weird(tdb, start_scmrun, ch):
-    weird_var_name = "variable" + ch
+    weird_var_name = "variable" + ch + "test"
     start_scmrun["variable"] = [weird_var_name, "other"]
     tdb.save(start_scmrun)
 
@@ -330,10 +330,43 @@ def test_database_save_weird(tdb, start_scmrun, ch):
         tdb.load(variable=weird_var_name), start_scmrun.filter(variable=weird_var_name)
     )
 
-    replace_ch = "-" if ch not in ".*" else ch
+    replace_ch = "-" if ch not in "." else ch
     exp = pd.DataFrame(
         [
-            ["cmodel_a", "variable" + replace_ch, "region", "scenario"],
+            ["cmodel_a", "variable" + replace_ch + "test", "region", "scenario"],
+            ["cmodel_b", "other", "region", "scenario"],
+        ],
+        columns=tdb.levels,
+    )
+
+    pd.testing.assert_frame_equal(tdb.available_data(), exp)
+
+
+# TODO: Extend to use "weird" characters at both start and end of name once #188 is resolved
+@pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\" .")
+def test_database_save_weird_end(tdb, start_scmrun, ch):
+    replace_ch = "-"
+    weird_var_name = "variable" + ch
+    expected_var_name = "variable" + replace_ch
+
+    start_scmrun["variable"] = [weird_var_name, "other"]
+
+    # Edge case to support windows
+    if ch == ".":
+        with pytest.raises(ValueError, match="Metadata cannot end in a '.'"):
+            tdb.save(start_scmrun)
+        return
+
+    tdb.save(start_scmrun)
+
+    assert len(start_scmrun.filter(variable=weird_var_name))
+    assert_scmdf_almost_equal(
+        tdb.load(variable=weird_var_name), start_scmrun.filter(variable=weird_var_name)
+    )
+
+    exp = pd.DataFrame(
+        [
+            ["cmodel_a", expected_var_name, "region", "scenario"],
             ["cmodel_b", "other", "region", "scenario"],
         ],
         columns=tdb.levels,
@@ -377,7 +410,12 @@ def test_database_loaded(tdb_with_data):
     )
 
     out_names = glob(
-        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+        os.path.join(
+            tdb_with_data._root_dir,
+            "**",
+            "*.nc",
+        ),
+        recursive=True,
     )
     assert len(out_names) == 2
 
@@ -425,7 +463,12 @@ def test_database_overwriting(tdb_with_data, start_scmrun):
     tdb_with_data.save(start_scmrun_2)
 
     out_names = glob(
-        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+        os.path.join(
+            tdb_with_data._root_dir,
+            "**",
+            "*.nc",
+        ),
+        recursive=True,
     )
     assert len(out_names) == 2
 
@@ -454,13 +497,23 @@ def test_database_save_duplicates(tdb_with_data, start_scmrun):
 
 def test_database_delete(tdb_with_data):
     out_names = glob(
-        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+        os.path.join(
+            tdb_with_data._root_dir,
+            "**",
+            "*.nc",
+        ),
+        recursive=True,
     )
     assert len(out_names) == 2
 
     tdb_with_data.delete(climate_model="cmodel_a")
     out_names = glob(
-        os.path.join(tdb_with_data._root_dir, "**", "*.nc",), recursive=True
+        os.path.join(
+            tdb_with_data._root_dir,
+            "**",
+            "*.nc",
+        ),
+        recursive=True,
     )
     assert len(out_names) == 1
     assert out_names[0].endswith("cmodel_b__variable.nc")

@@ -24,32 +24,36 @@ def test_run_to_nc(scm_run):
 
         assert exists(out_fname)
 
-        ds = nc.Dataset(out_fname)
+        with nc.Dataset(out_fname) as ds:
+            assert ds.dimensions["time"].size == len(scm_run.time_points)
+            assert ds.dimensions["scenario"].size == 2
 
-        assert ds.dimensions["time"].size == len(scm_run.time_points)
-        assert ds.dimensions["scenario"].size == 2
+            assert ds.variables["scenario"][0] == "a_scenario"
+            assert ds.variables["scenario"][1] == "a_scenario2"
 
-        assert ds.variables["scenario"][0] == "a_scenario"
-        assert ds.variables["scenario"][1] == "a_scenario2"
-
-        npt.assert_allclose(
-            ds.variables["Primary_Energy"][0, :],
-            scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
-        )
-        npt.assert_allclose(
-            ds.variables["Primary_Energy"][1, :],
-            scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
-        )
-        npt.assert_allclose(
-            ds.variables["Primary_Energy__Coal"][0, :],
-            scm_run.filter(
-                variable="Primary Energy|Coal", scenario="a_scenario"
-            ).values[0],
-        )
+            npt.assert_allclose(
+                ds.variables["Primary_Energy"][0, :],
+                scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[
+                    0
+                ],
+            )
+            npt.assert_allclose(
+                ds.variables["Primary_Energy"][1, :],
+                scm_run.filter(
+                    variable="Primary Energy", scenario="a_scenario2"
+                ).values[0],
+            )
+            npt.assert_allclose(
+                ds.variables["Primary_Energy__Coal"][0, :],
+                scm_run.filter(
+                    variable="Primary Energy|Coal", scenario="a_scenario"
+                ).values[0],
+            )
 
 
 @pytest.mark.parametrize(
-    "v", ["primary energy", "Primary Energy", "Primary Energy|Coal|Test"],
+    "v",
+    ["primary energy", "Primary Energy", "Primary Energy|Coal|Test"],
 )
 def test_run_to_nc_case(scm_run, v):
     with tempfile.TemporaryDirectory() as tempdir:
@@ -126,24 +130,23 @@ def test_run_to_nc_4d(scm_run, tmpdir):
 
     assert exists(out_fname)
 
-    ds = nc.Dataset(out_fname)
+    with nc.Dataset(out_fname) as ds:
+        assert ds.dimensions["time"].size == len(scm_run.time_points)
+        assert ds.dimensions["scenario"].size == 2
+        assert ds.dimensions["climate_model"].size == 4
+        assert ds.dimensions["run_id"].size == 10
 
-    assert ds.dimensions["time"].size == len(scm_run.time_points)
-    assert ds.dimensions["scenario"].size == 2
-    assert ds.dimensions["climate_model"].size == 4
-    assert ds.dimensions["run_id"].size == 10
+        assert ds.variables["scenario"][0] == "a_scenario"
+        assert ds.variables["scenario"][1] == "a_scenario2"
+        assert ds.variables["climate_model"][0] == "abc_m"
+        assert ds.variables["climate_model"][1] == "base_m"
+        assert ds.variables["climate_model"][2] == "def_m"
+        assert ds.variables["climate_model"][3] == "ghi_m"
+        npt.assert_array_equal(ds.variables["run_id"][:], range(10))
 
-    assert ds.variables["scenario"][0] == "a_scenario"
-    assert ds.variables["scenario"][1] == "a_scenario2"
-    assert ds.variables["climate_model"][0] == "abc_m"
-    assert ds.variables["climate_model"][1] == "base_m"
-    assert ds.variables["climate_model"][2] == "def_m"
-    assert ds.variables["climate_model"][3] == "ghi_m"
-    npt.assert_array_equal(ds.variables["run_id"][:], range(10))
-
-    # remove as order doesn't really matter unless I misunderstand something?
-    # assert ds.variables["Primary_Energy"].shape == (2, 4, 10, 3)
-    # assert ds.variables["Primary_Energy__Coal"].shape == (2, 4, 10, 3)
+        # remove as order doesn't really matter unless I misunderstand something?
+        # assert ds.variables["Primary_Energy"].shape == (2, 4, 10, 3)
+        # assert ds.variables["Primary_Energy__Coal"].shape == (2, 4, 10, 3)
 
 
 def test_run_to_nc_nan_dimension_error(scm_run, tmpdir):
@@ -398,32 +401,35 @@ def test_run_to_nc_with_extras(scm_run, dtype):
 
         assert exists(out_fname)
 
-        ds = nc.Dataset(out_fname)
+        with nc.Dataset(out_fname) as ds:
+            assert ds.dimensions["time"].size == len(scm_run.time_points)
+            assert ds.dimensions["scenario"].size == 2
 
-        assert ds.dimensions["time"].size == len(scm_run.time_points)
-        assert ds.dimensions["scenario"].size == 2
+            assert ds.variables["scenario"][0] == "a_scenario"
+            assert ds.variables["scenario"][1] == "a_scenario2"
 
-        assert ds.variables["scenario"][0] == "a_scenario"
-        assert ds.variables["scenario"][1] == "a_scenario2"
+            for i, run_id in enumerate(ds.variables["run_id"]):
+                exp_val = dtype(unique_scenarios.index(ds.variables["scenario"][i]))
+                assert run_id == exp_val
 
-        for i, run_id in enumerate(ds.variables["run_id"]):
-            exp_val = dtype(unique_scenarios.index(ds.variables["scenario"][i]))
-            assert run_id == exp_val
-
-        npt.assert_allclose(
-            ds.variables["Primary_Energy"][0, :],
-            scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
-        )
-        npt.assert_allclose(
-            ds.variables["Primary_Energy"][1, :],
-            scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
-        )
-        npt.assert_allclose(
-            ds.variables["Primary_Energy__Coal"][0, :],
-            scm_run.filter(
-                variable="Primary Energy|Coal", scenario="a_scenario"
-            ).values[0],
-        )
+            npt.assert_allclose(
+                ds.variables["Primary_Energy"][0, :],
+                scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[
+                    0
+                ],
+            )
+            npt.assert_allclose(
+                ds.variables["Primary_Energy"][1, :],
+                scm_run.filter(
+                    variable="Primary Energy", scenario="a_scenario2"
+                ).values[0],
+            )
+            npt.assert_allclose(
+                ds.variables["Primary_Energy__Coal"][0, :],
+                scm_run.filter(
+                    variable="Primary Energy|Coal", scenario="a_scenario"
+                ).values[0],
+            )
 
 
 def test_nc_to_run_with_extras(scm_run):
@@ -523,25 +529,25 @@ def test_nc_with_metadata(scm_run, mdata):
 
         run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
-        ds = nc.Dataset(out_fname)
+        with nc.Dataset(out_fname) as ds:
+            nc_attrs = {a: ds.getncattr(a) for a in ds.ncattrs()}
+            for k, v in mdata.items():
+                assert k in nc_attrs
+                assert _cmp(nc_attrs[k], v)
+            assert "created_at" in nc_attrs
 
-        nc_attrs = {a: ds.getncattr(a) for a in ds.ncattrs()}
-        for k, v in mdata.items():
-            assert k in nc_attrs
-            assert _cmp(nc_attrs[k], v)
-        assert "created_at" in nc_attrs
+            run_read = nc_to_run(scm_run.__class__, out_fname)
 
-        run_read = nc_to_run(scm_run.__class__, out_fname)
+            for k, v in mdata.items():
+                assert k in run_read.metadata
+                assert _cmp(run_read.metadata[k], v)
 
-        for k, v in mdata.items():
-            assert k in run_read.metadata
-            assert _cmp(run_read.metadata[k], v)
-
-        assert "created_at" in run_read.metadata
+            assert "created_at" in run_read.metadata
 
 
 @pytest.mark.parametrize(
-    "mdata", ({"test_fails": {"something": "else"}}, {"test_fails": {1, 2, 3}}),
+    "mdata",
+    ({"test_fails": {"something": "else"}}, {"test_fails": {1, 2, 3}}),
 )
 def test_nc_with_metadata_fails(scm_run, mdata):
     scm_run.metadata = mdata.copy()

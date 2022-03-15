@@ -11,7 +11,14 @@ maxes = pytest.importorskip("matplotlib.axes")
 plt = pytest.importorskip("matplotlib.pyplot")
 
 sample_quantiles_plumes = pytest.mark.parametrize(
-    "quantiles_plumes", ((((0.05, 0.95), 0.5), ((0.5,), 1.0),), (((0.17, 0.83), 0.7),),)
+    "quantiles_plumes",
+    (
+        (
+            ((0.05, 0.95), 0.5),
+            ((0.5,), 1.0),
+        ),
+        (((0.17, 0.83), 0.7),),
+    ),
 )
 
 
@@ -34,7 +41,8 @@ def test_plumeplot_pre_calculated(plumeplot_scmrun, quantiles_plumes):
         plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
     )
     summary_stats.plumeplot(
-        quantiles_plumes=quantiles_plumes, pre_calculated=True,
+        quantiles_plumes=quantiles_plumes,
+        pre_calculated=True,
     )
 
 
@@ -54,7 +62,8 @@ def test_plumeplot_pre_calculated_no_plume_for_one(plumeplot_scmrun):
 
     with pytest.warns(UserWarning) as record:
         summary_stats.plumeplot(
-            quantiles_plumes=quantiles_plumes, pre_calculated=True,
+            quantiles_plumes=quantiles_plumes,
+            pre_calculated=True,
         )
 
     assert len(record) == 2
@@ -84,7 +93,8 @@ def test_plumeplot_pre_calculated_no_median_for_one(plumeplot_scmrun):
     )
     with pytest.warns(UserWarning, match=warn_msg):
         summary_stats.plumeplot(
-            quantiles_plumes=quantiles_plumes, pre_calculated=True,
+            quantiles_plumes=quantiles_plumes,
+            pre_calculated=True,
         )
 
 
@@ -106,7 +116,8 @@ def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other(
 
     with pytest.warns(UserWarning) as record:
         _, lh = summary_stats.plumeplot(
-            quantiles_plumes=quantiles_plumes, pre_calculated=True,
+            quantiles_plumes=quantiles_plumes,
+            pre_calculated=True,
         )
 
     assert len(record) == 3
@@ -277,7 +288,16 @@ def test_plumeplot_args(plumeplot_scmrun):
 @pytest.mark.parametrize("time_axis", ("year", None))
 @pytest.mark.parametrize(
     "quantiles_plumes",
-    ((((0.05, 0.95), 0.5), ((0.5,), 1.0),), (((0.17, 0.83), 0.7), ((0.4,), 1.0),),),
+    (
+        (
+            ((0.05, 0.95), 0.5),
+            ((0.5,), 1.0),
+        ),
+        (
+            ((0.17, 0.83), 0.7),
+            ((0.4,), 1.0),
+        ),
+    ),
 )
 def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewidth):
     mock_ax = MagicMock()

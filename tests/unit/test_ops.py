@@ -603,7 +603,9 @@ def test_cumtrapz_time_handling_big_jumps():
     res = start.cumtrapz()
 
     npt.assert_allclose(
-        res.values.squeeze(), [0, 15, 90], rtol=1e-3,
+        res.values.squeeze(),
+        [0, 15, 90],
+        rtol=1e-3,
     )
 
 
@@ -649,7 +651,9 @@ def test_integration_nan_handling(method, exp):
         res = f()
 
     npt.assert_allclose(
-        res.values.squeeze().round(1), exp, rtol=1e-3,
+        res.values.squeeze().round(1),
+        exp,
+        rtol=1e-3,
     )
 
 
@@ -789,7 +793,9 @@ def test_delta_per_delta_time_handling_big_jumps():
     res = start.delta_per_delta_time().convert_unit("GtC / yr")
 
     npt.assert_allclose(
-        res.values.squeeze(), [1 / 10, 1 / 30], rtol=1e-3,
+        res.values.squeeze(),
+        [1 / 10, 1 / 30],
+        rtol=1e-3,
     )
 
 
@@ -967,8 +973,8 @@ def test_linear_regression_multiple_ts():
 @pytest.mark.parametrize(
     "unit,exp_values",
     (
-        ("Mt CO2 / yr", [1, -1, 5, 5 * 10 ** 3 * 44 / 12]),
-        ("Mt CO2 / day", np.array([1, -1, 5, 5 * 10 ** 3 * 44 / 12]) / 365.25),
+        ("Mt CO2 / yr", [1, -1, 5, 5 * 10**3 * 44 / 12]),
+        ("Mt CO2 / day", np.array([1, -1, 5, 5 * 10**3 * 44 / 12]) / 365.25),
         (None, np.array([1, -1, 5, 5]) / (365.25 * 24 * 60 * 60)),
     ),
 )
@@ -1005,13 +1011,13 @@ def test_linear_regression_gradient(unit, exp_values):
 @pytest.mark.parametrize(
     "unit,exp_values",
     (
-        ("Mt CO2", [2, -2, 6, 5 * 10 ** 3 * 44 / 12]),
+        ("Mt CO2", [2, -2, 6, 5 * 10**3 * 44 / 12]),
         (
             "GtC",
             [
-                2 / (10 ** 3) * 12 / 44,
-                -2 / (10 ** 3) * 12 / 44,
-                6 / (10 ** 3) * 12 / 44,
+                2 / (10**3) * 12 / 44,
+                -2 / (10**3) * 12 / 44,
+                6 / (10**3) * 12 / 44,
                 5,
             ],
         ),
@@ -1224,7 +1230,9 @@ def test_adjust_median_to_target_multiple_ts(
     exp = start.copy() - exp_shift + target_median
 
     res = start.adjust_median_to_target(
-        target_median, evaluation_period, process_over="ensemble_member",
+        target_median,
+        evaluation_period,
+        process_over="ensemble_member",
     )
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
@@ -1278,7 +1286,9 @@ def test_adjust_median_to_target_process_over(process_over):
         exp = start - 1.75
 
     res = start.adjust_median_to_target(
-        target_median, evaluation_period, process_over=process_over,
+        target_median,
+        evaluation_period,
+        process_over=process_over,
     )
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
@@ -1291,7 +1301,8 @@ def test_adjust_median_to_target_process_over(process_over):
     groups = list(set(res.meta.columns) - set(process_over))
 
     pdt.assert_frame_equal(
-        exp.timeseries().groupby(groups).std(), res.timeseries().groupby(groups).std(),
+        exp.timeseries().groupby(groups).std(),
+        res.timeseries().groupby(groups).std(),
     )
 
 
@@ -1308,7 +1319,10 @@ def test_adjust_median_to_target_check_groups_identical():
     )
     with pytest.raises(AssertionError):
         start.adjust_median_to_target(
-            0.1, [2010, 2020], process_over="scenario", check_groups_identical=True,
+            0.1,
+            [2010, 2020],
+            process_over="scenario",
+            check_groups_identical=True,
         )
 
 

@@ -46,7 +46,6 @@ try:
                 )
                 raise ValueError(error_msg)
 
-
 except ImportError:  # pragma: no cover
     # mypy can't work out try-except block sets typing
     IamDataFrame = None

@@ -121,7 +121,9 @@ def test_init_df_formats(test_pd_run_df, in_format):
     res_df = res_df.reset_index()
 
     pd.testing.assert_frame_equal(
-        res_df[test_pd_run_df.columns.tolist()], test_pd_run_df, check_like=True,
+        res_df[test_pd_run_df.columns.tolist()],
+        test_pd_run_df,
+        check_like=True,
     )
 
 
@@ -185,7 +187,8 @@ def test_init_required_cols(test_pd_df):
     assert not all([c in test_pd_df.columns for c in MyRun.required_cols])
     error_msg = re.escape("Missing required columns `['climate_model']`!")
     with pytest.raises(
-        MissingRequiredColumnError, match=error_msg,
+        MissingRequiredColumnError,
+        match=error_msg,
     ):
         MyRun(test_pd_df)
 
@@ -293,7 +296,9 @@ def test_init_with_ts(test_ts, test_pd_df):
 
 
 def test_init_with_scmdf(test_scm_run_datetimes, test_scm_datetime_run):
-    df = ScmRun(test_scm_run_datetimes,)
+    df = ScmRun(
+        test_scm_run_datetimes,
+    )
 
     assert_scmdf_almost_equal(df, test_scm_datetime_run, check_ts_names=False)
 
@@ -644,7 +649,12 @@ def test_filter_year_with_own_year(test_scm_run_datetimes):
 
 
 @pytest.mark.parametrize(
-    "year_list", ([2005, 2010], (2005, 2010), np.array([2005, 2010]).astype(int),)
+    "year_list",
+    (
+        [2005, 2010],
+        (2005, 2010),
+        np.array([2005, 2010]).astype(int),
+    ),
 )
 def test_filter_year_list(year_list, test_scm_run_datetimes):
     res = test_scm_run_datetimes.filter(year=year_list)
@@ -869,7 +879,11 @@ def test_filter_by_regexp(scm_run):
 
 
 @pytest.mark.parametrize(
-    "regexp,exp_units", ((True, []), (False, ["W/m^2"]),),
+    "regexp,exp_units",
+    (
+        (True, []),
+        (False, ["W/m^2"]),
+    ),
 )
 def test_filter_by_regexp_caret(scm_run, regexp, exp_units):
     tunits = ["W/m2"] * scm_run.shape[1]
@@ -990,7 +1004,12 @@ def test_append_index(scm_run):
         if reversed:
             exp_order = exp_order[::-1]
         pd.testing.assert_series_equal(
-            res["variable"], pd.Series(exp_order, index=exp_index, name="variable",),
+            res["variable"],
+            pd.Series(
+                exp_order,
+                index=exp_index,
+                name="variable",
+            ),
         )
 
     res = run_append(
@@ -1025,7 +1044,12 @@ def test_append_index_extra(scm_run):
     exp_index = pd.Int64Index([0, 1, 2, 3, 4, 5])
     pd.testing.assert_index_equal(res.meta.index, exp_index)
     pd.testing.assert_series_equal(
-        res["run_id"], pd.Series([1, 1, 2, 2, 3, 3], index=exp_index, name="run_id",),
+        res["run_id"],
+        pd.Series(
+            [1, 1, 2, 2, 3, 3],
+            index=exp_index,
+            name="run_id",
+        ),
     )
 
 
@@ -1040,7 +1064,10 @@ def test_append_nans(scm_run, value):
     # note that the indexes are reset for subsequent appends and then increment
     pd.testing.assert_series_equal(
         res["extra"],
-        pd.Series([np.nan, np.nan, np.nan, value, value, value], name="extra",),
+        pd.Series(
+            [np.nan, np.nan, np.nan, value, value, value],
+            name="extra",
+        ),
     )
 
 
@@ -1339,7 +1366,9 @@ def test_arb_function_returns_none(test_processing_scm_df):
         test_processing_scm_df.filter(variable="Primary Energy|Coal") + 2
     ).timeseries()
     pd.testing.assert_frame_equal(
-        exp, obs, check_like=True,
+        exp,
+        obs,
+        check_like=True,
     )
 
 
@@ -1395,7 +1424,8 @@ def test_process_over_with_nans(scm_run, na_override):
 
     npt.assert_array_equal(res.values[0, :], [0.75, 4.5, 4.5])
     npt.assert_array_equal(
-        res.values[1, :], scm_run.filter(scenario="a_scenario2"),
+        res.values[1, :],
+        scm_run.filter(scenario="a_scenario2"),
     )
 
 
@@ -1416,7 +1446,8 @@ def test_process_over_without_na_override(scm_run):
 
     npt.assert_array_equal(res.values[0, :], [0.75, 4.5, 4.5])
     npt.assert_array_equal(
-        res.values[1, :], scm_run.filter(scenario="a_scenario2"),
+        res.values[1, :],
+        scm_run.filter(scenario="a_scenario2"),
     )
 
     scm_run["nan_meta"] = np.nan
@@ -1440,7 +1471,9 @@ def test_process_over_as_run(scm_run):
 
     # Ops cols are also processed if as_run=False
     res = scm_run.process_over(
-        ("variable",), "median", op_cols={"variable": "New Variable", "extra": "other"},
+        ("variable",),
+        "median",
+        op_cols={"variable": "New Variable", "extra": "other"},
     )
     assert res.index.get_level_values("variable").unique() == ["New Variable"]
     assert res.index.get_level_values("extra").unique() == ["other"]
@@ -1451,13 +1484,19 @@ def test_process_over_as_run_returns_series(scm_run):
         return g.sum().sum()
 
     res = scm_run.process_over(
-        ("variable",), total, op_cols={"variable": "Variable"}, as_run=False,
+        ("variable",),
+        total,
+        op_cols={"variable": "Variable"},
+        as_run=False,
     )
     assert isinstance(res, pd.Series)
 
     with pytest.raises(ValueError, match="Cannot convert pd.Series to ScmRun"):
         res = scm_run.process_over(
-            ("variable",), total, op_cols={"variable": "Variable"}, as_run=True,
+            ("variable",),
+            total,
+            op_cols={"variable": "Variable"},
+            as_run=True,
         )
 
 
@@ -1553,7 +1592,8 @@ def test_quantiles_over(test_processing_scm_df):
     )
 
     obs = test_processing_scm_df.quantiles_over(
-        cols=["model", "scenario"], quantiles=[0, 0.5, 1, "mean", "median"],
+        cols=["model", "scenario"],
+        quantiles=[0, 0.5, 1, "mean", "median"],
     )
     pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
 
@@ -1572,7 +1612,8 @@ def test_quantiles_over_operation_in_kwargs(test_processing_scm_df):
 @pytest.mark.parametrize("test_quantile", [0.5, "mean", "median"])
 def test_quantiles_over_filter(test_processing_scm_df, test_quantile):
     quantiles = test_processing_scm_df.quantiles_over(
-        cols=["model", "scenario"], quantiles=[0, 0.5, 1, "mean", "median"],
+        cols=["model", "scenario"],
+        quantiles=[0, 0.5, 1, "mean", "median"],
     )
     quantiles["model"] = "model"
     quantiles["scenario"] = "scenario"
@@ -2046,7 +2087,8 @@ def test_append_timewise_extra_col_in_hist(scm_run_interpolated):
 
 
 @pytest.mark.xfail(
-    _check_pandas_less_120(), reason="pandas<1.2.0 can't align properly",
+    _check_pandas_less_120(),
+    reason="pandas<1.2.0 can't align properly",
 )
 def test_append_timewise_align_columns_one_to_many(scm_run_interpolated):
     start = scm_run_interpolated.copy()
@@ -2066,12 +2108,14 @@ def test_append_timewise_align_columns_one_to_many(scm_run_interpolated):
     for _, row in res.filter(year=range(1, join_year)).timeseries().iterrows():
         # check that history has been written into all timeseries
         npt.assert_allclose(
-            row.values.squeeze(), history.values.squeeze(),
+            row.values.squeeze(),
+            history.values.squeeze(),
         )
 
 
 @pytest.mark.xfail(
-    _check_pandas_less_120(), reason="pandas<1.2.0 can't align properly",
+    _check_pandas_less_120(),
+    reason="pandas<1.2.0 can't align properly",
 )
 def test_append_timewise_align_columns_many_to_many(scm_run_interpolated):
     start = scm_run_interpolated.copy()
@@ -2105,7 +2149,8 @@ def test_append_timewise_ambiguous_history(scm_run_interpolated):
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run_interpolated.append_timewise(
-            scm_run_interpolated, align_columns=["variable"],
+            scm_run_interpolated,
+            align_columns=["variable"],
         )
 
 
@@ -2828,7 +2873,8 @@ def test_convert_unit_multiple_units(
         res = tdf.convert_unit(target_unit)
         assert res.get_unique_meta("unit", no_duplicates=True) == target_unit
         npt.assert_allclose(
-            res.timeseries().sort_index().values, tdf.timeseries().sort_index().values,
+            res.timeseries().sort_index().values,
+            tdf.timeseries().sort_index().values,
         )
 
 
@@ -2838,7 +2884,7 @@ def test_convert_unit_does_not_warn(scm_run, caplog):
     res = scm_run.convert_unit("MtC")
 
     npt.assert_equal(len(caplog.records), 0)
-    npt.assert_array_equal(scm_run.values, res.values / 10 ** 3)
+    npt.assert_array_equal(scm_run.values, res.values / 10**3)
 
 
 def test_resample():
@@ -2903,12 +2949,30 @@ def test_init_no_file():
 @pytest.mark.parametrize(
     ("test_file", "test_kwargs"),
     [
-        ("rcp26_emissions.csv", {},),
-        ("rcp26_emissions.csv.gz", {"lowercase_cols": True},),
-        ("rcp26_emissions_capitalised.csv", {"lowercase_cols": True},),
-        ("rcp26_emissions_int.csv", {"lowercase_cols": True},),
-        ("rcp26_emissions.xls", {},),
-        ("rcp26_emissions_multi_sheet.xlsx", {"sheet_name": "rcp26_emissions"},),
+        (
+            "rcp26_emissions.csv",
+            {},
+        ),
+        (
+            "rcp26_emissions.csv.gz",
+            {"lowercase_cols": True},
+        ),
+        (
+            "rcp26_emissions_capitalised.csv",
+            {"lowercase_cols": True},
+        ),
+        (
+            "rcp26_emissions_int.csv",
+            {"lowercase_cols": True},
+        ),
+        (
+            "rcp26_emissions.xls",
+            {},
+        ),
+        (
+            "rcp26_emissions_multi_sheet.xlsx",
+            {"sheet_name": "rcp26_emissions"},
+        ),
         (
             "rcp26_emissions_multi_sheet_capitalised.xlsx",
             {"sheet_name": "rcp26_emissions", "lowercase_cols": True},
@@ -2917,7 +2981,10 @@ def test_init_no_file():
             "rcp26_emissions_multi_sheet_capitalised_int.xlsx",
             {"sheet_name": "rcp26_emissions", "lowercase_cols": True},
         ),
-        ("rcp26_emissions_multi_sheet_data.xlsx", {},),
+        (
+            "rcp26_emissions_multi_sheet_data.xlsx",
+            {},
+        ),
     ],
 )
 def test_read_from_disk(test_file, test_kwargs, test_data_path):
@@ -3479,7 +3546,12 @@ def test_drop_meta_nonunique():
 
 
 @pytest.mark.parametrize(
-    "output_cls", (None, cftime.DatetimeGregorian, cftime.Datetime360Day,)
+    "output_cls",
+    (
+        None,
+        cftime.DatetimeGregorian,
+        cftime.Datetime360Day,
+    ),
 )
 def test_time_as_cftime(scm_run, output_cls):
     if output_cls is None:
@@ -3505,11 +3577,19 @@ def test_round():
             "unit": "unit",
         }
         index = [2000, 2025, 2030, 2035, 2040]
-        run = ScmRun(data=np.array([inp]).T, index=index, columns=cols,)
+        run = ScmRun(
+            data=np.array([inp]).T,
+            index=index,
+            columns=cols,
+        )
 
         res = run.round(decimals)
 
-        exp = ScmRun(data=np.array([exp]).T, index=index, columns=cols,)
+        exp = ScmRun(
+            data=np.array([exp]).T,
+            index=index,
+            columns=cols,
+        )
         assert_scmdf_almost_equal(res, exp)
 
     compare([3.6565, 5.51, 5.55, 5.45, 1], [3.7, 5.5, 5.6, 5.4, 1.0])

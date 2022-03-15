@@ -403,7 +403,12 @@ def _get_1d_or_raise(in_scmrun, hue_var, style_var):
             "Please process your data to create unique quantile timeseries "
             "before calling :meth:`plumeplot`.\n"
             "Found: {}".format(
-                quantile, hue_var, hue_var_value, style_var, style_var_value, in_scmrun,
+                quantile,
+                hue_var,
+                hue_var_value,
+                style_var,
+                style_var_value,
+                in_scmrun,
             )
         )
         raise ValueError(error_msg)

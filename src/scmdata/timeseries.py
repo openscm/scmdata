@@ -200,7 +200,11 @@ class TimeSeries(OpsMixin):
         self._data.__setitem__(key, value)
 
     def _binary_op(
-        self, other, f: Callable[..., Any], reflexive=False, **kwargs,
+        self,
+        other,
+        f: Callable[..., Any],
+        reflexive=False,
+        **kwargs,
     ) -> Callable[..., "TimeSeries"]:
         other_data = getattr(other, "_data", other)
 

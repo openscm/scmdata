@@ -62,7 +62,10 @@ def test_to_xarray(scm_run, dimensions, expected_dimensions):
     res = scm_run.to_xarray(dimensions=dimensions)
 
     do_basic_to_xarray_checks(
-        res, scm_run, expected_dimensions, (),
+        res,
+        scm_run,
+        expected_dimensions,
+        (),
     )
     do_basic_check_of_data_points(res, scm_run, expected_dimensions)
 
@@ -71,7 +74,12 @@ def test_to_xarray(scm_run, dimensions, expected_dimensions):
 
 
 @pytest.mark.parametrize(
-    "extras", (("model",), ("climate_model",), ("climate_model", "model"),)
+    "extras",
+    (
+        ("model",),
+        ("climate_model",),
+        ("climate_model", "model"),
+    ),
 )
 def test_to_xarray_extras_no_id_coord(scm_run, extras):
     dimensions = ("scenario", "region", "time")
@@ -215,7 +223,10 @@ def test_to_xarray_weird_names(scm_run, ch, weird_idx):
     res = scm_run.to_xarray(dimensions=dimensions)
 
     do_basic_to_xarray_checks(
-        res, scm_run, dimensions, (),
+        res,
+        scm_run,
+        dimensions,
+        (),
     )
     do_basic_check_of_data_points(res, scm_run, dimensions)
 
@@ -259,7 +270,10 @@ def test_to_xarray_unify_multiple_units(scm_run):
     dimensions = ("region", "scenario", "time")
     res = scm_run.to_xarray(dimensions=dimensions, unify_units=True)
     do_basic_to_xarray_checks(
-        res, scm_run, dimensions, (),
+        res,
+        scm_run,
+        dimensions,
+        (),
     )
     do_basic_check_of_data_points(res, scm_run, dimensions)
 
@@ -283,8 +297,14 @@ def test_to_xarray_unify_multiple_units_incompatible_units(scm_run):
 @pytest.mark.parametrize(
     "dimensions,extras",
     (
-        (("junk",), (),),
-        (("junk",), ("climate_model"),),
+        (
+            ("junk",),
+            (),
+        ),
+        (
+            ("junk",),
+            ("climate_model"),
+        ),
         (("scenario", "junk_1"), ("junk",)),
         (("scenario",), ("junk",)),
         (("scenario",), ("junk", "climate_model")),

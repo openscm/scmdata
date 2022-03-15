@@ -63,8 +63,8 @@ def calculate_crossing_times_quantiles(
     crossing_times,
     groupby,
     quantiles=(0.05, 0.5, 0.95),
-    nan_fill_value=10 ** 6,
-    out_nan_threshold=10 ** 5,
+    nan_fill_value=10**6,
+    out_nan_threshold=10**5,
     interpolation="linear",
 ):
     """
@@ -251,7 +251,10 @@ def calculate_exceedance_probabilities(
     timeseries_gt_threshold = _get_ts_gt_threshold(scmrun, threshold)
     group_cols = list(scmrun.get_meta_columns_except(process_over_cols))
 
-    out = _get_exceedance_fraction(timeseries_gt_threshold.any(axis=1), group_cols,)
+    out = _get_exceedance_fraction(
+        timeseries_gt_threshold.any(axis=1),
+        group_cols,
+    )
 
     if not isinstance(out, pd.Series):  # pragma: no cover # emergency valve
         raise AssertionError("How did we end up without a series?")
@@ -319,7 +322,10 @@ def calculate_exceedance_probabilities_over_time(
     timeseries_gt_threshold = _get_ts_gt_threshold(scmrun, threshold)
     group_cols = list(scmrun.get_meta_columns_except(process_over_cols))
 
-    out = _get_exceedance_fraction(timeseries_gt_threshold, group_cols,)
+    out = _get_exceedance_fraction(
+        timeseries_gt_threshold,
+        group_cols,
+    )
 
     if not isinstance(out, pd.DataFrame):  # pragma: no cover # emergency valve
         raise AssertionError("How did we end up without a dataframe?")
@@ -603,7 +609,8 @@ def calculate_summary_stats(
         exceedance_probabilities_naming_base = _DEFAULT_EXCEEDANCE_PROB_OUTPUT_BASE
 
     scmrun_exceedance_prob = scmrun.filter(
-        variable=exceedance_probabilities_variable, log_if_empty=False,
+        variable=exceedance_probabilities_variable,
+        log_if_empty=False,
     )
     if scmrun_exceedance_prob.empty:
         _raise_missing_variable_error(
@@ -631,7 +638,10 @@ def calculate_summary_stats(
         else:
             peak_time_naming_base = "{} peak time"
 
-    scmrun_peak = scmrun.filter(variable=peak_variable, log_if_empty=False,)
+    scmrun_peak = scmrun.filter(
+        variable=peak_variable,
+        log_if_empty=False,
+    )
     if scmrun_peak.empty:
         _raise_missing_variable_error("peak_variable", peak_variable, scmrun)
 
@@ -681,11 +691,17 @@ def calculate_summary_stats(
 
     scmrun_categorisation = ScmRun(
         scmrun_categorisation.quantiles_over(
-            cols=categorisation_quantile_cols, quantiles=[0.33, 0.5, 0.66],
+            cols=categorisation_quantile_cols,
+            quantiles=[0.33, 0.5, 0.66],
         )
     )
     categorisation_calls = [
-        (categorisation_sr15, [scmrun_categorisation, _index], {}, "SR1.5 category",)
+        (
+            categorisation_sr15,
+            [scmrun_categorisation, _index],
+            {},
+            "SR1.5 category",
+        )
     ]
     func_calls_args_kwargs = (
         exceedance_prob_calls + peak_calls + peak_time_calls + categorisation_calls

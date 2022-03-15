@@ -63,7 +63,12 @@ def test_month_start():
 
 
 @pytest.mark.parametrize(
-    "output_cls", (None, cftime.DatetimeGregorian, cftime.Datetime360Day,)
+    "output_cls",
+    (
+        None,
+        cftime.DatetimeGregorian,
+        cftime.Datetime360Day,
+    ),
 )
 @pytest.mark.parametrize(
     "start,end",

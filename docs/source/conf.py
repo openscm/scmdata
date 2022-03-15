@@ -5,20 +5,10 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/scmdata"))
+from importlib.metadata import version
 
 # -- Import packages ---------------------------------------------------------
 
-from scmdata._version import get_versions
 
 # -- Project information -----------------------------------------------------
 
@@ -29,10 +19,11 @@ copyright_year = "2019"
 copyright = "{}, {}".format(copyright_year, authors)
 author = authors
 
-# The short X.Y version
-version = get_versions()["version"].split("+")[0]
 # The full version, including alpha/beta/rc tags
-release = get_versions()["version"]
+release = version("scmdata")
+# The short X.Y version
+version = ".".join(release.split(".")[:2])
+
 
 # -- General configuration ---------------------------------------------------
 
@@ -206,7 +197,10 @@ intersphinx_mapping = {
     "pyam": ("https://pyam-iamc.readthedocs.io/en/latest", None),
     "scmdata": ("https://scmdata.readthedocs.io/en/latest", None),
     "xarray": ("http://xarray.pydata.org/en/stable", None),
-    "pint": ("https://pint.readthedocs.io/en/latest", None,),
+    "pint": (
+        "https://pint.readthedocs.io/en/latest",
+        None,
+    ),
 }
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
