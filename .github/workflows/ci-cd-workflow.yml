@@ -66,9 +66,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install test dependencies
       run: |
-        pip install --upgrade pip wheel
+        pip install --upgrade --user pip wheel
         pip install -e .[tests,plotting,optional]
-    - name: Test with pytest
+    - name: Test with pytest (${{ runner.os }})
+      if: ${{ !startsWith(runner.os, 'Windows') }}
       env:
         MIN_COVERAGE: 90
       run: |
@@ -79,6 +80,12 @@ jobs:
               echo "Error: Test coverage has to be at least ${MIN_COVERAGE}"
               exit 1
           fi
+    - name: Test with pytest (${{ runner.os }})
+      if: startsWith(runner.os, 'Windows')
+      env:
+        MIN_COVERAGE: 90
+      run: |
+          pytest tests -r a --cov=scmdata --cov-report=term-missing --cov-fail-under=$$env:MIN_COVERAGE
     - name: Upload coverage to Codecov
       if: startsWith(runner.os, 'Linux') && matrix.python-version == 3.7
       uses: codecov/codecov-action@v1
