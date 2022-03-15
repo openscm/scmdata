@@ -14,6 +14,7 @@ import itertools
 import os
 import os.path
 import pathlib
+import platform
 from abc import ABC, abstractmethod
 
 import pandas as pd
@@ -21,6 +22,9 @@ import six
 import tqdm.autonotebook as tqdman
 
 from scmdata import ScmRun, run_append
+
+
+__is_windows__ = platform.system() == "Windows"
 
 
 def ensure_dir_exists(fp):
@@ -56,8 +60,10 @@ def _get_safe_filename(inp):
     def safe_char(c):
         if c.isalnum() or c in f"-{os.sep}*_.":
             return c
-        else:
-            return "-"
+        if __is_windows__ and c in [":"]:
+            return c
+
+        return "-"
 
     return "".join(safe_char(c) for c in inp)
 

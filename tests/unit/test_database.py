@@ -321,6 +321,7 @@ def test_database_save(tdb, start_scmrun):
 
 @pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\" .")
 def test_database_save_weird(tdb, start_scmrun, ch):
+    # if __is_windows__ and ch in []:
     weird_var_name = "variable" + ch
     start_scmrun["variable"] = [weird_var_name, "other"]
     tdb.save(start_scmrun)
