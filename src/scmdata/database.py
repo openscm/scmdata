@@ -179,6 +179,10 @@ class NetCDFBackend(DatabaseBackend):
             for database_level in self.kwargs["levels"]
         }
 
+        # Windows does not support directories or filenames which end in a '.'
+        if any([l.endswith(".") for l in levels.values()]):
+            raise ValueError("Metadata cannot end in a '.'")
+
         return self._get_out_filepath(**levels)
 
     def _get_out_filepath(self, **data_levels):
