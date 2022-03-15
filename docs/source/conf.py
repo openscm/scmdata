@@ -9,7 +9,6 @@ from importlib.metadata import version
 
 # -- Import packages ---------------------------------------------------------
 
-from scmdata._version import get_versions
 
 # -- Project information -----------------------------------------------------
 
