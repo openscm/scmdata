@@ -85,7 +85,7 @@ jobs:
       env:
         MIN_COVERAGE: 90
       run: |
-          pytest tests -r a --cov=scmdata --cov-report=term-missing --cov-fail-under=$$env:MIN_COVERAGE
+          pytest tests -r a --cov=scmdata --cov-report=term-missing --cov-fail-under=$env:MIN_COVERAGE
     - name: Upload coverage to Codecov
       if: startsWith(runner.os, 'Linux') && matrix.python-version == 3.7
       uses: codecov/codecov-action@v1
