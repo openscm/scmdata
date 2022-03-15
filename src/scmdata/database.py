@@ -164,6 +164,8 @@ class NetCDFBackend(DatabaseBackend):
         ValueError
             If non-unique metadata is found for each of :attr:`self.kwargs["levels"]`
 
+            If any metadata end with '.'
+
         KeyError
             If missing metadata is found for each of :attr:`self.kwargs["levels"]`
 
