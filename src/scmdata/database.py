@@ -54,7 +54,7 @@ def _check_is_subdir(root, d):
 
 def _get_safe_filename(inp):
     def safe_char(c):
-        if c.isalnum() or c in "-/*_.":
+        if c.isalnum() or c in f"-{os.sep}*_.":
             return c
         else:
             return "-"
