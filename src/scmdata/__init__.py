@@ -3,8 +3,6 @@ scmdata, simple data handling for simple climate model data.
 
 See README and docs for more info.
 """
-from .run import run  # noqa: F401
-
 try:
     from importlib.metadata import version as _version
 except ImportError:
@@ -17,4 +15,5 @@ except Exception:  # pylint: disable=broad-except  # pragma: no cover
     # Local copy, not installed with setuptools
     __version__ = "unknown"
 
+from .run import run  # noqa: F401
 from scmdata.run import ScmRun, run_append  # noqa: F401, E402
