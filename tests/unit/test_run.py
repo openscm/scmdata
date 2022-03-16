@@ -18,9 +18,9 @@ from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.errors import (
     DuplicateTimesError,
+    InsufficientDataError,
     MissingRequiredColumnError,
     NonUniqueMetadataError,
-    InsufficientDataError,
 )
 from scmdata.run import BaseScmRun, ScmRun, run_append
 from scmdata.testing import (
