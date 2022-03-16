@@ -336,7 +336,11 @@ class TimeseriesConverter:
         if len(values) == 1 and self.extrapolation_type == "constant":
             values = np.asarray([values[0], values[0], values[0]])
             source_time_points = np.asarray(
-                [source_time_points[0], source_time_points[0], source_time_points[0]]
+                [
+                    source_time_points[0] - 1,
+                    source_time_points[0],
+                    source_time_points[0] + 1,
+                ]
             )
 
         # Check for nans
