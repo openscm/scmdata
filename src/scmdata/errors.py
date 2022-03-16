@@ -63,5 +63,3 @@ class InsufficientDataError(Exception):
     """
     Insufficient data is available to interpolate/extrapolate
     """
-
-    pass
