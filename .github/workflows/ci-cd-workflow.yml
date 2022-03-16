@@ -238,14 +238,11 @@ jobs:
       run: |
           python scripts/test_install.py
 
-  deploy-pypi:
-    needs: [linting-and-docs,build,build-pandas-versions,build-no-plotting,test-notebooks,test-install]
-    if: startsWith(github.ref, 'refs/tags/v')
-
+  create-dist:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.9]
 
     steps:
     - name: Checkout repository
@@ -259,7 +256,40 @@ jobs:
         pip install --upgrade pip wheel
         pip install -e .[dev]
     - name: Create package
-      run: python setup.py sdist bdist_wheel --universal
+      run: |
+        python setup.py sdist bdist_wheel --universal
+        twine check dist/*
+    - name: Check package files
+      run: |
+        for f in README.rst LICENSE CHANGELOG.rst
+        do
+          if ! tar -tvf dist/scmdata*.tar.gz | grep "$f"
+          then
+              echo
+              echo "${f} not correctly packaged"
+              exit 1
+          fi
+        done
+    - uses: actions/upload-artifact@v2
+      if: startsWith(github.ref, 'refs/tags/v')
+      with:
+        name: dist
+        path: dist
+
+  deploy-pypi:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linting-and-docs,build,build-pandas-versions,build-no-plotting,test-notebooks,test-install,create-dist]
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: dist
     - name: Publish package to PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:

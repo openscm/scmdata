@@ -1,6 +1,11 @@
 Changelog
 =========
 
+master
+------
+
+- (`#191 <https://github.com/openscm/scmdata/pull/191>`_) Add check of PyPI distribution to CI
+
 v0.14.0
 -------
 
