@@ -20,7 +20,6 @@ from scmdata.errors import (
     DuplicateTimesError,
     MissingRequiredColumnError,
     NonUniqueMetadataError,
-
 )
 from scmdata.run import BaseScmRun, ScmRun, run_append
 from scmdata.testing import (

@@ -114,7 +114,11 @@ def test_extrapolation_with_nans():
     np.testing.assert_allclose(c.convert_from(source_vals), target_vals, rtol=1e-3)
 
 
-def test_not_enough():
+@pytest.mark.parametrize("count", [0, 1, 2])
+@pytest.mark.parametrize("extrapolation_type", [None, "linear", "constant"])
+def test_not_enough(count, extrapolation_type):
+    # This also tests that the single value and constant extrapolation edge-case
+    # doesn't work if nan's are involved
     source = np.asarray(
         [
             np.datetime64("1000-01-01"),
@@ -124,7 +128,11 @@ def test_not_enough():
         ],
         dtype=np.datetime64,
     )
-    source_vals = [1.0, 2.0, np.nan, np.nan]
+    source_vals = [np.nan] * 4
+    # Set the first 'count' values to be valid
+    for i in range(count):
+        source_vals[i] = i
+
     target = np.asarray(
         [
             np.datetime64("1000-01-01"),
@@ -134,10 +142,7 @@ def test_not_enough():
         ],
         dtype=np.datetime64,
     )
-    c = TimeseriesConverter(
-        source,
-        target,
-    )
+    c = TimeseriesConverter(source, target, extrapolation_type=extrapolation_type)
     with pytest.raises(InsufficientDataError):
         c.convert_from(source_vals)
 
@@ -172,3 +177,25 @@ def test_constant_extrapolation():
     res = c.convert_from(source_vals)
 
     np.testing.assert_allclose(res, [1.0, 1.0, 1.0])
+
+
+def test_constant_extrapolation_nan():
+    source = np.asarray(
+        [
+            np.datetime64("2000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+    source_vals = [np.nan]
+    target = np.asarray(
+        [
+            np.datetime64("1000-01-01"),
+            np.datetime64("2000-01-01"),
+            np.datetime64("3000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+
+    c = TimeseriesConverter(source, target, extrapolation_type="constant")
+    with pytest.raises(InsufficientDataError):
+        c.convert_from(source_vals)
