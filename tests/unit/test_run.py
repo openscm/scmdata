@@ -18,6 +18,7 @@ from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.errors import (
     DuplicateTimesError,
+    InsufficientDataError,
     MissingRequiredColumnError,
     NonUniqueMetadataError,
 )
@@ -2265,6 +2266,32 @@ def test_interpolate_nan_constant():
     npt.assert_array_almost_equal(
         res.values.squeeze(), [1.0, 2.0, 3.0, 3.0, 3.0], decimal=4
     )
+
+
+def test_interpolate_single_constant():
+    value = 2.0
+    df = ScmRun(
+        [value],
+        columns={
+            "scenario": ["a_scenario"],
+            "model": ["a_model"],
+            "region": ["World"],
+            "variable": ["Emissions|BC"],
+            "unit": ["Mg /yr"],
+        },
+        index=[2000],
+    )
+    target = [datetime(y, 1, 1) for y in [2000, 2100, 2200, 2300, 2400]]
+    res = df.interpolate(
+        target,
+        extrapolation_type="constant",
+    )
+
+    npt.assert_array_almost_equal(res.values.squeeze(), [value] * 5, decimal=4)
+
+    # Non-constant extrapolation (default) should fail
+    with pytest.raises(InsufficientDataError):
+        df.interpolate(target)
 
 
 def test_time_mean_year_beginning_of_year(test_scm_df_monthly):

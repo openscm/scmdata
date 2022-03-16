@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#190 <https://github.com/openscm/scmdata/pull/190>`_) Add special case for extrapolating timeseries containing a single timestep using ``constant`` extrapolation. Moved :attr:`scmdata.errors.InsufficientDataError` from :mod:`scmdata.time` to :mod:`scmdata.errors`
 - (`#186 <https://github.com/openscm/scmdata/pull/186>`_ and `#187 <https://github.com/openscm/scmdata/pull/187>`_) Fix the handling of non-alphanumeric characters in filenames on Windows for :class:`scmdata.database.ScmDatabase`. ``*`` values are no longer included in :class:`scmdata.database.ScmDatabase` filenames
 - (`#186 <https://github.com/openscm/scmdata/pull/186>`_ Move to ``pyproject.toml`` for setup etc.
 - (`#185 <https://github.com/openscm/scmdata/pull/185>`_) Allow :class:`scmdata.run.ScmRun` to read remote files by providing a URL to the constructor

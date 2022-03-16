@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 from dateutil import parser
 
+from scmdata.errors import InsufficientDataError
+
 try:
     import scipy.interpolate
 
@@ -23,14 +25,6 @@ except ImportError:  # pragma: no cover
 
 _TARGET_TYPE = np.int64
 _TARGET_DTYPE = "datetime64[s]"
-
-
-class InsufficientDataError(Exception):
-    """
-    Insufficient data is available to interpolate/extrapolate
-    """
-
-    pass
 
 
 def _float_year_to_datetime(inp: float) -> np.datetime64:
@@ -326,7 +320,7 @@ class TimeseriesConverter:
         ------
         InsufficientDataError
             Length of the time series is too short to convert
-        InsufficientDataError
+
             Target time points are outside the source time points and
             :attr:`extrapolation_type` is 'NONE'
         ImportError
@@ -338,6 +332,17 @@ class TimeseriesConverter:
             Converted time period average data for timeseries :obj:`values`
         """
         values = np.asarray(values)
+
+        if len(values) == 1 and self.extrapolation_type == "constant":
+            values = np.asarray([values[0], values[0], values[0]])
+            source_time_points = np.asarray(
+                [
+                    source_time_points[0] - 1,
+                    source_time_points[0],
+                    source_time_points[0] + 1,
+                ]
+            )
+
         # Check for nans
         nan_mask = np.isnan(values)
         if nan_mask.sum():

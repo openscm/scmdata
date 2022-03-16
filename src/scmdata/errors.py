@@ -57,3 +57,9 @@ class DuplicateTimesError(ValueError):
         )
 
         super().__init__(msg)
+
+
+class InsufficientDataError(Exception):
+    """
+    Insufficient data is available to interpolate/extrapolate
+    """
