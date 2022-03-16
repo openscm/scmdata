@@ -30,6 +30,11 @@ def test_short_data(combo):
         combo.extrapolation_type,
     )
     for a in [[], [0], [0, 1]]:
+        if len(a) == 1 and combo.extrapolation_type == "constant":
+            # Handle a single value and constant extrapolation differently
+            # 0 or 2 values should be handled as expected
+            continue
+
         with pytest.raises(InsufficientDataError):
             timeseriesconverter._convert(np.array(a), combo.source, combo.target)
 
@@ -135,3 +140,35 @@ def test_not_enough():
     )
     with pytest.raises(InsufficientDataError):
         c.convert_from(source_vals)
+
+
+def test_constant_extrapolation():
+    source = np.asarray(
+        [
+            np.datetime64("2000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+    source_vals = [1.0]
+    target = np.asarray(
+        [
+            np.datetime64("1000-01-01"),
+            np.datetime64("2000-01-01"),
+            np.datetime64("3000-01-01"),
+        ],
+        dtype=np.datetime64,
+    )
+
+    # Linear extrapolation (default) should fail
+    c = TimeseriesConverter(source, target)
+    with pytest.raises(InsufficientDataError):
+        c.convert_from(source_vals)
+    c = TimeseriesConverter(source, target, extrapolation_type="linear")
+    with pytest.raises(InsufficientDataError):
+        c.convert_from(source_vals)
+
+    # Constant extrapolation should work with a single value
+    c = TimeseriesConverter(source, target, extrapolation_type="constant")
+    res = c.convert_from(source_vals)
+
+    np.testing.assert_allclose(res, [1.0, 1.0, 1.0])

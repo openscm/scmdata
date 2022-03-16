@@ -338,6 +338,13 @@ class TimeseriesConverter:
             Converted time period average data for timeseries :obj:`values`
         """
         values = np.asarray(values)
+
+        if len(values) == 1 and self.extrapolation_type == "constant":
+            values = np.asarray([values[0], values[0], values[0]])
+            source_time_points = np.asarray(
+                [source_time_points[0], source_time_points[0], source_time_points[0]]
+            )
+
         # Check for nans
         nan_mask = np.isnan(values)
         if nan_mask.sum():
