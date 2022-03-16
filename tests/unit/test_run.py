@@ -20,6 +20,7 @@ from scmdata.errors import (
     DuplicateTimesError,
     MissingRequiredColumnError,
     NonUniqueMetadataError,
+    InsufficientDataError,
 )
 from scmdata.run import BaseScmRun, ScmRun, run_append
 from scmdata.testing import (
@@ -27,7 +28,6 @@ from scmdata.testing import (
     _check_pandas_less_120,
     assert_scmdf_almost_equal,
 )
-from scmdata.time import InsufficientDataError
 
 
 @pytest.fixture

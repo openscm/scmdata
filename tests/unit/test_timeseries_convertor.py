@@ -4,7 +4,8 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from scmdata.time import InsufficientDataError, TimeseriesConverter
+from scmdata.time import TimeseriesConverter
+from scmdata.errors import InsufficientDataError
 
 
 @patch("scmdata.time.has_scipy", False)
