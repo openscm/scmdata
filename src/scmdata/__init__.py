@@ -10,7 +10,7 @@ except ImportError:
     from importlib_metadata import version as _version
 
 try:
-    __version__ = _version("openscm_runner")
+    __version__ = _version("scmdata")
 except Exception:  # pylint: disable=broad-except  # pragma: no cover
     # Local copy, not installed with setuptools
     __version__ = "unknown"
