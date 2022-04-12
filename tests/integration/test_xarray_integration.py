@@ -35,5 +35,5 @@ def test_xarray_plot_scatter(plumeplot_scmrun, scatter_kwargs):
     xr_ds.plot.scatter(
         x="Surface Air Ocean Blended Temperature Change",
         y="Surface Air Temperature Change",
-        **scatter_kwargs
+        **scatter_kwargs,
     )

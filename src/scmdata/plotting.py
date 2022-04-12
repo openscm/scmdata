@@ -288,7 +288,7 @@ def plumeplot(  # pragma: no cover
                             hsdf.filter(quantile=q[1]), hue_var, style_var
                         ),
                         label=label,
-                        **pkwargs
+                        **pkwargs,
                     )
 
                     if palette is None:
@@ -326,7 +326,7 @@ def plumeplot(  # pragma: no cover
                         ),
                         label=label,
                         linewidth=linewidth,
-                        **pkwargs
+                        **pkwargs,
                     )[0]
 
                     if dashes is None:
