@@ -27,7 +27,7 @@ def test_groupby(scm_run, g):
             assert len(sub_df[c].unique()) == 1
         return df
 
-    res = scm_run.groupby(*g).map(func)
+    res = scm_run.groupby(*g).apply(func)
 
     assert isinstance(res, ScmRun)
     assert_scmdf_almost_equal(res, scm_run, check_ts_names=False)
@@ -45,7 +45,7 @@ def test_groupby_all_except(scm_run, g):
             assert len(sub_df[c].unique()) == 1
         return df
 
-    res = scm_run.groupby_all_except(*g).map(func)
+    res = scm_run.groupby_all_except(*g).apply(func)
 
     assert isinstance(res, ScmRun)
     assert_scmdf_almost_equal(res, scm_run, check_ts_names=False)
@@ -66,7 +66,7 @@ def test_groupby_return_none(scm_run):
         else:
             return None
 
-    res = scm_run.groupby("variable").map(func)
+    res = scm_run.groupby("variable").apply(func)
 
     assert "Primary Energy|Coal" in scm_run["variable"].values
     assert "Primary Energy|Coal" not in res["variable"].values
@@ -76,7 +76,7 @@ def test_groupby_return_none_all(scm_run):
     def func(_):
         return None
 
-    assert scm_run.groupby("variable").map(func) is None
+    assert scm_run.groupby("variable").apply(func) is None
 
 
 def test_groupby_integer_metadata_single_grouper(scm_run):
@@ -87,9 +87,21 @@ def test_groupby_integer_metadata_single_grouper(scm_run):
 
     scm_run["ensemble_member"] = range(scm_run.shape[0])
 
-    res = scm_run.groupby("ensemble_member").map(increment_ensemble_member)
+    res = scm_run.groupby("ensemble_member").apply(increment_ensemble_member)
 
     assert (res["ensemble_member"] == scm_run["ensemble_member"] + 10).all()
+
+
+def test_map_deprecated(scm_run):
+    def func(r):
+        return r * 2
+
+    with pytest.warns(DeprecationWarning, match="Use RunGroupby.apply instead"):
+        res = scm_run.groupby("scenario").map(func)
+
+    assert_scmdf_almost_equal(
+        res, scm_run * 2, allow_unordered=True, check_ts_names=False
+    )
 
 
 def test_groupby_integer_metadata():
@@ -111,7 +123,7 @@ def test_groupby_integer_metadata():
         },
     )
 
-    res = start.groupby(["variable", "region", "scenario", "ensemble_member"]).map(
+    res = start.groupby(["variable", "region", "scenario", "ensemble_member"]).apply(
         increment_ensemble_member
     )
 
