@@ -1810,18 +1810,44 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def apply(self, func, *args, **kwargs):
         """
+        Apply a function to each timeseries and append the results
+
+        `func` is called like `func(ar, *args, **kwargs)` for each :class:`ScmRun <scmdata.run.ScmRun>` ``ar``
+        in this group. If the result of this function call is None, than it is
+        excluded from the results.
+
+        The results are appended together using :func:`run_append`. The function
+        can change the size of the input :class:`ScmRun <scmdata.run.ScmRun>` as long as :func:`run_append`
+        can be applied to all results.
+
+        Examples
+        --------
+        .. code:: python
+
+            >>> def multiply_by_2(arr):
+            ...     variable = arr.get_unique_meta("variable", True)
+            ...     if variable == "Surface Temperature":
+            ...         return arr * 2
+            ...     return arr
+            >>> run.apply(multiply_by_2)
 
         Parameters
         ----------
-        func
-        args
-        kwargs
+        func : function
+            Callable to apply to each timeseries.
+
+        ``*args``
+            Positional arguments passed to `func`.
+
+        ``**kwargs``
+            Used to call `func(ar, **kwargs)` for each array `ar`.
 
         Returns
         -------
-
+        applied : :class:`ScmRun <scmdata.run.ScmRun>`
+            The result of splitting, applying and combining this array.
         """
-        self.groupby(self.meta.columns).apply(func, *args, **kwargs)
+        return self.groupby(self.meta.columns).apply(func, *args, **kwargs)
 
     def get_meta_columns_except(self, *not_group):
         """
