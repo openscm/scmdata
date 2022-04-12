@@ -1808,6 +1808,21 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return RunGroupBy(self, group)
 
+    def apply(self, func, *args, **kwargs):
+        """
+
+        Parameters
+        ----------
+        func
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
+        self.groupby(self.meta.columns).apply(func, *args, **kwargs)
+
     def get_meta_columns_except(self, *not_group):
         """
         Get columns in meta except a set
