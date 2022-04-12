@@ -188,6 +188,8 @@ class RunGroupBy(_GroupBy):
             return self.apply(reduce_array)
 
 
-RunGroupBy.map.__doc__ = RunGroupBy.apply.__doc__ + "\n\nDeprecated: Use RunGroupBy.apply instead"
+RunGroupBy.map.__doc__ = (
+    RunGroupBy.apply.__doc__ + "\n\nDeprecated: Use RunGroupBy.apply instead"
+)
 
 ops.inject_reduce_methods(RunGroupBy)
