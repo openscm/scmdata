@@ -1,7 +1,9 @@
 import pytest
+import numpy as np
 
 from scmdata import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
+
 
 group_tests = pytest.mark.parametrize(
     "g",
@@ -114,3 +116,31 @@ def test_groupby_integer_metadata():
     )
 
     assert (res["ensemble_member"] == start["ensemble_member"] + 10).all()
+
+
+def test_groupby_nan_metadata():
+    def increment_ensemble_member(scmrun):
+        scmrun["ensemble_member"] += 10
+        scmrun["has_nan"] = np.isnan(scmrun.get_unique_meta("ensemble_member"))
+
+        return scmrun
+
+    start = ScmRun(
+        data=[[1, 2], [0, 1]],
+        index=[2010, 2020],
+        columns={
+            "model": "model",
+            "scenario": "scenario",
+            "variable": "variable",
+            "unit": "unit",
+            "region": ["region", "regionb"],
+            "ensemble_member": [0, np.nan],
+        },
+    )
+
+    res = start.groupby(["ensemble_member"]).apply(increment_ensemble_member)
+    exp = start.copy()
+    exp["ensemble_member"] += 10
+    exp["has_nan"] = [False, True]
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
