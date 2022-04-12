@@ -29,7 +29,7 @@ def get_single_ts(
     model="mod",
     unit="GtC / yr",
     region="World",
-    **kwargs
+    **kwargs,
 ):
 
     return get_ts(
@@ -40,7 +40,7 @@ def get_single_ts(
         model=model,
         unit=unit,
         region=region,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -52,7 +52,7 @@ def get_multiple_ts(
     model="mod",
     unit=["GtC / yr", "MtCH4 / yr"],
     region="World",
-    **kwargs
+    **kwargs,
 ):
     return get_ts(
         data=data,
@@ -62,7 +62,7 @@ def get_multiple_ts(
         model=model,
         unit=unit,
         region=region,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -1275,7 +1275,7 @@ def test_adjust_median_to_target_process_over(process_over):
         exp = get_ts(
             np.array([[0.5, 1.5, 2.5], [0.25, 1.75, 2.25], [0.5, 1.5, 2.5]]).T,
             index,
-            **get_ts_kwargs
+            **get_ts_kwargs,
         )
 
     elif process_over in [
