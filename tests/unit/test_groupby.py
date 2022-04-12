@@ -1,9 +1,8 @@
-import pytest
 import numpy as np
+import pytest
 
 from scmdata import ScmRun
 from scmdata.testing import assert_scmdf_almost_equal
-
 
 group_tests = pytest.mark.parametrize(
     "g",

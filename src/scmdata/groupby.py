@@ -120,19 +120,9 @@ class RunGroupBy(_GroupBy):
 
     def map(self, func, *args, **kwargs):
         """
-        Apply a
+        Apply a function to each group and append the results
 
-        Deprecated: use apply instead
-
-        Parameters
-        ----------
-        func
-        args
-        kwargs
-
-        Returns
-        -------
-
+        Documentation overwritten with :func:`apply`
         """
         warnings.warn("Use RunGroupby.apply instead", DeprecationWarning)
         return self.apply(func, *args, **kwargs)
