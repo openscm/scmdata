@@ -8,8 +8,8 @@ import os
 import os.path
 
 from scmdata import ScmRun, run_append
-from scmdata.database.backends import BaseDatabaseBackend
 from scmdata.database._utils import _check_is_subdir, ensure_dir_exists
+from scmdata.database.backends import BaseDatabaseBackend
 
 
 def _get_safe_filename(inp, include_glob=False):
