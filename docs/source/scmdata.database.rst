@@ -3,7 +3,8 @@
 scmdata.database
 ----------------
 
-.. automodule:: scmdata.database._database
+.. automodule:: scmdata.database
+.. autoclass:: scmdata.database.ScmDatabase
     :special-members: __init__
 
 scmdata.database.backends
