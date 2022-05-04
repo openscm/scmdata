@@ -17,7 +17,7 @@ import six
 import tqdm.autonotebook as tqdman
 
 from scmdata import run_append
-from scmdata.database.backends import backend_classes, DatabaseBackend
+from scmdata.database.backends import DatabaseBackend, backend_classes
 from scmdata.database.utils import _check_is_subdir
 
 

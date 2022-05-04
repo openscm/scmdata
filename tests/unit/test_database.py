@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from scmdata import ScmRun, run_append, ScmDatabase
+from scmdata import ScmDatabase, ScmRun, run_append
 from scmdata.database.backends import DatabaseBackend, NetCDFBackend
 from scmdata.errors import NonUniqueMetadataError
 from scmdata.testing import assert_scmdf_almost_equal

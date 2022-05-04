@@ -4,6 +4,7 @@ import os
 import os.path
 import pathlib
 
+
 def ensure_dir_exists(fp):
     """
     Ensure directory exists

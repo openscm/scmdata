@@ -4,8 +4,8 @@ import os
 import os.path
 
 from scmdata import ScmRun, run_append
-from scmdata.database.utils import ensure_dir_exists, _check_is_subdir
 from scmdata.database.backends import DatabaseBackend
+from scmdata.database.utils import _check_is_subdir, ensure_dir_exists
 
 
 def _get_safe_filename(inp, include_glob=False):
