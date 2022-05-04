@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from scmdata import ScmRun, run_append
-from scmdata.database import DatabaseBackend, NetCDFBackend, ScmDatabase
+from scmdata import ScmRun, run_append, ScmDatabase
+from scmdata.database.backends import DatabaseBackend, NetCDFBackend
 from scmdata.errors import NonUniqueMetadataError
 from scmdata.testing import assert_scmdf_almost_equal
 
@@ -260,7 +260,7 @@ class TestNetCDFBackend:
                 mock_to_nc.assert_called_once()
                 inp_scmrun.to_nc.assert_called_with(out_fname, dimensions=[])
 
-    @patch("scmdata.database.ensure_dir_exists")
+    @patch("scmdata.database.backends.netcdf.ensure_dir_exists")
     @patch.object(ScmRun, "to_nc")
     def test_netcdf_save_non_unique_meta(
         self, mock_to_nc, mock_ensure_dir_exists, tdb, start_scmrun
