@@ -1,11 +1,15 @@
+"""
+Database backend for handling local files stored as NetCDF
+"""
+
 import glob
 import itertools
 import os
 import os.path
 
 from scmdata import ScmRun, run_append
-from scmdata.database.backends import DatabaseBackend
-from scmdata.database.utils import _check_is_subdir, ensure_dir_exists
+from scmdata.database.backends import BaseDatabaseBackend
+from scmdata.database._utils import _check_is_subdir, ensure_dir_exists
 
 
 def _get_safe_filename(inp, include_glob=False):
@@ -22,13 +26,9 @@ def _get_safe_filename(inp, include_glob=False):
     return "".join(safe_char(c) for c in inp)
 
 
-class NetCDFBackend(DatabaseBackend):
+class NetCDFDatabaseBackend(BaseDatabaseBackend):
     """
-    On-disk database handler for outputs from SCMs
-
-    Data is split into groups as specified by :attr:`levels`. This allows for fast
-    reading and writing of new subsets of data when a single output file is no longer
-    performant or data cannot all fit in memory.
+    Database backend for handling local files stored as NetCDF
     """
 
     def get_key(self, sr):

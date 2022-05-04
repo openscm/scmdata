@@ -17,8 +17,8 @@ import six
 import tqdm.autonotebook as tqdman
 
 from scmdata import run_append
-from scmdata.database.backends import DatabaseBackend, backend_classes
-from scmdata.database.utils import _check_is_subdir
+from scmdata.database.backends import BaseDatabaseBackend, backend_classes
+from scmdata.database._utils import _check_is_subdir
 
 
 class ScmDatabase:
@@ -40,6 +40,12 @@ class ScmDatabase:
         """
         Initialise the database
 
+        .. note::
+
+            Creating a new :class:`ScmDatabase` does not modify any existing data on
+            disk. To load an existing database ensure that the :attr:`root_dir` and
+            :attr:`levels` are the same as the previous instance.
+
         Parameters
         ----------
         root_dir : str
@@ -52,15 +58,15 @@ class ScmDatabase:
             best match the input data and desired access pattern. If there are any
             additional varying dimensions, they will be stored as dimensions.
 
-        backend: str or :class:`DatabaseBackend`
+        backend: str or :class:`BaseDatabaseBackend<scmdata.database.backends.BaseDatabaseBackend>`
             Determine the backend to serialize and deserialize data
 
-            Defaults to using :class:`NetCDFBackend` which reads and writes data as
-            netCDF files. Note that this requires the optional dependency of netCDF4 to
-            be installed.
+            Defaults to using :class:`NetCDFDatabaseBackend<scmdata.database.backends.NetCDFDatabaseBackend>`
+            which reads and writes data as netCDF files. Note that this requires the
+            optional dependency of netCDF4 to be installed.
 
-            If a custom backend class is being used, it must be extend the
-            :class:`DatabaseBackend` class.
+            If a custom backend class is being used, it must extend the
+            :class:`BaseDatabaseBackend<scmdata.database.backends.BaseDatabaseBackend>` class.
 
         backend_config: dict
             Additional configuration to pass to the backend
@@ -68,11 +74,7 @@ class ScmDatabase:
             See the documentation for the target backend to determine what configuration
             options are available.
 
-        .. note::
 
-            Creating a new :class:`ScmDatabase` does not modify any existing data on
-            disk. To load an existing database ensure that the :attr:`root_dir` and
-            :attr:`levels` are the same as the previous instance.
         """
         self._root_dir = root_dir
         self.levels = tuple(levels)
@@ -96,9 +98,9 @@ class ScmDatabase:
             except KeyError:
                 raise ValueError("Unknown database backend: {}".format(backend))
         else:
-            if not isinstance(backend, DatabaseBackend):
+            if not isinstance(backend, BaseDatabaseBackend):
                 raise ValueError(
-                    "Backend should be an instance of scmdata.database.DatabaseBackend"
+                    "Backend should be an instance of scmdata.database.BaseDatabaseBackend"
                 )
             return backend
 

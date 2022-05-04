@@ -1,7 +1,14 @@
+"""
+Interface for the base database backend
+
+All other database backends should be based upon this interface
+"""
+
+
 from abc import ABC, abstractmethod
 
 
-class DatabaseBackend(ABC):
+class BaseDatabaseBackend(ABC):
     """
     Abstract backend for serialising/deserialising data
 

@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from scmdata import ScmDatabase, ScmRun, run_append
-from scmdata.database.backends import DatabaseBackend, NetCDFBackend
+from scmdata.database.backends import BaseDatabaseBackend, NetCDFDatabaseBackend
 from scmdata.errors import NonUniqueMetadataError
 from scmdata.testing import assert_scmdf_almost_equal
 
@@ -31,9 +31,9 @@ def start_scmrun():
     )
 
 
-class DummyBackend(DatabaseBackend):
+class DummyBackendBase(BaseDatabaseBackend):
     def __init__(self, **kwargs):
-        super(DummyBackend, self).__init__(**kwargs)
+        super(DummyBackendBase, self).__init__(**kwargs)
         self.keys = {}
 
     def get(self, filters, ext="*.nc"):
@@ -84,7 +84,7 @@ def test_database_invalid_config(cfg_name):
 
 
 def test_database_custom_backend():
-    backend = DummyBackend()
+    backend = DummyBackendBase()
     tdb = ScmDatabase("root_dir", backend=backend)
 
     assert tdb._backend == backend
@@ -95,7 +95,7 @@ def test_database_custom_backend_invalid():
         pass
 
     backend = WrongBackend()
-    msg = "Backend should be an instance of scmdata.database.DatabaseBackend"
+    msg = "Backend should be an instance of scmdata.database.BaseDatabaseBackend"
     with pytest.raises(ValueError, match=msg):
         ScmDatabase("root_dir", backend=backend)
 
@@ -202,20 +202,20 @@ class TestNetCDFBackend:
     )
     def test_get_out_filepath(self, levels, inp, exp_tail):
         root_dir = os.path.join(f"{os.sep}tmp", "example")
-        backend = NetCDFBackend(levels=levels, root_dir=root_dir)
+        backend = NetCDFDatabaseBackend(levels=levels, root_dir=root_dir)
         res = backend._get_out_filepath(**inp)
         exp = os.path.join(root_dir, exp_tail)
 
         assert res == exp
 
     def test_get_out_filepath_not_all_values(self):
-        backend = NetCDFBackend(levels=["climate_model"], root_dir="")
+        backend = NetCDFDatabaseBackend(levels=["climate_model"], root_dir="")
         with pytest.raises(KeyError, match=": climate_model"):
             backend._get_out_filepath(other="test")
 
     def test_netcdf_save_missing_meta(self, tdb, start_scmrun):
         with tempfile.TemporaryDirectory() as tempdir:
-            backend = NetCDFBackend(levels=tdb.levels, root_dir=tempdir)
+            backend = NetCDFDatabaseBackend(levels=tdb.levels, root_dir=tempdir)
 
             start_scmrun["variable"] = ["variable_a", "variable_b"]
             run = start_scmrun.drop_meta("climate_model")
@@ -227,7 +227,7 @@ class TestNetCDFBackend:
 
     def test_netcdf_save_duplicate_meta(self, tdb, start_scmrun):
         with tempfile.TemporaryDirectory() as tempdir:
-            backend = NetCDFBackend(levels=("climate_model",), root_dir=tempdir)
+            backend = NetCDFDatabaseBackend(levels=("climate_model",), root_dir=tempdir)
             msg = re.escape(
                 "`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])"
             )
@@ -237,7 +237,7 @@ class TestNetCDFBackend:
     @patch.object(ScmRun, "to_nc")
     def test_netcdf_save(self, mock_to_nc, tdb, start_scmrun):
         with tempfile.TemporaryDirectory() as tempdir:
-            backend = NetCDFBackend(levels=tdb.levels, root_dir=tempdir)
+            backend = NetCDFDatabaseBackend(levels=tdb.levels, root_dir=tempdir)
 
             with patch.object(backend, "_get_out_filepath") as mock_get_out_filepath:
                 out_fname = os.path.join(tempdir, "test-level", "out.nc")
@@ -266,7 +266,7 @@ class TestNetCDFBackend:
         self, mock_to_nc, mock_ensure_dir_exists, tdb, start_scmrun
     ):
         with tempfile.TemporaryDirectory() as tempdir:
-            backend = NetCDFBackend(levels=tdb.levels, root_dir=tempdir)
+            backend = NetCDFDatabaseBackend(levels=tdb.levels, root_dir=tempdir)
 
             with patch.object(backend, "_get_out_filepath") as mock_get_out_filepath:
                 out_fname = os.path.join(tempdir, "test-level", "out.nc")
@@ -306,7 +306,7 @@ def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
 
 
 def test_database_save(tdb, start_scmrun):
-    tdb._backend = DummyBackend(levels=tdb.levels)
+    tdb._backend = DummyBackendBase(levels=tdb.levels)
     tdb.save(start_scmrun)
 
     expected_calls = len(
