@@ -5,10 +5,11 @@ backends should be based upon :class:`BaseDatabaseBackend`.
 
 from .base import BaseDatabaseBackend  # noqa: F401, E402
 from .netcdf import NetCDFDatabaseBackend
+from .api import APIDatabaseBackend
 
 """
 Loaded backends for ScmDatabase
 
 Additional backends should be based upon :class:`BaseDatabaseBackend`
 """
-backend_classes = {"netcdf": NetCDFDatabaseBackend}
+backend_classes = {"netcdf": NetCDFDatabaseBackend, "api": APIDatabaseBackend}

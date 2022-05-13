@@ -24,7 +24,7 @@ class ScmDatabase:
 
     def __init__(
         self,
-        root_dir,
+        root_dir=None,
         levels=("climate_model", "variable", "region", "scenario"),
         backend="netcdf",
         backend_config=None,
