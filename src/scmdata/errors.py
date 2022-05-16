@@ -2,6 +2,7 @@
 Custom errors and exceptions used by scmdata
 """
 import pandas as pd
+import requests.exceptions
 
 
 class NonUniqueMetadataError(ValueError):
@@ -63,3 +64,14 @@ class InsufficientDataError(Exception):
     """
     Insufficient data is available to interpolate/extrapolate
     """
+
+
+class RemoteQueryError(Exception):
+    """
+    Something went wrong when fetching data from a remote source
+    """
+
+    def __init__(self, msg: str, error: requests.exceptions.RequestException):
+        msg = f"{msg}: {str(error)}"
+        super().__init__(msg)
+        self.error = error
