@@ -1,6 +1,9 @@
 import pandas as pd
 import requests
 import urllib.parse
+from typing import List
+
+import scmdata
 from scmdata import ScmRun
 import io
 
@@ -57,7 +60,6 @@ def read_api_timeseries(url: str, **filters):
 
 def read_api_facets(url, **filters):
     timeseries_url = urllib.parse.urljoin(url, "facets")
-    filters["format"] = "csv"
 
     resp = _make_request("get", timeseries_url, filters)
 
@@ -67,3 +69,37 @@ def read_api_facets(url, **filters):
         for item in data[name]:
             items.append({"name": name, **item})
     return pd.DataFrame(items)[["name", "value", "count"]]
+
+
+def read_api_meta(url, **filters):
+    timeseries_url = urllib.parse.urljoin(url, "meta")
+
+    resp = _make_request("get", timeseries_url, filters)
+
+    data = resp.json()
+    return pd.DataFrame(data["meta"])
+
+
+class RemoteDataset:
+    def __init__(self, base_url: str, filters=None):
+        self.base_url = base_url
+        self.filters = filters or {}
+
+    def meta(self) -> pd.DataFrame:
+        return read_api_meta(self.base_url, **self.filters)
+
+    def get_unique_meta(self, col: str) -> List:
+        # TODO: handle single item kwarg
+        return self.meta()[col].unique()
+
+    def query(self) -> scmdata.ScmRun:
+        return read_api_timeseries(self.base_url, **self.filters)
+
+    def filter(self, **filters):
+        new_filters = {**self.filters}
+        for k in filters:
+            if k in self.filters:
+                raise ValueError(f"Already filtering by {k}")
+            new_filters[k] = filters[k]
+
+        return RemoteDataset(base_url=self.base_url, filters=new_filters)
