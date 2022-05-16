@@ -17,3 +17,4 @@ except Exception:  # pylint: disable=broad-except  # pragma: no cover
 
 from scmdata.run import ScmRun, run_append  # noqa: F401, E402
 from scmdata.database import ScmDatabase  # noqa: F401, E402
+from scmdata.remote import RemoteDataset  # noqa: F401, E402
