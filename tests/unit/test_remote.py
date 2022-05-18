@@ -1,20 +1,21 @@
 import os
 import pandas as pd
+import pytest
 
 import scmdata
 from scmdata.remote import (
-    read_api_facets,
-    read_api_timeseries,
-    read_api_meta,
+    _read_api_facets,
+    _read_api_timeseries,
+    _read_api_meta,
     RemoteDataset,
 )
-
+from scmdata.errors import NonUniqueMetadataError, RemoteQueryError
 
 NDCS_URL = "https://api.climateresource.com.au/ndcs/v1"
 
 
 def test_read_ndcs():
-    res = read_api_timeseries(
+    res = _read_api_timeseries(
         NDCS_URL,
         **{
             "version": "14Feb2022b_CR",
@@ -29,7 +30,7 @@ def test_read_ndcs():
 
 
 def test_read_facets():
-    res = read_api_facets(
+    res = _read_api_facets(
         NDCS_URL,
         **{
             "version": "14Feb2022b_CR",
@@ -44,7 +45,7 @@ def test_read_facets():
 
 
 def test_read_meta():
-    res = read_api_meta(
+    res = _read_api_meta(
         NDCS_URL,
         version="14Feb2022b_CR",
         variable="Emissions|Total *",
@@ -57,25 +58,30 @@ def test_read_meta():
 
 class MockRemoteDataset(RemoteDataset):
     # replaces remote queries with static dataset
+    _data_queries = []
+    _meta_queries = []
+    _side_effect = None
 
-    def __init__(self, *args, **kwargs):
-        super(MockRemoteDataset, self).__init__(*args, **kwargs)
-        self._data_queries = []
-        self._meta_queries = []
+    def _clear(self):
+        MockRemoteDataset._data_queries.clear()
+        MockRemoteDataset._meta_queries.clear()
 
-    def _get_data(self):
+    def _get_data(self, filters):
         from conftest import TEST_DATA
 
+        if self._side_effect:
+            raise self._side_effect
+
         fname = os.path.join(TEST_DATA, "sr15", "sr15-output.csv")
-        return scmdata.ScmRun(fname).filter(**self.filters)
+        return scmdata.ScmRun(fname).filter(**filters)
 
     def query(self) -> scmdata.ScmRun:
-        self._data_queries.append(self.filters)
-        return self._get_data()
+        MockRemoteDataset._data_queries.append(self.filters)
+        return self._get_data(self.filters)
 
     def meta(self) -> pd.DataFrame:
-        self._meta_queries.append(self.filters)
-        return self._get_data().meta
+        MockRemoteDataset._meta_queries.append(self.filters)
+        return self._get_data(self.filters).meta
 
 
 def test_remote_dataset_filtering():
@@ -90,6 +96,39 @@ def test_remote_dataset_filtering():
     # Can also filter on creation
     ds = MockRemoteDataset(NDCS_URL, {"variable": "Population"})
     assert ds.filters == {"variable": "Population"}
+
+
+def test_remote_query():
+    ds = MockRemoteDataset(NDCS_URL)
+    ds._clear()
+
+    res = ds.query()
+    res_filtered = ds.filter(variable="Emissions|CO2").query()
+
+    assert isinstance(res, scmdata.ScmRun)
+    assert isinstance(res_filtered, scmdata.ScmRun)
+    assert MockRemoteDataset._data_queries == [{}, {"variable": "Emissions|CO2"}]
+
+
+def test_remote_get_unique_meta():
+    ds = MockRemoteDataset(NDCS_URL)
+
+    variables = ds.get_unique_meta("variable")
+    assert isinstance(variables, list)
+    assert len(variables)
+
+    with pytest.raises(KeyError):
+        ds.get_unique_meta("unknown")
+
+    with pytest.raises(ValueError):
+        ds.get_unique_meta("variable", True)
+
+    single = ds.filter(variable="Temperature|Global Mean").get_unique_meta("unit", True)
+    assert single == "°C"
+
+    ds._side_effect = RemoteQueryError("Something went wrong", "opps")
+    with pytest.raises(RemoteQueryError, match="Something went wrong: opps"):
+        ds.get_unique_meta("variable")
 
 
 def test_remote_dataset_real():
@@ -107,4 +146,5 @@ def test_remote_dataset_real():
     pd.testing.assert_frame_equal(run.meta, ds_meta)
 
     # We should be able to use other ScmRun funcs
-    # ds.lineplot()
+    res = ds.process_over("variable", "mean")
+    assert isinstance(res, pd.DataFrame)

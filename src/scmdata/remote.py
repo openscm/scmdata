@@ -1,13 +1,17 @@
 import pandas as pd
 import requests
 import urllib.parse
-from typing import List
+from typing import List, Optional
 
 import scmdata
 from scmdata import ScmRun
 import io
 
 from scmdata.errors import RemoteQueryError
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _make_request(method, url, params) -> requests.Response:
@@ -29,7 +33,7 @@ def _make_request(method, url, params) -> requests.Response:
         raise RemoteQueryError("Unknown error occurred when fetching data", error=err)
 
 
-def read_api_timeseries(url: str, **filters):
+def _read_api_timeseries(url: str, **filters):
     """
     Fetch data from a Timeseries API
 
@@ -58,7 +62,7 @@ def read_api_timeseries(url: str, **filters):
     return ScmRun(df)
 
 
-def read_api_facets(url, **filters):
+def _read_api_facets(url, **filters):
     timeseries_url = urllib.parse.urljoin(url, "facets")
 
     resp = _make_request("get", timeseries_url, filters)
@@ -71,7 +75,7 @@ def read_api_facets(url, **filters):
     return pd.DataFrame(items)[["name", "value", "count"]]
 
 
-def read_api_meta(url, **filters):
+def _read_api_meta(url, **filters):
     timeseries_url = urllib.parse.urljoin(url, "meta")
 
     resp = _make_request("get", timeseries_url, filters)
@@ -85,15 +89,90 @@ class RemoteDataset:
         self.base_url = base_url
         self.filters = filters or {}
 
-    def meta(self) -> pd.DataFrame:
-        return read_api_meta(self.base_url, **self.filters)
+    def __getattr__(self, item):
+        # Proxy ScmRun functions
+        if hasattr(ScmRun, item):
+            return getattr(self.query(), item)
 
-    def get_unique_meta(self, col: str) -> List:
-        # TODO: handle single item kwarg
-        return self.meta()[col].unique()
+    def meta(self) -> pd.DataFrame:
+        """
+        Fetch metadata about the filtered dataset from the API
+        Returns
+        -------
+        The meta data for each row. This is the equivalent to :func:`scmdata.ScmRun.meta`
+        """
+        logger.info(
+            f"Fetching remote meta from {self.base_url} matching {self.filters}"
+        )
+        return _read_api_meta(self.base_url, **self.filters)
+
+    def get_unique_meta(
+        self,
+        col: str,
+        no_duplicates: Optional[bool] = False,
+    ) -> List:
+        """
+        Get unique values in a metadata column.
+
+        This performs a remote query to the API server
+
+        Parameters
+        ----------
+        col
+            Column to retrieve metadata for
+
+        no_duplicates:
+            Should I raise an error if there is more than one unique value in the
+            metadata column?
+
+        Raises
+        ------
+        ValueError
+            There is more than one unique value in the metadata column and
+            ``no_duplicates`` is ``True``.
+
+        KeyError
+            If a ``meta`` column does not exist in the run's metadata
+
+        RemoteQueryError
+            Something went wrong when querying the API
+
+        Returns
+        -------
+        [List[Any], Any]
+            List of unique metadata values. If ``no_duplicates`` is ``True`` the
+            metadata value will be returned (rather than a list).
+
+        """
+        vals = self.meta()[col].unique().tolist()
+        if no_duplicates:
+            if len(vals) != 1:
+                raise ValueError(
+                    "`{}` column is not unique (found values: {})".format(col, vals)
+                )
+
+            return vals[0]
+        return vals
 
     def query(self) -> scmdata.ScmRun:
-        return read_api_timeseries(self.base_url, **self.filters)
+        """
+        Fetch timeseries from the API
+
+        The resulting data will follow any applied filters (see :func:`filters`).
+
+        Raises
+        ------
+        RemoteQueryError
+            Something went wrong when querying the API
+
+        Returns
+        -------
+        :class:`scmdata.ScmRun`
+        """
+        logger.info(
+            f"Fetching remote timeseries from {self.base_url} matching {self.filters}"
+        )
+        return _read_api_timeseries(self.base_url, **self.filters)
 
     def filter(self, **filters):
         new_filters = {**self.filters}
@@ -102,4 +181,4 @@ class RemoteDataset:
                 raise ValueError(f"Already filtering by {k}")
             new_filters[k] = filters[k]
 
-        return RemoteDataset(base_url=self.base_url, filters=new_filters)
+        return self.__class__(base_url=self.base_url, filters=new_filters)
