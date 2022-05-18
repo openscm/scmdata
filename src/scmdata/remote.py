@@ -34,25 +34,6 @@ def _make_request(method, url, params) -> requests.Response:
 
 
 def _read_api_timeseries(url: str, **filters):
-    """
-    Fetch data from a Timeseries API
-
-    Parameters
-    ----------
-    url
-
-
-    filters
-
-    Raises
-    ------
-    RemoteQueryError
-        Any
-
-    Returns
-    -------
-    Data matching query
-    """
     timeseries_url = urllib.parse.urljoin(url, "timeseries")
     filters["format"] = "csv"  # CSV format is faster to parse compared to json
 
@@ -88,6 +69,10 @@ class RemoteDataset:
     def __init__(self, base_url: str, filters=None):
         self.base_url = base_url
         self.filters = filters or {}
+
+    def _read_api_info(self):
+        facets = _read_api_facets(self.base_url)
+        self._meta_cols = list(facets.keys())
 
     def __getattr__(self, item):
         # Proxy ScmRun functions
@@ -172,7 +157,20 @@ class RemoteDataset:
         logger.info(
             f"Fetching remote timeseries from {self.base_url} matching {self.filters}"
         )
-        return _read_api_timeseries(self.base_url, **self.filters)
+
+        if self._meta_cols is None:
+            self._read_api_info()
+
+        valid_filters = {
+            k: self.filters[k] for k in self.filters if k in self._meta_cols
+        }
+        extra_filters = {
+            k: self.filters[k] for k in self.filters if k not in self._meta_cols
+        }
+
+        return _read_api_timeseries(self.base_url, **valid_filters).filter(
+            **extra_filters
+        )
 
     def filter(self, **filters):
         new_filters = {**self.filters}
