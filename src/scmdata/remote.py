@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 import urllib.parse
 from typing import List, Optional
+from functools import lru_cache
 
 import scmdata
 from scmdata import ScmRun
@@ -43,6 +44,7 @@ def _read_api_timeseries(url: str, **filters):
     return ScmRun(df)
 
 
+@lru_cache(32)
 def _read_api_facets(url, **filters):
     timeseries_url = urllib.parse.urljoin(url, "facets")
 
@@ -69,6 +71,7 @@ class RemoteDataset:
     def __init__(self, base_url: str, filters=None):
         self.base_url = base_url
         self.filters = filters or {}
+        self._meta_cols = None
 
     def _read_api_info(self):
         facets = _read_api_facets(self.base_url)
@@ -78,6 +81,14 @@ class RemoteDataset:
         # Proxy ScmRun functions
         if hasattr(ScmRun, item):
             return getattr(self.query(), item)
+
+    def url(self) -> str:
+        opts = self.filter_options()
+        filters = {k: self.filters[k] for k in self.filters.keys() if k in opts}
+
+        return urllib.parse.urljoin(
+            self.base_url, "timeseries"
+        ) + urllib.parse.urlencode(filters)
 
     def meta(self) -> pd.DataFrame:
         """
@@ -139,7 +150,14 @@ class RemoteDataset:
             return vals[0]
         return vals
 
-    def query(self) -> scmdata.ScmRun:
+    def filter_options(self) -> List[str]:
+        if self._meta_cols is None:
+            self._read_api_info()
+
+        extra_filters = ["year.min", "year.max"]
+        return [*self._meta_cols, *extra_filters]
+
+    def query(self, raise_on_error=False) -> scmdata.ScmRun:
         """
         Fetch timeseries from the API
 
@@ -158,21 +176,28 @@ class RemoteDataset:
             f"Fetching remote timeseries from {self.base_url} matching {self.filters}"
         )
 
-        if self._meta_cols is None:
-            self._read_api_info()
+        opts = self.filter_options()
+        filter_keys = self.filters.keys()
+        filters = {k: self.filters[k] for k in filter_keys if k in opts}
 
-        valid_filters = {
-            k: self.filters[k] for k in self.filters if k in self._meta_cols
-        }
-        extra_filters = {
-            k: self.filters[k] for k in self.filters if k not in self._meta_cols
-        }
+        extra_filters = [k for k in filter_keys if k not in self._meta_cols]
+        if len(extra_filters):
 
-        return _read_api_timeseries(self.base_url, **valid_filters).filter(
-            **extra_filters
-        )
+            msg = f"Could not filter dataset by {extra_filters}"
+            if raise_on_error:
+                raise ValueError(msg)
+            logger.warning(msg + ". Ignoring")
+        run = _read_api_timeseries(self.base_url, **filters)
+
+        run.source = self
 
     def filter(self, **filters):
+        if not filters.get("keep", True):
+            logger.warning(
+                "'keep' is not handled by the API. Querying data and performing filtering locally"
+            )
+            return self.query().filter(**filters)
+
         new_filters = {**self.filters}
         for k in filters:
             if k in self.filters:
