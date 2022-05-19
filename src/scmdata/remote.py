@@ -69,7 +69,8 @@ def _read_api_meta(url, **filters):
 
 class RemoteDataset:
     def __init__(self, base_url: str, filters=None):
-        self.base_url = base_url
+        # Ensure the url is terminated with a '/'
+        self.base_url = base_url.rstrip("/") + "/"
         self.filters = filters or {}
         self._meta_cols = None
 
@@ -85,10 +86,12 @@ class RemoteDataset:
     def url(self) -> str:
         opts = self.filter_options()
         filters = {k: self.filters[k] for k in self.filters.keys() if k in opts}
+        if len(filters):
+            query_params = "?" + urllib.parse.urlencode(filters)
+        else:
+            query_params = ""
 
-        return urllib.parse.urljoin(
-            self.base_url, "timeseries"
-        ) + urllib.parse.urlencode(filters)
+        return urllib.parse.urljoin(self.base_url, "timeseries") + query_params
 
     def meta(self) -> pd.DataFrame:
         """
@@ -180,7 +183,7 @@ class RemoteDataset:
         filter_keys = self.filters.keys()
         filters = {k: self.filters[k] for k in filter_keys if k in opts}
 
-        extra_filters = [k for k in filter_keys if k not in self._meta_cols]
+        extra_filters = [k for k in filter_keys if k not in opts]
         if len(extra_filters):
 
             msg = f"Could not filter dataset by {extra_filters}"
@@ -190,6 +193,8 @@ class RemoteDataset:
         run = _read_api_timeseries(self.base_url, **filters)
 
         run.source = self
+
+        return run
 
     def filter(self, **filters):
         if not filters.get("keep", True):
