@@ -1,10 +1,13 @@
+import io
 import logging
 import os
 import pandas as pd
 import pytest
 import re
 
+import requests
 import scmdata
+import scmdata.testing
 from scmdata.remote import (
     _read_api_facets,
     _read_api_timeseries,
@@ -15,6 +18,76 @@ from unittest.mock import patch, Mock
 from scmdata.errors import NonUniqueMetadataError, RemoteQueryError
 
 NDCS_URL = "https://api.climateresource.com.au/ndcs/v1/"
+
+
+def build_response(
+    url, content, status_code=200, content_type="application/json", headers=None
+):
+    response = requests.Response()
+
+    # Fallback to None if there's no status_code, for whatever reason.
+    response.status_code = status_code
+
+    # Make headers case-insensitive.
+    response.headers = headers or {}
+    response.headers["content-type"] = content_type
+
+    # Set encoding.
+    response.encoding = "utf-8"
+    response.raw = content
+    response.url = url
+
+    return response
+
+
+@pytest.fixture()
+def timeseries_response(test_data_path):
+    fname = os.path.join(test_data_path, "api_responses", "response_timeseries.csv")
+    with open(fname, "rb") as fh:
+        return build_response(
+            "/timeseries", io.BytesIO(fh.read()), content_type="text/csv"
+        )
+
+
+@pytest.fixture()
+def timeseries_meta_response(test_data_path):
+    fname = os.path.join(test_data_path, "api_responses", "response_meta.json")
+    with open(fname, "rb") as fh:
+        return build_response("/timeseries", io.BytesIO(fh.read()))
+
+
+@pytest.fixture()
+def timeseries_facets_response(test_data_path):
+    fname = os.path.join(test_data_path, "api_responses", "response_facets.json")
+    with open(fname, "rb") as fh:
+        return build_response("/timeseries", io.BytesIO(fh.read()))
+
+
+@patch("scmdata.remote._make_request")
+def test_api_timeseries(mock_request, timeseries_response):
+    mock_request.return_value = timeseries_response
+
+    resp = _read_api_timeseries(NDCS_URL)
+    assert isinstance(resp, scmdata.ScmRun)
+    mock_request.assert_called_with("get", NDCS_URL + "timeseries", {"format": "csv"})
+
+
+@patch("scmdata.remote._make_request")
+def test_api_facets(mock_request, timeseries_facets_response):
+    mock_request.return_value = timeseries_facets_response
+
+    resp = _read_api_facets(NDCS_URL, scenario="test")
+    assert isinstance(resp, pd.DataFrame)
+    mock_request.assert_called_with("get", NDCS_URL + "facets", {"scenario": "test"})
+
+
+@patch("scmdata.remote._make_request")
+def test_api_meta(mock_request, timeseries_meta_response):
+    mock_request.return_value = timeseries_meta_response
+
+    resp = _read_api_meta(NDCS_URL, scenario="test")
+    assert isinstance(resp, pd.DataFrame)
+    mock_request.assert_called_with("get", NDCS_URL + "meta", {"scenario": "test"})
 
 
 class MockRemoteDataset(RemoteDataset):
@@ -173,3 +246,18 @@ def test_remote_url(remote_ds, base_url):
         }
     ).url()
     assert res == "https://api.example.com/v1/timeseries?variable=test&scenario=other"
+
+    res = remote_ds.url()
+    assert res == "https://api.example.com/v1/timeseries"
+
+
+def test_remote_proxy(remote_ds):
+    filters = {"variable": "Temperature|Global Mean"}
+
+    filtered_ds = remote_ds.filter(**filters)
+
+    exp = remote_ds._get_data(filters).process_over("scenario", "sum")
+    res = filtered_ds.process_over("scenario", "sum")
+    assert MockRemoteDataset._data_queries == [filters]
+
+    pd.testing.assert_frame_equal(res, exp)

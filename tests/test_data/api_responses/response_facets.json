@@ -1,0 +1,32 @@
+{
+  "model": [
+    {
+      "value": "MAGICC",
+      "count": 1
+    }
+  ],
+  "region": [
+    {
+      "value": "World",
+      "count": 1
+    }
+  ],
+  "scenario": [
+    {
+      "value": "ssp126",
+      "count": 1
+    }
+  ],
+  "unit": [
+    {
+      "value": "K",
+      "count": 1
+    }
+  ],
+  "variable": [
+    {
+      "value": "Surface Temperature",
+      "count": 1
+    }
+  ]
+}

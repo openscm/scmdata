@@ -55,6 +55,8 @@ def _read_api_facets(url, **filters):
     for name in data:
         for item in data[name]:
             items.append({"name": name, **item})
+    if len(items) == 0:
+        return pd.DataFrame(columns=["name", "value", "count"])
     return pd.DataFrame(items)[["name", "value", "count"]]
 
 
