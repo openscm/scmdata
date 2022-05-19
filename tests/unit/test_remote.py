@@ -234,11 +234,8 @@ def test_filter_options(remote_ds):
     assert res == [*remote_ds.meta().columns.tolist(), "year.min", "year.max"]
 
 
-@pytest.mark.parametrize(
-    "base_url", ("https://api.example.com/v1", "https://api.example.com/v1/")
-)
-def test_remote_url(remote_ds, base_url):
-    remote_ds.base_url = base_url
+def test_remote_url(remote_ds):
+    remote_ds.base_url = "https://api.example.com/v1/"
     res = remote_ds.filter(
         **{
             "variable": "test",
@@ -261,3 +258,9 @@ def test_remote_proxy(remote_ds):
     assert MockRemoteDataset._data_queries == [filters]
 
     pd.testing.assert_frame_equal(res, exp)
+
+
+def test_remote_meta(remote_ds):
+    res = remote_ds.meta()
+
+    assert isinstance(res, pd.DataFrame)
