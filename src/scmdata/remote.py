@@ -76,6 +76,18 @@ def _read_api_meta(url, **filters):
 
 class RemoteDataset:
     def __init__(self, base_url: str, filters=None):
+        """
+        To write once happy with interface
+
+        Parameters
+        ----------
+        base_url
+            Url of API
+        filters
+            Default filters
+
+            Shorthand for calling ``RemoteDataset(url).filter(**filters)``
+        """
         # Ensure the url is terminated with a '/'
         self.base_url = base_url.rstrip("/") + "/"
         self.filters = filters or {}
@@ -85,10 +97,13 @@ class RemoteDataset:
         facets = _read_api_facets(self.base_url)
         self._meta_cols = list(facets.keys())
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str):
         # Proxy ScmRun functions
         if hasattr(ScmRun, item):
             return getattr(self.query(), item)
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{item}'"
+        )
 
     def url(self) -> str:
         opts = self.filter_options()
@@ -167,11 +182,12 @@ class RemoteDataset:
         extra_filters = ["year.min", "year.max"]
         return [*self._meta_cols, *extra_filters]
 
-    def query(self, raise_on_error=False) -> scmdata.ScmRun:
+    def query(self, raise_on_error: bool = False) -> scmdata.ScmRun:
         """
         Fetch timeseries from the API
 
         The resulting data will follow any applied filters (see :func:`filters`).
+
 
         Raises
         ------

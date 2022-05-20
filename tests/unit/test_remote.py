@@ -313,6 +313,12 @@ def test_remote_proxy(remote_ds):
     pd.testing.assert_frame_equal(res, exp)
 
 
+def test_missing_attribute(remote_ds):
+    match = "'MockRemoteDataset' object has no attribute 'unknown_attr'"
+    with pytest.raises(AttributeError, match=match):
+        remote_ds.unknown_attr()
+
+
 def test_remote_meta(remote_ds):
     res = remote_ds.meta()
 
