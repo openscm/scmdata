@@ -14,6 +14,7 @@ except ImportError:  # pragma: no cover
 from datetime import datetime
 from logging import getLogger
 
+import pandas as pd
 import xarray as xr
 
 from . import __version__
@@ -80,7 +81,11 @@ def _reshape_to_scmrun_dataframe(dataframe, loaded):
     dataframe.columns.name = "variable"
     dataframe.columns = dataframe.columns.map(variable_name_map)
 
-    dataframe = dataframe.stack("variable").unstack("time").reset_index()
+    # Can revert to below once https://github.com/pandas-dev/pandas/issues/47071 is resolved
+    # dataframe = dataframe.stack("variable").unstack("time").reset_index()
+    dataframe = dataframe.stack("variable").unstack("time")
+    dataframe.columns = pd.Index(dataframe.columns.values)
+    dataframe = dataframe.reset_index()
 
     unit_map = {
         data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars
