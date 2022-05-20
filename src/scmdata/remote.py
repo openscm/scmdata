@@ -215,7 +215,7 @@ class RemoteDataset:
             logger.warning(msg + ". Ignoring")
         run = _read_api_timeseries(self.base_url, **filters)
 
-        run.source = self
+        run.metadata["source"] = self
 
         return run
 

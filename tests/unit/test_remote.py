@@ -202,6 +202,9 @@ def test_remote_query(remote_ds):
     assert isinstance(res_filtered, scmdata.ScmRun)
     assert MockRemoteDataset._data_queries == [{}, {"variable": "Emissions|CO2"}]
 
+    assert res.metadata["source"] == res
+    assert res_filtered.metadata["source"] == res_filtered
+
 
 @patch("scmdata.remote._read_api_timeseries")
 def test_remote_query_mocked(mock_timeseries, caplog):
