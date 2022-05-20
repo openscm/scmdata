@@ -2,10 +2,10 @@ import pandas as pd
 
 import scmdata
 from scmdata.remote import (
-    _read_api_facets,
-    _read_api_timeseries,
-    _read_api_meta,
     RemoteDataset,
+    _read_api_facets,
+    _read_api_meta,
+    _read_api_timeseries,
 )
 
 NDCS_URL = "https://api.climateresource.com.au/ndcs/v1"

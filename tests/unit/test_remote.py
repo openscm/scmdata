@@ -1,22 +1,23 @@
 import io
 import logging
 import os
+import re
+from unittest.mock import Mock, call, patch
+
 import pandas as pd
 import pytest
-import re
-
 import requests
+
 import scmdata
 import scmdata.testing
-from scmdata.remote import (
-    _read_api_facets,
-    _read_api_timeseries,
-    _read_api_meta,
-    RemoteDataset,
-    CACHE_SIZE,
-)
-from unittest.mock import patch, Mock, call
 from scmdata.errors import NonUniqueMetadataError, RemoteQueryError
+from scmdata.remote import (
+    CACHE_SIZE,
+    RemoteDataset,
+    _read_api_facets,
+    _read_api_meta,
+    _read_api_timeseries,
+)
 
 NDCS_URL = "https://api.climateresource.com.au/ndcs/v1/"
 

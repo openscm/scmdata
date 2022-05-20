@@ -1,16 +1,15 @@
+import io
+import logging
+import urllib.parse
+from functools import lru_cache
+from typing import List, Optional
+
 import pandas as pd
 import requests
-import urllib.parse
-from typing import List, Optional
-from functools import lru_cache
 
 import scmdata
 from scmdata import ScmRun
-import io
-
 from scmdata.errors import RemoteQueryError
-
-import logging
 
 logger = logging.getLogger(__name__)
 
