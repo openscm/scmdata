@@ -62,7 +62,7 @@ def _write_nc(fname, run, dimensions, extras, **kwargs):
 
 
 def _read_nc(cls, fname):
-    loaded = xr.load_dataset(fname)
+    loaded = xr.load_dataset(fname, use_cftime=True)
     dataframe = loaded.to_dataframe()
 
     dataframe = _reshape_to_scmrun_dataframe(dataframe, loaded)
