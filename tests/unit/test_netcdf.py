@@ -728,3 +728,18 @@ def test_run_to_nc_xarray_kwarg_passing_variable_renaming(
 
     # variable should be renamed so it matches what goes to disk
     mock_ds.to_netcdf.assert_called_with(out_fname, **call_kwargs)
+
+
+@pytest.mark.parametrize("shift_times", [0, -1000, 1000])
+def test_run_to_nc_different_eras(scm_run, shift_times):
+    tmp = scm_run.timeseries(time_axis="year-month")
+    tmp.columns = tmp.columns + shift_times
+    scm_run = ScmRun(tmp)
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",))
+
+        res = nc_to_run(scm_run.__class__, out_fname)
+
+    assert_scmdf_almost_equal(scm_run, res)
