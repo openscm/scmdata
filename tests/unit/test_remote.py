@@ -10,7 +10,7 @@ import requests
 
 import scmdata
 import scmdata.testing
-from scmdata.errors import NonUniqueMetadataError, RemoteQueryError
+from scmdata.errors import RemoteQueryError
 from scmdata.remote import (
     CACHE_SIZE,
     RemoteDataset,
@@ -101,6 +101,7 @@ def test_api_caches(
     timeseries_facets_response,
     func,
 ):
+
     if func == "meta":
         mock_request.return_value = timeseries_meta_response
         api_func = _read_api_meta
@@ -112,6 +113,8 @@ def test_api_caches(
         api_func = _read_api_timeseries
     else:
         raise ValueError("Unknown option")
+
+    api_func.cache_clear()
 
     api_func(NDCS_URL, scenario="test")
     api_func(NDCS_URL, scenario="test")
@@ -182,6 +185,17 @@ def remote_ds():
     return ds
 
 
+def test_remote_repr(remote_ds):
+    res = repr(remote_ds)
+
+    assert re.search(r"<MockRemoteDataset> \(timeseries:", res)
+    assert re.search(f"URL: {remote_ds.url()}", res)
+
+
+def test_remote_len(remote_ds):
+    assert len(remote_ds) == 13568
+
+
 def test_remote_dataset_filtering(remote_ds):
     filtered_ds = remote_ds.filter(variable="Population")
     assert filtered_ds.filters == {"variable": "Population"}
@@ -202,20 +216,18 @@ def test_remote_query(remote_ds):
     assert isinstance(res_filtered, scmdata.ScmRun)
     assert MockRemoteDataset._data_queries == [{}, {"variable": "Emissions|CO2"}]
 
-    assert res.metadata["source"] == res
-    assert res_filtered.metadata["source"] == res_filtered
-
 
 @patch("scmdata.remote._read_api_timeseries")
 def test_remote_query_mocked(mock_timeseries, caplog):
     caplog.set_level(logging.INFO)
+    mock_timeseries.return_value = scmdata.ScmRun()
 
     ds = RemoteDataset(NDCS_URL).filter(variable="test")
     ds.filter_options = Mock(return_value=["variable"])
     res = ds.query()
 
     assert res == mock_timeseries.return_value
-    assert res.source == ds
+    assert res.metadata["source"] == ds
 
     assert len(caplog.messages) == 1
     mock_timeseries.assert_called_with(NDCS_URL, **{"variable": "test"})

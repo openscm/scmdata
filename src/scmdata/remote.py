@@ -105,6 +105,25 @@ class RemoteDataset:
             f"'{self.__class__.__name__}' object has no attribute '{item}'"
         )
 
+    def __len__(self):
+        return len(self.meta())
+
+    def __repr__(self) -> str:
+        def _indent(s):
+            _lines = ["\t" + line for line in s.split("\n")]
+            return "\n".join(_lines)
+
+        lines = [
+            f"<{self.__class__.__name__}> (timeseries: {len(self)})",
+            f"URL: {self.url()}",
+            "Filters",
+            _indent(str(self.filters)),
+            "Meta",
+            _indent(repr(self.meta())),
+        ]
+
+        return "\n".join(lines)
+
     def url(self) -> str:
         opts = self.filter_options()
         filters = {k: self.filters[k] for k in self.filters.keys() if k in opts}
