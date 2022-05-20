@@ -15,6 +15,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# How many requests are kept in memory
+CACHE_SIZE = 32
+
+
 def _make_request(method, url, params) -> requests.Response:
     try:
         resp = requests.request(method, url, params=params)
@@ -34,6 +38,7 @@ def _make_request(method, url, params) -> requests.Response:
         raise RemoteQueryError("Unknown error occurred when fetching data", error=err)
 
 
+@lru_cache(CACHE_SIZE)
 def _read_api_timeseries(url: str, **filters):
     timeseries_url = urllib.parse.urljoin(url, "timeseries")
     filters["format"] = "csv"  # CSV format is faster to parse compared to json
@@ -44,7 +49,7 @@ def _read_api_timeseries(url: str, **filters):
     return ScmRun(df)
 
 
-@lru_cache(32)
+@lru_cache(CACHE_SIZE)
 def _read_api_facets(url, **filters):
     timeseries_url = urllib.parse.urljoin(url, "facets")
 
@@ -60,6 +65,7 @@ def _read_api_facets(url, **filters):
     return pd.DataFrame(items)[["name", "value", "count"]]
 
 
+@lru_cache(CACHE_SIZE)
 def _read_api_meta(url, **filters):
     timeseries_url = urllib.parse.urljoin(url, "meta")
 

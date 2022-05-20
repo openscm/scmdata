@@ -13,8 +13,9 @@ from scmdata.remote import (
     _read_api_timeseries,
     _read_api_meta,
     RemoteDataset,
+    CACHE_SIZE,
 )
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, call
 from scmdata.errors import NonUniqueMetadataError, RemoteQueryError
 
 NDCS_URL = "https://api.climateresource.com.au/ndcs/v1/"
@@ -88,6 +89,57 @@ def test_api_meta(mock_request, timeseries_meta_response):
     resp = _read_api_meta(NDCS_URL, scenario="test")
     assert isinstance(resp, pd.DataFrame)
     mock_request.assert_called_with("get", NDCS_URL + "meta", {"scenario": "test"})
+
+
+@patch("scmdata.remote._make_request")
+@pytest.mark.parametrize("func", ("meta", "facets", "timeseries"))
+def test_api_caches(
+    mock_request,
+    timeseries_meta_response,
+    timeseries_response,
+    timeseries_facets_response,
+    func,
+):
+    if func == "meta":
+        mock_request.return_value = timeseries_meta_response
+        api_func = _read_api_meta
+    elif func == "facets":
+        mock_request.return_value = timeseries_facets_response
+        api_func = _read_api_facets
+    elif func == "timeseries":
+        mock_request.return_value = timeseries_response
+        api_func = _read_api_timeseries
+    else:
+        raise ValueError("Unknown option")
+
+    api_func(NDCS_URL, scenario="test")
+    api_func(NDCS_URL, scenario="test")
+    api_func(NDCS_URL, scenario="other")
+
+    cache_info = api_func.cache_info()
+    assert cache_info.hits == 1
+    assert cache_info.misses == 2
+    assert cache_info.maxsize == CACHE_SIZE
+
+    # Only one of each request should have made it through
+    assert mock_request.call_count == 2
+
+    if func != "timeseries":
+        mock_request.assert_has_calls(
+            (
+                call("get", NDCS_URL + func, {"scenario": "test"}),
+                call("get", NDCS_URL + func, {"scenario": "other"}),
+            ),
+            any_order=False,
+        )
+    else:
+        mock_request.assert_has_calls(
+            (
+                call("get", NDCS_URL + func, {"scenario": "test", "format": "csv"}),
+                call("get", NDCS_URL + func, {"scenario": "other", "format": "csv"}),
+            ),
+            any_order=False,
+        )
 
 
 class MockRemoteDataset(RemoteDataset):
