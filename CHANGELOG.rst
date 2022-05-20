@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#197 <https://github.com/openscm/scmdata/pull/197>`_) Workaround `regression in Panda's <https://github.com/pandas-dev/pandas/issues/47071>`_ handling of xarray's :class:`CFTimeIndex`
 - (`#192 <https://github.com/openscm/scmdata/pull/192>`_) Bugfix for the versioning of the package
 - (`#191 <https://github.com/openscm/scmdata/pull/191>`_) Add check of PyPI distribution to CI
 
