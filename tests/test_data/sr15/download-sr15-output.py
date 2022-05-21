@@ -2,8 +2,7 @@ import os.path
 
 import pyam
 
-import scmdata
-import scmdata.database
+import scmdata.database.database
 
 out_path = os.path.join(".")
 
