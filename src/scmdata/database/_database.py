@@ -1,13 +1,5 @@
 """
 Database for handling large datasets in a performant, but flexible way
-
-Data is chunked using unique combinations of metadata. This allows for the
-database to expand as new data is added without having to change any of the
-existing data.
-
-Subsets of data are also able to be read without having to load all the data
-and then filter. For example, one could save model results from a number of different
-climate models and then load just the ``Surface Temperature`` data for all models.
 """
 import os
 import os.path
@@ -43,8 +35,8 @@ class ScmDatabase:
         .. note::
 
             Creating a new :class:`ScmDatabase` does not modify any existing data on
-            disk. To load an existing database ensure that the :attr:`root_dir` and
-            :attr:`levels` are the same as the previous instance.
+            disk. To load an existing database ensure that the :attr:`root_dir`.
+            :attr:`levels` and backend settings are the same as the previous instance.
 
         Parameters
         ----------
