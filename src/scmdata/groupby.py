@@ -122,7 +122,12 @@ class RunGroupBy(_GroupBy):
         """
         Apply a function to each group and append the results
 
-        Documentation overwritten with :func:`apply`
+        .. deprecated:: 0.14.2
+            :func:`map` will be removed in scmdata 1.0.0, it is renamed to :func:`apply` with identical functionality.
+
+        See Also
+        --------
+        :func:`apply`
         """
         warnings.warn("Use RunGroupby.apply instead", DeprecationWarning)
         return self.apply(func, *args, **kwargs)
@@ -177,9 +182,5 @@ class RunGroupBy(_GroupBy):
             warnings.simplefilter("ignore", category=RuntimeWarning)
             return self.apply(reduce_array)
 
-
-RunGroupBy.map.__doc__ = (
-    RunGroupBy.apply.__doc__ + "\n\nDeprecated: Use RunGroupBy.apply instead"
-)
 
 ops.inject_reduce_methods(RunGroupBy)
