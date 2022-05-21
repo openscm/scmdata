@@ -157,7 +157,7 @@ class MockRemoteDataset(RemoteDataset):
         MockRemoteDataset._meta_queries.clear()
 
     def _get_data(self, filters):
-        from conftest import TEST_DATA
+        from tests.conftest import TEST_DATA
 
         if self._side_effect:
             raise self._side_effect
@@ -189,7 +189,7 @@ def test_remote_repr(remote_ds):
     res = repr(remote_ds)
 
     assert re.search(r"<MockRemoteDataset> \(timeseries:", res)
-    assert re.search(f"URL: {remote_ds.url()}", res)
+    assert re.search(f"URL: {re.escape(remote_ds.url())}", res)
 
 
 def test_remote_len(remote_ds):
@@ -310,10 +310,13 @@ def test_remote_url(remote_ds):
             "scenario": "other",
         }
     ).url()
-    assert res == "https://api.example.com/v1/timeseries?variable=test&scenario=other"
+    assert (
+        res
+        == "https://api.example.com/v1/timeseries?variable=test&scenario=other&format=csv"
+    )
 
     res = remote_ds.url()
-    assert res == "https://api.example.com/v1/timeseries"
+    assert res == "https://api.example.com/v1/timeseries?format=csv"
 
 
 def test_remote_proxy(remote_ds):
