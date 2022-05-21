@@ -95,7 +95,7 @@ class RemoteDataset:
 
     def _read_api_info(self):
         facets = _read_api_facets(self.base_url)
-        self._meta_cols = list(facets.keys())
+        self._meta_cols = facets["name"].unique().tolist()
 
     def __getattr__(self, item: str):
         # Proxy ScmRun functions
@@ -127,10 +127,8 @@ class RemoteDataset:
     def url(self) -> str:
         opts = self.filter_options()
         filters = {k: self.filters[k] for k in self.filters.keys() if k in opts}
-        if len(filters):
-            query_params = "?" + urllib.parse.urlencode(filters)
-        else:
-            query_params = ""
+        filters["format"] = "csv"
+        query_params = "?" + urllib.parse.urlencode(filters)
 
         return urllib.parse.urljoin(self.base_url, "timeseries") + query_params
 
