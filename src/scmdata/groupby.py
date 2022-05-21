@@ -123,7 +123,8 @@ class RunGroupBy(_GroupBy):
         Apply a function to each group and append the results
 
         .. deprecated:: 0.14.2
-            :func:`map` will be removed in scmdata 1.0.0, it is renamed to :func:`apply` with identical functionality.
+            :func:`map` will be removed in scmdata 1.0.0, it is renamed to :func:`apply`
+            with identical functionality.
 
         See Also
         --------
