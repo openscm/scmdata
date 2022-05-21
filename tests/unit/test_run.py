@@ -3655,3 +3655,23 @@ def test_round_warns_small():
         },
     )
     assert_scmdf_almost_equal(res, exp)
+
+
+def test_apply(scm_run):
+    variable_to_multiply = "Primary Energy|Coal"
+
+    def my_func(run):
+        variable = run.get_unique_meta("variable", True)
+        if variable == variable_to_multiply:
+            return run * 2
+        return run
+
+    exp = run_append(
+        [
+            scm_run.filter(variable=variable_to_multiply) * 2,
+            scm_run.filter(variable=variable_to_multiply, keep=False),
+        ]
+    )
+    res = scm_run.apply(my_func)
+
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)

@@ -75,7 +75,7 @@ class RunGroupBy(_GroupBy):
         self.group_keys = groups
         super().__init__(run.meta, groups)
 
-    def map(self, func, *args, **kwargs):
+    def apply(self, func, *args, **kwargs):
         """
         Apply a function to each group and append the results
 
@@ -94,7 +94,7 @@ class RunGroupBy(_GroupBy):
             >>> def write_csv(arr):
             ...     variable = arr.get_unique_meta("variable")
             ...     arr.to_csv("out-{}.csv".format(variable)
-            >>> df.groupby("variable").map(write_csv)
+            >>> df.groupby("variable").apply(write_csv)
 
         Parameters
         ----------
@@ -117,6 +117,21 @@ class RunGroupBy(_GroupBy):
             _maybe_wrap_array(arr, func(arr, *args, **kwargs)) for arr in grouped
         ]
         return self._combine(applied)
+
+    def map(self, func, *args, **kwargs):
+        """
+        Apply a function to each group and append the results
+
+        .. deprecated:: 0.14.2
+            :func:`map` will be removed in scmdata 1.0.0, it is renamed to :func:`apply`
+            with identical functionality.
+
+        See Also
+        --------
+        :func:`apply`
+        """
+        warnings.warn("Use RunGroupby.apply instead", DeprecationWarning)
+        return self.apply(func, *args, **kwargs)
 
     def _combine(self, applied):
         """
@@ -166,7 +181,7 @@ class RunGroupBy(_GroupBy):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
-            return self.map(reduce_array)
+            return self.apply(reduce_array)
 
 
 ops.inject_reduce_methods(RunGroupBy)
