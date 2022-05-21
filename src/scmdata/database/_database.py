@@ -71,7 +71,7 @@ class ScmDatabase:
         backend_config: dict
             Additional configuration to pass to the backend
 
-            See the documentation for the target backend to determine what configuration
+            See the documentation for the target backend to determine which configuration
             options are available.
 
 
@@ -82,9 +82,7 @@ class ScmDatabase:
         backend_config = backend_config if backend_config else {}
         for key in ["levels", "root_dir"]:
             if key in backend_config:
-                raise ValueError(
-                    "backend_config cannot contain key of `{}`".format(key)
-                )
+                raise ValueError("backend_config cannot contain key `{}`".format(key))
         backend_config["levels"] = self.levels
         backend_config["root_dir"] = root_dir
 
@@ -100,7 +98,7 @@ class ScmDatabase:
         else:
             if not isinstance(backend, BaseDatabaseBackend):
                 raise ValueError(
-                    "Backend should be an instance of scmdata.database.BaseDatabaseBackend"
+                    "Backend must be an instance of scmdata.database.BaseDatabaseBackend"
                 )
             return backend
 

@@ -13,13 +13,11 @@ def ensure_dir_exists(fp):
         Filepath of which to ensure the directory exists
     """
     dir_to_check = os.path.dirname(fp)
-    if not os.path.isdir(dir_to_check):
-        try:
-            os.makedirs(dir_to_check)
-        except OSError:  # pragma: no cover
-            # Prevent race conditions if multiple threads attempt to create dir at same time
-            if not os.path.exists(dir_to_check):
-                raise
+
+    if os.path.isfile(dir_to_check):
+        raise AssertionError(f"Expected {dir_to_check} to not be a file")
+
+    os.makedirs(dir_to_check, exist_ok=True)
 
 
 def _check_is_subdir(root, d):

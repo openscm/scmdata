@@ -78,7 +78,7 @@ def test_database_passes_config(levels):
 
 @pytest.mark.parametrize("cfg_name", ["levels", "root_dir"])
 def test_database_invalid_config(cfg_name):
-    msg = "backend_config cannot contain key of `{}`".format(cfg_name)
+    msg = "backend_config cannot contain key `{}`".format(cfg_name)
     with pytest.raises(ValueError, match=msg):
         ScmDatabase("root_dir", backend_config={cfg_name: "test"})
 
@@ -95,7 +95,7 @@ def test_database_custom_backend_invalid():
         pass
 
     backend = WrongBackend()
-    msg = "Backend should be an instance of scmdata.database.BaseDatabaseBackend"
+    msg = "Backend must be an instance of scmdata.database.BaseDatabaseBackend"
     with pytest.raises(ValueError, match=msg):
         ScmDatabase("root_dir", backend=backend)
 
