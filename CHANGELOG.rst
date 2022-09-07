@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#202 <https://github.com/openscm/scmdata/pull/202>`_) Add :func:`scmdata.run.ScmRun.set_meta` to enable setting of metadata for a subset of timeseries
 - (`#194 <https://github.com/openscm/scmdata/pull/194>`_) Deprecate :func:`scmdata.groupby.RunGroupBy.map` in preference to :func:`scmdata.groupby.RunGroupBy.apply` which is identical in functionality. Add :class:`scmdata.ScmRun.apply` for applying a function to each timeseries
 - (`#195 <https://github.com/openscm/scmdata/pull/195>`_) Refactor :mod:`scmdata.database` to a package. The database backends have been moved to :mod:`scmdata.database.backends`.
 - (`#197 <https://github.com/openscm/scmdata/pull/197>`_) Workaround `regression in Panda's <https://github.com/pandas-dev/pandas/issues/47071>`_ handling of xarray's :class:`CFTimeIndex`
