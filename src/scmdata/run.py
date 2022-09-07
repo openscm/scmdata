@@ -990,11 +990,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def set_meta(self, dimension: str, value: Any, **filter_kwargs: Any):
         """
-        Update metadata of timeseries
+        Update metadata
 
-        Optionally, a subset of timeseries may be modified through the use of
-        additional `filter_kwargs` which are passed to :func:`filter`. The meta
-        for the non-filtered timeseries are not modified.
+        Optionally, a subset of metadata may be modified through the use of
+        additional `filter_kwargs` which are passed to :func:`filter`. The metadata
+        associated with the non-filtered timeseries are not modified.
 
         This method does not preserve the order of the timeseries.
 
