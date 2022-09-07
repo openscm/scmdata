@@ -988,6 +988,58 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         out = self._meta.get_level_values(col)
         return pd.Series(out, name=col, index=self._df.columns)
 
+    def set_meta(self, dimension: str, value: Any, **filter_kwargs: Any):
+        """
+        Update metadata of timeseries
+
+        Optionally, a subset of timeseries may be modified through the use of
+        additional `filter_kwargs` which are passed to :func:`filter`. The meta
+        for the non-filtered timeseries are not modified.
+
+        This method does not preserve the order of the timeseries.
+
+        Parameters
+        ----------
+        dimension : str
+            Dimension of meta to update
+
+        value : Any
+            Value to set the targeted meta to
+
+        filter_kwargs : Any
+            Arguments used to filter which timeseries are updated
+
+            All the filtering functionality of :func:`filter` is available, except for
+            `"inplace"`.
+
+        See Also
+        --------
+        :func:`filter`
+
+        Returns
+        -------
+        :class:`BaseScmRun <scmdata.run.BaseScmRun>`
+            Return a new instance with the updated timeseries.
+        """
+        keep = filter_kwargs.pop("keep", True)
+        log_if_empty = filter_kwargs.pop("log_if_empty", True)
+
+        if "inplace" in filter_kwargs:
+            raise ValueError("Inplace updating of metadata is not supported")
+
+        filtered_run = self.filter(
+            keep=keep, log_if_empty=log_if_empty, **filter_kwargs
+        )
+        filtered_run[dimension] = value
+        res = run_append(
+            [
+                filtered_run,
+                self.filter(keep=not keep, log_if_empty=False, **filter_kwargs),
+            ]
+        )
+
+        return res
+
     def filter(
         self,
         keep: bool = True,
@@ -2306,11 +2358,11 @@ def _merge_metadata(metadata):
 
 
 def run_append(
-    runs,
+    runs: List[BaseScmRun],
     inplace: bool = False,
     duplicate_msg: Union[str, bool] = True,
     metadata: Optional[MetadataType] = None,
-):
+) -> Optional[BaseScmRun]:
     """
     Append together many objects.
 

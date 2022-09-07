@@ -1055,6 +1055,82 @@ def test_append_index_extra(scm_run):
 
 
 @pytest.mark.parametrize("value", [1, 1.0, "test"])
+def test_set_meta(scm_run, value):
+    filter_kwargs = dict(variable="Primary Energy")
+    subset = scm_run.filter(**filter_kwargs)
+    subset["test"] = value
+    exp = run_append([subset, scm_run.filter(**filter_kwargs, keep=False)])
+
+    res = scm_run.set_meta("test", value, variable="Primary Energy")
+    assert_scmdf_almost_equal(exp, res)
+
+    pd.testing.assert_frame_equal(
+        res.meta[["variable", "test"]].drop_duplicates().reset_index(drop=True),
+        pd.DataFrame(
+            {
+                "variable": ["Primary Energy", "Primary Energy|Coal"],
+                "test": [value, np.nan],
+            }
+        ),
+    )
+
+
+def test_set_meta_existing_columns(scm_run):
+    res = scm_run.set_meta("region", "Mars", variable="Primary Energy")
+    pd.testing.assert_frame_equal(
+        res.meta[["variable", "region"]].drop_duplicates().reset_index(drop=True),
+        pd.DataFrame(
+            {
+                "variable": ["Primary Energy", "Primary Energy|Coal"],
+                "region": ["Mars", "World"],
+            }
+        ),
+    )
+
+
+def test_set_meta_logs(scm_run, caplog):
+    caplog.set_level(logging.WARNING)
+
+    res = scm_run.set_meta("test", "value", variable="*")
+    assert caplog.text == ""
+    assert res.get_unique_meta("test", True) == "value"
+
+    # Follows log_if_empty value
+    res = scm_run.set_meta("test", "value", variable="Nothing", log_if_empty=False)
+    assert caplog.text == ""
+    assert "value" not in res.meta.columns
+
+    scm_run.set_meta("test", "value", variable="Nothing", log_if_empty=True)
+    assert "Filtered ScmRun is empty!" in caplog.text
+
+
+def test_set_meta_keep(scm_run):
+    res = scm_run.set_meta("region", "Mars", variable="Primary Energy", keep=False)
+
+    # Note that the order has changed here (hence the sort_values)
+    pd.testing.assert_frame_equal(
+        res.meta[["variable", "region"]]
+        .drop_duplicates()
+        .sort_values(by="variable")
+        .reset_index(drop=True),
+        pd.DataFrame(
+            {
+                "variable": ["Primary Energy", "Primary Energy|Coal"],
+                "region": ["World", "Mars"],
+            }
+        ),
+        check_index_type=False,
+    )
+
+
+def test_set_meta_inplace(scm_run):
+    with pytest.raises(
+        ValueError, match="Inplace updating of metadata is not supported"
+    ):
+        scm_run.set_meta("test", "value", inplace=True)
+
+
+@pytest.mark.parametrize("value", [1, 1.0, "test"])
 def test_append_nans(scm_run, value):
     run_1 = scm_run.copy()
     run_2 = scm_run.copy()
