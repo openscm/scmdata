@@ -1019,7 +1019,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Returns
         -------
         :class:`BaseScmRun <scmdata.run.BaseScmRun>`
-            Return a new instance with the updated timeseries.
+            A new instance with the updated metadata.
         """
         keep = filter_kwargs.pop("keep", True)
         log_if_empty = filter_kwargs.pop("log_if_empty", True)
