@@ -19,7 +19,7 @@ import pandas as pd
 import pandas.io.common
 import pint
 from dateutil import parser
-from openscm_units import unit_registry as ur
+from scmdata.units import UNIT_REGISTRY
 
 from ._base import OpsMixin
 from ._xarray import inject_xarray_methods
@@ -709,7 +709,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         def _perform_op(df):
             if isinstance(other, pint.Quantity):
                 try:
-                    data = df.values * ur(df.get_unique_meta("unit", True))
+                    data = df.values * UNIT_REGISTRY(df.get_unique_meta("unit", True))
                     use_pint = True
                 except KeyError:  # pragma: no cover # emergency valve
                     raise KeyError(

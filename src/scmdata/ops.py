@@ -11,7 +11,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pint_pandas
-from openscm_units import unit_registry
+from scmdata.units import UNIT_REGISTRY
 
 from .time import TimePoints
 
@@ -24,7 +24,7 @@ except ImportError:  # pragma: no cover
     has_scipy = False
 
 
-def prep_for_op(inp, op_cols, meta, ur=unit_registry):
+def prep_for_op(inp, op_cols, meta, ur=UNIT_REGISTRY):
     """
     Prepare dataframe for operation
 
@@ -643,11 +643,11 @@ def cumsum(self, out_var=None, check_annual=True):
     out.columns = ts.columns
 
     out = type(self)(out)
-    out *= unit_registry(time_unit)
+    out *= UNIT_REGISTRY(time_unit)
 
     try:
         u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
-        u = str(unit_registry(u).to_reduced_units().units)
+        u = str(UNIT_REGISTRY(u).to_reduced_units().units)
         out = out.convert_unit(u)
     except ValueError:
         # more than one unit, don't try to clean up
@@ -731,11 +731,11 @@ def cumtrapz(self, out_var=None):
     out.columns = ts.columns
 
     out = type(self)(out)
-    out *= unit_registry(time_unit)
+    out *= UNIT_REGISTRY(time_unit)
 
     try:
         u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
-        u = str(unit_registry(u).to_reduced_units().units)
+        u = str(UNIT_REGISTRY(u).to_reduced_units().units)
         out = out.convert_unit(u)
     except ValueError:
         # more than one unit, don't try to clean up
@@ -850,11 +850,11 @@ def delta_per_delta_time(self, out_var=None):
     out.columns = TimePoints(new_times).to_index()
 
     out = type(self)(out)
-    out /= unit_registry(time_unit)
+    out /= UNIT_REGISTRY(time_unit)
 
     try:
         out_unit = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
-        out_unit = str(unit_registry(out_unit).to_reduced_units().units)
+        out_unit = str(UNIT_REGISTRY(out_unit).to_reduced_units().units)
         out = out.convert_unit(out_unit)
 
     except ValueError:
@@ -899,10 +899,10 @@ def linear_regression(self):
     ):
         unit = row_meta.pop("unit")
 
-        row_meta["gradient"] = gradient * unit_registry(
+        row_meta["gradient"] = gradient * UNIT_REGISTRY(
             "{} / {}".format(unit, time_unit)
         )
-        row_meta["intercept"] = intercept * unit_registry(unit)
+        row_meta["intercept"] = intercept * UNIT_REGISTRY(unit)
 
         out.append(row_meta)
 
