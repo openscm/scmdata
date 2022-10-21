@@ -7,7 +7,7 @@ from pint.errors import (  # noqa: F401 # pylint: disable=unused-import
     UndefinedUnitError,
 )
 
-from scmdata.units import UnitConverter
+from scmdata.units import UnitConverter, UNIT_REGISTRY
 
 
 def test_conversion_without_offset():
@@ -62,4 +62,4 @@ def test_metric_conversion_unit_converter_nan():
 
 def test_properties():
     assert UnitConverter("CO2", "C").contexts
-    assert UnitConverter("CO2", "C").unit_registry
+    assert UnitConverter("CO2", "C").unit_registry == UNIT_REGISTRY

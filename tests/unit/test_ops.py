@@ -8,10 +8,11 @@ import pandas as pd
 import pandas.testing as pdt
 import pint_pandas
 import pytest
-from openscm_units import unit_registry
-from pint.errors import DimensionalityError
+from openscm_units import unit_registry, ScmUnitRegistry
+from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.run import ScmRun
+import scmdata.units
 from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
 
 pint_pandas.PintType.ureg = unit_registry
@@ -1350,3 +1351,43 @@ def test_adjust_median_to_target_check_groups_identical_kwargs_passing():
         )
 
         assert mock_npt.call_args_list[0][1] == check_groups_identical_kwargs
+
+
+@pytest.fixture()
+def custom_unit_registry():
+    orig_registry = scmdata.units.UNIT_REGISTRY
+
+    ur = ScmUnitRegistry()
+    ur.add_standards()
+    ur.define("population = [population]")
+    ur.define("million = 1e6")
+    ur.define("thousand = 1e3")
+
+    try:
+        yield ur
+    finally:
+        scmdata.units.UNIT_REGISTRY = orig_registry
+
+
+def test_custom_registry(custom_unit_registry):
+    emms = get_single_ts(variable="Emissions|CO2", unit="MtCO2/yr")
+    pop = get_single_ts(variable="Population", unit="million population")
+
+    with pytest.raises(
+        UndefinedUnitError, match="'million' is not defined in the unit registry"
+    ):
+        emms.divide(pop, op_cols={"variable": "Emissions|CO2 per capita"})
+
+    # Set new registry
+    scmdata.units.UNIT_REGISTRY = custom_unit_registry
+
+    # convert_units works
+    res = pop.convert_unit("thousands population")
+    assert res.get_unique_meta("unit", True) == "thousands population"
+    npt.assert_allclose(res.values / 1000, pop.values)
+
+    res = emms.divide(
+        pop, op_cols={"variable": "Emissions|CO2 per capita"}
+    ).convert_unit("ktCO2 / yr / population")
+
+    assert res.get_unique_meta("unit", True) == "ktCO2 / yr / population"

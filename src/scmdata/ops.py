@@ -12,7 +12,7 @@ import numpy.testing as npt
 import pandas as pd
 import pint_pandas
 
-from scmdata.units import UNIT_REGISTRY
+import scmdata.units
 
 from .time import TimePoints
 
@@ -25,7 +25,7 @@ except ImportError:  # pragma: no cover
     has_scipy = False
 
 
-def prep_for_op(inp, op_cols, meta, ur=UNIT_REGISTRY):
+def prep_for_op(inp, op_cols, meta, ur=None):
     """
     Prepare dataframe for operation
 
@@ -55,7 +55,7 @@ def prep_for_op(inp, op_cols, meta, ur=UNIT_REGISTRY):
         `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
         to handle unit conversions automatically.
     """
-    pint_pandas.PintType.ureg = ur
+    pint_pandas.PintType.ureg = ur or scmdata.units.UNIT_REGISTRY
 
     key_cols = list(op_cols.keys())
 
