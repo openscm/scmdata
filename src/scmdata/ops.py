@@ -11,6 +11,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pint_pandas
+
 from scmdata.units import UNIT_REGISTRY
 
 from .time import TimePoints
