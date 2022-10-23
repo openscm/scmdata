@@ -129,3 +129,10 @@ class UnitConverter:
         Target unit
         """
         return self._target
+
+
+def get_unit_registry() -> openscm_units.ScmUnitRegistry:
+    """
+    Retrieve the global unit registry
+    """
+    return UNIT_REGISTRY

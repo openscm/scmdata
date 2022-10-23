@@ -20,8 +20,6 @@ import pandas.io.common
 import pint
 from dateutil import parser
 
-from scmdata.units import UNIT_REGISTRY
-
 from ._base import OpsMixin
 from ._xarray import inject_xarray_methods
 from .errors import (
@@ -45,7 +43,7 @@ from .ops import inject_ops_methods
 from .plotting import inject_plotting_methods
 from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
 from .time import _TARGET_DTYPE, TimePoints, TimeseriesConverter
-from .units import UnitConverter
+from .units import UnitConverter, get_unit_registry
 
 _logger = getLogger(__name__)
 
@@ -694,6 +692,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             return NotImplemented
 
         is_scalar = isinstance(other, (numbers.Number, pint.Quantity))
+        ur = get_unit_registry()
         if not is_scalar:
             other_ndim = len(other.shape)
             if other_ndim == 1:
@@ -710,7 +709,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         def _perform_op(df):
             if isinstance(other, pint.Quantity):
                 try:
-                    data = df.values * UNIT_REGISTRY(df.get_unique_meta("unit", True))
+                    data = df.values * ur(df.get_unique_meta("unit", True))
                     use_pint = True
                 except KeyError:  # pragma: no cover # emergency valve
                     raise KeyError(
