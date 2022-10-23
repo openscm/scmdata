@@ -12,7 +12,7 @@ import numpy.testing as npt
 import pandas as pd
 import pint_pandas
 
-from scmdata.units import get_unit_registry
+import scmdata.units
 
 from .time import TimePoints
 
@@ -55,7 +55,7 @@ def prep_for_op(inp, op_cols, meta, ur=None):
         `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
         to handle unit conversions automatically.
     """
-    pint_pandas.PintType.ureg = ur or get_unit_registry()
+    pint_pandas.PintType.ureg = ur or scmdata.units.get_unit_registry()
 
     key_cols = list(op_cols.keys())
 
@@ -638,7 +638,7 @@ def cumsum(self, out_var=None, check_annual=True):
         )
 
     ts = self.timeseries()
-    ur = get_unit_registry()
+    ur = scmdata.units.get_unit_registry()
 
     out = ts.cumsum(skipna=False, axis=1)
     out.index = ts.index
@@ -723,7 +723,7 @@ def cumtrapz(self, out_var=None):
     ).astype("int")
     ts = self.timeseries()
 
-    ur = get_unit_registry()
+    ur = scmdata.units.get_unit_registry()
 
     # If required, we can remove the hard-coding of initial, it just requires
     # some thinking about unit handling
@@ -833,7 +833,7 @@ def delta_per_delta_time(self, out_var=None):
     times_in_s = times_numpy.astype("int")
     time_deltas_in_s = times_in_s[1:] - times_in_s[:-1]
 
-    ur = get_unit_registry()
+    ur = scmdata.units.get_unit_registry()
 
     ts = self.timeseries()
     if ts.isnull().sum().sum() > 0:
@@ -897,7 +897,7 @@ def linear_regression(self):
     """
     _, _, time_unit, gradients, intercepts, meta = _calculate_linear_regression(self)
 
-    ur = get_unit_registry()
+    ur = scmdata.units.get_unit_registry()
 
     out = []
     for row_meta, gradient, intercept in zip(

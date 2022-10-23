@@ -45,18 +45,19 @@ class UnitConverter:
         """
         self._source = source
         self._target = target
+        self._ur = get_unit_registry()
 
-        source_unit = UNIT_REGISTRY.Unit(source)
-        target_unit = UNIT_REGISTRY.Unit(target)
+        source_unit = self._ur.Unit(source)
+        target_unit = self._ur.Unit(target)
 
-        s1 = UNIT_REGISTRY.Quantity(1, source_unit)
-        s2 = UNIT_REGISTRY.Quantity(-1, source_unit)
+        s1 = self._ur.Quantity(1, source_unit)
+        s2 = self._ur.Quantity(-1, source_unit)
 
         if context is None:
             t1 = s1.to(target_unit)
             t2 = s2.to(target_unit)
         else:
-            with UNIT_REGISTRY.context(context):
+            with self._ur.context(context):
                 t1 = s1.to(target_unit)
                 t2 = s2.to(target_unit)
 
@@ -107,14 +108,14 @@ class UnitConverter:
         """
         Available contexts for unit conversions
         """
-        return list(UNIT_REGISTRY._contexts.keys())  # pylint: disable=protected-access
+        return list(self._ur._contexts.keys())  # pylint: disable=protected-access
 
     @property
     def unit_registry(self) -> openscm_units.ScmUnitRegistry:
         """
         Underlying unit registry
         """
-        return UNIT_REGISTRY
+        return self._ur
 
     @property
     def source(self) -> str:
