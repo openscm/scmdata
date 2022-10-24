@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from openscm_units import ScmUnitRegistry
 from pint.errors import (  # noqa: F401 # pylint: disable=unused-import
     DimensionalityError,
     UndefinedUnitError,

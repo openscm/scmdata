@@ -1,5 +1,7 @@
 """
-Unit handling
+:mod:`scmdata` uses :mod:`openscm_units` to support unit handling and conversion. :mod:`openscm_units` is
+built on top of :mod:`pint` and includes some additional quantity definitions to support the tracking of
+emissions timeseries.
 """
 import warnings
 from typing import Optional, Sequence, Union
@@ -9,10 +11,12 @@ import openscm_units
 
 UNIT_REGISTRY: openscm_units.ScmUnitRegistry = openscm_units.unit_registry
 """
-Unit registry used for when converting units
+Unit registry used for when converting units in :mod:`scmdata`
 
-This defaults to the `openscm_units.unit_registry`. Additional units can be added to this
-registry. Alternatively, a different <openscm.ScmUnitRegistry> can be supplied.
+This defaults to :attr:`openscm_units.unit_registry` so any additional units added to
+:attr:`openscm_units.unit_registry` will also be available in :mod:`scmdata. Alternatively,
+this attribute can be overridden with a custom :class:`openscm.ScmUnitRegistry` instance
+if required.
 """
 
 

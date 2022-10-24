@@ -56,7 +56,7 @@ def assert_scmdf_almost_equal(
     AssertionError
         ``left`` and ``right`` are not equal
     """
-    # Check that the meta data is close
+    # Check that the metadata is close
     if allow_unordered or not check_ts_names:
 
         # Checks that all the timeseries are named the same
@@ -105,7 +105,9 @@ def get_single_ts(
     **kwargs,
 ):
     """
-    Helper function create a sample ScmRun with a single timeseries
+    Create a sample ScmRun with a single timeseries
+
+    This function is used for testing with some sample metadata.
     """
     return _get_ts(
         data=data,

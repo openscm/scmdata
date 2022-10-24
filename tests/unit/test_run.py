@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy import testing as npt
-from openscm_units import ScmUnitRegistry
 from packaging.version import parse
 from pandas.errors import UnsupportedFunctionCall
 from pint.errors import DimensionalityError, UndefinedUnitError

@@ -7,7 +7,6 @@ from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime
 from os.path import abspath, dirname, join
-from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
