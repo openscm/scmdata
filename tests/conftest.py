@@ -11,6 +11,7 @@ from os.path import abspath, dirname, join
 import numpy as np
 import pandas as pd
 import pytest
+from openscm_units import ScmUnitRegistry
 
 from scmdata.pyam_compat import IamDataFrame
 from scmdata.run import BaseScmRun, ScmRun
@@ -634,3 +635,14 @@ def combo_df(request):
     )
 
     return Combination(**vals), df
+
+
+@pytest.fixture()
+def custom_unit_registry():
+    ur = ScmUnitRegistry()
+    ur.add_standards()
+    ur.define("population = [population]")
+    ur.define("million = 1e6")
+    ur.define("thousand = 1e3")
+
+    return ur

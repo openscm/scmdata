@@ -19,7 +19,8 @@ import pandas as pd
 import pandas.io.common
 import pint
 from dateutil import parser
-from openscm_units import unit_registry as ur
+
+import scmdata.units
 
 from ._base import OpsMixin
 from ._xarray import inject_xarray_methods
@@ -693,6 +694,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             return NotImplemented
 
         is_scalar = isinstance(other, (numbers.Number, pint.Quantity))
+        ur = scmdata.units.get_unit_registry()
         if not is_scalar:
             other_ndim = len(other.shape)
             if other_ndim == 1:

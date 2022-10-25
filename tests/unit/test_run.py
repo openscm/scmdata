@@ -27,6 +27,7 @@ from scmdata.testing import (
     _check_pandas_less_110,
     _check_pandas_less_120,
     assert_scmdf_almost_equal,
+    get_single_ts,
 )
 
 
@@ -3751,3 +3752,13 @@ def test_apply(scm_run):
     res = scm_run.apply(my_func)
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+def test_overriding_registry(custom_unit_registry):
+    pop = get_single_ts(variable="Population", unit="million population")
+
+    with patch("scmdata.units.get_unit_registry", return_value=custom_unit_registry):
+
+        res = pop.convert_unit("thousands population")
+        assert res.get_unique_meta("unit", True) == "thousands population"
+        npt.assert_allclose(res.values / 1000, pop.values)

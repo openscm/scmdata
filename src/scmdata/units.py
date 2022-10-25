@@ -1,19 +1,23 @@
 """
-Unit handling
+:mod:`scmdata` uses :mod:`openscm_units` to support unit handling and conversion. :mod:`openscm_units` is
+built on top of :mod:`pint` and includes some additional quantity definitions to support the tracking of
+emissions timeseries.
 """
 import warnings
 from typing import Optional, Sequence, Union
 
 import numpy as np
-from openscm_units import ScmUnitRegistry
+import openscm_units
 
-_unit_registry = ScmUnitRegistry()
+UNIT_REGISTRY: openscm_units.ScmUnitRegistry = openscm_units.unit_registry
 """
-SCMData standard unit registry
+Unit registry used for when converting units in :mod:`scmdata`
 
-The unit registry contains all of the recognised units.
+This defaults to :attr:`openscm_units.unit_registry` so any additional units added to
+:attr:`openscm_units.unit_registry` will also be available in :mod:`scmdata. Alternatively,
+this attribute can be overridden with a custom :class:`openscm.ScmUnitRegistry` instance
+if required.
 """
-_unit_registry.add_standards()
 
 
 class UnitConverter:
@@ -45,18 +49,19 @@ class UnitConverter:
         """
         self._source = source
         self._target = target
+        self._ur = get_unit_registry()
 
-        source_unit = _unit_registry.Unit(source)
-        target_unit = _unit_registry.Unit(target)
+        source_unit = self._ur.Unit(source)
+        target_unit = self._ur.Unit(target)
 
-        s1 = _unit_registry.Quantity(1, source_unit)
-        s2 = _unit_registry.Quantity(-1, source_unit)
+        s1 = self._ur.Quantity(1, source_unit)
+        s2 = self._ur.Quantity(-1, source_unit)
 
         if context is None:
             t1 = s1.to(target_unit)
             t2 = s2.to(target_unit)
         else:
-            with _unit_registry.context(context):
+            with self._ur.context(context):
                 t1 = s1.to(target_unit)
                 t2 = s2.to(target_unit)
 
@@ -107,14 +112,14 @@ class UnitConverter:
         """
         Available contexts for unit conversions
         """
-        return list(_unit_registry._contexts.keys())  # pylint: disable=protected-access
+        return list(self._ur._contexts.keys())  # pylint: disable=protected-access
 
     @property
-    def unit_registry(self) -> ScmUnitRegistry:
+    def unit_registry(self) -> openscm_units.ScmUnitRegistry:
         """
         Underlying unit registry
         """
-        return _unit_registry
+        return self._ur
 
     @property
     def source(self) -> str:
@@ -129,3 +134,10 @@ class UnitConverter:
         Target unit
         """
         return self._target
+
+
+def get_unit_registry() -> openscm_units.ScmUnitRegistry:
+    """
+    Retrieve the global unit registry
+    """
+    return UNIT_REGISTRY

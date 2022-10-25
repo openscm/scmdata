@@ -9,39 +9,16 @@ import pandas.testing as pdt
 import pint_pandas
 import pytest
 from openscm_units import unit_registry
-from pint.errors import DimensionalityError
+from pint.errors import DimensionalityError, UndefinedUnitError
 
 from scmdata.run import ScmRun
-from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
+from scmdata.testing import (
+    _check_pandas_less_110,
+    assert_scmdf_almost_equal,
+    get_single_ts,
+)
 
 pint_pandas.PintType.ureg = unit_registry
-
-
-def get_ts(data, index, **kwargs):
-    return ScmRun(data=data, index=index, columns=kwargs)
-
-
-def get_single_ts(
-    data=[1, 2, 3],
-    index=[1, 2, 3],
-    variable="Emissions|CO2",
-    scenario="scen",
-    model="mod",
-    unit="GtC / yr",
-    region="World",
-    **kwargs,
-):
-
-    return get_ts(
-        data=data,
-        index=index,
-        variable=variable,
-        scenario=scenario,
-        model=model,
-        unit=unit,
-        region=region,
-        **kwargs,
-    )
 
 
 def get_multiple_ts(
@@ -54,7 +31,7 @@ def get_multiple_ts(
     region="World",
     **kwargs,
 ):
-    return get_ts(
+    return get_single_ts(
         data=data,
         index=index,
         variable=variable,
@@ -1181,7 +1158,7 @@ def test_missing_ops(op, other):
 )
 @pytest.mark.parametrize("target_median", (0.43, 1.0))
 def test_adjust_median_to_target_single_ts(evaluation_period, exp_shift, target_median):
-    start = get_ts(
+    start = get_single_ts(
         np.array([[1, 2, 3]]).T,
         [2000, 2010, 2020],
         variable="Surface Temperature",
@@ -1216,7 +1193,7 @@ def test_adjust_median_to_target_single_ts(evaluation_period, exp_shift, target_
 def test_adjust_median_to_target_multiple_ts(
     evaluation_period, exp_shift, target_median
 ):
-    start = get_ts(
+    start = get_single_ts(
         np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T,
         [2000, 2010, 2020],
         variable="Surface Temperature",
@@ -1263,7 +1240,7 @@ def test_adjust_median_to_target_process_over(process_over):
         ensemble_member=[0, 1, 2],
     )
     index = [2000, 2010, 2020]
-    start = get_ts(
+    start = get_single_ts(
         np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T, index, **get_ts_kwargs
     )
 
@@ -1272,7 +1249,7 @@ def test_adjust_median_to_target_process_over(process_over):
         or process_over == "not supplied"
         or process_over in ["scenario", ["scenario"]]
     ):
-        exp = get_ts(
+        exp = get_single_ts(
             np.array([[0.5, 1.5, 2.5], [0.25, 1.75, 2.25], [0.5, 1.5, 2.5]]).T,
             index,
             **get_ts_kwargs,
@@ -1307,7 +1284,7 @@ def test_adjust_median_to_target_process_over(process_over):
 
 
 def test_adjust_median_to_target_check_groups_identical():
-    start = get_ts(
+    start = get_single_ts(
         np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T,
         [2000, 2010, 2020],
         variable="Surface Temperature",
@@ -1327,7 +1304,7 @@ def test_adjust_median_to_target_check_groups_identical():
 
 
 def test_adjust_median_to_target_check_groups_identical_kwargs_passing():
-    start = get_ts(
+    start = get_single_ts(
         np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T,
         [2000, 2010, 2020],
         variable="Surface Temperature",
@@ -1350,3 +1327,20 @@ def test_adjust_median_to_target_check_groups_identical_kwargs_passing():
         )
 
         assert mock_npt.call_args_list[0][1] == check_groups_identical_kwargs
+
+
+def test_custom_registry(custom_unit_registry):
+    emms = get_single_ts(variable="Emissions|CO2", unit="MtCO2/yr")
+    pop = get_single_ts(variable="Population", unit="million population")
+
+    with patch("scmdata.units.get_unit_registry", return_value=custom_unit_registry):
+        res = emms.divide(
+            pop, op_cols={"variable": "Emissions|CO2 per capita"}
+        ).convert_unit("ktCO2 / yr / population")
+
+        assert res.get_unique_meta("unit", True) == "ktCO2 / yr / population"
+
+    with pytest.raises(
+        UndefinedUnitError, match="'million' is not defined in the unit registry"
+    ):
+        emms.divide(pop, op_cols={"variable": "Emissions|CO2 per capita"})

@@ -11,7 +11,8 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pint_pandas
-from openscm_units import unit_registry
+
+import scmdata.units
 
 from .time import TimePoints
 
@@ -24,7 +25,7 @@ except ImportError:  # pragma: no cover
     has_scipy = False
 
 
-def prep_for_op(inp, op_cols, meta, ur=unit_registry):
+def prep_for_op(inp, op_cols, meta, ur=None):
     """
     Prepare dataframe for operation
 
@@ -54,7 +55,7 @@ def prep_for_op(inp, op_cols, meta, ur=unit_registry):
         `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
         to handle unit conversions automatically.
     """
-    pint_pandas.PintType.ureg = ur
+    pint_pandas.PintType.ureg = ur or scmdata.units.get_unit_registry()
 
     key_cols = list(op_cols.keys())
 
@@ -637,17 +638,18 @@ def cumsum(self, out_var=None, check_annual=True):
         )
 
     ts = self.timeseries()
+    ur = scmdata.units.get_unit_registry()
 
     out = ts.cumsum(skipna=False, axis=1)
     out.index = ts.index
     out.columns = ts.columns
 
     out = type(self)(out)
-    out *= unit_registry(time_unit)
+    out *= ur(time_unit)
 
     try:
         u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
-        u = str(unit_registry(u).to_reduced_units().units)
+        u = str(ur(u).to_reduced_units().units)
         out = out.convert_unit(u)
     except ValueError:
         # more than one unit, don't try to clean up
@@ -721,6 +723,8 @@ def cumtrapz(self, out_var=None):
     ).astype("int")
     ts = self.timeseries()
 
+    ur = scmdata.units.get_unit_registry()
+
     # If required, we can remove the hard-coding of initial, it just requires
     # some thinking about unit handling
     _initial = 0.0
@@ -731,11 +735,11 @@ def cumtrapz(self, out_var=None):
     out.columns = ts.columns
 
     out = type(self)(out)
-    out *= unit_registry(time_unit)
+    out *= ur(time_unit)
 
     try:
         u = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
-        u = str(unit_registry(u).to_reduced_units().units)
+        u = str(ur(u).to_reduced_units().units)
         out = out.convert_unit(u)
     except ValueError:
         # more than one unit, don't try to clean up
@@ -829,6 +833,8 @@ def delta_per_delta_time(self, out_var=None):
     times_in_s = times_numpy.astype("int")
     time_deltas_in_s = times_in_s[1:] - times_in_s[:-1]
 
+    ur = scmdata.units.get_unit_registry()
+
     ts = self.timeseries()
     if ts.isnull().sum().sum() > 0:
         warnings.warn(
@@ -850,11 +856,11 @@ def delta_per_delta_time(self, out_var=None):
     out.columns = TimePoints(new_times).to_index()
 
     out = type(self)(out)
-    out /= unit_registry(time_unit)
+    out /= ur(time_unit)
 
     try:
         out_unit = out.get_unique_meta("unit", no_duplicates=True).replace(" ", "")
-        out_unit = str(unit_registry(out_unit).to_reduced_units().units)
+        out_unit = str(ur(out_unit).to_reduced_units().units)
         out = out.convert_unit(out_unit)
 
     except ValueError:
@@ -891,6 +897,8 @@ def linear_regression(self):
     """
     _, _, time_unit, gradients, intercepts, meta = _calculate_linear_regression(self)
 
+    ur = scmdata.units.get_unit_registry()
+
     out = []
     for row_meta, gradient, intercept in zip(
         meta.to_dict("records"),
@@ -899,10 +907,8 @@ def linear_regression(self):
     ):
         unit = row_meta.pop("unit")
 
-        row_meta["gradient"] = gradient * unit_registry(
-            "{} / {}".format(unit, time_unit)
-        )
-        row_meta["intercept"] = intercept * unit_registry(unit)
+        row_meta["gradient"] = gradient * ur("{} / {}".format(unit, time_unit))
+        row_meta["intercept"] = intercept * ur(unit)
 
         out.append(row_meta)
 

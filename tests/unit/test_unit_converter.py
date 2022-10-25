@@ -1,4 +1,5 @@
 import warnings
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -7,7 +8,8 @@ from pint.errors import (  # noqa: F401 # pylint: disable=unused-import
     UndefinedUnitError,
 )
 
-from scmdata.units import UnitConverter
+import scmdata.units
+from scmdata.units import UNIT_REGISTRY, UnitConverter
 
 
 def test_conversion_without_offset():
@@ -62,4 +64,25 @@ def test_metric_conversion_unit_converter_nan():
 
 def test_properties():
     assert UnitConverter("CO2", "C").contexts
-    assert UnitConverter("CO2", "C").unit_registry
+    assert UnitConverter("CO2", "C").unit_registry == UNIT_REGISTRY
+
+
+def test_overriding_getter(custom_unit_registry):
+    with patch("scmdata.units.get_unit_registry", return_value=custom_unit_registry):
+        assert UnitConverter("CO2", "C").unit_registry == custom_unit_registry
+
+
+def test_overriding_default(custom_unit_registry):
+    orig = scmdata.units.UNIT_REGISTRY
+
+    try:
+        assert scmdata.units.get_unit_registry() == scmdata.units.UNIT_REGISTRY
+
+        scmdata.units.UNIT_REGISTRY = custom_unit_registry
+
+        assert scmdata.units.get_unit_registry() == custom_unit_registry
+
+    finally:
+        scmdata.units.UNIT_REGISTRY = orig
+
+    assert scmdata.units.UNIT_REGISTRY == orig

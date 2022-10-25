@@ -8,6 +8,8 @@ import packaging.version
 import pandas as pd
 import pandas.testing as pdt
 
+from scmdata import ScmRun
+
 
 def _check_pandas_less_110():
     return packaging.version.parse(pd.__version__) < packaging.version.Version("1.1.0")
@@ -54,7 +56,7 @@ def assert_scmdf_almost_equal(
     AssertionError
         ``left`` and ``right`` are not equal
     """
-    # Check that the meta data is close
+    # Check that the metadata is close
     if allow_unordered or not check_ts_names:
 
         # Checks that all the timeseries are named the same
@@ -86,3 +88,34 @@ def assert_scmdf_almost_equal(
     else:
         _assert_frame_equal(left.meta, right.meta)
         npt.assert_allclose(left.values, right.values, rtol=rtol, atol=atol)
+
+
+def _get_ts(data, index, **kwargs):
+    return ScmRun(data=data, index=index, columns=kwargs)
+
+
+def get_single_ts(
+    data=[1, 2, 3],
+    index=[1, 2, 3],
+    variable="Emissions|CO2",
+    scenario="scen",
+    model="mod",
+    unit="GtC / yr",
+    region="World",
+    **kwargs,
+):
+    """
+    Create a sample ScmRun with a single timeseries
+
+    This function is used for testing with some sample metadata.
+    """
+    return _get_ts(
+        data=data,
+        index=index,
+        variable=variable,
+        scenario=scenario,
+        model=model,
+        unit=unit,
+        region=region,
+        **kwargs,
+    )
