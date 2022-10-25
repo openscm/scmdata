@@ -72,6 +72,7 @@ jobs:
       run: |
         pip install --upgrade --user pip wheel
         pip install -e .[tests,plotting,optional]
+        pip freeze
     - name: Test with pytest (${{ runner.os }})
       if: ${{ !startsWith(runner.os, 'Windows') }}
       env:
