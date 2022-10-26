@@ -8,25 +8,6 @@ from itertools import cycle
 
 import numpy as np
 
-try:
-    import matplotlib.lines as mlines
-    import matplotlib.patches as mpatches
-    import matplotlib.pyplot as plt
-
-    has_matplotlib = True
-except ImportError:  # pragma: no cover
-    plt = None
-    has_matplotlib = False
-
-try:
-    import seaborn as sns
-
-    has_seaborn = True
-except ImportError:  # pragma: no cover
-    sns = None
-    has_seaborn = False
-
-
 # Copying https://github.com/IAMconsortium/pyam/blob/main/pyam/plotting.py
 RCMIP_SCENARIO_COLOURS = {
     "historical": "black",
@@ -81,7 +62,9 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     :class:`matplotlib.axes._subplots.AxesSubplot`
         Output of call to ``seaborn.lineplot``
     """
-    if not has_seaborn:
+    try:
+        import seaborn as sns
+    except ImportError:
         raise ImportError("seaborn is not installed. Run 'pip install seaborn'")
 
     plt_df = self.long_data(time_axis=time_axis)
@@ -214,7 +197,11 @@ def plumeplot(  # pragma: no cover
     with little testing. In some ways, it is more intended as inspiration for
     other users than as a robust plotting tool.
     """
-    if not has_matplotlib:
+    try:
+        import matplotlib.lines as mlines
+        import matplotlib.patches as mpatches
+        import matplotlib.pyplot as plt
+    except ImportError:  # pragma: no cover
         raise ImportError("matplotlib is not installed. Run 'pip install matplotlib'")
 
     if not pre_calculated:

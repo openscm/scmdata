@@ -3291,7 +3291,7 @@ def test_lineplot_time_axis(scm_run, time_axis, mod_func):
     pytest.importorskip("seaborn")
     mock_return = 4
 
-    with patch("scmdata.plotting.sns.lineplot") as mock_sns_lineplot:
+    with patch("seaborn.lineplot") as mock_sns_lineplot:
         with patch.object(ScmRun, "long_data") as mock_long_data:
             mock_long_data.return_value = mock_return
 
@@ -3415,7 +3415,7 @@ def test_lineplot_time_axis_junk_error(scm_run):
 
     error_msg = re.escape("time_axis = 'junk")
 
-    with patch("scmdata.plotting.sns.lineplot") as mock_sns_lineplot:
+    with patch("seaborn.lineplot") as mock_sns_lineplot:
         with pytest.raises(NotImplementedError, match=error_msg):
             scm_run.lineplot(time_axis="junk")
 

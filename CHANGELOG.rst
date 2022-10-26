@@ -4,7 +4,8 @@ Changelog
 master
 ------
 
-- (`#209 <https://github.com/openscm/scmdata/pull/209>`_) Ensure that all unit operations in :mod:`scmdata` use :attr:`scmdata.units.UNIT_REGISTRY`. This now defaults to :attr:`openscm_units.unit_registry` instead of unique unit registry for :mod:`scmdata`.
+- (`#209 <https://github.com/openscm/scmdata/pull/209>`_) Lazy import plotting modules to speed up startup time
+- (`#208 <https://github.com/openscm/scmdata/pull/208>`_) Ensure that all unit operations in :mod:`scmdata` use :attr:`scmdata.units.UNIT_REGISTRY`. This now defaults to :attr:`openscm_units.unit_registry` instead of unique unit registry for :mod:`scmdata`.
 - (`#202 <https://github.com/openscm/scmdata/pull/202>`_) Add :func:`scmdata.run.ScmRun.set_meta` to enable setting of metadata for a subset of timeseries
 - (`#194 <https://github.com/openscm/scmdata/pull/194>`_) Deprecate :func:`scmdata.groupby.RunGroupBy.map` in preference to :func:`scmdata.groupby.RunGroupBy.apply` which is identical in functionality. Add :class:`scmdata.ScmRun.apply` for applying a function to each timeseries
 - (`#195 <https://github.com/openscm/scmdata/pull/195>`_) Refactor :mod:`scmdata.database` to a package. The database backends have been moved to :mod:`scmdata.database.backends`.
