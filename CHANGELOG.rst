@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.14.2
+-------
+
 - (`#209 <https://github.com/openscm/scmdata/pull/209>`_) Lazy import plotting modules to speed up startup time
 - (`#208 <https://github.com/openscm/scmdata/pull/208>`_) Ensure that all unit operations in :mod:`scmdata` use :attr:`scmdata.units.UNIT_REGISTRY`. This now defaults to :attr:`openscm_units.unit_registry` instead of unique unit registry for :mod:`scmdata`.
 - (`#202 <https://github.com/openscm/scmdata/pull/202>`_) Add :func:`scmdata.run.ScmRun.set_meta` to enable setting of metadata for a subset of timeseries
