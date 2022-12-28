@@ -737,7 +737,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 df._df.values[:] = res.T
             return df
 
-        return self.copy().groupby("unit").map(_perform_op)
+        return self.copy().groupby("unit").apply(_perform_op)
 
     def _unary_op(self, f, *args, **kwargs) -> Callable[..., "ScmRun"]:
         df = self.copy()
@@ -2029,7 +2029,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         ret = to_convert
         if not to_convert.empty:
-            ret = ret.groupby("unit").map(apply_units)
+            ret = ret.groupby("unit").apply(apply_units)
 
         ret = run_append([ret, to_not_convert], inplace=inplace)
         if not inplace:
