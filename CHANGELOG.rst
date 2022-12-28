@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#218 <https://github.com/openscm/scmdata/pull/218>`_) Replaced Map with apply
 - (`#210 <https://github.com/openscm/scmdata/pull/210>`_) Update github actions to avoid the use of a deprecated workflow command
 
 v0.14.2
