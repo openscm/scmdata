@@ -2304,6 +2304,7 @@ def test_interpolate_float(scm_run):
 
 
 def test_interpolate_int(scm_run):
+    # check int not converted to unix time (gh 221)
     target_time_points = [int(y) for y in range(2000, 2005)]
 
     res = scm_run.interpolate(target_time_points)
@@ -2392,7 +2393,11 @@ def test_interpolate_single_constant():
     [
         ([2000, 2001, 2002, 2003], [np.nan, 2.0, 3.0, 4.0]),
         # We assume Jan 1 values so the following doesn't cover a leap year
-        pytest.param([2001, 2002, 2003, 2004],[1.0, 2.0, 3.0, np.nan]), mark=pytest.xfail(reason="Doesn't cover a leap year"))
+        pytest.param(
+            [2001, 2002, 2003, 2004],
+            [1.0, 2.0, 3.0, np.nan],
+            marks=pytest.mark.xfail(reason="Doesn't cover a leap year"),
+        ),
         ([2002, 2003, 2004, 2005], [1.0, 2.0, 3.0, np.nan]),
         ([2003, 2004, 2005, 2006], [1.0, np.nan, 3.0, 4.0]),
     ],

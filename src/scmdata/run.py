@@ -1360,7 +1360,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             np.ndarray, Iterable[Union[dt.datetime, dt.date, int, float]]
         ],
         interpolation_type: str = "linear",
-        extrapolation_type: str = "linear",
+        extrapolation_type: Optional[str] = "linear",
         uniform_year_length: bool = False,
     ):
         """
