@@ -6,6 +6,7 @@ Thanks to the original author, Sven Willner
 """
 
 from datetime import datetime
+from typing import Type
 
 import cftime
 import numpy as np
@@ -134,7 +135,9 @@ class TimePoints:
         """
         return pd.Index(self._values.astype(object), dtype=object, name="time")
 
-    def as_cftime(self, date_cls=cftime.DatetimeGregorian) -> list:
+    def as_cftime(
+        self, date_cls: Type[cftime.datetime] = cftime.DatetimeGregorian
+    ) -> list:
         """
         Format time points as :class:`cftime.datetime`
 
