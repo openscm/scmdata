@@ -2444,7 +2444,7 @@ def test_interpolate_uniform_years_nonunique():
 
     match = "Non-unique year values with uniform_year_length=True"
     with pytest.raises(ValueError, match=match):
-        df.interpolate(range(2000, 2003))
+        df.interpolate(range(2000, 2003), uniform_year_length=True)
 
 
 def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
