@@ -2392,7 +2392,7 @@ def test_interpolate_single_constant():
     [
         ([2000, 2001, 2002, 2003], [np.nan, 2.0, 3.0, 4.0]),
         # We assume Jan 1 values so the following doesn't cover a leap year
-        # [2001, 2002, 2003, 2004],[1.0, 2.0, 3.0, np.nan]),
+        pytest.param([2001, 2002, 2003, 2004],[1.0, 2.0, 3.0, np.nan]), mark=pytest.xfail(reason="Doesn't cover a leap year"))
         ([2002, 2003, 2004, 2005], [1.0, 2.0, 3.0, np.nan]),
         ([2003, 2004, 2005, 2006], [1.0, np.nan, 3.0, 4.0]),
     ],
@@ -2417,7 +2417,7 @@ def test_interpolate_uniform_years(years, values):
         extrapolation_type="linear",
     )
     with pytest.raises(AssertionError):
-        # difference in last_years before the infilled value causes a small difference
+        # difference in year lengths because of the leap years causes a small difference
         npt.assert_array_almost_equal(res.values.squeeze(), [1.0, 2.0, 3.0, 4.0])
 
     res = df.interpolate(

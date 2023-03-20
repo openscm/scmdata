@@ -1383,7 +1383,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Raises
         ------
         ValueError
-            If ``uniform_year_length=True`` and the sub-annual timeseries are present
+            If ``uniform_year_length=True`` and sub-annual timeseries are present
 
         Returns
         -------
