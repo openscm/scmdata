@@ -112,7 +112,6 @@ def _update_kwargs_to_match_serialised_variable_names(xr_ds, in_kwargs):
     def _update_kwargs(dict_in):
         dict_out = {}
         for key, value in dict_in.items():
-
             if isinstance(value, dict):
                 new_val = _update_kwargs(value)
             elif value in variable_name_map:
