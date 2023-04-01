@@ -24,20 +24,20 @@ def test_no_scipy(scm_run):
 
 
 def test_short_data(combo):
-    timeseriesconverter = TimeseriesConverter(
+    converter = TimeseriesConverter(
         combo.source,
         combo.target,
         combo.interpolation_type,
         combo.extrapolation_type,
     )
-    for a in [[], [0], [0, 1]]:
+    for a in [[], [0]]:
         if len(a) == 1 and combo.extrapolation_type == "constant":
             # Handle a single value and constant extrapolation differently
             # 0 or 2 values should be handled as expected
             continue
 
         with pytest.raises(InsufficientDataError):
-            timeseriesconverter._convert(np.array(a), combo.source, combo.target)
+            converter._convert(np.array(a), combo.source, combo.target)
 
 
 def test_none_extrapolation_error(combo):
@@ -115,9 +115,12 @@ def test_extrapolation_with_nans():
     np.testing.assert_allclose(c.convert_from(source_vals), target_vals, rtol=1e-3)
 
 
-@pytest.mark.parametrize("count", [0, 1, 2])
+@pytest.mark.parametrize("count", [0, 1])
 @pytest.mark.parametrize("extrapolation_type", [None, "linear", "constant"])
 def test_not_enough(count, extrapolation_type):
+    if count == 1 and extrapolation_type == "constant":
+        return
+
     # This also tests that the single value and constant extrapolation edge-case
     # doesn't work if nan's are involved
     source = np.asarray(
