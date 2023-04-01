@@ -1715,7 +1715,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             ts.index = pd.MultiIndex.from_frame(ts_idx.fillna(na_override))
 
         group_cols = list(set(ts.index.names) - set(cols))
-        grouper = ts.groupby(group_cols)
+        grouper = ts.groupby(group_cols, group_keys=False)
 
         # This is a subset of the available functions
         #  https://pandas.pydata.org/pandas-docs/stable/reference/groupby.html
@@ -2537,7 +2537,7 @@ def run_append(
         # Convert back from str
         for c in nan_cols[nan_cols].index:
             new_meta[c].replace("nan", np.nan, inplace=True)
-        for c, dtype in orig_dtypes.iteritems():
+        for c, dtype in orig_dtypes.items():
             new_meta[c] = new_meta[c].astype(dtype)
 
         ret._meta = pd.MultiIndex.from_frame(new_meta.astype("category"))

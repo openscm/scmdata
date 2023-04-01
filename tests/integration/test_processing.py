@@ -414,7 +414,9 @@ def test_exceedance_probabilities_over_time(
     exp = pd.DataFrame(
         np.array(exp_vals)[np.newaxis, :],
         index=exp_idx,
-        columns=test_processing_scm_df.time_points.to_index(),
+        # This forces the coercion to a DateTimeIndex which now happens automatically for
+        # pandas>=1.4.3
+        columns=pd.Index(test_processing_scm_df.time_points.to_index()),
     )
     exp.index = exp.index.set_levels(
         [_get_calculate_exeedance_probs_expected_name(output_name, threshold)],
@@ -424,7 +426,7 @@ def test_exceedance_probabilities_over_time(
         level="unit",
     )
 
-    pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
+    pdt.assert_frame_equal(res, exp, check_like=True, check_names=False)
 
 
 def test_exceedance_probabilities_over_time_multiple_res(
@@ -444,7 +446,11 @@ def test_exceedance_probabilities_over_time_multiple_res(
         start.meta.drop(["ensemble_member"], axis="columns").drop_duplicates()
     )
 
-    exp = pd.DataFrame(exp_vals, index=exp_idx, columns=start.time_points.to_index())
+    exp = pd.DataFrame(
+        exp_vals,
+        index=exp_idx,
+        columns=pd.Index(start.time_points.to_index()),
+    )
     exp.index = exp.index.set_levels(
         [_get_calculate_exeedance_probs_expected_name(None, threshold)],
         level="variable",
@@ -453,7 +459,7 @@ def test_exceedance_probabilities_over_time_multiple_res(
         level="unit",
     )
 
-    pdt.assert_frame_equal(res, exp, check_like=True, check_column_type=False)
+    pdt.assert_frame_equal(res, exp, check_like=True, check_names=False)
 
 
 def test_exceedance_probabilities_over_time_multiple_grouping(
@@ -478,7 +484,7 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
     exp = pd.DataFrame(
         exp_vals[np.newaxis, :],
         index=exp_idx,
-        columns=start.time_points.to_index(),
+        columns=pd.Index(start.time_points.to_index()),
     )
     exp.index = exp.index.set_levels(
         [_get_calculate_exeedance_probs_expected_name(None, threshold)],

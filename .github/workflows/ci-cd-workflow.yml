@@ -55,12 +55,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: [3.7, 3.8, 3.9]
-        exclude:
-          # netCDF4>=1.6.0 doesn't include prebuilt wheels for windows/Python3.7
-          # Older netCDF4 or self-built versions will likely work
-          - os: windows-latest
-            python-version: 3.7
+        python-version: [3.8, 3.9, '3.10', 3.11]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -92,7 +87,7 @@ jobs:
       run: |
           pytest tests -r a --cov=scmdata --cov-report=term-missing --cov-fail-under=$env:MIN_COVERAGE
     - name: Upload coverage to Codecov
-      if: startsWith(runner.os, 'Linux') && matrix.python-version == 3.7
+      if: startsWith(runner.os, 'Linux') && matrix.python-version == 3.11
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
@@ -101,6 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        # Pandas v1.1 doesn't build python v3.9 wheels
         python-version: [3.7]
         pandas-version: [1.0.5, 1.1]
 
@@ -134,7 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ 3.7 ]
+        python-version: [ 3.9 ]
         xarray-version: [ 0.16.2, 0.17.0, 0.18.2 ]
 
     steps:
@@ -170,7 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.9]
 
     steps:
       - name: Checkout repository
@@ -201,7 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8, 3.9, 3.11]
 
     steps:
     - name: Checkout repository
@@ -226,7 +222,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8, 3.9, '3.10', 3.11]
 
     steps:
     - name: Checkout repository
