@@ -241,7 +241,6 @@ class TimeseriesConverter:
         interpolation_type="linear",
         extrapolation_type="linear",
     ):
-
         self.source = (
             np.array(source_time_points)
             .astype(_TARGET_DTYPE)

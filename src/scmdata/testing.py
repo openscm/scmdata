@@ -58,7 +58,6 @@ def assert_scmdf_almost_equal(
     """
     # Check that the metadata is close
     if allow_unordered or not check_ts_names:
-
         # Checks that all the timeseries are named the same
         if check_ts_names:
             df1_index = np.argsort(left.meta.index)
