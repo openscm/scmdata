@@ -119,7 +119,7 @@ def test_extrapolation_with_nans():
 @pytest.mark.parametrize("extrapolation_type", [None, "linear", "constant"])
 def test_not_enough(count, extrapolation_type):
     if count == 1 and extrapolation_type == "constant":
-        return
+        pytest.skip(reason="Failure not expected")
 
     # This also tests that the single value and constant extrapolation edge-case
     # doesn't work if nan's are involved
