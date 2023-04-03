@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.15.0
+-------
+
 - (`#223 <https://github.com/openscm/scmdata/pull/223>`_) Loosen the pandas requirement to cover pandas>=1.4.3. Also support officially support Python 3.10 and 3.11
 - (`#222 <https://github.com/openscm/scmdata/pull/222>`_) Decrease the minimum number of time points for interpolation to 2
 - (`#221 <https://github.com/openscm/scmdata/pull/221>`_) Add option to :func:`scmdata.ScmRun.interpolate` to allow for interpolation which ignores leap-years. This also fixes a bug where :func:`scmdata.ScmRun.interpolate` converts integer values into unix time. This functionality isn't consistent with the behaviour of the TimePoints class where integers are converted into years.
