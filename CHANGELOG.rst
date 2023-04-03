@@ -4,6 +4,7 @@ Changelog
 master
 ------
 
+- (`#222 <https://github.com/openscm/scmdata/pull/222>`_) Decrease the minimum number of time points for interpolation to 2
 - (`#221 <https://github.com/openscm/scmdata/pull/221>`_) Add option to :func:`scmdata.ScmRun.interpolate` to allow for interpolation which ignores leap-years. This also fixes a bug where :func:`scmdata.ScmRun.interpolate` converts integer values into unix time. This functionality isn't consistent with the behaviour of the TimePoints class where integers are converted into years.
 - (`#218 <https://github.com/openscm/scmdata/pull/218>`_) Replaced internal calls to :func:`scmdata.groupby.RunGroupby.map` with :func:`scmdata.groupby.RunGroupby.apply`
 - (`#210 <https://github.com/openscm/scmdata/pull/210>`_) Update github actions to avoid the use of a deprecated workflow command

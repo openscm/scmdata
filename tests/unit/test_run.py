@@ -2368,10 +2368,18 @@ def test_interpolate_nan_constant():
     )
 
 
-def test_interpolate_single_constant():
-    value = 2.0
+@pytest.mark.parametrize(
+    "years,values",
+    [
+        ([2000], [2]),
+        ([2000, 2001, 2002], [np.nan, 2, np.nan]),
+    ],
+)
+@pytest.mark.parametrize("uniform_years", [True, False])
+def test_interpolate_single_constant(years, values, uniform_years):
+    target = [2000, 2100, 2200, 2300, 2400]
     df = ScmRun(
-        [value],
+        values,
         columns={
             "scenario": ["a_scenario"],
             "model": ["a_model"],
@@ -2379,19 +2387,62 @@ def test_interpolate_single_constant():
             "variable": ["Emissions|BC"],
             "unit": ["Mg /yr"],
         },
-        index=[2000],
+        index=years,
     )
-    target = [int(y) for y in [2000, 2100, 2200, 2300, 2400]]
     res = df.interpolate(
         target,
         extrapolation_type="constant",
+        uniform_year_length=uniform_years,
     )
 
-    npt.assert_array_almost_equal(res.values.squeeze(), [value] * 5, decimal=4)
+    npt.assert_array_almost_equal(res.values.squeeze(), [2] * 5, decimal=4)
 
     # Non-constant extrapolation (default) should fail
     with pytest.raises(InsufficientDataError):
         df.interpolate(target)
+
+
+@pytest.mark.parametrize(
+    "years,values",
+    [
+        ([2001, 2003], [2, 3]),
+        ([2000, 2001, 2002, 2003], [np.nan, 2, np.nan, 3]),
+    ],
+)
+def test_interpolate_two_value(years, values):
+    target = list(range(2000, 2005))
+    df = ScmRun(
+        values,
+        columns={
+            "scenario": ["a_scenario"],
+            "model": ["a_model"],
+            "region": ["World"],
+            "variable": ["Emissions|BC"],
+            "unit": ["Mg /yr"],
+        },
+        index=years,
+    )
+    res = df.interpolate(
+        target,
+        extrapolation_type="constant",
+        uniform_year_length=True,
+    )
+
+    npt.assert_array_almost_equal(
+        res.values.squeeze(),
+        [2, 2, 2.5, 3, 3],
+    )
+
+    res = df.interpolate(
+        target,
+        extrapolation_type="linear",
+        uniform_year_length=True,
+    )
+
+    npt.assert_array_almost_equal(
+        res.values.squeeze(),
+        [1.5, 2, 2.5, 3, 3.5],
+    )
 
 
 @pytest.mark.parametrize(

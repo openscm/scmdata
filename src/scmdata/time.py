@@ -336,23 +336,22 @@ class TimeseriesConverter:
         """
         values = np.asarray(values)
 
-        if len(values) == 1 and self.extrapolation_type == "constant":
-            values = np.asarray([values[0], values[0], values[0]])
-            source_time_points = np.asarray(
-                [
-                    source_time_points[0] - 1,
-                    source_time_points[0],
-                    source_time_points[0] + 1,
-                ]
-            )
-
-        # Check for nans
+        # Strip out any nans
         nan_mask = np.isnan(values)
         if nan_mask.sum():
             values = values[~nan_mask]
             source_time_points = source_time_points[~nan_mask]
 
-        if len(values) < 3:
+        if len(values) == 1 and self.extrapolation_type == "constant":
+            values = np.asarray([values[0], values[0]])
+            source_time_points = np.asarray(
+                [
+                    source_time_points[0] - 1,
+                    source_time_points[0],
+                ]
+            )
+
+        if len(values) < 2:
             raise InsufficientDataError
 
         try:
