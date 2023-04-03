@@ -212,7 +212,6 @@ def test_init_unrecognised_type_error():
 
 
 def test_init_remote_files():
-
     remote_file = (
         "https://rcmip-protocols-au.s3-ap-southeast-2.amazonaws.com"
         "/v5.1.0/rcmip-emissions-annual-means-v5-1-0.csv"
@@ -2307,9 +2306,16 @@ def test_interpolate_int(scm_run):
     # check int not converted to unix time (gh 221)
     target_time_points = [int(y) for y in range(2000, 2005)]
 
-    res = scm_run.interpolate(target_time_points)
+    res = scm_run.interpolate(target_time_points, uniform_year_length=True)
     assert res["year"].to_list() == [2000, 2001, 2002, 2003, 2004]
-    assert np.isnan(res.values).sum() == 0
+    npt.assert_array_equal(
+        res.values,
+        [
+            [-4.0, -3.0, -2.0, -1.0, 0.0],
+            [-2.0, -1.5, -1.0, -0.5, 0.0],
+            [-3.0, -2.0, -1.0, 0.0, 1.0],
+        ],
+    )
 
 
 @pytest.mark.parametrize(
@@ -3839,7 +3845,6 @@ def test_overriding_registry(custom_unit_registry):
     pop = get_single_ts(variable="Population", unit="million population")
 
     with patch("scmdata.units.get_unit_registry", return_value=custom_unit_registry):
-
         res = pop.convert_unit("thousands population")
         assert res.get_unique_meta("unit", True) == "thousands population"
         npt.assert_allclose(res.values / 1000, pop.values)
