@@ -212,7 +212,6 @@ def test_init_unrecognised_type_error():
 
 
 def test_init_remote_files():
-
     remote_file = (
         "https://rcmip-protocols-au.s3-ap-southeast-2.amazonaws.com"
         "/v5.1.0/rcmip-emissions-annual-means-v5-1-0.csv"
@@ -2295,6 +2294,30 @@ def test_interpolate(combo_df):
     npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
 
 
+def test_interpolate_float(scm_run):
+    target_time_points = [float(y) for y in range(2000, 2005)]
+
+    res = scm_run.interpolate(target_time_points)
+    assert res["year"].to_list() == [2000, 2001, 2002, 2003, 2004]
+    assert np.isnan(res.values).sum() == 0
+
+
+def test_interpolate_int(scm_run):
+    # check int not converted to unix time (gh 221)
+    target_time_points = [int(y) for y in range(2000, 2005)]
+
+    res = scm_run.interpolate(target_time_points, uniform_year_length=True)
+    assert res["year"].to_list() == [2000, 2001, 2002, 2003, 2004]
+    npt.assert_array_equal(
+        res.values,
+        [
+            [-4.0, -3.0, -2.0, -1.0, 0.0],
+            [-2.0, -1.5, -1.0, -0.5, 0.0],
+            [-3.0, -2.0, -1.0, 0.0, 1.0],
+        ],
+    )
+
+
 @pytest.mark.parametrize(
     "source",
     [[1.0, 2.0, 3.0, np.nan], [1.0, 2.0, np.nan, 4.0], [np.nan, 2.0, 3.0, 4.0]],
@@ -2358,7 +2381,7 @@ def test_interpolate_single_constant():
         },
         index=[2000],
     )
-    target = [datetime(y, 1, 1) for y in [2000, 2100, 2200, 2300, 2400]]
+    target = [int(y) for y in [2000, 2100, 2200, 2300, 2400]]
     res = df.interpolate(
         target,
         extrapolation_type="constant",
@@ -2369,6 +2392,70 @@ def test_interpolate_single_constant():
     # Non-constant extrapolation (default) should fail
     with pytest.raises(InsufficientDataError):
         df.interpolate(target)
+
+
+@pytest.mark.parametrize(
+    "years,values",
+    [
+        ([2000, 2001, 2002, 2003], [np.nan, 2.0, 3.0, 4.0]),
+        # We assume Jan 1 values so the following doesn't cover a leap year
+        pytest.param(
+            [2001, 2002, 2003, 2004],
+            [1.0, 2.0, 3.0, np.nan],
+            marks=pytest.mark.xfail(reason="Doesn't cover a leap year"),
+        ),
+        ([2002, 2003, 2004, 2005], [1.0, 2.0, 3.0, np.nan]),
+        ([2003, 2004, 2005, 2006], [1.0, np.nan, 3.0, 4.0]),
+    ],
+)
+def test_interpolate_uniform_years(years, values):
+    df = ScmRun(
+        values,
+        columns={
+            "scenario": ["a_scenario"],
+            "model": ["a_model"],
+            "region": ["World"],
+            "variable": ["Emissions|BC"],
+            "unit": ["Mg /yr"],
+        },
+        index=years,
+    )
+    target_dates = [datetime(y, 1, 1) for y in years]
+
+    res = df.interpolate(
+        target_dates,
+        interpolation_type="linear",
+        extrapolation_type="linear",
+    )
+    with pytest.raises(AssertionError):
+        # difference in year lengths because of the leap years causes a small difference
+        npt.assert_array_almost_equal(res.values.squeeze(), [1.0, 2.0, 3.0, 4.0])
+
+    res = df.interpolate(
+        target_dates,
+        interpolation_type="linear",
+        extrapolation_type="linear",
+        uniform_year_length=True,
+    )
+    npt.assert_array_almost_equal(res.values.squeeze(), [1.0, 2.0, 3.0, 4.0])
+
+
+def test_interpolate_uniform_years_nonunique():
+    df = ScmRun(
+        [1, 2, 3],
+        columns={
+            "scenario": ["a_scenario"],
+            "model": ["a_model"],
+            "region": ["World"],
+            "variable": ["Emissions|BC"],
+            "unit": ["Mg /yr"],
+        },
+        index=[datetime(2000, 1, 1), datetime(2000, 2, 1), datetime(2000, 3, 1)],
+    )
+
+    match = "Non-unique year values with uniform_year_length=True"
+    with pytest.raises(ValueError, match=match):
+        df.interpolate(range(2000, 2003), uniform_year_length=True)
 
 
 def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
@@ -3758,7 +3845,6 @@ def test_overriding_registry(custom_unit_registry):
     pop = get_single_ts(variable="Population", unit="million population")
 
     with patch("scmdata.units.get_unit_registry", return_value=custom_unit_registry):
-
         res = pop.convert_unit("thousands population")
         assert res.get_unique_meta("unit", True) == "thousands population"
         npt.assert_allclose(res.values / 1000, pop.values)

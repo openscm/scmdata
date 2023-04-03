@@ -1356,9 +1356,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def interpolate(
         self,
-        target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
+        target_times: Union[
+            np.ndarray, Iterable[Union[dt.datetime, dt.date, int, float]]
+        ],
         interpolation_type: str = "linear",
-        extrapolation_type: str = "linear",
+        extrapolation_type: Optional[str] = "linear",
+        uniform_year_length: bool = False,
     ):
         """
         Interpolate the data onto a new time frame.
@@ -1371,6 +1374,16 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             Interpolation type. Options are 'linear'
         extrapolation_type: str or None
             Extrapolation type. Options are None, 'linear' or 'constant'
+        uniform_year_length: bool
+            If True, a 365-day calendar is assumed where each year has an equal length
+
+            By default, the interpolation takes into account the different number of
+            days in leap years.
+
+        Raises
+        ------
+        ValueError
+            If ``uniform_year_length=True`` and sub-annual timeseries are present
 
         Returns
         -------
@@ -1379,16 +1392,24 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             :obj:`target_times` grid
         """
         # pylint: disable=protected-access
+        target_times: TimePoints = TimePoints(target_times)
+        source_times: TimePoints = self.time_points
 
-        target_times = np.asarray(target_times, dtype="datetime64[s]")
+        if uniform_year_length:
+            source_time_values = source_times.years()
+
+            if len(np.unique(source_time_values)) != len(source_times):
+                raise ValueError("Non-unique year values with uniform_year_length=True")
+            target_time_values = target_times.years()
+        else:
+            source_time_values = source_times.values
+            target_time_values = target_times.values
 
         res = self.copy()
 
-        target_times = TimePoints(target_times)
-
         timeseries_converter = TimeseriesConverter(
-            self.time_points.values,
-            target_times.values,
+            source_time_values,
+            target_time_values,
             interpolation_type=interpolation_type,
             extrapolation_type=extrapolation_type,
         )
