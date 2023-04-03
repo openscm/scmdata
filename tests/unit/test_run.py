@@ -126,6 +126,7 @@ def test_init_df_formats(test_pd_run_df, in_format):
         res_df[test_pd_run_df.columns.tolist()],
         test_pd_run_df,
         check_like=True,
+        check_names=False,
     )
 
 
@@ -289,7 +290,9 @@ def test_init_with_ts(test_ts, test_pd_df):
     )
 
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
-    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
+    pd.testing.assert_frame_equal(
+        df.timeseries().reset_index(), tdf, check_like=True, check_names=False
+    )
 
     b = ScmRun(test_pd_df)
 
@@ -329,7 +332,9 @@ def test_init_with_years_as_str(test_pd_df, years):
 def test_init_with_year_columns(test_pd_df):
     df = ScmRun(test_pd_df)
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
-    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
+    pd.testing.assert_frame_equal(
+        df.timeseries().reset_index(), tdf, check_like=True, check_names=False
+    )
 
 
 def test_init_with_decimal_years():
@@ -372,7 +377,9 @@ def test_init_df_with_extra_col(test_pd_df):
 
     tdf = get_test_pd_df_with_datetime_columns(tdf)
     assert extra_col in df.meta
-    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True)
+    pd.testing.assert_frame_equal(
+        df.timeseries().reset_index(), tdf, check_like=True, check_names=False
+    )
 
 
 def test_init_df_without_required_arguments(test_run_ts):
@@ -981,16 +988,16 @@ def test_filter_timeseries_nan_meta():
 
 
 def test_filter_index(scm_run):
-    pd.testing.assert_index_equal(scm_run.meta.index, pd.Int64Index([0, 1, 2]))
+    pd.testing.assert_index_equal(scm_run.meta.index, pd.Index([0, 1, 2], dtype=int))
 
     run = scm_run.filter(variable="Primary Energy")
-    exp_index = pd.Int64Index([0, 2])
+    exp_index = pd.Index([0, 2], dtype=int)
     pd.testing.assert_index_equal(run["variable"].index, exp_index)
     pd.testing.assert_index_equal(run.meta.index, exp_index)
     pd.testing.assert_index_equal(run._df.columns, exp_index)
 
     run = scm_run.filter(variable="Primary Energy", keep=False)
-    exp_index = pd.Int64Index([1])
+    exp_index = pd.Index([1], dtype=int)
     pd.testing.assert_index_equal(run["variable"].index, exp_index)
     pd.testing.assert_index_equal(run.meta.index, exp_index)
     pd.testing.assert_index_equal(run._df.columns, exp_index)
@@ -998,7 +1005,7 @@ def test_filter_index(scm_run):
 
 def test_append_index(scm_run):
     def _check(res, reversed):
-        exp_index = pd.Int64Index([0, 1, 2])
+        exp_index = pd.Index([0, 1, 2], dtype=int)
         pd.testing.assert_index_equal(res.meta.index, exp_index)
 
         exp_order = ["Primary Energy", "Primary Energy", "Primary Energy|Coal"]
@@ -1036,13 +1043,13 @@ def test_append_index_extra(scm_run):
         r = scm_run.filter(variable="Primary Energy")
         r["run_id"] = i + 1
 
-        pd.testing.assert_index_equal(r.meta.index, pd.Int64Index([0, 2]))
+        pd.testing.assert_index_equal(r.meta.index, pd.Index([0, 2], dtype=int))
         runs.append(r)
 
     res = run_append(runs)
 
     # note that the indexes are reset for subsequent appends and then increment
-    exp_index = pd.Int64Index([0, 1, 2, 3, 4, 5])
+    exp_index = pd.Index([0, 1, 2, 3, 4, 5], dtype=int)
     pd.testing.assert_index_equal(res.meta.index, exp_index)
     pd.testing.assert_series_equal(
         res["run_id"],
@@ -1313,7 +1320,10 @@ def test_quantile_over_lower(test_processing_scm_df):
     )
     obs = test_processing_scm_df.process_over("scenario", "quantile", q=0)
     pd.testing.assert_frame_equal(
-        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+        exp,
+        obs.reset_index(),
+        check_like=True,
+        check_names=False,
     )
 
 
@@ -1335,7 +1345,10 @@ def test_quantile_over_upper(test_processing_scm_df):
     )
     obs = test_processing_scm_df.process_over(["model", "scenario"], "quantile", q=1)
     pd.testing.assert_frame_equal(
-        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+        exp,
+        obs.reset_index(),
+        check_like=True,
+        check_names=False,
     )
 
 
@@ -1376,7 +1389,10 @@ def test_mean_over(test_processing_scm_df):
     )
     obs = test_processing_scm_df.process_over("scenario", "mean")
     pd.testing.assert_frame_equal(
-        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+        exp,
+        obs.reset_index(),
+        check_like=True,
+        check_names=False,
     )
 
 
@@ -1407,8 +1423,9 @@ def test_median_over(test_processing_scm_df):
         ],
     )
     obs = test_processing_scm_df.process_over("scenario", "median")
+
     pd.testing.assert_frame_equal(
-        exp.set_index(obs.index.names), obs, check_like=True, check_column_type=False
+        exp, obs.reset_index(), check_like=True, check_names=False
     )
 
 
@@ -1672,7 +1689,9 @@ def test_quantiles_over(test_processing_scm_df):
         cols=["model", "scenario"],
         quantiles=[0, 0.5, 1, "mean", "median"],
     )
-    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True)
+    pd.testing.assert_frame_equal(
+        exp.set_index(obs.index.names), obs, check_like=True, check_names=False
+    )
 
 
 def test_quantiles_over_operation_in_kwargs(test_processing_scm_df):
@@ -1902,7 +1921,9 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
 
         error_msg = exc_info.value.args[0]
         assert error_msg.startswith(exp_msg)
-        pd.testing.assert_frame_equal(base.meta.append(other.meta), exc_info.value.meta)
+        pd.testing.assert_frame_equal(
+            pd.concat([base.meta, other.meta]), exc_info.value.meta
+        )
 
         return
 

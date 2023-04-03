@@ -99,7 +99,7 @@ def test_no_scipy(scm_run):
     with pytest.raises(
         ImportError, match="scipy is not installed. Run 'pip install scipy'"
     ):
-        scm_run.integrate()
+        scm_run.cumtrapz()
 
 
 @OPS_MARK
@@ -222,7 +222,7 @@ def perform_pint_op(base, pint_obj, op):
     base_ts = base_ts.pint.quantify(level=unit_level)
 
     out = []
-    for _, series in base_ts.iteritems():
+    for _, series in base_ts.items():
         if op == "add":
             op_series = series + pint_obj
 
