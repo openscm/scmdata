@@ -2393,7 +2393,7 @@ def _merge_metadata(metadata):
 
 
 def run_append(
-    runs: List[T],
+    runs: Iterable[T],
     inplace: bool = False,
     duplicate_msg: Union[str, bool] = True,
     metadata: Optional[MetadataType] = None,
