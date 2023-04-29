@@ -97,7 +97,7 @@ jobs:
     strategy:
       matrix:
         # Pandas v1.1 doesn't build python v3.9 wheels
-        python-version: [3.7]
+        python-version: [3.8]
         pandas-version: [1.0.5, 1.1]
 
     steps:

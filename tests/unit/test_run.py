@@ -1990,7 +1990,7 @@ def test_append_duplicate_times_error_msg(scm_run):
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_append_inplace(scm_run):
+def test_append_inplace_with_warning(scm_run):
     other = scm_run * 2
 
     obs = scm_run.filter(scenario="a_scenario2").timeseries().squeeze()
