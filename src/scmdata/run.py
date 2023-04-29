@@ -2390,6 +2390,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         return ret
 
 
+T = TypeVar("T", bound=BaseScmRun)
+
+
 def _merge_metadata(metadata):
     res = metadata[0].copy()
 
