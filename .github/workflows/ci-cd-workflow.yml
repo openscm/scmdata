@@ -86,6 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        # Pandas v1.1 doesn't build python v3.9 wheels
         python-version: [3.8]
         pandas-version: [1.1]
 
