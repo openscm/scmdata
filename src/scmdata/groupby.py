@@ -3,10 +3,42 @@ Functionality for grouping and filtering ScmRun objects
 """
 import warnings
 from collections.abc import Iterable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    List,
+    ParamSpec,
+    Protocol,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
+import pandas as pd
 from xarray.core import ops
 from xarray.core.common import ImplementsArrayReduce
+
+import scmdata
+
+if TYPE_CHECKING:
+    from .run import BaseScmRun
+
+T = TypeVar("T", bound=BaseScmRun)
+
+
+class RunApplyCallback(Protocol, Generic[T]):
+    def __call__(self, value: T, *args: Any, **kwargs: Any) -> Union[T, None]:
+        ...
+
+
+class NumericApplyCallback(Protocol):
+    def __call__(
+        self, value: Union[pd.DataFrame, np.ndarray], *args: Any, **kwargs: Any
+    ) -> Union[pd.DataFrame, np.ndarray, None]:
+        ...
 
 
 def _maybe_wrap_array(original, new_array):
@@ -65,17 +97,20 @@ class _GroupBy(ImplementsArrayReduce):
         return self._iter_grouped()
 
 
-class RunGroupBy(_GroupBy):
+P = ParamSpec("P")
+
+
+class RunGroupBy(_GroupBy, Generic[T]):
     """
     GroupBy object specialized to grouping ScmRun objects
     """
 
-    def __init__(self, run, groups):
+    def __init__(self, run: T, groups: Iterable[str]):
         self.run = run
         self.group_keys = groups
         super().__init__(run.meta, groups)
 
-    def apply(self, func, *args, **kwargs):
+    def apply(self, func: RunApplyCallback[T], *args: Any, **kwargs: Any) -> T:
         """
         Apply a function to each group and append the results
 
@@ -118,7 +153,7 @@ class RunGroupBy(_GroupBy):
         ]
         return self._combine(applied)
 
-    def map(self, func, *args, **kwargs):
+    def map(self, func: RunApplyCallback, *args: Any, **kwargs: Any) -> T:
         """
         Apply a function to each group and append the results
 
@@ -133,19 +168,19 @@ class RunGroupBy(_GroupBy):
         warnings.warn("Use RunGroupby.apply instead", DeprecationWarning)
         return self.apply(func, *args, **kwargs)
 
-    def _combine(self, applied):
+    def _combine(self, applied: Sequence[Union[T, None]]) -> T:
         """
         Recombine the applied objects like the original.
         """
         from scmdata.run import run_append
 
         # Remove all None values
-        applied = [df for df in applied if df is not None]
+        applied_clean: List[T] = [df for df in applied if df is not None]
 
-        if len(applied) == 0:
-            return None
+        if len(applied_clean) == 0:
+            return scmdata.ScmRun()  # type: ignore
         else:
-            return run_append(applied)
+            return run_append(applied_clean)
 
     def reduce(self, func, dim=None, axis=None, **kwargs):
         """

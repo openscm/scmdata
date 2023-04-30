@@ -6,7 +6,7 @@ Thanks to the original author, Sven Willner
 """
 
 from datetime import datetime
-from typing import Type
+from typing import Any, Literal, Optional, Type
 
 import cftime
 import numpy as np
@@ -238,8 +238,8 @@ class TimeseriesConverter:
         self,
         source_time_points: np.ndarray,
         target_time_points: np.ndarray,
-        interpolation_type="linear",
-        extrapolation_type="linear",
+        interpolation_type: Literal["linear"] = "linear",
+        extrapolation_type: Optional[Literal["linear", "constant"]] = "linear",
     ):
         self.source = (
             np.array(source_time_points)
@@ -284,7 +284,7 @@ class TimeseriesConverter:
 
         return True
 
-    def _get_scipy_extrapolation_args(self, values: np.ndarray):
+    def _get_scipy_extrapolation_args(self, values: np.ndarray) -> dict[str, Any]:
         if self.extrapolation_type == "linear":
             return {"fill_value": "extrapolate"}
         if self.extrapolation_type == "constant":

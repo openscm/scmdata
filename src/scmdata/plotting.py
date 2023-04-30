@@ -5,8 +5,18 @@ See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 """
 import warnings
 from itertools import cycle
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import numpy as np
+
+from ._types import TimeAxisOptions
+
+if TYPE_CHECKING:
+    from matplotlib.axis import Axis
+    from matplotlib.patches import Patch
+
+    from .run import BaseScmRun
+
 
 # Copying https://github.com/IAMconsortium/pyam/blob/main/pyam/plotting.py
 RCMIP_SCENARIO_COLOURS = {
@@ -28,7 +38,9 @@ RCMIP_SCENARIO_COLOURS = {
 }
 
 
-def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
+def lineplot(
+    self: "BaseScmRun", time_axis: Optional[TimeAxisOptions] = None, **kwargs: Any
+) -> "Axis":  # pragma: no cover
     """
     Make a line plot via `seaborn's lineplot
     <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
@@ -88,20 +100,20 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
 
 
 def plumeplot(  # pragma: no cover
-    self,
-    ax=None,
-    quantiles_plumes=[((0.05, 0.95), 0.5), ((0.5,), 1.0)],
-    hue_var="scenario",
-    hue_label="Scenario",
-    palette=None,
-    style_var="variable",
-    style_label="Variable",
-    dashes=None,
-    linewidth=2,
-    time_axis=None,
-    pre_calculated=False,
-    quantile_over=("ensemble_member",),
-):
+    self: "BaseScmRun",
+    ax: Optional["Axis"] = None,
+    quantiles_plumes: Optional[list[tuple[tuple, float]]] = None,
+    hue_var: str = "scenario",
+    hue_label: str = "Scenario",
+    palette: Optional[Mapping[str, str]] = None,
+    style_var: str = "variable",
+    style_label: str = "Variable",
+    dashes: Optional[Mapping[str, str]] = None,
+    linewidth: Optional[int] = 2,
+    time_axis: Optional[TimeAxisOptions] = None,
+    pre_calculated: bool = False,
+    quantile_over: Iterable[str] = ("ensemble_member",),
+) -> Tuple["Axis", List["Patch"]]:
     """
     Make a plume plot, showing plumes for custom quantiles
 
@@ -117,6 +129,9 @@ def plumeplot(  # pragma: no cover
         length two, these two elements are the quantiles to plot and a plume
         will be made between these two quantiles. If the first element has
         length one, then a line will be plotted to represent this quantile.
+
+        Defaults to `[((0.05, 0.95), 0.5), ((0.5,), 1.0)]` if no values is
+        provided
 
     hue_var : str
         The column of ``self.meta`` which should be used to distinguish
@@ -204,6 +219,8 @@ def plumeplot(  # pragma: no cover
     except ImportError:  # pragma: no cover
         raise ImportError("matplotlib is not installed. Run 'pip install matplotlib'")
 
+    if quantiles_plumes is None:
+        quantiles_plumes = [((0.05, 0.95), 0.5), ((0.5,), 1.0)]
     if not pre_calculated:
         quantiles = [v for qv in quantiles_plumes for v in qv[0]]
         _pdf = type(self)(self.quantiles_over(quantile_over, quantiles=quantiles))
@@ -213,10 +230,10 @@ def plumeplot(  # pragma: no cover
     if ax is None:
         ax = plt.figure().add_subplot(111)
 
-    _palette = {} if palette is None else palette
+    _palette: Mapping[str, Any] = {} if palette is None else palette
 
     if dashes is None:
-        _dashes = {}
+        _dashes: Mapping[str, Any] = {}
         lines = ["-", "--", "-.", ":"]
         linestyle_cycler = cycle(lines)
     else:
@@ -230,7 +247,7 @@ def plumeplot(  # pragma: no cover
     for q, alpha in quantiles_plumes:
         for hdf in _pdf.groupby(hue_var):
             hue_value = hdf.get_unique_meta(hue_var, no_duplicates=True)
-            pkwargs = {"alpha": alpha}
+            pkwargs: Dict[str, Any] = {"alpha": alpha}
 
             for hsdf in hdf.groupby(style_var):
                 style_value = hsdf.get_unique_meta(style_var, no_duplicates=True)

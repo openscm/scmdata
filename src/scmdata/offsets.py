@@ -4,7 +4,7 @@ Allow stepping through time using :mod:`xarray`'s offset functionality
 Provides similar functionality to https://pandas.pydata.org/pandas-docs/stable/user_gui
 de/timeseries.html#dateoffset-objects
 """
-from typing import Iterable
+from typing import Iterable, Type
 
 import cftime
 from xarray.coding import cftime_offsets
@@ -15,7 +15,7 @@ def generate_range(
     start: cftime.datetime,
     end: cftime.datetime,
     offset: cftime_offsets.BaseCFTimeOffset,
-    date_cls: cftime.datetime = cftime.DatetimeGregorian,
+    date_cls: Type[cftime.datetime] = cftime.DatetimeGregorian,
 ) -> Iterable[cftime.datetime]:
     """
     Generate a range of datetime objects between start and end, using offset to

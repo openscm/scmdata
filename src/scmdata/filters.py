@@ -13,9 +13,10 @@ import numpy as np
 import pandas as pd
 
 HIERARCHY_SEPARATOR = "|"
+ValidMetaValue = Union[str, float, int]
 
 
-def is_in(vals: List, items: List) -> np.ndarray:
+def is_in(vals: Iterable, items: Iterable) -> np.ndarray:
     """
     Find elements of vals which are in items.
 
@@ -38,11 +39,11 @@ def is_in(vals: List, items: List) -> np.ndarray:
 
 
 def find_depth(
-    meta_col: pd.Series,
+    meta_col: pd.Series[ValidMetaValue],
     s: str,
     level: Union[int, str],
     separator: str = HIERARCHY_SEPARATOR,
-) -> np.ndarray:
+) -> list[ValidMetaValue]:
     """
     Find all values which match given depth from a filter keyword.
 
@@ -105,8 +106,8 @@ def find_depth(
 
 
 def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
-    meta_col: pd.Series,
-    values: Union[Iterable[str], str],
+    meta_col: pd.Series[ValidMetaValue],
+    values: Union[Iterable[str], str, Iterable[float], float],
     level: Optional[Union[str, int]] = None,
     regexp: bool = False,
     separator: str = HIERARCHY_SEPARATOR,
@@ -185,7 +186,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
 
                 if level is not None:
                     depth = find_depth(meta_col, str(s), level, separator=separator)
-                    subset = set(subset).intersection(set(depth))
+                    subset = list(set(subset).intersection(set(depth)))
 
                 matches |= meta_col.isin(subset)
         else:
@@ -200,7 +201,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     return matches
 
 
-def years_match(data: List, years: Union[List[int], np.ndarray, int]) -> np.ndarray:
+def years_match(data: Iterable, years: Union[List[int], np.ndarray, int]) -> np.ndarray:
     """
     Match years in time columns for data filtering.
 
@@ -236,7 +237,7 @@ def years_match(data: List, years: Union[List[int], np.ndarray, int]) -> np.ndar
 
 
 def month_match(
-    data: List, months: Union[List[str], List[int], int, str]
+    data: Iterable, months: Union[List[str], List[int], int, str]
 ) -> np.ndarray:
     """
     Match months in time columns for data filtering.
@@ -257,7 +258,9 @@ def month_match(
     return time_match(data, months, ["%b", "%B"], "tm_mon", "month")
 
 
-def day_match(data: List, days: Union[List[str], List[int], int, str]) -> np.ndarray:
+def day_match(
+    data: Iterable, days: Union[List[str], List[int], int, str]
+) -> np.ndarray:
     """
     Match days in time columns for data filtering.
 
@@ -277,7 +280,7 @@ def day_match(data: List, days: Union[List[str], List[int], int, str]) -> np.nda
     return time_match(data, days, ["%a", "%A"], "tm_wday", "day")
 
 
-def hour_match(data: List, hours: Union[List[int], int]) -> np.ndarray:
+def hour_match(data: Iterable, hours: Union[List[int], int]) -> np.ndarray:
     """
     Match hours in time columns for data filtering.
 
@@ -299,7 +302,7 @@ def hour_match(data: List, hours: Union[List[int], int]) -> np.ndarray:
 
 
 def time_match(
-    data: List,
+    data: Iterable,
     times: Union[List[str], List[int], int, str],
     conv_codes: List[str],
     strptime_attr: str,
@@ -389,7 +392,7 @@ def time_match(
 
 
 def datetime_match(
-    data: List, dts: Union[List[datetime.datetime], datetime.datetime]
+    data: Iterable, dts: Union[List[datetime.datetime], datetime.datetime]
 ) -> np.ndarray:
     """
     Match datetimes in time columns for data filtering.

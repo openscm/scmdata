@@ -6,7 +6,7 @@ Functionality for handling and storing individual time-series
 
 import copy
 import datetime as dt
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List, Literal, Optional, Union
 
 import numpy as np
 import pint
@@ -169,7 +169,7 @@ class TimeSeries(OpsMixin):
         return self._data.attrs
 
     @property
-    def time_points(self):
+    def time_points(self) -> TimePoints:
         """
         Time points of the data
 
@@ -203,9 +203,9 @@ class TimeSeries(OpsMixin):
         self,
         other,
         f: Callable[..., Any],
-        reflexive=False,
+        reflexive: bool = False,
         **kwargs,
-    ) -> Callable[..., "TimeSeries"]:
+    ) -> "TimeSeries":
         other_data = getattr(other, "_data", other)
 
         if isinstance(other, pint.Quantity):
@@ -226,7 +226,7 @@ class TimeSeries(OpsMixin):
 
         return TimeSeries(ts)
 
-    def _inplace_binary_op(self, other, f: Callable) -> Callable[..., "TimeSeries"]:
+    def _inplace_binary_op(self, other, f: Callable) -> "TimeSeries":
         other_data = getattr(other, "_data", other)
         f(self._data, other_data)
         return self
@@ -261,8 +261,8 @@ class TimeSeries(OpsMixin):
     def interpolate(
         self,
         target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
-        interpolation_type: str = "linear",
-        extrapolation_type: str = "linear",
+        interpolation_type: Literal["linear"] = "linear",
+        extrapolation_type: Optional[Literal["linear", "constant"]] = "linear",
     ):
         """
         Interpolate the timeseries onto a new time axis
@@ -280,15 +280,15 @@ class TimeSeries(OpsMixin):
         :class:`TimeSeries`
             A new TimeSeries with the new time dimension
         """
-        target_times = TimePoints(target_times)
+        times = TimePoints(target_times)
         timeseries_converter = TimeseriesConverter(
             self.time_points.values,
-            target_times.values,
+            times.values,
             interpolation_type=interpolation_type,
             extrapolation_type=extrapolation_type,
         )
 
-        ts = self.reindex(target_times.as_cftime())
+        ts = self.reindex(times.as_cftime())
         ts._data[:] = timeseries_converter.convert_from(self._data.values)
 
         return ts
