@@ -54,6 +54,8 @@ _logger = getLogger(__name__)
 MetadataType = Dict[str, Union[str, int, float]]
 ApplyCallable = Callable[[pd.DataFrame], Union[pd.DataFrame, pd.Series, float]]
 
+T = TypeVar("T", bound="BaseScmRun")
+
 
 def _read_file(  # pylint: disable=missing-return-doc
     fnames: str, required_cols: Tuple[str], *args: Any, **kwargs: Any
@@ -303,7 +305,7 @@ def _from_ts(
     return df, meta
 
 
-def _get_target(run, inplace):
+def _get_target(run: T, inplace: bool) -> T:
     if inplace:
         return run
     else:
@@ -315,7 +317,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     Base class of a data container for timeseries data
     """
 
-    required_cols = ("variable", "unit")
+    required_cols: Tuple[str, ...] = ("variable", "unit")
     """
     Required metadata columns
 
@@ -2368,9 +2370,6 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         return ret
 
 
-T = TypeVar("T", bound=BaseScmRun)
-
-
 def _merge_metadata(metadata):
     res = metadata[0].copy()
 
@@ -2577,7 +2576,7 @@ class ScmRun(BaseScmRun):
     Data container for holding one or many time-series of SCM data.
     """
 
-    required_cols = ("model", "scenario", "region", "variable", "unit")
+    required_cols: Tuple[str, ...] = ("model", "scenario", "region", "variable", "unit")
     """
     Minimum metadata columns required by an ScmRun.
 

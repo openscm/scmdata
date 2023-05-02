@@ -96,7 +96,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Pandas v1.1 doesn't build python v3.9 wheels
         python-version: [3.8]
         pandas-version: [1.0.5, 1.1]
 
@@ -112,7 +111,7 @@ jobs:
           pip install --upgrade pip wheel
           pip install -e .[tests,plotting,optional]
 
-          pip install pandas==${{ matrix.pandas-version }}
+          pip install pandas==${{ matrix.pandas-version }} numpy=1.20.0
 
       - name: Test with pytest
         env:
