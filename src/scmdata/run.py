@@ -10,7 +10,18 @@ import numbers
 import os
 import warnings
 from logging import getLogger
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import cftime
 import numpy as np
@@ -2381,7 +2392,7 @@ def _merge_metadata(metadata):
 
 
 def run_append(
-    runs: Iterable[T],
+    runs: Sequence[T],
     inplace: bool = False,
     duplicate_msg: Union[str, bool] = True,
     metadata: Optional[MetadataType] = None,
@@ -2458,7 +2469,7 @@ def run_append(
 
         No runs are provided to be appended
     """
-    if not isinstance(runs, list):
+    if not isinstance(runs, Sequence):
         raise TypeError("runs is not a list")
 
     if not len(runs):
