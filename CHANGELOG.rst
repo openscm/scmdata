@@ -4,7 +4,7 @@ Changelog
 master
 ------
 
-- (`#232 <https://github.com/openscm/scmdata/pull/232>`_) Update inplace operations to always return a result (closes `#230 <https://github.com/openscm/scmdata/issues/230>`_)
+- (`#232 <https://github.com/openscm/scmdata/pull/232>`_) Update inplace operations to always return a result (closes `#230 <https://github.com/openscm/scmdata/issues/230>`_). Removes support for pandas==1.0.5
 
 v0.15.0
 -------
