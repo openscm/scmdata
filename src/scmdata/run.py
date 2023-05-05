@@ -10,7 +10,18 @@ import numbers
 import os
 import warnings
 from logging import getLogger
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import cftime
 import numpy as np
@@ -19,6 +30,7 @@ import pandas as pd
 import pandas.io.common
 import pint
 from dateutil import parser
+from typing_extensions import Self
 
 import scmdata.units
 
@@ -52,6 +64,8 @@ _logger = getLogger(__name__)
 
 MetadataType = Dict[str, Union[str, int, float]]
 ApplyCallable = Callable[[pd.DataFrame], Union[pd.DataFrame, pd.Series, float]]
+
+T = TypeVar("T", bound="BaseScmRun")
 
 
 def _read_file(  # pylint: disable=missing-return-doc
@@ -302,7 +316,7 @@ def _from_ts(
     return df, meta
 
 
-def _get_target(run, inplace):
+def _get_target(run: T, inplace: bool) -> T:
     if inplace:
         return run
     else:
@@ -314,7 +328,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     Base class of a data container for timeseries data
     """
 
-    required_cols = ("variable", "unit")
+    required_cols: Tuple[str, ...] = ("variable", "unit")
     """
     Required metadata columns
 
@@ -748,7 +762,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         df._df.values[:] = res.T
         return df
 
-    def drop_meta(self, columns: Union[list, str], inplace: Optional[bool] = False):
+    def drop_meta(
+        self, columns: Union[list, str], inplace: Optional[bool] = False
+    ) -> Self:
         """
         Drop meta columns out of the Run
 
@@ -757,12 +773,16 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         columns
             The column or columns to drop
         inplace
-            If True, do operation inplace and return None.
+            If True, do operation inplace, otherwise a copy is performed.
 
         Raises
         ------
         KeyError
             If any of the columns do not exist in the meta :class:`DataFrame`
+
+        Returns
+        -------
+            Object without the specified meta columns.
         """
         ret = _get_target(self, inplace)
 
@@ -781,8 +801,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         if ret._duplicated_meta():
             raise NonUniqueMetadataError(ret.meta)
 
-        if not inplace:
-            return ret
+        return ret
 
     @property
     def meta_attributes(self):
@@ -1048,7 +1067,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         inplace: bool = False,
         log_if_empty: bool = True,
         **kwargs: Any,
-    ):
+    ) -> Self:
         """
         Return a filtered ScmRun (i.e., a subset of the data).
 
@@ -1117,7 +1136,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             timeseries satisfying the filters
 
         inplace
-            If True, do operation inplace and return None
+            If True, do operation inplace, otherwise a copy is performed.
 
         log_if_empty
             If ``True``, log a warning level message if the result is empty.
@@ -1146,7 +1165,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Returns
         -------
         :class:`ScmRun <scmdata.run.ScmRun>`
-            If not ``inplace``, return a new instance with the filtered data.
+            Object containing a filtered subset of timeseries.
         """
         ret = copy.copy(self) if not inplace else self
 
@@ -1177,10 +1196,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         if log_if_empty and ret.empty:
             _logger.warning("Filtered ScmRun is empty!", stack_info=True)
 
-        if not inplace:
-            return ret
-
-        return None
+        return ret
 
     # pylint doesn't recognise ',' in returns type definition
     def _apply_filters(  # pylint: disable=missing-return-doc
@@ -1683,7 +1699,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Returns
         -------
-        :class:`pandas.DataFrame` or :class:`pandas.Series`  or :class:`scmdata.ScmRun`
+        :class:`pandas.DataFrame` or :class:`pandas.Series` or :class:`scmdata.ScmRun`
             The result of ``operation``, grouped by all columns in :attr:`meta`
             other than :obj:`cols`
 
@@ -1970,7 +1986,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         context: Optional[str] = None,
         inplace: bool = False,
         **kwargs: Any,
-    ):
+    ) -> Self:
         """
         Convert the units of a selection of timeseries.
 
@@ -1988,7 +2004,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             CO2-equivalent calculations will raise :class:`DimensionalityError`.
 
         inplace
-            If True, apply the conversion inplace and return None
+            If True, apply the conversion inplace, otherwise a copy is performed.
 
         **kwargs
             Extra arguments which are passed to :meth:`~ScmRun.filter` to
@@ -1998,8 +2014,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Returns
         -------
         :class:`ScmRun <scmdata.run.ScmRun>`
-            If :obj:`inplace` is not ``False``, a new :class:`ScmRun <scmdata.run.ScmRun>` instance
-            with the converted units.
+            A :class:`ScmRun <scmdata.run.ScmRun>` object containing converted units.
 
         Notes
         -----
@@ -2053,8 +2068,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             ret = ret.groupby("unit").apply(apply_units)
 
         ret = run_append([ret, to_not_convert], inplace=inplace)
-        if not inplace:
-            return ret
+
+        return ret
 
     @staticmethod
     def _check_unit_context(dat, context):
@@ -2117,12 +2132,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def append(
         self,
-        other,
+        other: "BaseScmRun",
         inplace: bool = False,
         duplicate_msg: Union[str, bool] = True,
         metadata: Optional[MetadataType] = None,
         **kwargs: Any,
-    ):
+    ) -> Self:
         """
         Append additional data to the current data.
 
@@ -2131,11 +2146,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Parameters
         ----------
         other
-            Data (in format which can be cast to :class:`ScmRun <scmdata.run.ScmRun>`) to append
+            Data (in format which can be cast to :class:`ScmRun <scmdata.run.ScmRun>`) to
+             append.
 
         inplace
-            If ``True``, append data in place and return ``None``. Otherwise, return a
-            new :class:`ScmRun <scmdata.run.ScmRun>` instance with the appended data.
+            If ``True``, append data in place, modifying the current object. Otherwise,
+            a new :class:`ScmRun <scmdata.run.ScmRun>` instance is created.
 
         duplicate_msg
             If ``True``, raise a :class:`scmdata.errors.NonUniqueMetadataError` error
@@ -2156,8 +2172,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         Returns
         -------
         :class:`ScmRun <scmdata.run.ScmRun>`
-            If not :obj:`inplace`, return a new :class:`ScmRun <scmdata.run.ScmRun>` instance
-            containing the result of the append.
+            Object containing the results of appending the timeseries in ``other``.
 
         Raises
         ------
@@ -2289,8 +2304,6 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         NotImplementedError
             If `axis` is anything other than 0
-
-
         """
         if dim is not None:
             raise ValueError("ScmRun.reduce does not handle dim. Use axis instead")
@@ -2330,7 +2343,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
             return type(self)(data, index=index, columns=meta)
 
-    def round(self, decimals=3, inplace=False):
+    def round(self, decimals=3, inplace=False) -> Self:
         """
         Round data to a given number of decimal places.
 
@@ -2344,13 +2357,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             Number of decimal places to round each value to.
 
         inplace : bool
-            If True, apply the conversion inplace and return None
+            If True, apply the conversion inplace, otherwise a copy is performed.
 
         Returns
         -------
         :class:`ScmRun <scmdata.run.ScmRun>`
-            If :obj:`inplace` is not ``False``, a new :class:`ScmRun <scmdata.run.ScmRun>` instance
-            with the rounded values.
+            :class:`ScmRun <scmdata.run.ScmRun>` containing the rounded values.
 
         """
         ret = _get_target(self, inplace)
@@ -2366,8 +2378,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         ret._df = ret._df.round(decimals)
 
-        if not inplace:
-            return ret
+        return ret
 
 
 def _merge_metadata(metadata):
@@ -2381,11 +2392,11 @@ def _merge_metadata(metadata):
 
 
 def run_append(
-    runs: List[BaseScmRun],
+    runs: Sequence[T],
     inplace: bool = False,
     duplicate_msg: Union[str, bool] = True,
     metadata: Optional[MetadataType] = None,
-) -> Optional[BaseScmRun]:
+) -> T:
     """
     Append together many objects.
 
@@ -2425,8 +2436,8 @@ def run_append(
         The runs to append. Values will be attempted to be cast to :class:`ScmRun <scmdata.run.ScmRun>`.
 
     inplace
-        If ``True``, then the operation updates the first item in :obj:`runs` and returns
-        ``None``.
+        If ``True``, then the operation updates the first item in :obj:`runs` inplace.
+        Otherwise, the results are appended to a new object.
 
     duplicate_msg
         If ``True``, raise a ``NonUniqueMetadataError`` error so the user can
@@ -2442,8 +2453,8 @@ def run_append(
     Returns
     -------
     :class:`ScmRun <scmdata.run.ScmRun>`
-        If not :obj:`inplace`, the return value is the object containing the merged
-        data. The resultant class will be determined by the type of the first object.
+        Object containing the appended data. The resultant class will be determined by
+        the type of the first object.
 
     Raises
     ------
@@ -2458,7 +2469,7 @@ def run_append(
 
         No runs are provided to be appended
     """
-    if not isinstance(runs, list):
+    if not isinstance(runs, Sequence):
         raise TypeError("runs is not a list")
 
     if not len(runs):
@@ -2547,8 +2558,7 @@ def run_append(
     else:
         ret.metadata = _merge_metadata([r.metadata for r in runs])
 
-    if not inplace:
-        return ret
+    return ret
 
 
 def _handle_potential_duplicates_in_append(data, duplicate_msg):
@@ -2577,7 +2587,7 @@ class ScmRun(BaseScmRun):
     Data container for holding one or many time-series of SCM data.
     """
 
-    required_cols = ("model", "scenario", "region", "variable", "unit")
+    required_cols: Tuple[str, ...] = ("model", "scenario", "region", "variable", "unit")
     """
     Minimum metadata columns required by an ScmRun.
 

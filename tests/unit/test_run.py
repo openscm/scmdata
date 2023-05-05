@@ -30,6 +30,8 @@ from scmdata.testing import (
     get_single_ts,
 )
 
+inplace_params = pytest.mark.parametrize("inplace", [True, False])
+
 
 @pytest.fixture
 def scm_run_interpolated(scm_run):
@@ -671,13 +673,24 @@ def test_filter_year_list(year_list, test_scm_run_datetimes):
     assert (res["year"].unique() == expected).all()
 
 
-def test_filter_inplace(test_scm_run_datetimes):
-    test_scm_run_datetimes.filter(year=2005, inplace=True)
-    expected = dt.datetime(2005, 6, 17, 12)
+@inplace_params
+def test_filter_inplace(test_scm_run_datetimes, inplace):
+    exp = test_scm_run_datetimes.filter(year=2005, inplace=False)
 
-    unique_time = test_scm_run_datetimes["time"].unique()
-    assert len(unique_time) == 1
-    assert unique_time[0] == expected
+    if inplace:
+        res = test_scm_run_datetimes.filter(year=2005, inplace=True)
+        assert id(res) == id(test_scm_run_datetimes)
+
+        expected = dt.datetime(2005, 6, 17, 12)
+
+        unique_time = test_scm_run_datetimes["time"].unique()
+        assert len(unique_time) == 1
+        assert unique_time[0] == expected
+    else:
+        res = test_scm_run_datetimes.filter(year=2005, inplace=False)
+        assert id(res) != id(test_scm_run_datetimes)
+
+    assert_scmdf_almost_equal(exp, res)
 
 
 @pytest.mark.parametrize("test_month", [6, "June", "Jun", "jun", ["Jun", "jun"]])
@@ -1977,7 +1990,7 @@ def test_append_duplicate_times_error_msg(scm_run):
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-def test_append_inplace(scm_run):
+def test_append_inplace_with_warning(scm_run):
     other = scm_run * 2
 
     obs = scm_run.filter(scenario="a_scenario2").timeseries().squeeze()
@@ -3340,7 +3353,7 @@ def test_get_meta_no_duplicates(scm_run, no_duplicates):
         ]
 
 
-@pytest.mark.parametrize("inplace", [True, False])
+@inplace_params
 @pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
 def test_drop_meta(scm_run, label, inplace):
     if type(label) == str:
@@ -3352,8 +3365,8 @@ def test_drop_meta(scm_run, label, inplace):
             assert lbl in scm_run.meta.columns
 
     if inplace:
-        scm_run.drop_meta(label, inplace=True)
-        res = scm_run
+        res = scm_run.drop_meta(label, inplace=True)
+        assert id(res) == id(scm_run)
     else:
         res = scm_run.drop_meta(label, inplace=False)
         assert id(res) != id(scm_run)
@@ -3630,6 +3643,29 @@ def test_append_long_run(tax1, tax2):
     assert res.get_unique_meta("scenario") == ["run1", "run2"]
 
 
+@inplace_params
+@pytest.mark.parametrize("use_cls_method", [True, False])
+def test_append_inplace(scm_run, inplace, use_cls_method):
+    run1 = scm_run.copy()
+    run1["ensemble_member"] = 1
+    run2 = scm_run.copy()
+    run2["ensemble_member"] = 2
+
+    exp = run_append([run1, run2])
+
+    if use_cls_method:
+        res = run1.append(run2, inplace=inplace)
+    else:
+        res = run_append([run1, run2], inplace=inplace)
+
+    if inplace:
+        assert id(res) == id(run1)
+    else:
+        assert id(res) != id(run1)
+
+    assert_scmdf_almost_equal(res, exp)
+
+
 @pytest.mark.parametrize(
     "metadata_1,metadata_2,metadata,expected",
     (
@@ -3653,7 +3689,7 @@ def test_append_long_run(tax1, tax2):
         ),
     ),
 )
-@pytest.mark.parametrize("inplace", [True, False])
+@inplace_params
 @pytest.mark.parametrize("use_cls_method", [True, False])
 def test_append_metadata(
     scm_run, metadata_1, metadata_2, metadata, expected, inplace, use_cls_method
@@ -3669,9 +3705,6 @@ def test_append_metadata(
         res = run1.append(run2, metadata=metadata, inplace=inplace)
     else:
         res = run_append([run1, run2], metadata=metadata, inplace=inplace)
-
-    if inplace:
-        res = run1
 
     assert res.metadata == expected
 
