@@ -3,8 +3,7 @@
 Installation
 ============
 
-scmdata is tested to work with Python 3.6 and above
-
+scmdata is tested to work with Python 3.8 and above
 
 
 Installing with conda

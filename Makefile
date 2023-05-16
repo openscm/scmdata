@@ -3,8 +3,6 @@
 VENV_DIR ?= venv
 TESTS_DIR=$(PWD)/tests
 
-NOTEBOOKS_DIR=./notebooks
-NOTEBOOKS_SANITIZE_FILE=$(TESTS_DIR)/notebook-tests.cfg
 
 define PRINT_HELP_PYSCRIPT
 import re, sys
@@ -28,7 +26,6 @@ checks: $(VENV_DIR)  ## run all the checks
 		echo "\n\n=== isort ==="; $(VENV_DIR)/bin/isort --check-only --quiet src tests setup.py || echo "--- isort failed ---" >&2; \
 		echo "\n\n=== pydocstyle ==="; $(VENV_DIR)/bin/pydocstyle src || echo "--- pydocstyle failed ---" >&2; \
 		echo "\n\n=== pylint ==="; $(VENV_DIR)/bin/pylint src || echo "--- pylint failed ---" >&2; \
-		echo "\n\n=== notebook tests ==="; $(VENV_DIR)/bin/pytest notebooks -r a --nbval --sanitize-with tests/notebook-tests.cfg || echo "--- notebook tests failed ---" >&2; \
 		echo "\n\n=== tests ==="; $(VENV_DIR)/bin/pytest tests --cov -rfsxEX --cov-report term-missing || echo "--- tests failed ---" >&2; \
 		echo "\n\n=== docs ==="; $(VENV_DIR)/bin/sphinx-build -M html docs/source docs/build -qW || echo "--- docs failed ---" >&2; \
 		echo
@@ -61,19 +58,6 @@ docs: $(VENV_DIR)  ## build the docs
 .PHONY: test
 test:  $(VENV_DIR) ## run the full testsuite
 	$(VENV_DIR)/bin/pytest --cov -rfsxEX --cov-report term-missing
-
-.PHONY: test-notebooks
-test-notebooks: $(VENV_DIR)  ## test the notebooks
-	$(VENV_DIR)/bin/pytest -r a --nbval $(NOTEBOOKS_DIR) --sanitize-with $(NOTEBOOKS_SANITIZE_FILE)
-
-.PHONY: format-notebooks
-format-notebooks: $(VENV_DIR)  ## format the notebooks
-	@status=$$(git status --porcelain $(NOTEBOOKS_DIR)); \
-	if test ${FORCE} || test "x$${status}" = x; then \
-		$(VENV_DIR)/bin/black-nb $(NOTEBOOKS_DIR); \
-	else \
-		echo Not trying any formatting. Working directory is dirty ... >&2; \
-	fi;
 
 
 test-testpypi-install: $(VENV_DIR)  ## test whether installing from test PyPI works
