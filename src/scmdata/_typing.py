@@ -1,6 +1,7 @@
 """
 Commonly used typehints
 """
+from os import PathLike  # noqa
 from typing import Callable, Dict, Union
 
 import pandas as pd

@@ -364,7 +364,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Parameters
         ----------
-        data: Union[ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str, PathLike]
+        data: Union[ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str, pathlib.Path]
             If a :class:`ScmRun <scmdata.run.ScmRun>` object is provided, then a new
             :class:`ScmRun <scmdata.run.ScmRun>` is created with a copy of the values and metadata from :obj:
             `data`.
@@ -378,7 +378,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             ``(n_times, n_series)`` where `n_times` is the number of timesteps and
             `n_series` is the number of time series.
 
-            If a string is passed, data will be attempted to be read from file.
+            If a string or :class:`pathlib.Path` is passed, data will be attempted to be
+            read from file.
+
             Currently, reading from CSV, gzipped CSV and Excel formatted files is
             supported. The string could be a URL in a format handled by pandas.
             Valid URL schemes include http, ftp, s3, gs, and file if pandas>1.2
