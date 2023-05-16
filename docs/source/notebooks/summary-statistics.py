@@ -32,7 +32,6 @@ import pandas as pd
 
 from scmdata.run import ScmRun, run_append
 
-
 # %% [markdown]
 # ## Helper bits and piecs
 

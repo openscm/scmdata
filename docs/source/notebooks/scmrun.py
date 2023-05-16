@@ -30,7 +30,6 @@ from pint.errors import DimensionalityError
 from scmdata import ScmRun
 from scmdata.errors import NonUniqueMetadataError
 
-
 # %% [markdown]
 # ## Loading data
 #

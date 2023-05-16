@@ -32,7 +32,6 @@ import xarray as xr
 from scmdata.netcdf import nc_to_run
 from scmdata.run import ScmRun, run_append
 
-
 # %% [markdown]
 # ## Helper bits and piecs
 

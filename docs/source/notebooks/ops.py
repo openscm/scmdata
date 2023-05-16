@@ -15,6 +15,14 @@
 
 # %%
 import os
+import traceback
+import warnings
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from scmdata import ScmRun, run_append
+
 # %% [markdown]
 # # Operations
 #
@@ -40,17 +48,6 @@ import os
 # ## Load some data
 #
 # We first load some test data.
-
-# %%
-
-import traceback
-import warnings
-
-import matplotlib.pyplot as plt
-import pandas as pd
-
-from scmdata import ScmRun, run_append
-
 # %%
 
 db_emms = ScmRun("rcp26_emissions.csv", lowercase_cols=True)

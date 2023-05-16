@@ -21,35 +21,23 @@ help:
 
 checks: $(VENV_DIR)  ## run all the checks
 	@echo "=== bandit ==="; $(VENV_DIR)/bin/bandit -c .bandit.yml -r src || echo "--- bandit failed ---" >&2; \
-		echo "\n\n=== black ==="; $(VENV_DIR)/bin/black --check src tests setup.py docs/source/conf.py || echo "--- black failed ---" >&2; \
+		echo "\n\n=== black ==="; $(VENV_DIR)/bin/black --check src tests setup.py docs || echo "--- black failed ---" >&2; \
 		echo "\n\n=== flake8 ==="; $(VENV_DIR)/bin/flake8 src tests setup.py || echo "--- flake8 failed ---" >&2; \
 		echo "\n\n=== isort ==="; $(VENV_DIR)/bin/isort --check-only --quiet src tests setup.py || echo "--- isort failed ---" >&2; \
 		echo "\n\n=== pydocstyle ==="; $(VENV_DIR)/bin/pydocstyle src || echo "--- pydocstyle failed ---" >&2; \
 		echo "\n\n=== pylint ==="; $(VENV_DIR)/bin/pylint src || echo "--- pylint failed ---" >&2; \
 		echo "\n\n=== tests ==="; $(VENV_DIR)/bin/pytest tests --cov -rfsxEX --cov-report term-missing || echo "--- tests failed ---" >&2; \
-		echo "\n\n=== docs ==="; $(VENV_DIR)/bin/sphinx-build -M html docs/source docs/build -qW || echo "--- docs failed ---" >&2; \
+		echo "\n\n=== docs ==="; $(VENV_DIR)/bin/sphinx-build -M html docs/source docs/build -qn || echo "--- docs failed ---" >&2; \
 		echo
 
 .PHONY: format
-format:  ## re-format files
-	make isort
-	make black
+format: isort black ## re-format files
 
 black: $(VENV_DIR)  ## apply black formatter to source and tests
-	@status=$$(git status --porcelain src tests docs scripts); \
-	if test ${FORCE} || test "x$${status}" = x; then \
-		$(VENV_DIR)/bin/black setup.py src tests docs/source/conf.py scripts/*.py; \
-	else \
-		echo Not trying any formatting. Working directory is dirty ... >&2; \
-	fi;
+	$(VENV_DIR)/bin/black setup.py src tests docs scripts/*.py
 
 isort: $(VENV_DIR)  ## format the code
-	@status=$$(git status --porcelain src tests); \
-	if test ${FORCE} || test "x$${status}" = x; then \
-		$(VENV_DIR)/bin/isort src tests setup.py; \
-	else \
-		echo Not trying any formatting. Working directory is dirty ... >&2; \
-	fi;
+	$(VENV_DIR)/bin/isort src tests docs/source/notebooks setup.py
 
 .PHONY: docs
 docs: $(VENV_DIR)  ## build the docs
@@ -103,5 +91,4 @@ first-venv: ## create a new virtual environment for the very first repo setup
 	python3 -m venv $(VENV_DIR)
 
 	$(VENV_DIR)/bin/pip install --upgrade pip
-	$(VENV_DIR)/bin/pip install versioneer
 	# don't touch here as we don't want this venv to persist anyway
