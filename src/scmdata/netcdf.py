@@ -13,13 +13,18 @@ except ImportError:  # pragma: no cover
 
 from datetime import datetime
 from logging import getLogger
+from typing import TYPE_CHECKING, Any, Iterable
 
 import pandas as pd
 import xarray as xr
 
 from . import __version__
+from ._typing import FilePath
 
 logger = getLogger(__name__)
+
+if TYPE_CHECKING:
+    from scmdata.run import BaseScmRun
 
 
 def _var_to_nc(var):
@@ -45,7 +50,13 @@ def _get_xr_dataset_to_write(run, dimensions, extras):
     return xr_ds
 
 
-def _write_nc(fname, run, dimensions, extras, **kwargs):
+def _write_nc(
+    fname: FilePath,
+    run: "BaseScmRun",
+    dimensions: list[str],
+    extras: list[str],
+    **kwargs,
+):
     """
     Low level function to write the dimensions, variables and metadata to disk
     """
@@ -61,7 +72,7 @@ def _write_nc(fname, run, dimensions, extras, **kwargs):
     xr_ds.to_netcdf(fname, **write_kwargs)
 
 
-def _read_nc(cls, fname):
+def _read_nc(cls: "BaseScmRun", fname: FilePath):
     loaded = xr.load_dataset(fname, use_cftime=True)
     dataframe = loaded.to_dataframe()
 
@@ -129,7 +140,13 @@ def _update_kwargs_to_match_serialised_variable_names(xr_ds, in_kwargs):
     return _update_kwargs(in_kwargs)
 
 
-def run_to_nc(run, fname, dimensions=("region",), extras=(), **kwargs):
+def run_to_nc(
+    run: "BaseScmRun",
+    fname: FilePath,
+    dimensions: Iterable[str] = ("region",),
+    extras: Iterable[str] = (),
+    **kwargs: Any,
+):
     """
     Write timeseries to disk as a netCDF4 file
 
@@ -139,7 +156,7 @@ def run_to_nc(run, fname, dimensions=("region",), extras=(), **kwargs):
 
     Parameters
     ----------
-    fname : str
+    fname : str | pathlib.Path
         Path to write the file into
 
     dimensions : iterable of str
@@ -184,7 +201,7 @@ def run_to_nc(run, fname, dimensions=("region",), extras=(), **kwargs):
     _write_nc(fname, run, dimensions, extras, **kwargs)
 
 
-def nc_to_run(cls, fname):
+def nc_to_run(cls: "BaseScmRun", fname: FilePath):
     """
     Read a netCDF4 file from disk
 
@@ -207,7 +224,7 @@ def nc_to_run(cls, fname):
         raise
 
 
-def inject_nc_methods(cls):
+def inject_nc_methods(cls: "BaseScmRun"):
     """
     Add the to/from nc methods to a class
 

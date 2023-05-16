@@ -2,6 +2,7 @@ import copy
 import datetime as dt
 import logging
 import os
+import pathlib
 import re
 import warnings
 from datetime import datetime
@@ -3222,6 +3223,7 @@ def test_init_no_file():
     _check_pandas_less_120(),
     reason="pandas<1.2.0 gets confused about how to read xlsx files",
 )
+@pytest.mark.parametrize("use_pathlib", [True, False])
 @pytest.mark.parametrize(
     ("test_file", "test_kwargs"),
     [
@@ -3263,8 +3265,12 @@ def test_init_no_file():
         ),
     ],
 )
-def test_read_from_disk(test_file, test_kwargs, test_data_path):
-    loaded = ScmRun(os.path.join(test_data_path, test_file), **test_kwargs)
+def test_read_from_disk(test_file, test_kwargs, test_data_path, use_pathlib):
+    fname = os.path.join(test_data_path, test_file)
+
+    if use_pathlib:
+        fname = pathlib.Path(fname)
+    loaded = ScmRun(fname, **test_kwargs)
     assert (
         loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
         == 0.010116813
@@ -3953,3 +3959,16 @@ def test_overriding_registry(custom_unit_registry):
         res = pop.convert_unit("thousands population")
         assert res.get_unique_meta("unit", True) == "thousands population"
         npt.assert_allclose(res.values / 1000, pop.values)
+
+
+@pytest.mark.parametrize("use_pathlib", [True, False])
+def test_to_csv_pathlib(scm_run, use_pathlib, tmpdir: pathlib.Path):
+    fname = tmpdir / "test.csv"
+    fname_under_test = fname
+
+    if not use_pathlib:
+        fname_under_test = str(fname)
+
+    scm_run.to_csv(fname_under_test)
+
+    assert fname.exists()

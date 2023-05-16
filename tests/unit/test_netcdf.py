@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import re
 import tempfile
 from os.path import exists, join
@@ -17,9 +18,12 @@ from scmdata.netcdf import _get_xr_dataset_to_write, nc_to_run, run_to_nc
 from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
 
 
-def test_run_to_nc(scm_run):
+@pytest.mark.parametrize("use_pathlib", [True, False])
+def test_run_to_nc(scm_run, use_pathlib):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
+        if use_pathlib:
+            out_fname = pathlib.Path(out_fname)
         run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
         assert exists(out_fname)
@@ -157,6 +161,7 @@ def test_run_to_nc_nan_dimension_error(scm_run, tmpdir):
         run_to_nc(scm_run, out_fname, dimensions=("scenario", "run_id"))
 
 
+@pytest.mark.parametrize("use_pathlib", [True, False])
 @pytest.mark.parametrize(
     "dimensions",
     (
@@ -166,9 +171,11 @@ def test_run_to_nc_nan_dimension_error(scm_run, tmpdir):
         ("scenario", "variable", "time"),
     ),
 )
-def test_nc_to_run(scm_run, dimensions):
+def test_nc_to_run(scm_run, dimensions, use_pathlib):
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
+        if use_pathlib:
+            out_fname = pathlib.Path(out_fname)
         run_to_nc(scm_run, out_fname, dimensions=dimensions)
 
         assert exists(out_fname)
