@@ -13,7 +13,7 @@ except ImportError:  # pragma: no cover
 
 from datetime import datetime
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any, Iterable, List
 
 import pandas as pd
 import xarray as xr
@@ -53,8 +53,8 @@ def _get_xr_dataset_to_write(run, dimensions, extras):
 def _write_nc(
     fname: FilePath,
     run: "BaseScmRun",
-    dimensions: list[str],
-    extras: list[str],
+    dimensions: List[str],
+    extras: List[str],
     **kwargs,
 ):
     """
@@ -189,16 +189,15 @@ def run_to_nc(
     if not has_netcdf:
         raise ImportError("netcdf4 is not installed. Run 'pip install netcdf4'")
 
-    dimensions = list(dimensions)
-    extras = list(extras)
+    _dimensions = list(dimensions)
 
-    if "time" in dimensions:
-        dimensions.remove("time")
+    if "time" in _dimensions:
+        _dimensions.remove("time")
 
-    if "variable" in dimensions:
-        dimensions.remove("variable")
+    if "variable" in _dimensions:
+        _dimensions.remove("variable")
 
-    _write_nc(fname, run, dimensions, extras, **kwargs)
+    _write_nc(fname, run, _dimensions, list(extras), **kwargs)
 
 
 def nc_to_run(cls: "BaseScmRun", fname: FilePath):
