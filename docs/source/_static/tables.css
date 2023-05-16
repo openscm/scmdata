@@ -1,0 +1,4 @@
+/* Force wide pandas tables to scroll */
+.output.text_html {
+    overflow: scroll;
+}

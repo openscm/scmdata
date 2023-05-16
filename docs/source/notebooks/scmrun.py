@@ -19,11 +19,8 @@
 # *Suggestions for update:* add examples of handling of timeseries interpolation plus how the guessing works
 #
 # In this notebook we provide an overview of the capabilities provided by scmdata's `ScmRun` class. `ScmRun` provides a efficient interface to analyse timeseries data.
-
-# %%
 # ## Imports
-
-
+# %% tags=["remove-stdout", "remove-stderr"]
 import traceback
 
 import numpy as np

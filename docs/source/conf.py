@@ -141,6 +141,9 @@ nb_custom_formats = {".py": ["jupytext.reads", {"fmt": "py:percent"}]}
 # Pick your theme for html output, we typically use the read the docs theme
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+html_css_files = [
+    "tables.css",
+]
 html_context = {
     "display_github": True,
     "github_user": "openscm",
