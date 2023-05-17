@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.15.1
+-------
+
 - (`#239 <https://github.com/openscm/scmdata/pull/239>`_) Move notebooks into the documentation and an update of the documentation configuration
 - (`#238 <https://github.com/openscm/scmdata/pull/238>`_) Support :func:`scmdata.ScmRun` reading and writing files using `pathlib.Path` objects.
 - (`#232 <https://github.com/openscm/scmdata/pull/232>`_) Update inplace operations to always return a result (closes `#230 <https://github.com/openscm/scmdata/issues/230>`_). Removes support for pandas==1.0.5
