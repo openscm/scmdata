@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional, 
 
 import numpy as np
 
-from ._types import TimeAxisOptions
+from ._typing import TimeAxisOptions
 
 if TYPE_CHECKING:
     from matplotlib.axis import Axis
@@ -182,7 +182,7 @@ def plumeplot(  # pragma: no cover
     Examples
     --------
     >>> scmrun = ScmRun(
-    ...     data=np.random.random((10, 3)).T,
+    ...     data=np.random.random((10, 3)).AnyScmRun,
     ...     columns={
     ...         "model": ["a_iam"],
     ...         "climate_model": ["a_model"] * 5 + ["a_model_2"] * 5,

@@ -15,7 +15,7 @@ except ImportError:  # pragma: no cover
 
 from datetime import datetime
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Iterable, List
+from typing import TYPE_CHECKING, Any, Iterable, List, Type
 
 import pandas as pd
 import xarray as xr
@@ -225,7 +225,7 @@ def nc_to_run(cls: BaseScmRun, fname: FilePath):
         raise
 
 
-def inject_nc_methods(cls: BaseScmRun):
+def inject_nc_methods(cls: Type[BaseScmRun]):
     """
     Add the to/from nc methods to a class
 

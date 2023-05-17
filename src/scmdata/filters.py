@@ -4,6 +4,8 @@ Helpers for filtering data in :class:`scmdata.run.ScmRun`.
 Based upon :mod:`pyam.utils`.
 """
 
+from __future__ import annotations
+
 import datetime
 import re
 import time

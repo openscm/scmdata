@@ -41,8 +41,15 @@ from typing_extensions import Self
 import scmdata.units
 
 from ._base import OpsMixin
-from ._typing import FilePath, MetadataType
-from ._types import TimeAxisOptions
+from ._typing import (
+    FilePath,
+    MetadataType,
+    MetadataValue,
+    TimeAxisOptions,
+    NumericCallbackWithArgs,
+    ScmRunCallback,
+    ScmRunCallbackWithArgs,
+)
 from ._xarray import inject_xarray_methods
 from .errors import (
     DuplicateTimesError,
@@ -58,7 +65,7 @@ from .filters import (
     pattern_match,
     years_match,
 )
-from .groupby import RunApplyCallback, RunGroupBy
+from .groupby import RunGroupBy
 from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .ops import inject_ops_methods
@@ -203,7 +210,7 @@ def _format_data(  # pylint: disable=missing-return-doc
 
 
 def _format_long_data(
-    df: pd.DataFrame, required_cols: Sequence[str]
+    df: pd.DataFrame, required_cols: Iterable[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # check if time column is given as `year` (int) or `time` (datetime)
     cols = set(df.columns)
@@ -225,10 +232,12 @@ def _format_long_data(
 
 
 def _format_wide_data(
-    df: pd.DataFrame, required_cols: Sequence[str]
+    df: pd.DataFrame, required_cols: Iterable[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     cols = set(df.columns) - set(required_cols)
-    time_cols, extra_cols = False, []
+    time_cols: bool = False
+    extra_cols: List[str] = []
+
     for i in cols:
         # if in wide format, check if columns are years (int) or datetime
         if isinstance(i, (dt.datetime, cftime.datetime)):
@@ -256,8 +265,7 @@ def _format_wide_data(
         )
         raise ValueError(msg)
 
-    all_cols = set(tuple(required_cols) + tuple(extra_cols))
-    all_cols = list(all_cols)
+    all_cols = list(set(tuple(required_cols) + tuple(extra_cols)))
 
     df_out = df.drop(all_cols, axis="columns").T
     df_out.index.name = "time"
@@ -337,7 +345,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     Base class of a data container for timeseries data
     """
 
-    required_cols: Iterable[str] = ("variable", "unit")
+    required_cols: Sequence[str] = ("variable", "unit")
     """
     Required metadata columns
 
@@ -1669,7 +1677,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     def process_over(
         self,
         cols: Union[str, Iterable[str]],
-        operation: Union[str, RunApplyCallback[pd.DataFrame]],
+        operation: Union[str, Callable[[pd.DataFrame], pd.DataFrame]],
         na_override: float = -1e6,
         op_cols: Optional[Dict[str, str]] = None,
         as_run: Union[bool, Type["BaseScmRun"]] = False,
@@ -1934,7 +1942,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return RunGroupBy(self, self._check_groupby_input(group))
 
-    def apply(self, func: RunApplyCallback[Self], *args: Any, **kwargs: Any) -> Self:
+    def apply(
+        self,
+        func: ScmRunCallbackWithArgs[Self] | ScmRunCallback[Self],
+        *args: Any,
+        **kwargs: Any,
+    ) -> Self:
         """
         Apply a function to each timeseries and append the results
 
@@ -2315,7 +2328,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def reduce(
         self,
-        func: NumericApplyCallback[np.ndarray],
+        func: NumericCallbackWithArgs,
         dim: Any = None,
         axis: Optional[int] = None,
         **kwargs: Any,
