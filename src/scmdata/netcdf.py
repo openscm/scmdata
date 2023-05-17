@@ -3,6 +3,8 @@ NetCDF4 file operations
 
 Reading and writing :class:`ScmRun <scmdata.run.ScmRun>` to disk as binary
 """
+from __future__ import annotations
+
 try:
     import netCDF4 as nc
 
@@ -52,7 +54,7 @@ def _get_xr_dataset_to_write(run, dimensions, extras):
 
 def _write_nc(
     fname: FilePath,
-    run: "BaseScmRun",
+    run: BaseScmRun,
     dimensions: List[str],
     extras: List[str],
     **kwargs,
@@ -72,7 +74,7 @@ def _write_nc(
     xr_ds.to_netcdf(fname, **write_kwargs)
 
 
-def _read_nc(cls: "BaseScmRun", fname: FilePath):
+def _read_nc(cls: BaseScmRun, fname: FilePath):
     loaded = xr.load_dataset(fname, use_cftime=True)
     dataframe = loaded.to_dataframe()
 
@@ -141,7 +143,7 @@ def _update_kwargs_to_match_serialised_variable_names(xr_ds, in_kwargs):
 
 
 def run_to_nc(
-    run: "BaseScmRun",
+    run: BaseScmRun,
     fname: FilePath,
     dimensions: Iterable[str] = ("region",),
     extras: Iterable[str] = (),
@@ -200,7 +202,7 @@ def run_to_nc(
     _write_nc(fname, run, _dimensions, list(extras), **kwargs)
 
 
-def nc_to_run(cls: "BaseScmRun", fname: FilePath):
+def nc_to_run(cls: BaseScmRun, fname: FilePath):
     """
     Read a netCDF4 file from disk
 
@@ -223,7 +225,7 @@ def nc_to_run(cls: "BaseScmRun", fname: FilePath):
         raise
 
 
-def inject_nc_methods(cls: "BaseScmRun"):
+def inject_nc_methods(cls: BaseScmRun):
     """
     Add the to/from nc methods to a class
 
