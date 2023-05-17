@@ -198,7 +198,7 @@ jobs:
     - name: Install notebook dependencies
       run: |
         pip install --upgrade pip wheel
-        pip install -e .[tests,notebooks]
+        pip install -e .[notebooks,docs]
     - name: Check that the notebook runs without any errors
       run: |
           jupytext --set-formats ipynb,py:percent --execute docs/source/notebooks/*.py 
