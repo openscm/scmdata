@@ -4,10 +4,13 @@ data. It provides a simple interface for reading/writing, subsetting and visuali
 model data. ScmRuns are able to hold multiple model runs which aids in analysis of
 ensembles of model runs.
 """
+from __future__ import annotations
+
 import copy
 import datetime as dt
 import numbers
 import os
+import pathlib
 import warnings
 from logging import getLogger
 from typing import (
@@ -35,6 +38,7 @@ from typing_extensions import Self
 import scmdata.units
 
 from ._base import OpsMixin
+from ._typing import ApplyCallable, FilePath, MetadataType
 from ._xarray import inject_xarray_methods
 from .errors import (
     DuplicateTimesError,
@@ -62,14 +66,11 @@ from .units import UnitConverter
 _logger = getLogger(__name__)
 
 
-MetadataType = Dict[str, Union[str, int, float]]
-ApplyCallable = Callable[[pd.DataFrame], Union[pd.DataFrame, pd.Series, float]]
-
 T = TypeVar("T", bound="BaseScmRun")
 
 
 def _read_file(  # pylint: disable=missing-return-doc
-    fnames: str, required_cols: Tuple[str], *args: Any, **kwargs: Any
+    filename: FilePath, required_cols: Sequence[str], *args: Any, **kwargs: Any
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from a file.
@@ -86,13 +87,13 @@ def _read_file(  # pylint: disable=missing-return-doc
     :class:`pandas.DataFrame`, :class:`pandas.DataFrame`
         First dataframe is the data. Second dataframe is metadata
     """
-    _logger.info("Reading %s", fnames)
+    _logger.info("Reading %s", filename)
 
-    return _format_data(_read_pandas(fnames, *args, **kwargs), required_cols)
+    return _format_data(_read_pandas(str(filename), *args, **kwargs), required_cols)
 
 
 def _read_pandas(
-    fname: str, *args: Any, lowercase_cols=False, **kwargs: Any
+    fname: str, *args: Any, lowercase_cols: bool = False, **kwargs: Any
 ) -> pd.DataFrame:
     """
     Read a file and return a :class:`pandas.DataFrame`.
@@ -153,7 +154,7 @@ def _read_pandas(
 
 # pylint doesn't recognise return statements if they include ','
 def _format_data(  # pylint: disable=missing-return-doc
-    df: Union[pd.DataFrame, pd.Series], required_cols: Tuple[str]
+    df: Union[pd.DataFrame, pd.Series], required_cols: Sequence[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from :class:`pandas.DataFrame` or
@@ -197,7 +198,9 @@ def _format_data(  # pylint: disable=missing-return-doc
     return df, meta
 
 
-def _format_long_data(df, required_cols):
+def _format_long_data(
+    df: pd.DataFrame, required_cols: Sequence[str]
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # check if time column is given as `year` (int) or `time` (datetime)
     cols = set(df.columns)
     if "year" in cols and "time" not in cols:
@@ -217,7 +220,9 @@ def _format_long_data(df, required_cols):
     return df, meta
 
 
-def _format_wide_data(df, required_cols):
+def _format_wide_data(
+    df: pd.DataFrame, required_cols: Sequence[str]
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     cols = set(df.columns) - set(required_cols)
     time_cols, extra_cols = False, []
     for i in cols:
@@ -359,7 +364,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Parameters
         ----------
-        data: Union[ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str]
+        data: Union[ScmRun, IamDataFrame, pd.DataFrame, np.ndarray, str, pathlib.Path]
             If a :class:`ScmRun <scmdata.run.ScmRun>` object is provided, then a new
             :class:`ScmRun <scmdata.run.ScmRun>` is created with a copy of the values and metadata from :obj:
             `data`.
@@ -373,7 +378,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             ``(n_times, n_series)`` where `n_times` is the number of timesteps and
             `n_series` is the number of time series.
 
-            If a string is passed, data will be attempted to be read from file.
+            If a string or :class:`pathlib.Path` is passed, data will be attempted to be
+            read from file.
+
             Currently, reading from CSV, gzipped CSV and Excel formatted files is
             supported. The string could be a URL in a format handled by pandas.
             Valid URL schemes include http, ftp, s3, gs, and file if pandas>1.2
@@ -508,8 +515,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 data.data.copy() if copy_data else data.data, self.required_cols
             )
         else:
-            if not isinstance(data, str):
-                if isinstance(data, list) and isinstance(data[0], str):
+            if not isinstance(data, (str, pathlib.PurePath)):
+                if isinstance(data, (list, tuple)) and isinstance(
+                    data[0], (str, pathlib.PurePath)
+                ):
                     raise ValueError(
                         "Initialising from multiple files not supported, "
                         "use `scmdata.run.ScmRun.append()`"
@@ -2261,7 +2270,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return LongDatetimeIamDataFrame(self.timeseries())
 
-    def to_csv(self, fname: str, **kwargs: Any) -> None:
+    def to_csv(self, fname: FilePath, **kwargs: Any) -> None:
         """
         Write timeseries data to a csv file
 
