@@ -20,26 +20,10 @@ SCMData
 
    installation
    data
+   notebooks
    development
+   api
 
-.. toctree::
-   :maxdepth: 2
-   :caption: API reference
-
-   scmdata.database
-   scmdata.errors
-   scmdata.filters
-   scmdata.groupby
-   scmdata.netcdf
-   scmdata.offsets
-   scmdata.ops
-   scmdata.plotting
-   scmdata.processing
-   scmdata.run
-   scmdata.testing
-   scmdata.time
-   scmdata.timeseries
-   scmdata.units
 
 .. toctree::
    :maxdepth: 2

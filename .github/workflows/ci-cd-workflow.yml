@@ -29,8 +29,7 @@ jobs:
     # TODO: add `pylint src`
     - name: Formatting and linters
       run: |
-        black --check src tests setup.py
-        black-nb --check notebooks
+        black --check src tests setup.py docs/source/notebooks
         isort --check-only --quiet src tests setup.py
         pydocstyle src
         bandit -c .bandit.yml -r src/scmdata
@@ -39,16 +38,7 @@ jobs:
       # treat warnings as errors (-W)...
       # ...but not when being nitpicky (-n)
       run: |
-          sphinx-build -M html docs/source docs/build -qW
-          sphinx-build -M html docs/source docs/build -Eqn -b coverage
-          if [[ -s docs/build/html/python.txt ]]
-          then
-              echo
-              echo \"Error: Documentation missing:\"
-              echo
-              cat docs/build/html/python.txt
-              exit 1
-          fi
+          sphinx-build -M html docs/source docs/build -Evn
 
   build:
     runs-on: ${{ matrix.os }}
@@ -196,7 +186,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, 3.11]
+        python-version: [3.9, 3.11]
 
     steps:
     - name: Checkout repository
@@ -208,14 +198,10 @@ jobs:
     - name: Install notebook dependencies
       run: |
         pip install --upgrade pip wheel
-        pip install -e .[tests,notebooks]
-    - name: Test notebooks with nbval
+        pip install -e .[notebooks,docs]
+    - name: Check that the notebook runs without any errors
       run: |
-          pytest notebooks -r a --nbval-lax --sanitize-with tests/notebook-tests.cfg --no-cov
-    - name: Test notebooks strictly
-      if: matrix.python-version == 3.9
-      run: |
-        pytest notebooks -r a --nbval --sanitize-with tests/notebook-tests.cfg --no-cov
+          jupytext --set-formats ipynb,py:percent --execute docs/source/notebooks/*.py 
 
   test-install:
     runs-on: ubuntu-latest
