@@ -597,7 +597,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         Notes
         -----
-        If the meta values changes are applied to a filtered subset, the change will be reflected
+        If the meta values changes are applied to a filtered subset, the change might be reflected
         in the original :class:`ScmRun <scmdata.run.ScmRun>` object.
 
         .. code:: python
@@ -665,21 +665,39 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         if key == "time":
             self._time_points = TimePoints(meta)
             self._df.index = self._time_points.to_index()
-        else:
+        elif len(meta) in (1, len(self)):
+            # build new index
+            new_levels = list(self._meta.levels)
+            new_codes = list(self._meta.codes)
+            new_names = list(self._meta.names)
+            meta_ci = pd.CategoricalIndex(data=meta, name=key)
             if len(meta) == 1:
-                new_meta = self._meta.to_frame()
-                new_meta[key] = meta[0]
-                self._meta = pd.MultiIndex.from_frame(new_meta.astype("category"))
-            elif len(meta) == len(self):
-                new_meta_index = self._meta.to_frame(index=False)
-                new_meta_index[key] = pd.Series(meta, dtype="category")
-                self._meta = pd.MultiIndex.from_frame(new_meta_index)
+                codes = np.zeros(len(self), dtype=int)
             else:
-                msg = (
-                    "Invalid length for metadata, `{}`, must be 1 or equal to the "
-                    "number of timeseries, `{}`"
+                codes = meta_ci.codes
+                meta_ci = pd.CategoricalIndex(
+                    data=meta_ci.categories, categories=meta_ci.categories, name=key
                 )
-                raise ValueError(msg.format(len(meta), len(self)))
+            if key in new_names:
+                key_i = new_names.index(key)
+                new_levels[key_i] = meta_ci
+                new_codes[key_i] = codes
+            else:
+                new_names.append(key)
+                new_levels.append(meta_ci)
+                new_codes.append(codes)
+            self._meta = pd.MultiIndex(
+                levels=new_levels,
+                codes=new_codes,
+                names=new_names,
+                verify_integrity=False,
+            )
+        else:
+            msg = (
+                "Invalid length for metadata, `{}`, must be 1 or equal to the "
+                "number of timeseries, `{}`"
+            )
+            raise ValueError(msg.format(len(meta), len(self)))
 
         if self._duplicated_meta():
             raise NonUniqueMetadataError(self.meta)

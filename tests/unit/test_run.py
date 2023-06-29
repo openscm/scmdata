@@ -554,12 +554,32 @@ def test_set_item(scm_run):
     assert all(scm_run["model"] == ["a_iam", "b_iam", "c_iam"])
 
 
+def test_set_item_single(scm_run):
+    scm_run["model"] = "b_iam"
+    assert all(scm_run["model"] == ["b_iam", "b_iam", "b_iam"])
+
+
 def test_set_item_not_in_meta(scm_run):
     with pytest.raises(ValueError):
         scm_run["junk"] = ["hi", "bye"]
 
     scm_run["junk"] = ["hi", "bye", "ciao"]
     assert all(scm_run["junk"] == ["hi", "bye", "ciao"])
+
+    scm_run["junk"] = ["hi", "bye", "bye"]
+    assert all(scm_run["junk"] == ["hi", "bye", "bye"])
+
+
+@pytest.mark.parametrize("key", ("model", "junk"))
+def test_set_item_nan(scm_run, key):
+    scm_run[key] = ["hi", np.NaN, "bye"]
+    assert all(scm_run[key] == ["hi", "nan", "bye"])
+
+
+@pytest.mark.parametrize("key", ("model", "junk"))
+def test_set_item_nan_single(scm_run, key):
+    scm_run[key] = np.nan
+    assert all(np.isnan(scm_run[key]))
 
 
 def test_len(scm_run):
