@@ -582,6 +582,14 @@ def test_set_item_nan_single(scm_run, key):
     assert all(np.isnan(scm_run[key]))
 
 
+@pytest.mark.parametrize("key", ("model", "junk"))
+def test_set_item_nan_float(scm_run, key):
+    scm_run[key] = [1, np.NaN, 2]
+    assert scm_run[key][0] == 1
+    assert np.isnan(scm_run[key][1])
+    assert scm_run[key][2] == 2
+
+
 def test_len(scm_run):
     assert len(scm_run) == len(scm_run.timeseries())
 
