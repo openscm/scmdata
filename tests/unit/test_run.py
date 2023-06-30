@@ -2753,9 +2753,8 @@ def test_filter_empty(scm_run, caplog):
     res = empty_run.filter(variable="anything")
     assert res.shape == (0, 3)
 
-    # Filtering for an empty run is a noop (the times aren't filtered)
     res = empty_run.filter(year=range(2000, 2010))
-    assert res.shape == (0, 3)
+    assert res.shape == (0, 1)
     assert id(res) != id(empty_run)
 
 
