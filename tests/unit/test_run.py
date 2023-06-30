@@ -474,6 +474,29 @@ def test_init_empty(scm_run):
     assert not empty_run.empty
 
 
+def test_empty_meta_cols():
+    empty_run = ScmRun().set_meta("test", 100)
+    assert len(empty_run.meta["test"]) == 0
+    assert empty_run.meta_attributes == [
+        "model",
+        "region",
+        "scenario",
+        "test",
+        "unit",
+        "variable",
+    ]
+
+    empty_run = empty_run.drop_meta("test")
+    assert empty_run.meta_attributes == [
+        "model",
+        "region",
+        "scenario",
+        "unit",
+        "variable",
+    ]
+    assert "test" not in empty_run.meta
+
+
 def test_repr_empty():
     empty_run = ScmRun()
     assert str(empty_run) == empty_run.__repr__()

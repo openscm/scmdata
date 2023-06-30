@@ -1179,7 +1179,13 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ret = copy.copy(self) if not inplace else self
 
         _keep_times, _keep_rows = self._apply_filters(kwargs)
-        if not keep and sum(~_keep_rows) and sum(~_keep_times):
+        if (
+            not keep
+            and len(_keep_rows)
+            and len(_keep_times)
+            and sum(~_keep_rows)
+            and sum(~_keep_times)
+        ):
             raise ValueError(
                 "If keep==False, filtering cannot be performed on the temporal axis "
                 "and with metadata at the same time"
