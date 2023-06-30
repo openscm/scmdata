@@ -2736,6 +2736,17 @@ def test_filter_empty(scm_run, caplog):
     assert id(res) != id(empty_run)
 
 
+def test_filter_empty_times():
+    result = (
+        get_single_ts()
+        .filter(model="nonexistent", log_if_empty=False)
+        .filter(year=[2], log_if_empty=False)
+        .time_points.years()
+    )
+    expected = np.array([2])
+    np.testing.assert_equal(result, expected)
+
+
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )
