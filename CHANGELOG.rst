@@ -4,6 +4,8 @@ Changelog
 master
 ------
 
+- (`#248 <https://github.com/openscm/scmdata/pull/248>`_) Correctly filter the time index of empty ScmRuns. Resolves #245
+
 v0.15.1
 -------
 

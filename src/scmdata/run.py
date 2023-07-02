@@ -1178,28 +1178,35 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         ret = copy.copy(self) if not inplace else self
 
-        if len(ret):
-            _keep_times, _keep_rows = self._apply_filters(kwargs)
-            if not keep and sum(~_keep_rows) and sum(~_keep_times):
-                raise ValueError(
-                    "If keep==False, filtering cannot be performed on the temporal axis "
-                    "and with metadata at the same time"
-                )
+        _keep_times, _keep_rows = self._apply_filters(kwargs)
+        if (
+            not keep
+            and len(_keep_rows)
+            and len(_keep_times)
+            and sum(~_keep_rows)
+            and sum(~_keep_times)
+        ):
+            raise ValueError(
+                "If keep==False, filtering cannot be performed on the temporal axis "
+                "and with metadata at the same time"
+            )
 
-            reduce_times = (~_keep_times).sum() > 0
-            reduce_rows = (~_keep_rows).sum() > 0
+        reduce_times = len(_keep_times) and (~_keep_times).sum() > 0
+        reduce_rows = len(_keep_rows) and (~_keep_rows).sum() > 0
 
-            if not keep:
-                if reduce_times:
-                    _keep_times = ~_keep_times
-                if reduce_rows:
-                    _keep_rows = ~_keep_rows
-                if not reduce_rows and not reduce_times:
-                    _keep_times = _keep_times * False
-                    _keep_rows = _keep_rows * False
+        if not keep:
+            if reduce_times:
+                _keep_times = ~_keep_times
+            if reduce_rows:
+                _keep_rows = ~_keep_rows
+            if not reduce_rows and not reduce_times:
+                _keep_times = _keep_times * False
+                _keep_rows = _keep_rows * False
 
-            ret._df = ret._df.loc[_keep_times, _keep_rows]
+        ret._df = ret._df.loc[_keep_times, _keep_rows]
+        if len(_keep_rows):
             ret._meta = ret._meta[_keep_rows]
+        if len(_keep_times):
             ret["time"] = self.time_points.values[_keep_times]
 
         if log_if_empty and ret.empty:
@@ -1236,13 +1243,20 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         keep_ts = np.array([True] * len(self.time_points))
         keep_meta = np.array([True] * len(self))
 
+        time_filter_options = ["year", "month", "day", "hour", "time"]
+
         # filter by columns and list of values
         for col, values in filters.items():
+            if not len(keep_ts) and col in time_filter_options:
+                continue
+
             if col in self._meta.names:
                 if col == "variable":
                     level = filters["level"] if "level" in filters else None
                 else:
                     level = None
+                if not len(keep_meta):
+                    continue
 
                 keep_meta &= pattern_match(
                     self._meta.get_level_values(col),
@@ -1253,7 +1267,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 )
 
             elif col == "level":
-                if "variable" not in filters.keys():
+                if "variable" not in filters.keys() and len(keep_meta):
                     keep_meta &= pattern_match(
                         self._meta.get_level_values("variable"),
                         "*",
