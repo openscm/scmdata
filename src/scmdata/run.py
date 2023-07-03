@@ -595,56 +595,6 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         Update metadata
 
-        Notes
-        -----
-        If the meta values changes are applied to a filtered subset, the change might be reflected
-        in the original :class:`ScmRun <scmdata.run.ScmRun>` object.
-
-        .. code:: python
-
-            >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-            Time:
-                Start: 2005-01-01T00:00:00
-                End: 2015-01-01T00:00:00
-            Meta:
-                   model     scenario region             variable   unit climate_model
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-            >>> df["climate_model"] = ["a_model", "a_model", "b_model"]
-            >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-            Time:
-                Start: 2005-01-01T00:00:00
-                End: 2015-01-01T00:00:00
-            Meta:
-                   model     scenario region             variable   unit climate_model
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model
-            >>> df2 = df.filter(variable="Primary Energy")
-            >>> df2["pe_only"] = True
-            >>> df2
-            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
-            Time:
-                Start: 2005-01-01T00:00:00
-                End: 2015-01-01T00:00:00
-            Meta:
-                   model     scenario region             variable   unit climate_model pe_only
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
-            >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
-            Time:
-                Start: 2005-01-01T00:00:00
-                End: 2015-01-01T00:00:00
-            Meta:
-                   model     scenario region             variable   unit climate_model pe_only
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model    True
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model     NaN
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       b_model    True
-
         Parameters
         ----------
         key

@@ -549,45 +549,62 @@ def test_get_item_not_in_meta(scm_run):
         scm_run[dud_key]
 
 
-def test_set_item(scm_run):
-    scm_run["model"] = ["a_iam", "b_iam", "c_iam"]
-    assert all(scm_run["model"] == ["a_iam", "b_iam", "c_iam"])
+class TestSetItem:
+    def test_multiple(self, scm_run):
+        scm_run["model"] = ["a_iam", "b_iam", "c_iam"]
+        assert all(scm_run["model"] == ["a_iam", "b_iam", "c_iam"])
 
+    def test_single(self, scm_run):
+        scm_run["model"] = "b_iam"
+        assert all(scm_run["model"] == ["b_iam", "b_iam", "b_iam"])
 
-def test_set_item_single(scm_run):
-    scm_run["model"] = "b_iam"
-    assert all(scm_run["model"] == ["b_iam", "b_iam", "b_iam"])
+    def test_not_in_meta(self, scm_run):
+        with pytest.raises(ValueError):
+            scm_run["junk"] = ["hi", "bye"]
 
+        scm_run["junk"] = ["hi", "bye", "ciao"]
+        assert all(scm_run["junk"] == ["hi", "bye", "ciao"])
 
-def test_set_item_not_in_meta(scm_run):
-    with pytest.raises(ValueError):
-        scm_run["junk"] = ["hi", "bye"]
+        scm_run["junk"] = ["hi", "bye", "bye"]
+        assert all(scm_run["junk"] == ["hi", "bye", "bye"])
 
-    scm_run["junk"] = ["hi", "bye", "ciao"]
-    assert all(scm_run["junk"] == ["hi", "bye", "ciao"])
+    @pytest.mark.parametrize("key", ("model", "junk"))
+    def test_nan(self, scm_run, key):
+        scm_run[key] = ["hi", np.NaN, "bye"]
+        assert all(scm_run[key] == ["hi", "nan", "bye"])
 
-    scm_run["junk"] = ["hi", "bye", "bye"]
-    assert all(scm_run["junk"] == ["hi", "bye", "bye"])
+    @pytest.mark.parametrize("key", ("model", "junk"))
+    def test_nan_single(self, scm_run, key):
+        scm_run[key] = np.nan
+        assert all(np.isnan(scm_run[key]))
 
+    @pytest.mark.parametrize("key", ("model", "junk"))
+    def test_nan_float(self, scm_run, key):
+        scm_run[key] = [1, np.NaN, 2]
+        assert scm_run[key][0] == 1
+        assert np.isnan(scm_run[key][1])
+        assert scm_run[key][2] == 2
 
-@pytest.mark.parametrize("key", ("model", "junk"))
-def test_set_item_nan(scm_run, key):
-    scm_run[key] = ["hi", np.NaN, "bye"]
-    assert all(scm_run[key] == ["hi", "nan", "bye"])
+    def test_filter(self, scm_run):
+        filtered = scm_run.filter(variable="Primary Energy|Coal")
+        assert len(filtered) == 1
+        filtered["model"] = "other_model"
+        assert (scm_run["model"] == ["a_iam", "a_iam", "a_iam"]).all()
 
+    def test_filter_full(self, scm_run):
+        filtered = scm_run.filter(model="a_iam")
+        assert len(filtered) == 3
+        filtered["climate_model"] = "other_model"
+        assert (scm_run["climate_model"] == "a_model").all()
 
-@pytest.mark.parametrize("key", ("model", "junk"))
-def test_set_item_nan_single(scm_run, key):
-    scm_run[key] = np.nan
-    assert all(np.isnan(scm_run[key]))
-
-
-@pytest.mark.parametrize("key", ("model", "junk"))
-def test_set_item_nan_float(scm_run, key):
-    scm_run[key] = [1, np.NaN, 2]
-    assert scm_run[key][0] == 1
-    assert np.isnan(scm_run[key][1])
-    assert scm_run[key][2] == 2
+    def test_filter_new(self, scm_run):
+        filtered = scm_run.filter(variable="Primary Energy|Coal")
+        assert len(filtered) == 1
+        filtered["new_key"] = "other_model"
+        filtered2 = scm_run.filter(model="a_iam")
+        assert len(filtered2) == 3
+        filtered2["new_key"] = "third model"
+        assert "new_key" not in scm_run.meta.columns
 
 
 def test_len(scm_run):
