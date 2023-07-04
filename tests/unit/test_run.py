@@ -606,6 +606,12 @@ class TestSetItem:
         filtered2["new_key"] = "third model"
         assert "new_key" not in scm_run.meta.columns
 
+    def test_filter_remove(self, scm_run):
+        scm_run["new_key"] = "test_model"
+        filtered = scm_run.filter(variable="Primary Energy|Coal").drop_meta("new_key")
+
+        assert "new_key" not in filtered.meta_attributes
+        assert "new_key" in scm_run.meta_attributes
 
 def test_len(scm_run):
     assert len(scm_run) == len(scm_run.timeseries())
