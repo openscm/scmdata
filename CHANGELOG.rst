@@ -5,6 +5,7 @@ master
 ------
 
 - (`#248 <https://github.com/openscm/scmdata/pull/248>`_) Correctly filter the time index of empty ScmRuns. Resolves #245
+- (`#247 <https://github.com/openscm/scmdata/pull/247>`_) Better performance for ScmRun.__setitem__.
 
 v0.15.1
 -------
