@@ -613,6 +613,7 @@ class TestSetItem:
         assert "new_key" not in filtered.meta_attributes
         assert "new_key" in scm_run.meta_attributes
 
+
 def test_len(scm_run):
     assert len(scm_run) == len(scm_run.timeseries())
 
