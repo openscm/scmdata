@@ -25,7 +25,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8"
 cftime = ">=1.5"
-numpy = "<1.25.0"
+numpy = "*"
 openscm-units = "*"
 packaging = "*"
 pandas = ">=1.1, <2"
@@ -42,7 +42,7 @@ netCDF4 = { version = "*", optional = true }
 openpyxl = { version = "*", optional = true }
 xlrd = { version = "*", optional = true }
 scipy = { version = "*", optional = true }
-notebook = { version = "*", optional = true }
+notebook = { version = ">=7", optional = true }
 
 [tool.poetry.extras]
 plots = ["matplotlib", "seaborn"]
@@ -64,10 +64,10 @@ sphinx-copybutton = "^0.5.2"
 [tool.poetry.group.dev.dependencies]
 pytest-cov = "^4.0.0"
 coverage = "^7.2.0"
-black = "23.3.0"
+black = "23.9.1"
 blackdoc = "0.3.8"
 mypy = "^1.2.0"
-ruff = "0.0.264"
+ruff = "0.0.288"
 pre-commit = "^3.3.1"
 towncrier = "^23.6.0"
 liccheck = "^0.9.1"
