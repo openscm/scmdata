@@ -57,8 +57,8 @@ def _write_nc(
     run: BaseScmRun,
     dimensions: List[str],
     extras: List[str],
-    **kwargs,
-):
+    **kwargs: Any,
+) -> None:
     """
     Low level function to write the dimensions, variables and metadata to disk
     """
@@ -74,14 +74,14 @@ def _write_nc(
     xr_ds.to_netcdf(fname, **write_kwargs)
 
 
-def _read_nc(cls: BaseScmRun, fname: FilePath):
+def _read_nc(cls: BaseScmRun, fname: FilePath) -> BaseScmRun:
     loaded = xr.load_dataset(fname, use_cftime=True)
     dataframe = loaded.to_dataframe()
 
     dataframe = _reshape_to_scmrun_dataframe(dataframe, loaded)
     run = _convert_to_cls_and_add_metadata(dataframe, loaded, cls)
 
-    return run
+    return run  # type: ignore
 
 
 def _reshape_to_scmrun_dataframe(dataframe, loaded):
@@ -148,7 +148,7 @@ def run_to_nc(
     dimensions: Iterable[str] = ("region",),
     extras: Iterable[str] = (),
     **kwargs: Any,
-):
+) -> None:
     """
     Write timeseries to disk as a netCDF4 file
 
@@ -202,7 +202,7 @@ def run_to_nc(
     _write_nc(fname, run, _dimensions, list(extras), **kwargs)
 
 
-def nc_to_run(cls: BaseScmRun, fname: FilePath):
+def nc_to_run(cls: BaseScmRun, fname: FilePath) -> BaseScmRun:
     """
     Read a netCDF4 file from disk
 
@@ -225,7 +225,7 @@ def nc_to_run(cls: BaseScmRun, fname: FilePath):
         raise
 
 
-def inject_nc_methods(cls: BaseScmRun):
+def inject_nc_methods(cls: type[BaseScmRun]) -> None:
     """
     Add the to/from nc methods to a class
 
