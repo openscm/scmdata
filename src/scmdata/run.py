@@ -17,30 +17,32 @@ from typing import (
     Any,
     Callable,
     Dict,
-    overload,
+    Hashable,
     Iterable,
-    Literal,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
     TypeVar,
     Union,
+    overload,
 )
 
-import cftime
+import cftime  # type: ignore
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pandas.io.common
 import pint
 from dateutil import parser
+from numpy.typing import ArrayLike, NDArray
 from typing_extensions import Self
 
 import scmdata.units
 
 from ._base import OpsMixin
-from ._typing import ApplyCallable, FilePath, MetadataType
+from ._typing import ApplyCallable, FilePath, FloatArray, MetadataType
 from ._xarray import inject_xarray_methods
 from .errors import (
     DuplicateTimesError,
@@ -126,7 +128,7 @@ def _read_pandas(
     OSError
         Path specified by :obj:`fname` does not exist
     """
-    is_remote = pandas.io.common.is_url(fname)
+    is_remote = pandas.io.common.is_url(fname)  # type: ignore
     if not is_remote and not os.path.exists(fname):
         raise OSError("no data file `{}` found!".format(fname))
 
@@ -137,11 +139,11 @@ def _read_pandas(
         if len(xl.sheet_names) > 1 and "sheet_name" not in kwargs:
             kwargs["sheet_name"] = "data"
 
-        df = pd.read_excel(fname, *args, **kwargs)
+        dateframe: pd.DataFrame = pd.read_excel(fname, *args, **kwargs)
 
     else:
         _logger.debug("Reading with pandas read_csv")
-        df = pd.read_csv(fname, *args, **kwargs)
+        dateframe = pd.read_csv(fname, *args, **kwargs)
 
     def _to_lower(c):
         if hasattr(c, "lower"):
@@ -149,14 +151,14 @@ def _read_pandas(
         return c
 
     if lowercase_cols:
-        df.columns = [_to_lower(c) for c in df.columns]
+        dateframe.columns = [_to_lower(c) for c in dateframe.columns]  # type: ignore
 
-    return df
+    return dateframe
 
 
 # pylint doesn't recognise return statements if they include ','
 def _format_data(  # pylint: disable=missing-return-doc
-    df: Union[pd.DataFrame, pd.Series], required_cols: Sequence[str]
+    df: Union[pd.DataFrame, pd.Series[Any]], required_cols: Sequence[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from :class:`pandas.DataFrame` or
@@ -270,7 +272,7 @@ def _from_ts(
     df: Any,
     required_cols: Tuple[str, ...],
     index: Any = None,
-    **columns: Union[str, bool, float, int, List],
+    **columns: Union[str, bool, float, int, List[Any]],
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from wide timeseries.
@@ -358,7 +360,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         data: Any = None,
         index: Any = None,
-        columns: Optional[Union[Dict[str, list], Dict[str, str]]] = None,
+        columns: Optional[dict[Hashable, Union[str, list[str]]]] = None,
         metadata: Optional[MetadataType] = None,
         copy_data: bool = False,
         **kwargs: Any,
@@ -485,7 +487,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         else:
             self._df = pd.DataFrame(dtype=float)
             self._meta = pd.MultiIndex.from_frame(
-                pd.DataFrame(data=[], columns=self.required_cols)
+                pd.DataFrame(data=[], columns=list(self.required_cols))
             )
             self._time_points = TimePoints([])
 
@@ -498,7 +500,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         data: Any,
         index: Any = None,
-        columns: Optional[Union[Dict[str, list[str]], Dict[str, str]]] = None,
+        columns: Optional[Dict[Hashable, Union[list[str], str]]] = None,
         copy_data: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -567,7 +569,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         Get the number of timeseries.
         """
-        return self._df.shape[1]  # type: ignore
+        return self._df.shape[1]
 
     def __getitem__(self, key: Any) -> Any:
         """
@@ -594,7 +596,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         raise KeyError("[{}] is not in metadata".format(key))
 
     def __setitem__(
-        self, key: str, value: Optional[Union[np.ndarray, list, int, float, str]]
+        self,
+        key: str,
+        value: Optional[Union[ArrayLike[Any], int, float, str]],
     ) -> Any:
         """
         Update metadata
@@ -723,13 +727,13 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                     res.append(f(v, other))
                 else:
                     res.append(f(other, v))
-            res = np.vstack(res)
+            res_stacked = np.vstack(res)
 
             if use_pint:
-                df._df.values[:] = res.magnitude.T
-                df["unit"] = str(res.units)
+                df._df.values[:] = res_stacked.magnitude.T
+                df["unit"] = str(res_stacked.units)
             else:
-                df._df.values[:] = res.T
+                df._df.values[:] = res_stacked.T
             return df
 
         return self.copy().groupby("unit").apply(_perform_op)
@@ -805,8 +809,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         return self._time_points
 
     def timeseries(
-        self, meta=None, check_duplicated=True, time_axis=None, drop_all_nan_times=False
-    ):
+        self,
+        meta: Optional[Iterable[str]] = None,
+        check_duplicated: bool = True,
+        time_axis: Optional[str] = None,
+        drop_all_nan_times: bool = False,
+    ) -> pd.DataFrame:
         """
         Return the data with metadata as a :class:`pandas.DataFrame`.
 
@@ -925,11 +933,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             :class:`pandas.DataFrame` containing the data in 'long form' (i.e. one observation
             per row).
         """
-        out = self.timeseries(time_axis=time_axis).stack()
+        out: pd.DataFrame = self.timeseries(time_axis=time_axis).stack()
         out.name = "value"
-        out = out.to_frame().reset_index()
+        result = out.to_frame().reset_index()
 
-        return out
+        return result
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -940,10 +948,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         -------
         tuple of int
         """
-        return self._df.T.shape  # type: ignore
+        return self._df.T.shape
 
     @property
-    def values(self) -> np.ndarray:
+    def values(self) -> FloatArray:
         """
         Timeseries values without metadata
 
@@ -958,7 +966,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             The array in the same shape as :meth:`ScmRun.shape`, that is
             ``(num_timeseries, num_timesteps)``.
         """
-        return self._df.values.T  # type: ignore
+        return self._df.values.T
 
     @property
     def empty(self) -> bool:
@@ -983,7 +991,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return df[sorted(df.columns)]
 
-    def _meta_column(self, col: str) -> pd.Series:
+    def _meta_column(self, col: str) -> pd.Series[Any]:
         out = self._meta.get_level_values(col)
         return pd.Series(out, name=col, index=self._df.columns)
 
@@ -1185,8 +1193,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     # pylint doesn't recognise ',' in returns type definition
     def _apply_filters(  # pylint: disable=missing-return-doc
-        self, filters: Dict
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self, filters: Dict[str, Any]
+    ) -> Tuple[NDArray[np.bool_], NDArray[np.bool_]]:
         """
         Determine rows to keep in data for given set of filters.
 
@@ -1364,9 +1372,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def interpolate(
         self,
-        target_times: Union[
-            np.ndarray, Iterable[Union[dt.datetime, dt.date, int, float]]
-        ],
+        target_times: Iterable[Union[dt.datetime, dt.date, int, float]],
         interpolation_type: str = "linear",
         extrapolation_type: Optional[str] = "linear",
         uniform_year_length: bool = False,
@@ -1670,7 +1676,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         op_cols: Optional[Dict[str, str]] = None,
         as_run: Union[bool, type[T]] = False,
         **kwargs: Any,
-    ) -> pd.DataFrame:
+    ) -> Union[pd.DataFrame, Self, T]:
         """
         Process the data over the input columns.
 
@@ -1875,9 +1881,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
             out.append(quantile_df)
 
-        out = pd.concat(out).set_index("quantile", append=True)
+        out_concat = pd.concat(out).set_index("quantile", append=True)
 
-        return out
+        return out_concat
 
     @staticmethod
     def _check_groupby_input(v):
@@ -1886,7 +1892,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return v
 
-    def groupby(self, *group):
+    def groupby(self, *group: str) -> RunGroupBy:
         """
         Group the object by unique metadata
 
@@ -1968,7 +1974,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         return self.groupby(self.meta.columns).apply(func, *args, **kwargs)
 
-    def get_meta_columns_except(self, *not_group):
+    def get_meta_columns_except(
+        self, *not_group: Union[Iterable[str], str]
+    ) -> list[str]:
         """
         Get columns in meta except a set
 
@@ -1987,7 +1995,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return group
 
-    def groupby_all_except(self, *not_group):
+    def groupby_all_except(self, *not_group: str) -> RunGroupBy:
         """
         Group the object by unique metadata apart from the input columns
 
@@ -2150,7 +2158,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ref_data = self.filter(**kwargs)
         ref_period_mean = ref_data.timeseries().mean(axis="columns")
 
-        res = ts.sub(ref_period_mean, axis="rows")
+        res = ts.sub(ref_period_mean, axis="index")
         res.reset_index(inplace=True)
 
         res["reference_period_start_year"] = ref_data["year"].min()
@@ -2210,7 +2218,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         """
         if not isinstance(other, BaseScmRun):
-            other = self.__class__(other, **kwargs)
+            other = self.__class__(other, **kwargs)  # type: ignore
 
         return run_append(  # type: ignore
             [self, other],
@@ -2514,21 +2522,21 @@ def run_append(
     to_join_metas = []
     overlapping_times = False
 
-    ind = range(ret._df.shape[1])
-    ret._df.columns = ind
-    ret._meta.index = ind
+    return_index = pd.Index(range(ret._df.shape[1]))
+    ret._df.columns = return_index
+    ret._meta.index = return_index
 
     min_idx = ret._df.shape[1]
     for run in runs[1:]:
         run_to_join_df: pd.DataFrame = run._df
 
         max_idx = min_idx + run_to_join_df.shape[1]
-        ind = range(min_idx, max_idx)
+        new_index = pd.Index(range(min_idx, max_idx))
         min_idx = max_idx
 
-        run_to_join_df.columns = ind
+        run_to_join_df.columns = new_index
         run_to_join_meta = run._meta.to_frame()
-        run_to_join_meta.index = ind
+        run_to_join_meta.index = new_index
 
         # check everything still makes sense
         npt.assert_array_equal(run_to_join_meta.index, run_to_join_df.columns)

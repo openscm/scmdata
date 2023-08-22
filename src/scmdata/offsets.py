@@ -127,3 +127,6 @@ def generate_range(
     )
 
     return [date_cls(*dt.timetuple()[:6]) for dt in res]
+
+
+__all__ = ["to_offset", "generate_range"]
