@@ -14,6 +14,7 @@ import pathlib
 import warnings
 from logging import getLogger
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -36,13 +37,12 @@ import pandas as pd
 import pandas.io.common
 import pint
 from dateutil import parser
-from numpy.typing import ArrayLike, NDArray
 from typing_extensions import Self
 
 import scmdata.units
 
 from ._base import OpsMixin
-from ._typing import ApplyCallable, FilePath, FloatArray, MetadataType
+from ._typing import ApplyCallable, FilePath, MetadataType
 from ._xarray import inject_xarray_methods
 from .errors import (
     DuplicateTimesError,
@@ -71,6 +71,10 @@ _logger = getLogger(__name__)
 
 
 T = TypeVar("T", bound="BaseScmRun")
+
+
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike, NDArray
 
 
 def _read_file(  # pylint: disable=missing-return-doc
@@ -598,7 +602,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     def __setitem__(
         self,
         key: str,
-        value: Optional[Union[ArrayLike[Any], int, float, str]],
+        value: "Optional[Union[ArrayLike[Any], int, float, str]]",
     ) -> Any:
         """
         Update metadata
@@ -951,7 +955,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         return self._df.T.shape
 
     @property
-    def values(self) -> FloatArray:
+    def values(self) -> "NDArray[np.float_]":
         """
         Timeseries values without metadata
 
@@ -1194,7 +1198,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     # pylint doesn't recognise ',' in returns type definition
     def _apply_filters(  # pylint: disable=missing-return-doc
         self, filters: Dict[str, Any]
-    ) -> Tuple[NDArray[np.bool_], NDArray[np.bool_]]:
+    ) -> "Tuple[NDArray[np.bool_], NDArray[np.bool_]]":
         """
         Determine rows to keep in data for given set of filters.
 
