@@ -6,7 +6,7 @@ Thanks to the original author, Sven Willner
 """
 
 from datetime import datetime
-from typing import Type, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 import cftime
 import numpy as np

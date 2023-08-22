@@ -7,7 +7,7 @@ Based upon :mod:`pyam.utils`.
 import datetime
 import re
 import time
-from typing import Iterable, List, Optional, Union, Any
+from typing import Any, Iterable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -42,7 +42,7 @@ def find_depth(
     s: str,
     level: Union[int, str],
     separator: str = HIERARCHY_SEPARATOR,
-) -> list[Any]:
+) -> List[Any]:
     """
     Find all values which match given depth from a filter keyword.
 
@@ -105,7 +105,7 @@ def find_depth(
 
 
 def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
-    meta_col: pd.Series,
+    meta_col: pd.Index,
     values: Union[Iterable[str], str],
     level: Optional[Union[str, int]] = None,
     regexp: bool = False,
@@ -259,7 +259,9 @@ def month_match(
     return time_match(data, months, ["%b", "%B"], "tm_mon", "month")
 
 
-def day_match(data: List, days: Union[List[str], List[int], int, str]) -> np.ndarray:
+def day_match(
+    data: Iterable[Any], days: Union[List[str], List[int], int, str]
+) -> np.ndarray:
     """
     Match days in time columns for data filtering.
 
@@ -279,9 +281,7 @@ def day_match(data: List, days: Union[List[str], List[int], int, str]) -> np.nda
     return time_match(data, days, ["%a", "%A"], "tm_wday", "day")
 
 
-def hour_match(
-    data: Iterable[Any], hours: Union[np.ndarray, Iterable[int], int]
-) -> np.ndarray:
+def hour_match(data: Iterable[Any], hours: Union[Iterable[int], int]) -> np.ndarray:
     """
     Match hours in time columns for data filtering.
 
@@ -395,7 +395,7 @@ def time_match(
 
 
 def datetime_match(
-    data: Iterable[Any], dts: Union[Iterable[datetime.datetime], datetime.datetime]
+    data: Iterable[Any], dts: Union[Iterable[datetime.datetime], datetime.datetime, str]
 ) -> np.ndarray:
     """
     Match datetimes in time columns for data filtering.

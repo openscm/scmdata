@@ -12,3 +12,19 @@ build-backend = "setuptools.build_meta"
 [tool.black]
 line-length = 88
 target-version = ['py39']
+
+
+[tool.mypy]
+strict = true
+# show error codes on failure with context
+show_error_codes = true
+show_error_context = true
+# warn if code can't be reached
+warn_unreachable = true
+# importing following uses default settings
+follow_imports = "normal"
+
+# Opt outs
+# We don't currently have 100% type coverage so the settings below are temporarily added
+disallow_untyped_calls = false
+disallow_untyped_defs = false
