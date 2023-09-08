@@ -364,7 +364,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         data: Any = None,
         index: Any = None,
-        columns: Optional[dict[Hashable, Union[str, Iterable[str]]]] = None,
+        columns: Optional[dict[Hashable, Union[MetadataValue, Iterable[MetadataValue]]]] = None,
         metadata: Optional[MetadataType] = None,
         copy_data: bool = False,
         **kwargs: Any,
@@ -1000,7 +1000,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         return pd.Series(out, name=col, index=self._df.columns)
 
     def set_meta(
-        self, dimension: str, value: MetadataValue, **filter_kwargs: MetadataValue
+        self,
+        dimension: str,
+        value: Union[MetadataValue, Iterable[MetadataValue]],
+        **filter_kwargs: Union[MetadataValue, List[MetadataValue]],
     ) -> Self:
         """
         Update metadata
@@ -1059,7 +1062,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         keep: bool = True,
         inplace: bool = False,
         log_if_empty: bool = True,
-        **kwargs: MetadataValue,
+        **kwargs: Union[MetadataValue, Iterable[MetadataValue]],
     ) -> Self:
         """
         Return a filtered ScmRun (i.e., a subset of the data).
@@ -1956,7 +1959,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return RunGroupBy(self, group)
 
-    def apply(self, func, *args, **kwargs):
+    def apply(
+        self,
+        func: Callable[[Self, ...], Union[Self, None]],
+        *args,
+        **kwargs,
+    ) -> Union[Self, None]:
         """
         Apply a function to each timeseries and append the results
 
