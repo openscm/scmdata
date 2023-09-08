@@ -98,7 +98,7 @@ class RunGroupBy(_GroupBy):
 
         Parameters
         ----------
-        func : function
+        func
             Callable to apply to each timeseries.
 
         ``*args``
