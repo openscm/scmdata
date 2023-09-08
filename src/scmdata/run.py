@@ -364,7 +364,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         data: Any = None,
         index: Any = None,
-        columns: Optional[dict[Hashable, Union[MetadataValue, Iterable[MetadataValue]]]] = None,
+        columns: Optional[
+            dict[Hashable, Union[MetadataValue, Iterable[MetadataValue]]]
+        ] = None,
         metadata: Optional[MetadataType] = None,
         copy_data: bool = False,
         **kwargs: Any,
