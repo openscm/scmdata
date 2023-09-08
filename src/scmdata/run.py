@@ -42,7 +42,7 @@ from typing_extensions import Self
 import scmdata.units
 
 from ._base import OpsMixin
-from ._typing import ApplyCallable, FilePath, MetadataType
+from ._typing import ApplyCallable, FilePath, MetadataType, MetadataValue
 from ._xarray import inject_xarray_methods
 from .errors import (
     DuplicateTimesError,
@@ -364,7 +364,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         data: Any = None,
         index: Any = None,
-        columns: Optional[dict[Hashable, Union[str, list[str]]]] = None,
+        columns: Optional[dict[Hashable, Union[str, Iterable[str]]]] = None,
         metadata: Optional[MetadataType] = None,
         copy_data: bool = False,
         **kwargs: Any,
@@ -999,7 +999,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         out = self._meta.get_level_values(col)
         return pd.Series(out, name=col, index=self._df.columns)
 
-    def set_meta(self, dimension: str, value: Any, **filter_kwargs: Any) -> Self:
+    def set_meta(
+        self, dimension: str, value: MetadataValue, **filter_kwargs: MetadataValue
+    ) -> Self:
         """
         Update metadata
 
@@ -1053,10 +1055,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def filter(
         self,
+        *,
         keep: bool = True,
         inplace: bool = False,
         log_if_empty: bool = True,
-        **kwargs: Any,
+        **kwargs: MetadataValue,
     ) -> Self:
         """
         Return a filtered ScmRun (i.e., a subset of the data).
@@ -1197,7 +1200,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     # pylint doesn't recognise ',' in returns type definition
     def _apply_filters(  # pylint: disable=missing-return-doc
-        self, filters: Dict[str, Any]
+        self, filters: Dict[str, MetadataValue]
     ) -> "Tuple[NDArray[np.bool_], NDArray[np.bool_]]":
         """
         Determine rows to keep in data for given set of filters.
@@ -1293,7 +1296,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return day_match(days, values)
 
-    def head(self, *args, **kwargs):
+    def head(self, *args: Any, **kwargs: Any) -> pd.DataFrame[float]:
         """
         Return head of :func:`self.timeseries()`.
 
@@ -1312,7 +1315,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         return self.timeseries().head(*args, **kwargs)
 
-    def tail(self, *args: Any, **kwargs: Any) -> pd.DataFrame:
+    def tail(self, *args: Any, **kwargs: Any) -> pd.DataFrame[float]:
         """
         Return tail of :func:`self.timeseries()`.
 
@@ -1331,11 +1334,27 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         return self.timeseries().tail(*args, **kwargs)
 
+    @overload
+    def get_unique_meta(
+        self,
+        meta: str,
+        no_duplicates: Literal[True],
+    ) -> MetadataValue:
+        ...
+
+    @overload
+    def get_unique_meta(
+        self,
+        meta: str,
+        no_duplicates: Literal[False] = ...,
+    ) -> List[MetadataValue]:
+        ...
+
     def get_unique_meta(
         self,
         meta: str,
         no_duplicates: Optional[bool] = False,
-    ) -> Union[List[Any], Any]:
+    ) -> Union[List[MetadataValue], MetadataValue]:
         """
         Get unique values in a metadata column.
 
