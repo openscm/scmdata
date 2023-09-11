@@ -1,4 +1,5 @@
 import re
+import warnings
 from unittest.mock import MagicMock, call
 
 import numpy as np
@@ -61,6 +62,7 @@ def test_plumeplot_pre_calculated_no_plume_for_one(plumeplot_scmrun):
     )
 
     with pytest.warns(UserWarning) as record:
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
         summary_stats.plumeplot(
             quantiles_plumes=quantiles_plumes,
             pre_calculated=True,
@@ -115,6 +117,7 @@ def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other(
     ).filter(climate_model="a_model_2", quantile=0.5, keep=False)
 
     with pytest.warns(UserWarning) as record:
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
         _, lh = summary_stats.plumeplot(
             quantiles_plumes=quantiles_plumes,
             pre_calculated=True,
@@ -152,6 +155,7 @@ def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other_different
     ).filter(climate_model="a_model_2", quantile=0.5, keep=False)
 
     with pytest.warns(UserWarning) as record:
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
         summary_stats.plumeplot(
             quantiles_plumes=quantiles_plumes,
             pre_calculated=True,

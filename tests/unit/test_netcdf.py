@@ -2,6 +2,7 @@ import logging
 import pathlib
 import re
 import tempfile
+import warnings
 from os.path import exists, join
 from unittest.mock import MagicMock, patch
 
@@ -747,7 +748,8 @@ def test_run_to_nc_different_eras(scm_run, shift_times):
         out_fname = join(tempdir, "out.nc")
         run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
-        with pytest.warns(None) as record:
+        with pytest.warns(UserWarning) as record:
+            warnings.simplefilter("ignore", category=DeprecationWarning)
             res = nc_to_run(scm_run.__class__, out_fname)
 
         if not _check_pandas_less_110():
