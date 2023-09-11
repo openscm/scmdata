@@ -3447,7 +3447,7 @@ def test_get_meta_no_duplicates(scm_run, no_duplicates):
 @inplace_params
 @pytest.mark.parametrize("label", ["extra_meta", ["extra", "other"]])
 def test_drop_meta(scm_run, label, inplace):
-    if type(label) == str:
+    if isinstance(label, str):
         scm_run[label] = 1.0
         assert label in scm_run.meta.columns
     else:
@@ -3462,7 +3462,7 @@ def test_drop_meta(scm_run, label, inplace):
         res = scm_run.drop_meta(label, inplace=False)
         assert id(res) != id(scm_run)
 
-    if type(label) == str:
+    if isinstance(label, str):
         assert label not in res.meta.columns
         assert label not in res.meta_attributes
     else:

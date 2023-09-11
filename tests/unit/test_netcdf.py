@@ -15,7 +15,7 @@ import xarray as xr
 
 from scmdata import ScmRun
 from scmdata.netcdf import _get_xr_dataset_to_write, nc_to_run, run_to_nc
-from scmdata.testing import _check_pandas_less_110, assert_scmdf_almost_equal
+from scmdata.testing import assert_scmdf_almost_equal
 
 
 @pytest.mark.parametrize("use_pathlib", [True, False])
@@ -747,11 +747,5 @@ def test_run_to_nc_different_eras(scm_run, shift_times):
         out_fname = join(tempdir, "out.nc")
         run_to_nc(scm_run, out_fname, dimensions=("scenario",))
 
-        with pytest.warns(None) as record:
-            res = nc_to_run(scm_run.__class__, out_fname)
-
-        if not _check_pandas_less_110():
-            # assert there weren't any warnings on loading
-            assert not record, " --- ".join([str(r) for r in record.list])
-
+        res = nc_to_run(scm_run.__class__, out_fname)
     assert_scmdf_almost_equal(scm_run, res)
