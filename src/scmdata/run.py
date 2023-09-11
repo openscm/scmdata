@@ -1005,7 +1005,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         dimension: str,
         value: Union[MetadataValue, Iterable[MetadataValue]],
-        **filter_kwargs: Union[MetadataValue, List[MetadataValue]],
+        **filter_kwargs: Union[MetadataValue, Iterable[MetadataValue]],
     ) -> Self:
         """
         Update metadata
