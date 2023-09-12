@@ -9,6 +9,8 @@ import re
 import time
 from typing import Any, Iterable, List, Optional, Union
 
+from scmdata._typing import MetadataValue
+
 import numpy as np
 import pandas as pd
 
@@ -106,8 +108,8 @@ def find_depth(
 
 def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     meta_col: pd.Index,
-    values: Union[Iterable[str], str],
-    level: Optional[Union[str, int]] = None,
+    values: Union[Iterable[MetadataValue], MetadataValue],
+    level: Optional[MetadataValue] = None,
     regexp: bool = False,
     separator: str = HIERARCHY_SEPARATOR,
 ) -> np.ndarray:

@@ -162,7 +162,7 @@ def _read_pandas(
 
 # pylint doesn't recognise return statements if they include ','
 def _format_data(  # pylint: disable=missing-return-doc
-    df: Union[pd.DataFrame, pd.Series[Any]], required_cols: Sequence[str]
+    input_df: Union[pd.DataFrame, pd.Series[Any]], required_cols: Sequence[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from :class:`pandas.DataFrame` or
@@ -186,8 +186,9 @@ def _format_data(  # pylint: disable=missing-return-doc
         Not all required metadata columns are present or the time axis cannot be
         understood
     """
-    if isinstance(df, pd.Series):
-        df = df.to_frame()
+    df: pd.DataFrame = (
+        input_df.to_frame() if isinstance(input_df, pd.Series) else input_df  # type: ignore
+    )
 
     # reset the index if meaningful entries are included there
     if list(df.index.names) != [None]:
@@ -506,7 +507,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         data: Any,
         index: Any = None,
-        columns: Optional[Dict[Hashable, Union[list[str], str]]] = None,
+        columns: Optional[
+            Dict[Hashable, Union[Iterable[MetadataValue], MetadataValue]]
+        ] = None,
         copy_data: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -604,7 +607,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     def __setitem__(
         self,
         key: str,
-        value: "Optional[Union[ArrayLike[Any], int, float, str]]",
+        value: "Optional[Union[Iterable[MetadataValue], MetadataValue]]",
     ) -> Any:
         """
         Update metadata
@@ -752,7 +755,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         run._df.values[:] = np.vstack(res).T
         return run
 
-    def drop_meta(self, columns: Union[list, str], inplace: bool = False) -> Self:
+    def drop_meta(
+        self, columns: Union[Iterable[str], str], inplace: bool = False
+    ) -> Self:
         """
         Drop meta columns out of the Run
 
@@ -1039,7 +1044,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         :class:`BaseScmRun <scmdata.run.BaseScmRun>`
             A new instance with the updated metadata.
         """
-        keep = filter_kwargs.pop("keep", True)
+        keep: bool = filter_kwargs.pop("keep", True)
         log_if_empty = filter_kwargs.pop("log_if_empty", True)
 
         if "inplace" in filter_kwargs:
@@ -1205,7 +1210,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     # pylint doesn't recognise ',' in returns type definition
     def _apply_filters(  # pylint: disable=missing-return-doc
-        self, filters: Dict[str, MetadataValue]
+        self, filters: Dict[str, Union[MetadataValue, Iterable[MetadataValue]]]
     ) -> "Tuple[NDArray[np.bool_], NDArray[np.bool_]]":
         """
         Determine rows to keep in data for given set of filters.
@@ -1228,7 +1233,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ValueError
             Filtering cannot be performed on requested column
         """
-        regexp = filters.pop("regexp", False)
+        regexp: bool = filters.pop("regexp", False)
         keep_ts = np.array([True] * len(self.time_points))
         keep_meta = np.array([True] * len(self))
 
@@ -1387,7 +1392,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             List of unique metadata values. If ``no_duplicates`` is ``True`` the
             metadata value will be returned (rather than a list).
         """
-        vals = self._meta.get_level_values(meta).unique().to_list()
+        vals: List[MetadataValue] = self._meta.get_level_values(meta).unique().to_list()
         if no_duplicates:
             if len(vals) != 1:
                 raise ValueError(
@@ -1460,7 +1465,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         # TODO: Extend TimeseriesConverter to handle 2d inputs
         for i in range(len(res)):
             target_data[:, i] = timeseries_converter.convert_from(
-                res._df.iloc[:, i].values
+                res._df.iloc[:, i].values  # type: ignore
             )
         res._df = pd.DataFrame(
             target_data, columns=res._df.columns, index=target_time_points.to_index()
@@ -1679,7 +1684,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         operation: Union[str, ApplyCallable],
         na_override: float = -1e6,
         op_cols: Optional[Dict[str, str]] = None,
-        as_run: Literal[False] = ...,
+        as_run: Literal[False] = False,
         **kwargs: Any,
     ) -> pd.DataFrame:
         ...
@@ -1914,11 +1919,13 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         return out_concat
 
     @staticmethod
-    def _check_groupby_input(v):
+    def _check_groupby_input(
+        v: Tuple[Union[str, Iterable[str]], ...]
+    ) -> Tuple[str, ...]:
         if len(v) == 1 and not isinstance(v[0], str):
             v = tuple(v[0])
 
-        return v
+        return v  # type: ignore
 
     def groupby(self, *group: str) -> RunGroupBy:
         """
@@ -1964,8 +1971,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     def apply(
         self,
         func: Callable[[Self, ...], Union[Self, None]],
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> Union[Self, None]:
         """
         Apply a function to each timeseries and append the results
