@@ -9,10 +9,10 @@ import re
 import time
 from typing import Any, Iterable, List, Optional, Union
 
-from scmdata._typing import MetadataValue
-
 import numpy as np
 import pandas as pd
+
+from scmdata._typing import MetadataValue
 
 HIERARCHY_SEPARATOR = "|"
 
