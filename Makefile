@@ -83,7 +83,9 @@ $(VENV_DIR): setup.py setup.cfg
 
 	$(VENV_DIR)/bin/pip install --upgrade pip wheel
 	$(VENV_DIR)/bin/pip install -e .[dev]
-	$(VENV_DIR)/bin/jupyter nbextension enable --py widgetsnbextension
+
+	# Set jupytext as the default viewer when opening notebooks
+	$(VENV_DIR)/bin/jupytext-config set-default-viewer
 
 	touch $(VENV_DIR)
 
