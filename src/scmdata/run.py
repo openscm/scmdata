@@ -74,7 +74,7 @@ T = TypeVar("T", bound="BaseScmRun")
 
 
 if TYPE_CHECKING:
-    from numpy.typing import ArrayLike, NDArray
+    from numpy.typing import NDArray
 
 
 def _read_file(  # pylint: disable=missing-return-doc
