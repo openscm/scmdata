@@ -7,10 +7,12 @@ https://myst-parser.readthedocs.io/en/latest/syntax/organising_content.html#inse
 
 <!--- sec-begin-description -->
 
-**scmdata** provides some useful data handling routines for dealing with data related to simple climate models (SCMs aka reduced complexity climate models, RCMs).
-In particular, it provides a high-performance way of handling and serialising (including to netCDF) timeseries data along with attached metadata.
+**scmdata** provides some useful data handling routines for dealing with data related to simple climate models
+(SCMs aka reduced complexity climate models, RCMs). In particular, it provides a high-performance way of
+handling and serialising (including to netCDF) timeseries data along with attached metadata.
 
-**scmdata** was inspired by `pyam <https://github.com/IAMconsortium/pyam>`_ and was originally part of the `openscm <https://github.com/openscm/openscm>`_ package.
+**scmdata** was inspired by `pyam <https://github.com/IAMconsortium/pyam>`_ and was originally part of the
+`openscm <https://github.com/openscm/openscm>`_ package.
 
 [![CI](https://github.com/openscm/scmdata/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/openscm/scmdata/actions/workflows/ci.yaml)
 [![Coverage](https://codecov.io/gh/climate-resource/scmdata/branch/main/graph/badge.svg)](https://codecov.io/gh/climate-resource/scmdata)

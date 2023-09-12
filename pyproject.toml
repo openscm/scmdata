@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scmdata"
-version = "0.15.1"
+version = "0.15.2"
 description = "scmdata provides some useful data handling routines for dealing with data related to simple climate models (SCMs aka reduced complexity climate models, RCMs)"
 authors = ["Jared Lewis <jared.lewis@climate-resource.com>", "Zeb Nicholls <zebedee.nicholls@climate-energy-college.org>"]
 readme = "README.md"
