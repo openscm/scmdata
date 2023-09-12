@@ -4,6 +4,9 @@ Changelog
 master
 ------
 
+v0.15.2
+-------
+
 - (`#257 <https://github.com/openscm/scmdata/pull/257>`_) Updated to support the latest version of :mod:`notebook`
 - (`#252 <https://github.com/openscm/scmdata/pull/252>`_) Add ``py.typed`` file do downstream packages can use the provided type-hints. Improved the coverage of the type-hints in ``run.py``
 - (`#255 <https://github.com/openscm/scmdata/pull/255>`_) Unpin upper limit of the version of numpy
