@@ -293,7 +293,7 @@ xr.load_dataset(multi_dim_outfile)
 # %%
 
 multi_dim_loaded_co2_conc = ScmRun.from_nc(multi_dim_outfile).filter(
-    "Atmospheric Concentrations|CO2"
+    variable="Atmospheric Concentrations|CO2"
 )
 
 seaborn_df = multi_dim_loaded_co2_conc.long_data()
