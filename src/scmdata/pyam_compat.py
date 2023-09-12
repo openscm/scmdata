@@ -50,3 +50,6 @@ except ImportError:  # pragma: no cover
     # mypy can't work out try-except block sets typing
     IamDataFrame = None
     LongDatetimeIamDataFrame = None  # type: ignore
+
+
+__all__ = ["IamDataFrame", "LongDatetimeIamDataFrame"]

@@ -6,7 +6,7 @@ Thanks to the original author, Sven Willner
 """
 
 from datetime import datetime
-from typing import Type
+from typing import Any, Dict, Optional, Type
 
 import cftime
 import numpy as np
@@ -48,9 +48,9 @@ _ufunc_str_to_datetime = np.frompyfunc(parser.parse, 1, 1)
 
 def _parse_datetime(inp: np.ndarray) -> np.ndarray:
     try:
-        return _ufunc_float_year_to_datetime(inp.astype(float))
+        return _ufunc_float_year_to_datetime(inp.astype(float))  # type: ignore
     except (TypeError, ValueError):
-        return _ufunc_str_to_datetime(inp)
+        return _ufunc_str_to_datetime(inp)  # type: ignore
 
 
 def _format_datetime(dts: np.ndarray) -> np.ndarray:
@@ -108,7 +108,7 @@ class TimePoints:
         Time points are stored as provided. The user should sort them first if
         sorting is desired.
         """
-        self._values = _format_datetime(np.asarray(values))
+        self._values: np.ndarray = _format_datetime(np.asarray(values))
 
     def __len__(self) -> int:
         """
@@ -238,8 +238,8 @@ class TimeseriesConverter:
         self,
         source_time_points: np.ndarray,
         target_time_points: np.ndarray,
-        interpolation_type="linear",
-        extrapolation_type="linear",
+        interpolation_type: str = "linear",
+        extrapolation_type: Optional[str] = "linear",
     ):
         self.source = (
             np.array(source_time_points)
@@ -284,7 +284,7 @@ class TimeseriesConverter:
 
         return True
 
-    def _get_scipy_extrapolation_args(self, values: np.ndarray):
+    def _get_scipy_extrapolation_args(self, values: np.ndarray) -> Dict[str, Any]:
         if self.extrapolation_type == "linear":
             return {"fill_value": "extrapolate"}
         if self.extrapolation_type == "constant":

@@ -6,12 +6,13 @@ Functionality for handling and storing individual time-series
 
 import copy
 import datetime as dt
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List, Literal, Optional, Union
 
 import numpy as np
 import pint
 import xarray as xr
 from openscm_units import unit_registry as ur
+from typing_extensions import Self
 
 from ._base import OpsMixin
 from .time import TimePoints, TimeseriesConverter
@@ -201,11 +202,11 @@ class TimeSeries(OpsMixin):
 
     def _binary_op(
         self,
-        other,
+        other: Any,
         f: Callable[..., Any],
-        reflexive=False,
-        **kwargs,
-    ) -> Callable[..., "TimeSeries"]:
+        reflexive: bool = False,
+        **kwargs: Any,
+    ) -> "TimeSeries":
         other_data = getattr(other, "_data", other)
 
         if isinstance(other, pint.Quantity):
@@ -226,12 +227,12 @@ class TimeSeries(OpsMixin):
 
         return TimeSeries(ts)
 
-    def _inplace_binary_op(self, other, f: Callable) -> Callable[..., "TimeSeries"]:
+    def _inplace_binary_op(self, other, f: Callable) -> Self:
         other_data = getattr(other, "_data", other)
         f(self._data, other_data)
         return self
 
-    def reindex(self, time, **kwargs):
+    def reindex(self, time: np.ndarray, **kwargs: Any) -> "TimeSeries":
         """
         Update the time dimension, filling in the missing values with NaN's
 
@@ -261,9 +262,9 @@ class TimeSeries(OpsMixin):
     def interpolate(
         self,
         target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
-        interpolation_type: str = "linear",
-        extrapolation_type: str = "linear",
-    ):
+        interpolation_type: Literal["linear"] = "linear",
+        extrapolation_type: Optional[Literal["linear", "constant"]] = "linear",
+    ) -> "TimeSeries":
         """
         Interpolate the timeseries onto a new time axis
 

@@ -72,8 +72,8 @@ class UnitConverter:
             )
             warnings.warn(warn_msg)
 
-        self._scaling = float(t2.m - t1.m) / float(s2.m - s1.m)
-        self._offset = t1.m - self._scaling * s1.m
+        self._scaling: float = float(t2.m - t1.m) / float(s2.m - s1.m)
+        self._offset: float = t1.m - self._scaling * s1.m
 
     def convert_from(self, v: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """

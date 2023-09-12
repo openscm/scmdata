@@ -94,8 +94,8 @@ def _get_ts(data, index, **kwargs):
 
 
 def get_single_ts(
-    data=[1, 2, 3],
-    index=[1, 2, 3],
+    data=(1, 2, 3),
+    index=(1, 2, 3),
     variable="Emissions|CO2",
     scenario="scen",
     model="mod",

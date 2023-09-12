@@ -186,7 +186,9 @@ for sce_run in large_run.groupby("scenario"):
 
 # %%
 
-ScmRun.from_nc("/tmp/out-ssp585-sparse.nc").filter("Surface Temperature").line_plot()
+ScmRun.from_nc("/tmp/out-ssp585-sparse.nc").filter(
+    variable="Surface Temperature"
+).line_plot()
 
 # %% [markdown]
 # For such a data set, since both `run_id` and `paraset_id` vary, both could be added as dimensions in the file.
@@ -223,7 +225,9 @@ xr.load_dataset("/tmp/out-ssp585-extras.nc")
 
 # %%
 
-ScmRun.from_nc("/tmp/out-ssp585-extras.nc").filter("Surface Temperature").line_plot()
+ScmRun.from_nc("/tmp/out-ssp585-extras.nc").filter(
+    variable="Surface Temperature"
+).line_plot()
 
 # %% [markdown]
 # If we use dimensions and extra such that our extra co-ordinates are not uniquely defined by the regions, an `_id` dimension is automatically added to ensure we don't lose any information.
@@ -289,7 +293,7 @@ xr.load_dataset(multi_dim_outfile)
 # %%
 
 multi_dim_loaded_co2_conc = ScmRun.from_nc(multi_dim_outfile).filter(
-    "Atmospheric Concentrations|CO2"
+    variable="Atmospheric Concentrations|CO2"
 )
 
 seaborn_df = multi_dim_loaded_co2_conc.long_data()

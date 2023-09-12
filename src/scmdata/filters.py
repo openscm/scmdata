@@ -7,15 +7,17 @@ Based upon :mod:`pyam.utils`.
 import datetime
 import re
 import time
-from typing import Iterable, List, Optional, Union
+from typing import Any, Iterable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 
+from scmdata._typing import MetadataValue
+
 HIERARCHY_SEPARATOR = "|"
 
 
-def is_in(vals: List, items: List) -> np.ndarray:
+def is_in(vals: Iterable[Any], items: Iterable[Any]) -> np.ndarray:
     """
     Find elements of vals which are in items.
 
@@ -42,7 +44,7 @@ def find_depth(
     s: str,
     level: Union[int, str],
     separator: str = HIERARCHY_SEPARATOR,
-) -> np.ndarray:
+) -> List[Any]:
     """
     Find all values which match given depth from a filter keyword.
 
@@ -105,9 +107,9 @@ def find_depth(
 
 
 def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
-    meta_col: pd.Series,
-    values: Union[Iterable[str], str],
-    level: Optional[Union[str, int]] = None,
+    meta_col: pd.Index,
+    values: Union[Iterable[MetadataValue], MetadataValue],
+    level: Optional[MetadataValue] = None,
     regexp: bool = False,
     separator: str = HIERARCHY_SEPARATOR,
 ) -> np.ndarray:
@@ -150,7 +152,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
         :class:`numpy.nan` and :obj:`has_nan` is ``False``
     """
     matches = np.array([False] * len(meta_col), dtype=bool)
-    _values = (
+    _values: Iterable[Any] = (
         [values]
         if not isinstance(values, Iterable) or isinstance(values, str)
         else values
@@ -200,7 +202,9 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     return matches
 
 
-def years_match(data: List, years: Union[List[int], np.ndarray, int]) -> np.ndarray:
+def years_match(
+    data: Iterable[Any], years: Union[Iterable[int], np.ndarray, int]
+) -> np.ndarray:
     """
     Match years in time columns for data filtering.
 
@@ -236,7 +240,7 @@ def years_match(data: List, years: Union[List[int], np.ndarray, int]) -> np.ndar
 
 
 def month_match(
-    data: List, months: Union[List[str], List[int], int, str]
+    data: Iterable[Any], months: Union[Iterable[Union[str, int]], int, str]
 ) -> np.ndarray:
     """
     Match months in time columns for data filtering.
@@ -257,7 +261,9 @@ def month_match(
     return time_match(data, months, ["%b", "%B"], "tm_mon", "month")
 
 
-def day_match(data: List, days: Union[List[str], List[int], int, str]) -> np.ndarray:
+def day_match(
+    data: Iterable[Any], days: Union[List[str], List[int], int, str]
+) -> np.ndarray:
     """
     Match days in time columns for data filtering.
 
@@ -277,7 +283,7 @@ def day_match(data: List, days: Union[List[str], List[int], int, str]) -> np.nda
     return time_match(data, days, ["%a", "%A"], "tm_wday", "day")
 
 
-def hour_match(data: List, hours: Union[List[int], int]) -> np.ndarray:
+def hour_match(data: Iterable[Any], hours: Union[Iterable[int], int]) -> np.ndarray:
     """
     Match hours in time columns for data filtering.
 
@@ -299,8 +305,8 @@ def hour_match(data: List, hours: Union[List[int], int]) -> np.ndarray:
 
 
 def time_match(
-    data: List,
-    times: Union[List[str], List[int], int, str],
+    data: Iterable[Any],
+    times: Union[Iterable[Union[str, int]], int, str],
     conv_codes: List[str],
     strptime_attr: str,
     name: str,
@@ -340,7 +346,9 @@ def time_match(
         increasing integers (i.e. "Nov-Feb" will not work, one must use ["Nov-Dec",
         "Jan-Feb"] instead)
     """
-    times_list = [times] if isinstance(times, (int, str)) else times
+    times_list: List[Union[int, str]] = (
+        [times] if isinstance(times, (int, str)) else times
+    )
 
     def conv_strs(strs_to_convert, conv_codes, name):
         res = None
@@ -363,7 +371,7 @@ def time_match(
 
     if isinstance(times_list[0], str):
         to_delete = []
-        to_append = []  # type: List
+        to_append: List[Any] = []
         for i, timeset in enumerate(times_list):
             # ignore type as already established we're looking at strings
             if "-" in timeset:  # type: ignore
@@ -389,7 +397,7 @@ def time_match(
 
 
 def datetime_match(
-    data: List, dts: Union[List[datetime.datetime], datetime.datetime]
+    data: Iterable[Any], dts: Union[Iterable[datetime.datetime], datetime.datetime, str]
 ) -> np.ndarray:
     """
     Match datetimes in time columns for data filtering.
