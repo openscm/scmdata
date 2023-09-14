@@ -525,7 +525,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 if isinstance(data, (list, tuple)) and isinstance(
                     data[0], (str, pathlib.PurePath)
                 ):
-                    raise TypeError(
+                    raise ValueError(  # noqa: TRY004
                         "Initialising from multiple files not supported, "
                         "use `scmdata.run.ScmRun.append()`"
                     )

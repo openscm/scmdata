@@ -96,13 +96,13 @@ def test_database_custom_backend_invalid():
 
     backend = WrongBackend()
     msg = "Backend must be an instance of scmdata.database.BaseDatabaseBackend"
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(TypeError, match=msg):
         ScmDatabase("root_dir", backend=backend)
 
 
 def test_database_custom_backend_missing():
     msg = "Unknown database backend: other"
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(TypeError, match=msg):
         ScmDatabase("root_dir", backend="other")
 
 

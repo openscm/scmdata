@@ -44,10 +44,11 @@ openpyxl = { version = "*", optional = true }
 xlrd = { version = "*", optional = true }
 scipy = { version = "*", optional = true }
 notebook = { version = ">=7", optional = true }
+pyam-iamc = { version = "<2", optional = true }
 
 [tool.poetry.extras]
-plots = ["matplotlib", "seaborn" , 'nc-time-axis']
-optional = ["netCDF4", "openpyxl", "xlrd", "scipy"]
+plots = ["matplotlib", "seaborn" , "nc-time-axis"]
+optional = ["netCDF4", "openpyxl", "xlrd", "scipy", "pyam-iamc"]
 notebooks = ["notebook"]
 
 [tool.poetry.group.tests.dependencies]
@@ -120,6 +121,7 @@ formats = "ipynb,py:percent"
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
+    "--ignore=tests/test_data"
 ]
 testpaths = "tests"
 
