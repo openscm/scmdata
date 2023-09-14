@@ -124,8 +124,8 @@ def calculate_crossing_times_quantiles(
     ...     [pd.NA, pd.NA, 2100, 2007, 2006, pd.NA, 2100, 2007, 2006, 2006],
     ...     index=pd.MultiIndex.from_product(
     ...         [["a_scenario"], ["z_model", "x_model"], range(5)],
-    ...         names=["scenario", "climate_model", "ensemble_member"]
-    ...     )
+    ...         names=["scenario", "climate_model", "ensemble_member"],
+    ...     ),
     ... )
     >>> crossing_times
     scenario    climate_model  ensemble_member
@@ -175,8 +175,7 @@ def calculate_crossing_times_quantiles(
 def _assert_only_one_value(scmrun, col):
     if len(scmrun.get_unique_meta(col)) > 1:
         raise ValueError(
-            "More than one value for {}. "
-            "This is unlikely to be what you want.".format(col)
+            f"More than one value for {col}. " "This is unlikely to be what you want."
         )
 
 
@@ -257,7 +256,7 @@ def calculate_exceedance_probabilities(
     )
 
     if not isinstance(out, pd.Series):  # pragma: no cover # emergency valve
-        raise AssertionError("How did we end up without a series?")
+        raise AssertionError("How did we end up without a series?")  # noqa
 
     output_name = _get_exceedance_prob_output_name(output_name, threshold)
     out.name = output_name
@@ -328,7 +327,7 @@ def calculate_exceedance_probabilities_over_time(
     )
 
     if not isinstance(out, pd.DataFrame):  # pragma: no cover # emergency valve
-        raise AssertionError("How did we end up without a dataframe?")
+        raise AssertionError("How did we end up without a dataframe?")  # noqa
 
     output_name = _get_exceedance_prob_output_name(output_name, threshold)
     out = _set_index_level_to(out, "variable", output_name)
@@ -343,9 +342,7 @@ def _set_peak_output_name(out, output_name, default_lead):
     else:
         idx = out.index.names
         out = out.reset_index()
-        out["variable"] = out["variable"].apply(
-            lambda x: "{} {}".format(default_lead, x)
-        )
+        out["variable"] = out["variable"].apply(lambda x: f"{default_lead} {x}")
         out = out.set_index(idx)[0]
 
     return out
@@ -452,8 +449,8 @@ def categorisation_sr15(scmrun, index):
     if not all([q in available_quantiles for q in required_quantiles]):
         msg = (
             "Not all required quantiles are available, we require the "
-            "0.33, 0.5 and 0.66 quantiles, available quantiles: `{}`"
-        ).format(available_quantiles)
+            f"0.33, 0.5 and 0.66 quantiles, available quantiles: `{available_quantiles}`"
+        )
         raise ValueError(msg)
 
     _assert_only_one_value(scmrun, "variable")
@@ -478,6 +475,7 @@ def categorisation_sr15(scmrun, index):
     end_of_century_median = _get_comp_series(
         calculate_peak(scmrun.filter(quantile=0.5, year=2100))
     )
+
     categories[peak_median > 2.0] = "Above 2C"
     categories[peak_median <= 1.5] = "Below 1.5C"
 
@@ -489,14 +487,14 @@ def categorisation_sr15(scmrun, index):
         overshoot_15 & (peak_p33 > 1.5)  # p exceed > 0.67
     ] = "1.5C high overshoot"
 
-    still_uncategorised = categories.isnull()
+    still_uncategorised = categories.isna()
     peak_p66_lte_2 = peak_p66 <= 2.0  # p exceed < 0.34
     categories[
         still_uncategorised & (peak_median <= 2.0) & ~peak_p66_lte_2
     ] = "Higher 2C"
     categories[still_uncategorised & peak_p66_lte_2] = "Lower 2C"
 
-    if categories.isnull().any():  # pragma: no cover # emergency valve
+    if categories.isna().any():  # pragma: no cover # emergency valve
         raise AssertionError("Unclassified results?")
 
     return categories
@@ -513,7 +511,7 @@ def _raise_missing_variable_error(name, requested, scmrun):
     raise ValueError(msg)
 
 
-def calculate_summary_stats(
+def calculate_summary_stats(  # noqa: PLR0912, PLR0913, PLR0915
     scmrun,
     index,
     exceedance_probabilities_thresholds=(1.5, 2.0, 2.5),
@@ -540,7 +538,7 @@ def calculate_summary_stats(
         Columns to use in the index of the output (unit is added if not
         included)
 
-    exceedance_probabilities_threshold : list[float]
+    exceedance_probabilities_thresholds : list[float]
         Thresholds to use for exceedance probabilities
 
     exceedance_probabilities_variable : str
@@ -599,7 +597,7 @@ def calculate_summary_stats(
         being given by ``index``
     """
     if "unit" not in index:
-        _index = index + ["unit"]
+        _index = [*index, "unit"]
     else:
         _index = index
 
@@ -682,10 +680,8 @@ def calculate_summary_stats(
         [v in scmrun_categorisation.meta for v in _categorisation_quantile_cols]
     ):
         msg = (
-            "categorisation_quantile_cols `{}` not in `scmrun`. "
-            "Available columns:{}".format(
-                categorisation_quantile_cols, scmrun.meta.columns.tolist()
-            )
+            f"categorisation_quantile_cols `{categorisation_quantile_cols}` not in `scmrun`. "
+            f"Available columns:{scmrun.meta.columns.tolist()}"
         )
         raise ValueError(msg)
 

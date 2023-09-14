@@ -31,6 +31,8 @@ RCMIP_SCENARIO_COLOURS = {
 def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     """
     Make a line plot via `seaborn's lineplot
+
+    See seaborn documentation for a complete description of the kwargs
     <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
 
     If only a single unit is present, it will be used as the y-axis label.
@@ -38,7 +40,7 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
 
     Parameters
     ----------
-    time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}  # noqa: E501
+    time_axis : {None, "year", "year-month", "days since 1970-01-01", "seconds since 1970-01-01"}
         Time axis to use for the plot.
 
         If ``None``, :class:`datetime.datetime` objects will be used.
@@ -64,8 +66,8 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     """
     try:
         import seaborn as sns
-    except ImportError:
-        raise ImportError("seaborn is not installed. Run 'pip install seaborn'")
+    except ImportError as e:
+        raise ImportError("seaborn is not installed. Run 'pip install seaborn'") from e
 
     plt_df = self.long_data(time_axis=time_axis)
     kwargs.setdefault("x", "time")
@@ -87,10 +89,10 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     return ax
 
 
-def plumeplot(  # pragma: no cover
+def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
     self,
     ax=None,
-    quantiles_plumes=[((0.05, 0.95), 0.5), ((0.5,), 1.0)],
+    quantiles_plumes=(((0.05, 0.95), 0.5), ((0.5,), 1.0)),
     hue_var="scenario",
     hue_label="Scenario",
     palette=None,
@@ -202,7 +204,9 @@ def plumeplot(  # pragma: no cover
         import matplotlib.patches as mpatches
         import matplotlib.pyplot as plt
     except ImportError:  # pragma: no cover
-        raise ImportError("matplotlib is not installed. Run 'pip install matplotlib'")
+        raise ImportError(  # noqa:TRY200
+            "matplotlib is not installed. Run 'pip install matplotlib'"
+        )
 
     if not pre_calculated:
         quantiles = [v for qv in quantiles_plumes for v in qv[0]]
@@ -240,9 +244,7 @@ def plumeplot(  # pragma: no cover
                 for qt in q:
                     if qt not in quantiles:
                         warnings.warn(
-                            "Quantile {} not available for {} {}".format(
-                                qt, hue_value, style_value
-                            )
+                            f"Quantile {qt} not available for {hue_value} {style_value}"
                         )
                         missing_quantile = True
 
@@ -257,14 +259,14 @@ def plumeplot(  # pragma: no cover
                     try:
                         pkwargs["color"] = _palette[hue_value]
                     except KeyError as exc:
-                        error_msg = "{} not in palette: {}".format(hue_value, palette)
+                        error_msg = f"{hue_value} not in palette: {palette}"
                         raise KeyError(error_msg) from exc
 
                 elif hue_value in _palette:
                     pkwargs["color"] = _palette[hue_value]
 
-                if len(q) == 2:
-                    label = "{:.0f}th - {:.0f}th".format(q[0] * 100, q[1] * 100)
+                if len(q) == 2:  # noqa: PLR2004
+                    label = f"{q[0] * 100:.0f}th - {q[1] * 100:.0f}th"
 
                     p = ax.fill_between(
                         xaxis,
@@ -291,9 +293,7 @@ def plumeplot(  # pragma: no cover
                         try:
                             pkwargs["linestyle"] = _dashes[style_value]
                         except KeyError as exc:
-                            error_msg = "{} not in dashes: {}".format(
-                                style_value, dashes
-                            )
+                            error_msg = f"{style_value} not in dashes: {dashes}"
                             raise KeyError(error_msg) from exc
                     else:
                         if style_value not in _dashes:
@@ -304,7 +304,7 @@ def plumeplot(  # pragma: no cover
                     if isinstance(q[0], str):
                         label = q[0]
                     else:
-                        label = "{:.0f}th".format(q[0] * 100)
+                        label = f"{q[0] * 100:.0f}th"
 
                     p = ax.plot(
                         xaxis,
@@ -325,7 +325,7 @@ def plumeplot(  # pragma: no cover
                 else:
                     raise ValueError(
                         "quantiles to plot must be of length one or two, "
-                        "received: {}".format(q)
+                        f"received: {q}"
                     )
 
                 if label not in quantile_labels:
@@ -360,12 +360,11 @@ def plumeplot(  # pragma: no cover
             mpatches.Patch(alpha=0, label=style_label),
             *style_val_lines,
         ]
-    else:
-        if dashes is not None:
-            warnings.warn(
-                "`dashes` was passed but no lines were plotted, the style settings "
-                "will not be used"
-            )
+    elif dashes is not None:
+        warnings.warn(
+            "`dashes` was passed but no lines were plotted, the style settings "
+            "will not be used"
+        )
 
     ax.legend(handles=legend_items, loc="best")
 
@@ -384,19 +383,12 @@ def _get_1d_or_raise(in_scmrun, hue_var, style_var):
         style_var_value = in_scmrun.get_unique_meta(style_var, True)
         error_msg = (
             "More than one timeseries for "
-            "quantile: {}, "
-            "{}: {}, "
-            "{}: {}.\n"
+            f"quantile: {quantile}, "
+            f"{hue_var}: {hue_var_value}, "
+            f"{style_var}: {style_var_value}.\n"
             "Please process your data to create unique quantile timeseries "
             "before calling :meth:`plumeplot`.\n"
-            "Found: {}".format(
-                quantile,
-                hue_var,
-                hue_var_value,
-                style_var,
-                style_var_value,
-                in_scmrun,
-            )
+            f"Found: {in_scmrun}"
         )
         raise ValueError(error_msg)
 
@@ -405,8 +397,7 @@ def _get_1d_or_raise(in_scmrun, hue_var, style_var):
 
 def _deprecated_line_plot(self, **kwargs):  # pragma: no cover
     """
-    Make a line plot via
-    `seaborn's lineplot <https://seaborn.pydata.org/generated/seaborn.lineplot.html>`_
+    Make a line plot
 
     Deprecated: use :func:`lineplot` instead
 

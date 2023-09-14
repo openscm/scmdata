@@ -15,7 +15,7 @@ except Exception:  # pylint: disable=broad-except  # pragma: no cover
     # Local copy, not installed with setuptools
     __version__ = "unknown"
 
-from scmdata.run import ScmRun, run_append
 from scmdata.database import ScmDatabase
+from scmdata.run import ScmRun, run_append
 
 __all__ = ["ScmRun", "ScmDatabase", "run_append"]

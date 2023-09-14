@@ -58,9 +58,7 @@ def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
     if dimensions_extras_overlap:
         raise ValueError(
             "dimensions and extras cannot have any overlap. "
-            "Current values in both dimensions and extras: {}".format(
-                dimensions_extras_overlap
-            )
+            f"Current values in both dimensions and extras: {dimensions_extras_overlap}"
         )
 
     timeseries_dims = list(set(dimensions) - {"time"} - {"_id"})
@@ -128,10 +126,8 @@ def _unify_scmrun_units(run, unify_units):
                 run = run.convert_unit(out_unit, variable=variable)
             except pint.errors.DimensionalityError as exc:
                 error_msg = (
-                    "Variable `{}` cannot be converted to a common unit. "
-                    "Units in the provided dataset: {}.".format(
-                        variable, variable_units[variable].values.tolist()
-                    )
+                    f"Variable `{variable}` cannot be converted to a common unit. "
+                    f"Units in the provided dataset: {variable_units[variable].values.tolist()}."
                 )
                 raise ValueError(error_msg) from exc
 
@@ -142,16 +138,14 @@ def _get_timeseries_for_xr_dataset(run, dimensions, extras):
     for d in dimensions:
         vals = sorted(run.meta[d].unique())
         if not all([isinstance(v, str) for v in vals]) and np.isnan(vals).any():
-            raise AssertionError("nan in dimension: `{}`".format(d))
+            raise AssertionError(f"nan in dimension: `{d}`")
 
     try:
         timeseries = run.timeseries(dimensions + extras + ["variable"])
     except NonUniqueMetadataError as exc:
         error_msg = (
-            "dimensions: `{}` and extras: `{}` do not uniquely define the "
-            "timeseries, please add extra dimensions and/or extras".format(
-                dimensions, extras
-            )
+            f"dimensions: `{dimensions}` and extras: `{extras}` do not uniquely define the "
+            "timeseries, please add extra dimensions and/or extras"
         )
         raise ValueError(error_msg) from exc
 
@@ -167,15 +161,10 @@ def _get_other_metdata_for_xr_dataset(run, dimensions, extras):
     other_metdata = run.meta[other_dimensions].drop_duplicates()
     if other_metdata.shape[0] > 1 and not other_metdata.empty:
         error_msg = (
-            "Other metadata is not unique for dimensions: `{}` and extras: `{}`. "
+            f"Other metadata is not unique for dimensions: `{dimensions}` and extras: `{extras}`. "
             "Please add meta columns with more than one value to dimensions or "
-            "extras.\nNumber of unique values in each column:\n{}.\n"
-            "Existing values in the other metadata:\n{}.".format(
-                dimensions,
-                extras,
-                other_metdata.nunique(),
-                other_metdata.drop_duplicates(),
-            )
+            f"extras.\nNumber of unique values in each column:\n{other_metdata.nunique()}.\n"
+            f"Existing values in the other metadata:\n{other_metdata.drop_duplicates()}."
         )
         raise ValueError(error_msg)
 
@@ -225,10 +214,10 @@ def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids, ids_dimen
             timeseries.set_index(ids.index.names)
             .join(ids)
             .reset_index(drop=True)
-            .set_index(dimensions + ["variable", "_id"])
+            .set_index([*dimensions, "variable", "_id"])
         )
     else:
-        timeseries = timeseries.set_index(dimensions + ["variable"])
+        timeseries = timeseries.set_index([*dimensions, "variable"])
         if extras:
             timeseries = timeseries.drop(extras, axis="columns")
 
@@ -242,7 +231,7 @@ def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids, ids_dimen
         raise AssertionError("something not unique")
 
     for_xarray = (
-        timeseries.T.stack(dimensions + ["_id"])
+        timeseries.T.stack([*dimensions, "_id"])
         if add_id_dimension
         else timeseries.T.stack(dimensions)
     )
@@ -280,9 +269,7 @@ def _add_units(xr_ds, unit_map):
             not isinstance(unit, str) and len(unit) > 1
         ):  # pragma: no cover # emergency valve
             # should have already been caught...
-            raise AssertionError(
-                "Found multiple units ({}) for {}".format(unit, data_var)
-            )
+            raise AssertionError(f"Found multiple units ({unit}) for {data_var}")
 
         xr_ds[data_var].attrs["units"] = unit
 
@@ -294,9 +281,9 @@ def _add_scmdata_metadata(xr_ds, others):
         vals = others[col].unique()
         if len(vals) > 1:  # pragma: no cover # emergency valve
             # should have already been caught...
-            raise AssertionError("More than one value for meta: {}".format(col))
+            raise AssertionError(f"More than one value for meta: {col}")
 
-        xr_ds.attrs["scmdata_metadata_{}".format(col)] = vals[0]
+        xr_ds.attrs[f"scmdata_metadata_{col}"] = vals[0]
 
     return xr_ds
 

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from pint.errors import (  # noqa: F401 # pylint: disable=unused-import
+from pint.errors import (  # pylint: disable=unused-import
     DimensionalityError,
     UndefinedUnitError,
 )
@@ -51,8 +51,8 @@ def test_metric_conversion_unit_converter_nan():
     src_species = "CHCl3"
     target_species = "CO2"
     expected_warning = (
-        "No conversion from {} to {} available, nan will be returned "
-        "upon conversion".format(src_species, target_species)
+        f"No conversion from {src_species} to {target_species} available, nan will be returned "
+        "upon conversion"
     )
 
     with warnings.catch_warnings(record=True) as recorded_warnings:

@@ -178,9 +178,7 @@ def doesnt_warn():
             yield
         if record:
             pytest.fail(
-                "The following warnings were raised: {}".format(
-                    [w.message for w in record.list]
-                )
+                f"The following warnings were raised: {[w.message for w in record.list]}"
             )
 
     return check_context
@@ -275,11 +273,13 @@ _misru = [
 ]
 TEST_DF_MONTHLY = pd.DataFrame(
     [
-        _misru + ["Radiative Forcing"] + list(np.arange(45)),
-        _misru + ["Radiative Forcing|Aerosols"] + list(np.sin(np.arange(45))),
-        _misru
-        + ["Radiative Forcing|GHGs"]
-        + list(np.cos(np.arange(45)) + np.sin(np.arange(45))),
+        [*_misru, "Radiative Forcing", *list(np.arange(45))],
+        [*_misru, "Radiative Forcing|Aerosols", *list(np.sin(np.arange(45)))],
+        [
+            *_misru,
+            "Radiative Forcing|GHGs",
+            *list(np.cos(np.arange(45)) + np.sin(np.arange(45))),
+        ],
     ],
     columns=["climate_model", "model", "scenario", "region", "unit", "variable"]
     + [dt.datetime((v // 12) + 1992, v % 12 + 1, 1) for v in range(45)],
@@ -421,9 +421,12 @@ append_scm_df_pairs = [
             ).T,
             "index": append_scm_df_pairs_times,
             "columns": {
-                "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
-                "variable": append_scm_df_pairs_vars
-                + ["Primary Energy|Coal", "Primary Energy"],
+                "scenario": [*append_scm_df_pairs_scens, "b_scenario", "b_scenario2"],
+                "variable": [
+                    *append_scm_df_pairs_vars,
+                    "Primary Energy|Coal",
+                    "Primary Energy",
+                ],
                 **append_scm_df_pairs_cols,
             },
         },
@@ -460,9 +463,12 @@ append_scm_df_pairs = [
             ).T,
             "index": append_scm_df_pairs_times,
             "columns": {
-                "scenario": append_scm_df_pairs_scens + ["b_scenario", "b_scenario2"],
-                "variable": append_scm_df_pairs_vars
-                + ["Primary Energy|Coal", "Primary Energy"],
+                "scenario": [*append_scm_df_pairs_scens, "b_scenario", "b_scenario2"],
+                "variable": [
+                    *append_scm_df_pairs_vars,
+                    "Primary Energy|Coal",
+                    "Primary Energy",
+                ],
                 **append_scm_df_pairs_cols,
             },
         },

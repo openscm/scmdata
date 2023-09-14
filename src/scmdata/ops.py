@@ -114,8 +114,8 @@ def _perform_op(base, other, op, use_pint_units=True):
                     out.append(base[col] - other[col])
 
             except KeyError:
-                raise KeyError(
-                    "No equivalent in `other` for {}".format(list(zip(col_names, col)))
+                raise KeyError(  # noqa: TRY200
+                    f"No equivalent in `other` for {list(zip(col_names, col))}"
                 )
 
         elif op == "multiply":
@@ -192,7 +192,14 @@ def subtract(self, other, op_cols, **kwargs):
     ...             "Surface Air Temperature Change",
     ...         ],
     ...         "unit": ["GtC / yr", "GtC / yr", "GtC / yr", "GtC / yr", "GtC", "K"],
-    ...         "region": ["World|NH", "World|NH", "World|SH", "World|SH", "World", "World"],
+    ...         "region": [
+    ...             "World|NH",
+    ...             "World|NH",
+    ...             "World|SH",
+    ...             "World|SH",
+    ...             "World",
+    ...             "World",
+    ...         ],
     ...         "model": "idealised",
     ...         "scenario": "idealised",
     ...     },
@@ -298,7 +305,14 @@ def add(self, other, op_cols, **kwargs):
     ...             "Surface Air Temperature Change",
     ...         ],
     ...         "unit": ["GtC / yr", "GtC / yr", "GtC / yr", "GtC / yr", "GtC", "K"],
-    ...         "region": ["World|NH", "World|NH", "World|SH", "World|SH", "World", "World"],
+    ...         "region": [
+    ...             "World|NH",
+    ...             "World|NH",
+    ...             "World|SH",
+    ...             "World|SH",
+    ...             "World",
+    ...             "World",
+    ...         ],
     ...         "model": "idealised",
     ...         "scenario": "idealised",
     ...     },
@@ -414,7 +428,14 @@ def multiply(self, other, op_cols, **kwargs):
     ...             "Surface Air Temperature Change",
     ...         ],
     ...         "unit": ["GtC / yr", "GtC / yr", "GtC / yr", "GtC / yr", "GtC", "K"],
-    ...         "region": ["World|NH", "World|NH", "World|SH", "World|SH", "World", "World"],
+    ...         "region": [
+    ...             "World|NH",
+    ...             "World|NH",
+    ...             "World|SH",
+    ...             "World|SH",
+    ...             "World",
+    ...             "World",
+    ...         ],
     ...         "model": "idealised",
     ...         "scenario": "idealised",
     ...     },
@@ -511,7 +532,14 @@ def divide(self, other, op_cols, **kwargs):
     ...             "Surface Air Temperature Change",
     ...         ],
     ...         "unit": ["GtC / yr", "GtC / yr", "GtC / yr", "GtC / yr", "GtC", "K"],
-    ...         "region": ["World|NH", "World|NH", "World|SH", "World|SH", "World", "World"],
+    ...         "region": [
+    ...             "World|NH",
+    ...             "World|NH",
+    ...             "World|SH",
+    ...             "World|SH",
+    ...             "World",
+    ...             "World",
+    ...         ],
     ...         "model": "idealised",
     ...         "scenario": "idealised",
     ...     },
@@ -622,7 +650,7 @@ def cumsum(self, out_var=None, check_annual=True):
     """
     time_unit = "a"
 
-    if self.timeseries().isnull().sum().sum() > 0:
+    if self.timeseries().isna().sum().sum() > 0:
         warnings.warn(
             "You are integrating data which contains nans so your result will "
             "also contain nans. Perhaps you want to remove the nans before "
@@ -709,7 +737,7 @@ def cumtrapz(self, out_var=None):
     if not has_scipy:
         raise ImportError("scipy is not installed. Run 'pip install scipy'")
 
-    if self.timeseries().isnull().sum().sum() > 0:
+    if self.timeseries().isna().sum().sum() > 0:
         warnings.warn(
             "You are integrating data which contains nans so your result will "
             "also contain nans. Perhaps you want to remove the nans before "
@@ -718,9 +746,9 @@ def cumtrapz(self, out_var=None):
         )
 
     time_unit = "s"
-    times_in_s = self.time_points.values.astype(
-        "datetime64[{}]".format(time_unit)
-    ).astype("int")
+    times_in_s = self.time_points.values.astype(f"datetime64[{time_unit}]").astype(
+        "int"
+    )
     ts = self.timeseries()
 
     ur = scmdata.units.get_unit_registry()
@@ -828,7 +856,7 @@ def delta_per_delta_time(self, out_var=None):
         contain nans.
     """
     time_unit = "s"
-    times_numpy = self.time_points.values.astype("datetime64[{}]".format(time_unit))
+    times_numpy = self.time_points.values.astype(f"datetime64[{time_unit}]")
     times_deltas_numpy = times_numpy[1:] - times_numpy[:-1]
     times_in_s = times_numpy.astype("int")
     time_deltas_in_s = times_in_s[1:] - times_in_s[:-1]
@@ -836,7 +864,7 @@ def delta_per_delta_time(self, out_var=None):
     ur = scmdata.units.get_unit_registry()
 
     ts = self.timeseries()
-    if ts.isnull().sum().sum() > 0:
+    if ts.isna().sum().sum() > 0:
         warnings.warn(
             "You are calculating deltas of data which contains nans so your "
             "result will also contain nans. Perhaps you want to remove the "
@@ -845,7 +873,7 @@ def delta_per_delta_time(self, out_var=None):
         )
 
     out = ts.diff(periods=1, axis="columns")
-    if not out.iloc[:, 0].isnull().all():  # pragma: no cover
+    if not out.iloc[:, 0].isna().all():  # pragma: no cover
         raise AssertionError(
             "Did pandas change their API? The first timestep is not all nan."
         )
@@ -907,7 +935,7 @@ def linear_regression(self):
     ):
         unit = row_meta.pop("unit")
 
-        row_meta["gradient"] = gradient * ur("{} / {}".format(unit, time_unit))
+        row_meta["gradient"] = gradient * ur(f"{unit} / {time_unit}")
         row_meta["intercept"] = intercept * ur(unit)
 
         out.append(row_meta)
@@ -1020,13 +1048,11 @@ def linear_regression_scmrun(self):
 
 def _calculate_linear_regression(in_scmrun):
     time_unit = "s"
-    times_numpy = in_scmrun.time_points.values.astype(
-        "datetime64[{}]".format(time_unit)
-    )
+    times_numpy = in_scmrun.time_points.values.astype(f"datetime64[{time_unit}]")
     times_in_s = times_numpy.astype("int")
 
     ts = in_scmrun.timeseries()
-    if ts.isnull().sum().sum() > 0:
+    if ts.isna().sum().sum() > 0:
         warnings.warn(
             "You are calculating a linear regression of data which contains "
             "nans so your result will also contain nans. Perhaps you want to "

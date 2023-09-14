@@ -124,7 +124,7 @@ testpaths = "tests"
 
 [tool.ruff]
 src = ["src"]
-target-version = "py39"
+target-version = "py38"
 select = [
     "E",  # pycodestyle error
     "W",  # pycodestyle warning
@@ -137,9 +137,6 @@ select = [
     "RUF",  # ruff specifics
     "UP",  # pyupgrade
     "S",  # flake8-bandit
-    # pandas support via pandas-vet. In some cases we will want to disable
-    # this because it can lead to too many false positives.
-    "PD",
 ]
 unfixable = [
     "PD002",  # Disable autofix for inplace as this often introduces bugs
@@ -147,6 +144,7 @@ unfixable = [
 ignore = [
     "D200",  # One-line docstring should fit on one line with quotes
     "D400",  # First line should end with a period
+    "TRY003",  # Avoid specifying long messages outside the exception class
 ]
 # Provide some leeway for long docstring, this is otherwise handled by black
 line-length = 110
@@ -155,7 +153,11 @@ line-length = 110
 "test*.py" = [
     "D",  # Documentation not needed in tests
     "S101",  # S101 Use of `assert` detected
-    "PLR2004" # Magic value used in comparison
+    "PLR0913",  # Too many arguments to function call
+    "PLR2004",  # Magic value used in comparison
+    "PLR5501",  # Use `elif` instead of `else` then `if`
+    "NPY002",  # Replace legacy `np.random.rand`
+    "S311",  # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
 "docs/source/notebooks/*" = [
     "D100",  # Missing docstring at the top of file
@@ -165,6 +167,16 @@ line-length = 110
 "scripts/*" = [
     "S101" # S101 Use of `assert` detected
 ]
+"src/scmdata/ops.py" = [
+    "E501" # Line too long
+]
+
+"src/scmdata/processing.py" = [
+    "PLR2004" # Magic value used in comparison
+]
+
+[tool.ruff.pylint]
+max-args = 7
 
 [tool.ruff.isort]
 known-first-party = ["src"]

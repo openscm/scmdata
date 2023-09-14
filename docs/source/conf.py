@@ -178,6 +178,6 @@ intersphinx_mapping = {
 
 # -- Misc configuration -------------------------------------------------
 
-rst_epilog = """
+rst_epilog = r"""
 .. |CO2| replace:: CO\ :sub:`2`\
 """

@@ -1,4 +1,6 @@
 """
+Unit handling and conversion
+
 :mod:`scmdata` uses :mod:`openscm_units` to support unit handling and conversion. :mod:`openscm_units` is
 built on top of :mod:`pint` and includes some additional quantity definitions to support the tracking of
 emissions timeseries.
@@ -67,8 +69,8 @@ class UnitConverter:
 
         if np.isnan(t1) or np.isnan(t2):
             warn_msg = (
-                "No conversion from {} to {} available, nan will be returned "
-                "upon conversion".format(source, target)
+                f"No conversion from {source} to {target} available, nan will be returned "
+                "upon conversion"
             )
             warnings.warn(warn_msg)
 

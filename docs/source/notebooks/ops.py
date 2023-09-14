@@ -14,7 +14,6 @@
 # ---
 
 # %%
-import os
 import traceback
 import warnings
 
@@ -26,7 +25,8 @@ from scmdata import ScmRun, run_append
 # %% [markdown]
 # # Operations
 #
-# scmdata has limited support for operations with `ScmRun` instances. Here we provide examples of how to use them.
+# scmdata has limited support for operations with `ScmRun` instances. Here we provide examples of
+# how to use them.
 
 # %% [markdown]
 # ## Available operations
@@ -64,7 +64,8 @@ db_forcing.head()
 # ## Add
 
 # %% [markdown]
-# A very simple example is adding two variables together. For example, below we calculate total CO$_2$ emissions for the RCP2.6 scenario.
+# A very simple example is adding two variables together. For example, below we calculate total
+# CO$_2$ emissions for the RCP2.6 scenario.
 
 # %%
 emms_co2 = db_emms.filter(variable="Emissions|CO2|MAGICC Fossil and Industrial").add(
@@ -157,23 +158,21 @@ ssp126_minus_rcp26.lineplot()
 ssp_rcp_diffs = []
 for target in ["26", "45", "60", "85"]:
     ssp = db_forcing.filter(
-        scenario="ssp*{}".format(target),
+        scenario=f"ssp*{target}",
         variable="Effective Radiative Forcing",
     )
     ssp_scen = ssp.get_unique_meta("scenario", no_duplicates=True)
     ssp_model = ssp.get_unique_meta("model", no_duplicates=True)
 
-    rcp = db_forcing.filter(
-        scenario="rcp{}".format(target), variable="Radiative Forcing"
-    )
+    rcp = db_forcing.filter(scenario=f"rcp{target}", variable="Radiative Forcing")
     rcp_scen = rcp.get_unique_meta("scenario", no_duplicates=True)
     rcp_model = rcp.get_unique_meta("model", no_duplicates=True)
 
     ssp_rcp_diff = ssp.subtract(
         rcp,
         op_cols={
-            "scenario": "{} - {}".format(ssp_scen, rcp_scen),
-            "model": "{} - {}".format(ssp_model, rcp_model),
+            "scenario": f"{ssp_scen} - {rcp_scen}",
+            "model": f"{ssp_model} - {rcp_model}",
             "variable": "RF",
         },
     )
@@ -401,9 +400,9 @@ ref_period = range(2010, 2040 + 1)
 erf_total_for_shift_rel_to_ref_period = erf_total_for_shift.relative_to_ref_period_mean(
     year=ref_period
 )
-erf_total_for_shift_rel_to_ref_period["label"] = "rel. to {} - {}".format(
-    ref_period[0], ref_period[-1]
-)
+erf_total_for_shift_rel_to_ref_period[
+    "label"
+] = f"rel. to {ref_period[0]} - {ref_period[-1]}"
 
 # %%
 target = -5

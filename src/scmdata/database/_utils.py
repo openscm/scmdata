@@ -27,4 +27,4 @@ def _check_is_subdir(root, d):
     is_subdir = root_path in out_path.parents
     # Sanity check that we never mangle anything outside of the root dir
     if not is_subdir:  # pragma: no cover
-        raise AssertionError("{} not in {}".format(d, root))
+        raise AssertionError(f"{d} not in {root}")

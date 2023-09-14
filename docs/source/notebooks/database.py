@@ -16,9 +16,12 @@
 # %% [markdown]
 # # ScmDatabase
 #
-# In this notebook, we provide an example of the `ScmDatabase` class. `ScmDatabase` helps read and write large bunches of timeseries data by splitting them up into multiple files on disk and allowing users to read/write selections at a time.
+# In this notebook, we provide an example of the `ScmDatabase` class. `ScmDatabase` helps read and
+# write large bunches of timeseries data by splitting them up into multiple files on disk and
+# allowing users to read/write selections at a time.
 #
-# This allows handling very large datasets which may exceed the amount of system memory a user has available.
+# This allows handling very large datasets which may exceed the amount of system memory a user has
+# available.
 
 # %%
 
@@ -33,6 +36,7 @@ from scmdata.database import ScmDatabase
 from scmdata.errors import NonUniqueMetadataError
 
 pd.set_option("display.width", 160)
+generator = np.random.default_rng(0)
 
 # %% [markdown]
 # ## Initialisation
@@ -42,11 +46,20 @@ pd.set_option("display.width", 160)
 # * Where the data is going to be stored (`root_dir`)
 # * How the data will be split up (`levels`)
 #
-# When data is to be written to disk it is split into different files, each with a unique combination of metadata values. The `levels` option defines the metadata columns used to split up the data.
+# When data is to be written to disk it is split into different files, each with a unique
+# combination of metadata values. The `levels` option defines the metadata columns used to split up
+# the data.
 #
-# Choosing an appropriate value for `levels` could play a large role in determining the performance of reading/writing. For example, if you were storing output from a number of different climate models, you may define `levels` as `["climate_model", "scenario", "variable", "region"]`. This would allow loading a particular variable and region, say `Surface Temperature` for the `World` region, from all climate models and scenarios without needing to load the other variables and regions. Specifying too many groups may result in slow writing if a very large number of database files are written.
+# Choosing an appropriate value for `levels` could play a large role in determining the performance
+# of reading/writing. For example, if you were storing output from a number of different climate
+# models, you may define `levels` as `["climate_model", "scenario", "variable", "region"]`. This
+# would allow loading a particular variable and region, say `Surface Temperature` for the `World`
+# region, from all climate models and scenarios without needing to load the other variables and
+# regions. Specifying too many groups may result in slow writing if a very large number of database
+# files are written.
 #
-# If you wish load a subset of a particular metadata dimension then it must be specified in this list.
+# If you wish load a subset of a particular metadata dimension then it must be specified in this
+# list.
 
 # %%
 print(ScmDatabase.__init__.__doc__)
@@ -63,11 +76,12 @@ database
 # %% [markdown]
 # ## Saving data
 #
-# Data can be added to the database using the `save_to_database` method. Subsequent calls merge new data into the database.
+# Data can be added to the database using the `save_to_database` method. Subsequent calls merge new
+# data into the database.
 
 
 # %%
-def create_timeseries(
+def create_timeseries(  # noqa: PLR0913
     n=500,
     count=1,
     b_factor=1 / 1000,
@@ -78,8 +92,11 @@ def create_timeseries(
     region="World",
     **kwargs,
 ):
-    a = np.random.rand(count)
-    b = np.random.rand(count) * b_factor
+    """
+    Create an example timeseries
+    """
+    a = generator.random(count)
+    b = generator.random(count) * b_factor
     data = a + np.arange(n)[:, np.newaxis] ** 2 * b
     index = 2000 + np.arange(n)
     return ScmRun(
@@ -143,16 +160,19 @@ database.save(runs_low)
 database.available_data()
 
 # %% [markdown]
-# Internally, each row shown in `available_data()` is stored as a netCDF file in a directory structure following ``database.levels``.
+# Internally, each row shown in `available_data()` is stored as a netCDF file in a directory
+# structure following ``database.levels``.
 
 # %%
 
 # !pushd {temp_out_dir.name}; tree; popd
 
 # %% [markdown]
-# Additional calls to `save` will merge the new data into the database, creating any new files as required.
+# Additional calls to `save` will merge the new data into the database, creating any new files as
+# required.
 #
-# If existing data is found, it is first loaded and merged with the saved data before writing to prevent losing existing data.
+# If existing data is found, it is first loaded and merged with the saved data before writing to
+# prevent losing existing data.
 
 # %%
 
@@ -180,7 +200,8 @@ database.save(runs_high_extra)
 # %% [markdown]
 # ## Loading data
 #
-# When loading data we can select a subset of data, similar to `ScmRun.filter` but limited to filtering for the metadata columns as specified in `levels`
+# When loading data we can select a subset of data, similar to `ScmRun.filter` but limited to
+# filtering for the metadata columns as specified in `levels`
 
 # %%
 
@@ -192,7 +213,8 @@ run.meta
 database.load(climate_model="model_b").meta
 
 # %% [markdown]
-# The entire dataset can also be loaded if needed. This may not be possible for very large datasets depending on the amount of system memory available.
+# The entire dataset can also be loaded if needed. This may not be possible for very large datasets
+# depending on the amount of system memory available.
 
 # %%
 

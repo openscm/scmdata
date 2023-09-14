@@ -16,14 +16,14 @@
 # %% [markdown]
 # # Emissions units with Pint
 #
-# In this notebook we give some examples of how units are handled in SCMData and are built on top of the [Pint](https://github.com/hgrecco/pint) package.
+# In this notebook we give some examples of how units are handled in SCMData and are built on top of
+# the [Pint](https://github.com/hgrecco/pint) package.
 
 # %%
 
 import traceback
 import warnings
 
-import pint
 from pint.errors import DimensionalityError
 
 from scmdata.units import UnitConverter
@@ -43,7 +43,8 @@ uc.convert_to(1)
 # %% [markdown]
 # ## Pint Unit Registry
 #
-# The `unit_registry` which sits underneath all conversions can be accessed via `scmdata.units.get_unit_registry`or via `UnitConverter`'s `unit_registry` property.
+# The `unit_registry` which sits underneath all conversions can be accessed via
+# `scmdata.units.get_unit_registry`or via `UnitConverter`'s `unit_registry` property.
 
 # %%
 unit_registry = uc.unit_registry
@@ -56,7 +57,9 @@ unit_registry = uc.unit_registry
 dir(unit_registry)
 
 # %% [markdown]
-# Additional units can be added to the unit registry using `define` as shown below. By default, `scmdata.units.UNIT_REGISTRY` uses the same registry as `openscm_units.unit_registry` so any additional units will be available for any other packages which use `openscm_units.unit_registry`.
+# Additional units can be added to the unit registry using `define` as shown below. By default,
+# `scmdata.units.UNIT_REGISTRY` uses the same registry as `openscm_units.unit_registry` so any
+# additional units will be available for any other packages which use `openscm_units.unit_registry`.
 
 # %%
 unit_registry.define("population = [population]")
@@ -66,7 +69,8 @@ assert "population" in dir(unit_registry)
 # %% [markdown]
 # ## Using Pint Directly
 #
-# For completeness, below we show how to use pint directly. Note that all of these operations are used by `UnitConverter` so the user shouldn't ever have to access pint in this way.
+# For completeness, below we show how to use pint directly. Note that all of these operations are
+# used by `UnitConverter` so the user shouldn't ever have to access pint in this way.
 
 # %% [markdown]
 # With the `unit_registry`, we can also create Pint variables/arrays which are unit aware.
@@ -108,7 +112,8 @@ print(one_carbon / one_co2)
 print((one_carbon / one_co2).to_base_units())
 
 # %% [markdown]
-# If we have compound units (e.g. emissions units which are [mass] * [substance] / [time]), we can convert any bit of the unit we want.
+# If we have compound units (e.g. emissions units which are [mass] * [substance] / [time]), we can
+# convert any bit of the unit we want.
 
 # %%
 eg1 = 1 * unit_registry("Mt") * unit_registry("C") / unit_registry("yr")
@@ -123,7 +128,9 @@ print(eg2.to("Gt C / yr"))
 # %% [markdown]
 # ## Contexts
 #
-# With a context, we can use metric conversion definitions to do emissions conversions that would otherwise raise a `DimensionalityError`. For example, converting CO2 to N2O using AR4GWP100 (where 298 tCO2 = 1 tN2O).
+# With a context, we can use metric conversion definitions to do emissions conversions that would
+# otherwise raise a `DimensionalityError`. For example, converting CO2 to N2O using AR4GWP100
+# (where 298 tCO2 = 1 tN2O).
 
 # %%
 
@@ -153,7 +160,8 @@ with unit_registry.context("AR4GWP100"):
     )  # I am not sure why you need to force the conversion of `a` first...
 
 # %% [markdown]
-# Without a context to tell us about metrics, if we try to do an invalid conversion, a `DimensionalityError` will be raised.
+# Without a context to tell us about metrics, if we try to do an invalid conversion, a
+# `DimensionalityError` will be raised.
 
 # %%
 try:
@@ -170,14 +178,18 @@ except DimensionalityError:
 
 
 # %% [markdown]
-# If the context you use does not have the conversion you request, a warning will be raised. Any subsequent conversions will result in NaN's.
+# If the context you use does not have the conversion you request, a warning will be raised. Any
+# subsequent conversions will result in NaN's.
 
 
 # %%
 # modify the way the warning appears to remove the path,
 # thank you https://stackoverflow.com/a/26433913
 def custom_formatting(message, category, filename, lineno, file=None, line=None):
-    return "{}: {}\n".format(category.__name__, message)
+    """
+    Create a format string for a warning message
+    """
+    return f"{category.__name__}: {message}\n"
 
 
 warnings.formatwarning = custom_formatting

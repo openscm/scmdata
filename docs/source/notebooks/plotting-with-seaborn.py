@@ -75,7 +75,8 @@ rcmip_db.filter(variable="Effective Radiative Forcing").lineplot(
 # ### Specifying the time axis
 #
 # Plotting with a `datetime.datetime` time axis is not always convenient.
-# To address this, we provide the `time_axis` keyword argument. The options are available in the `lineplot` docstring.
+# To address this, we provide the `time_axis` keyword argument. The options are available in the
+# `lineplot` docstring.
 
 # %%
 print(rcmip_db.lineplot.__doc__)
@@ -122,16 +123,18 @@ rcmip_db.long_data(time_axis="days since 1970-01-01")
 # %% [markdown]
 # ## Plotting with seaborn
 #
-# If you wish to make plots which are more complex than this most basic pattern, a combination of seaborn and pandas reshaping is your best bet.
+# If you wish to make plots which are more complex than this most basic pattern, a combination of
+# seaborn and pandas reshaping is your best bet.
 
 # %% [markdown]
 # ### Plotting on a grid
 #
-# Often we wish to look at lots of different variables at once. Seaborn allows this sort of 'gridded' plotting, as shown below.
+# Often we wish to look at lots of different variables at once. Seaborn allows this sort of
+# 'gridded' plotting, as shown below.
 
 # %%
 vars_to_plot = ["Effective Radiative Forcing"] + [
-    "Effective Radiative Forcing|{}".format(v)
+    f"Effective Radiative Forcing|{v}"
     for v in [
         "Anthropogenic",
         "Anthropogenic|Aerosols",
@@ -148,7 +151,8 @@ seaborn_df = rcmip_db.filter(variable=vars_to_plot).long_data()
 seaborn_df.head()
 
 # %% [markdown]
-# With the output of `.long_data()` we can directly use [``seaborn.relplot``](https://seaborn.pydata.org/generated/seaborn.relplot.html).
+# With the output of `.long_data()` we can directly use
+# [seaborn.relplot](https://seaborn.pydata.org/generated/seaborn.relplot.html).
 
 # %%
 
@@ -169,7 +173,9 @@ sns.relplot(
 # %% [markdown]
 # ### Variable scatter plots
 #
-# Sometimes we don't want to plot against time, rather we want to plot variables against each other. For example, we might want to see how the effective radiative forcings relate to each other in the different scenarios. In such a case we can reshape the data using pandas before using seaborn.
+# Sometimes we don't want to plot against time, rather we want to plot variables against each other.
+# For example, we might want to see how the effective radiative forcings relate to each other in the
+# different scenarios. In such a case we can reshape the data using pandas before using seaborn.
 
 # %%
 

@@ -71,7 +71,7 @@ def test_init_df_formats(test_pd_run_df, in_format):
     if in_format == "pd.Series":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year").set_index(
-            idx + ["year"]
+            [*idx, "year"]
         )["value"]
     elif in_format == "year_col":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
@@ -79,7 +79,7 @@ def test_init_df_formats(test_pd_run_df, in_format):
     elif in_format == "year_col_index":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year").set_index(
-            idx + ["year"]
+            [*idx, "year"]
         )
     elif in_format == "time_col":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
@@ -91,25 +91,23 @@ def test_init_df_formats(test_pd_run_df, in_format):
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
         test_init["time"] = test_init["year"].apply(lambda x: dt.datetime(x, 1, 1))
         test_init = test_init.drop("year", axis="columns")
-        test_init = test_init.set_index(idx + ["time"])
+        test_init = test_init.set_index([*idx, "time"])
     elif in_format == "time_col_str_simple":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
-        test_init["time"] = test_init["year"].apply(
-            lambda x: "{}-1-1 00:00:00".format(x)
-        )
+        test_init["time"] = test_init["year"].apply(lambda x: f"{x}-1-1 00:00:00")
         test_init = test_init.drop("year", axis="columns")
     elif in_format == "time_col_str_complex":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
-        test_init["time"] = test_init["year"].apply(lambda x: "{}/1/1".format(x))
+        test_init["time"] = test_init["year"].apply(lambda x: f"{x}/1/1")
         test_init = test_init.drop("year", axis="columns")
     elif in_format == "time_col_reversed":
         test_init = test_pd_run_df[test_pd_run_df.columns[::-1]]
     elif in_format == "str_times":
         test_init = test_pd_run_df.copy()
         test_init.columns = test_init.columns.map(
-            lambda x: "{}/1/1".format(x) if isinstance(x, int) else x
+            lambda x: f"{x}/1/1" if isinstance(x, int) else x
         )
 
     res = ScmRun(test_init)
@@ -210,7 +208,7 @@ def test_init_multiple_file_error():
 
 def test_init_unrecognised_type_error():
     fail_type = {"dict": "key"}
-    error_msg = re.escape("Cannot load {} from {}".format(str(ScmRun), type(fail_type)))
+    error_msg = re.escape(f"Cannot load {ScmRun!s} from {type(fail_type)}")
     with pytest.raises(TypeError, match=error_msg):
         ScmRun(fail_type)
 
@@ -248,9 +246,7 @@ def test_init_ts_col_string(test_ts):
 def test_init_ts_col_wrong_length_error(test_ts, fail_setting):
     correct_scenarios = ["a_scenario", "a_scenario", "a_scenario2"]
     error_msg = re.escape(
-        "Length of column 'model' is incorrect. It should be length 1 or {}".format(
-            len(correct_scenarios)
-        )
+        f"Length of column 'model' is incorrect. It should be length 1 or {len(correct_scenarios)}"
     )
     with pytest.raises(ValueError, match=error_msg):
         ScmRun(
@@ -544,7 +540,7 @@ def test_get_item_with_nans(scm_run, value, output):
 
 def test_get_item_not_in_meta(scm_run):
     dud_key = 0
-    error_msg = re.escape("[{}] is not in metadata".format(dud_key))
+    error_msg = re.escape(f"[{dud_key}] is not in metadata")
     with pytest.raises(KeyError, match=error_msg):
         scm_run[dud_key]
 
@@ -1352,10 +1348,10 @@ def test_timeseries_drop_all_nan_times(drop_all_nan_times, time_axis):
     res = start.timeseries(drop_all_nan_times=drop_all_nan_times, time_axis=time_axis)
     if drop_all_nan_times:
         # leave the solo nan, drop all others
-        assert res.isnull().sum().sum() == 1
+        assert res.isna().sum().sum() == 1
         assert len(res.columns) == 3
     else:
-        assert res.isnull().sum().sum() == 4
+        assert res.isna().sum().sum() == 4
         assert len(res.columns) == 4
 
 
@@ -1618,7 +1614,7 @@ def test_process_over_with_nans_raises(scm_run, na_override):
 
     with pytest.raises(
         ValueError,
-        match="na_override clashes with existing meta: {}".format(na_override),
+        match=f"na_override clashes with existing meta: {na_override}",
     ):
         scm_run.process_over(("variable",), "median", na_override=na_override)
 
@@ -2383,7 +2379,7 @@ def test_append_timewise_no_match(scm_run_interpolated):
         if exp_vals.empty:
             # no other provided hence get nans in output
             # question for Jared: should we raise a warning when this happens?
-            assert df.isnull().all().all()
+            assert df.isna().all().all()
 
         else:
             exp_vals = exp_vals.values.squeeze()
@@ -2877,9 +2873,7 @@ def test_convert_unit_unknown_unit(scm_run):
     unknown_unit = "Unknown"
     scm_run["unit"] = unknown_unit
 
-    error_msg = re.escape(
-        "'{}' is not defined in the unit registry".format(unknown_unit)
-    )
+    error_msg = re.escape(f"'{unknown_unit}' is not defined in the unit registry")
     with pytest.raises(UndefinedUnitError, match=error_msg):
         scm_run.convert_unit("EJ/yr")
 
@@ -3109,7 +3103,7 @@ def test_unit_context_both_have_existing_context_error(
 
     error_msg = re.escape(
         "Existing unit conversion context(s), `['junk']`, doesn't match input context, "
-        "`{}`, drop `unit_context` metadata before doing conversion".format(context)
+        f"`{context}`, drop `unit_context` metadata before doing conversion"
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run.convert_unit("MJ/yr", variable=to_convert, context=context)
@@ -3148,8 +3142,8 @@ def test_unit_context_to_convert_has_existing_context_error(scm_run, context):
     _check_context_or_nan(start, to_convert, None, keep=False)
 
     error_msg = re.escape(
-        "Existing unit conversion context(s), `['{}']`, doesn't match input context, `junk`, drop "
-        "`unit_context` metadata before doing conversion".format(context)
+        f"Existing unit conversion context(s), `['{context}']`, doesn't match input context, `junk`, drop "
+        "`unit_context` metadata before doing conversion"
     )
     with pytest.raises(ValueError, match=error_msg):
         start.convert_unit("GJ/yr", variable=to_convert, context="junk")
@@ -3299,7 +3293,7 @@ def test_resample_long_datetimes():
 
 def test_init_no_file():
     fname = "/path/to/nowhere"
-    error_msg = re.escape("no data file `{}` found!".format(fname))
+    error_msg = re.escape(f"no data file `{fname}` found!")
     with pytest.raises(OSError, match=error_msg):
         ScmRun(fname)
 
@@ -3405,9 +3399,7 @@ def test_separator_changes(scm_run, separator):
 
     pd.testing.assert_series_equal(
         scm_run.filter(level=1)["variable"],
-        pd.Series(
-            ["Primary Energy{}Coal".format(separator)], index=[1], name="variable"
-        ),
+        pd.Series([f"Primary Energy{separator}Coal"], index=[1], name="variable"),
     )
 
 
@@ -3641,9 +3633,7 @@ def test_timeseries_time_axis_non_unique_raises(
             "region": "World",
         },
     )
-    error_msg = re.escape(
-        "Ambiguous time values with time_axis = '{}'".format(time_axis)
-    )
+    error_msg = re.escape(f"Ambiguous time values with time_axis = '{time_axis}'")
 
     if exp_raise:
         with pytest.raises(ValueError, match=error_msg):
@@ -3867,7 +3857,7 @@ def test_non_unique_metadata_error_formatting():
     exp = exp.to_frame().reset_index()
     error_msg = (
         "Duplicate metadata (numbers show how many times the given "
-        "metadata is repeated).\n{}".format(exp)
+        f"metadata is repeated).\n{exp}"
     )
 
     with pytest.raises(NonUniqueMetadataError, match=re.escape(error_msg)):

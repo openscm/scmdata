@@ -68,9 +68,9 @@ def _get_calculate_crossing_times_call_kwargs(return_year):
 
 def _get_expected_crossing_times(exp_vals, conv_to_year):
     if conv_to_year:
-        exp_vals = [v if pd.isnull(v) else v.year for v in exp_vals]
+        exp_vals = [v if pd.isna(v) else v.year for v in exp_vals]
     else:
-        exp_vals = [pd.NaT if pd.isnull(v) else v for v in exp_vals]
+        exp_vals = [pd.NaT if pd.isna(v) else v for v in exp_vals]
 
     return exp_vals
 
@@ -382,7 +382,7 @@ def _get_calculate_exeedance_probs_expected_name(output_name, threshold):
     if output_name is not None:
         return output_name
 
-    return "{} exceedance probability".format(threshold)
+    return f"{threshold} exceedance probability"
 
 
 @pytest.mark.parametrize(
@@ -606,8 +606,7 @@ def test_requires_preprocessing(test_processing_scm_df, col, func, kwargs):
     ]
 
     error_msg = (
-        "More than one value for {}. "
-        "This is unlikely to be what you want.".format(col)
+        f"More than one value for {col}. " "This is unlikely to be what you want."
     )
     with pytest.raises(ValueError, match=error_msg):
         func(
@@ -646,7 +645,7 @@ def test_peak(output_name, test_processing_scm_df):
     else:
         idx = exp.index.names
         exp = exp.reset_index()
-        exp["variable"] = exp["variable"].apply(lambda x: "Peak {}".format(x))
+        exp["variable"] = exp["variable"].apply(lambda x: f"Peak {x}")
         exp = exp.set_index(idx)[0]
 
     pdt.assert_series_equal(res, exp)
@@ -667,7 +666,7 @@ def test_peak_multi_variable(test_processing_scm_df_multi_climate_model):
     exp = pd.Series(exp_vals, index=exp_idx)
     idx = exp.index.names
     exp = exp.reset_index()
-    exp["variable"] = exp["variable"].apply(lambda x: "Peak {}".format(x))
+    exp["variable"] = exp["variable"].apply(lambda x: f"Peak {x}")
     exp = exp.set_index(idx)[0]
 
     pdt.assert_series_equal(res, exp)
@@ -716,9 +715,7 @@ def test_peak_time(output_name, return_year, conv_to_year, test_processing_scm_d
     else:
         idx = exp.index.names
         exp = exp.reset_index()
-        exp["variable"] = exp["variable"].apply(
-            lambda x: "{} of peak {}".format(time_name, x)
-        )
+        exp["variable"] = exp["variable"].apply(lambda x: f"{time_name} of peak {x}")
         exp = exp.set_index(idx)[0]
 
     pdt.assert_series_equal(res, exp)
@@ -758,9 +755,7 @@ def test_peak_time_multi_variable(
     idx = exp.index.names
     exp = exp.reset_index()
 
-    exp["variable"] = exp["variable"].apply(
-        lambda x: "{} of peak {}".format(time_name, x)
-    )
+    exp["variable"] = exp["variable"].apply(lambda x: f"{time_name} of peak {x}")
     exp = exp.set_index(idx)[0]
 
     pdt.assert_series_equal(res, exp)
@@ -778,20 +773,20 @@ def sr15_inferred_temperature_quantiles(test_data_path):
 
     out = []
     for cm in ["MAGICC", "FAIR"]:
-        cm_ep = sr15_exceedance_probs.filter(variable="*{}*".format(cm))
-        cm_median = sr15_output.filter(variable="*{}*MED".format(cm)).timeseries()
+        cm_ep = sr15_exceedance_probs.filter(variable=f"*{cm}*")
+        cm_median = sr15_output.filter(variable=f"*{cm}*MED").timeseries()
         for p in [0.67, 0.5, 0.34]:
             quantile = 1 - p
             cm_q = cm_median.reset_index()
             cm_q["variable"] = cm_q["variable"].str.replace(
-                "MED", "P{}".format(int(np.round(quantile * 100, 0)))
+                "MED", f"P{int(np.round(quantile * 100, 0))}"
             )
             cm_q = cm_q.set_index(cm_median.index.names).sort_index()
             cm_q.iloc[:, :] = 10
             for t in [2.0, 1.5]:
-                cm_ep_t = cm_ep.filter(variable="*{}*".format(t)).timeseries()
+                cm_ep_t = cm_ep.filter(variable=f"*{t}*").timeseries()
                 # null values in FaIR should be treated as being small
-                cm_ep_t_lt = (cm_ep_t <= p) | cm_ep_t.isnull()
+                cm_ep_t_lt = (cm_ep_t <= p) | cm_ep_t.isna()
                 cm_ep_t_lt = cm_ep_t_lt.reorder_levels(cm_q.index.names).sort_index()
                 cm_ep_t_lt.index = cm_q.index
                 cm_q[cm_ep_t_lt] = t
@@ -817,7 +812,7 @@ def sr15_temperatures_unmangled_names(sr15_inferred_temperature_quantiles):
 def test_categorisation_sr15(unit, sr15_temperatures_unmangled_names):
     index = ["model", "scenario"]
     exp = (
-        sr15_temperatures_unmangled_names.meta[index + ["category"]]
+        sr15_temperatures_unmangled_names.meta[[*index, "category"]]
         .drop_duplicates()
         .set_index(index)["category"]
     )
@@ -1067,7 +1062,7 @@ def test_categorisation_sr15_missing_quantiles(sr15_temperatures_unmangled_names
     ),
 )
 @pytest.mark.parametrize("progress", (True, False))
-def test_calculate_summary_stats(
+def test_calculate_summary_stats(  # noqa: PLR0912, PLR0915
     exceedance_probabilities_thresholds,
     exp_exceedance_prob_thresholds,
     index,
@@ -1095,7 +1090,7 @@ def test_calculate_summary_stats(
     inp = test_processing_scm_df_multi_climate_model.copy()
 
     if "unit" not in index:
-        exp_index = index + ["unit"]
+        exp_index = [*index, "unit"]
     else:
         exp_index = index
 
@@ -1271,10 +1266,8 @@ def test_calculate_summary_stats_no_categorisation_quantile_cols(
     dud_cols,
 ):
     error_msg = re.escape(
-        "categorisation_quantile_cols `{}` not in `scmrun`. "
-        "Available columns:{}".format(
-            dud_cols, test_processing_scm_df_multi_climate_model.meta.columns.tolist()
-        )
+        f"categorisation_quantile_cols `{dud_cols}` not in `scmrun`. "
+        f"Available columns:{test_processing_scm_df_multi_climate_model.meta.columns.tolist()}"
     )
     with pytest.raises(ValueError, match=error_msg):
         scmdata.processing.calculate_summary_stats(

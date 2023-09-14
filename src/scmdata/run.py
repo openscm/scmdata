@@ -1,6 +1,7 @@
 """
-ScmRun provides a high level analysis tool for simple climate model relevant
-data. It provides a simple interface for reading/writing, subsetting and visualising
+ScmRun provides a high level analysis tool for simple climate model relevant data
+
+It provides a simple interface for reading/writing, subsetting and visualising
 model data. ScmRuns are able to hold multiple model runs which aids in analysis of
 ensembles of model runs.
 """
@@ -17,16 +18,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Hashable,
     Iterable,
-    List,
     Literal,
-    Optional,
     Sequence,
-    Tuple,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -79,7 +75,7 @@ if TYPE_CHECKING:
 
 def _read_file(  # pylint: disable=missing-return-doc
     filename: FilePath, required_cols: Sequence[str], *args: Any, **kwargs: Any
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from a file.
 
@@ -134,7 +130,7 @@ def _read_pandas(
     """
     is_remote = pandas.io.common.is_url(fname)  # type: ignore
     if not is_remote and not os.path.exists(fname):
-        raise OSError("no data file `{}` found!".format(fname))
+        raise OSError(f"no data file `{fname}` found!")
 
     if fname.endswith("xlsx") or fname.endswith("xls"):
         _logger.debug("Assuming excel file")
@@ -160,13 +156,13 @@ def _read_pandas(
     return dateframe
 
 
-# pylint doesn't recognise return statements if they include ','
 def _format_data(  # pylint: disable=missing-return-doc
-    input_df: Union[pd.DataFrame, pd.Series[Any]], required_cols: Sequence[str]
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    input_df: pd.DataFrame | pd.Series[Any], required_cols: Sequence[str]
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from :class:`pandas.DataFrame` or
-    :class:`pandas.Series`.
+    Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>`
+
+    Handles inut from from :class:`pandas.DataFrame` or  :class:`pandas.Series`.
 
     See docstring of :func:`ScmRun.__init__` for details.
 
@@ -209,7 +205,7 @@ def _format_data(  # pylint: disable=missing-return-doc
 
 def _format_long_data(
     df: pd.DataFrame, required_cols: Sequence[str]
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     # check if time column is given as `year` (int) or `time` (datetime)
     cols = set(df.columns)
     if "year" in cols and "time" not in cols:
@@ -221,7 +217,7 @@ def _format_long_data(
         raise ValueError(msg)
 
     required_cols = list(required_cols)
-    extra_cols = list(set(cols) - set(required_cols + [time_col, "value"]))
+    extra_cols = list(set(cols) - set([*required_cols, time_col, "value"]))
     df = df.pivot_table(columns=required_cols + extra_cols, index=time_col).value
     meta = df.columns.to_frame(index=None)
     df.columns = meta.index
@@ -231,10 +227,10 @@ def _format_long_data(
 
 def _format_wide_data(
     df: pd.DataFrame, required_cols: Sequence[str]
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     cols = set(df.columns) - set(required_cols)
     time_cols = False
-    extra_cols: List[str] = []
+    extra_cols: list[str] = []
 
     for i in cols:
         # if in wide format, check if columns are years (int) or datetime
@@ -274,11 +270,11 @@ def _format_wide_data(
 
 
 def _from_ts(
-    df: Any,
-    required_cols: Tuple[str, ...],
+    input_df: Any,
+    required_cols: tuple[str, ...],
     index: Any = None,
-    **columns: Union[str, bool, float, int, List[Any]],
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    **columns: str | (bool | (float | (int | list[Any]))),
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepare data to initialize :class:`ScmRun <scmdata.run.ScmRun>` from wide timeseries.
 
@@ -294,24 +290,24 @@ def _from_ts(
     ValueError
         Not all required columns are present
     """
-    if not isinstance(df, pd.DataFrame):
-        df = pd.DataFrame(df)
+    if not isinstance(input_df, pd.DataFrame):
+        input_df = pd.DataFrame(input_df)
     if index is not None:
         if isinstance(index, np.ndarray):
-            df.index = TimePoints(index).to_index()
+            input_df.index = TimePoints(index).to_index()
         elif isinstance(index, TimePoints):
-            df.index = index.to_index()
+            input_df.index = index.to_index()
         else:
-            df.index = index
+            input_df.index = index
 
     # format columns to lower-case and check that all required columns exist
     if not set(required_cols).issubset(columns.keys()):
         missing = list(set(required_cols) - set(columns.keys()))
         raise MissingRequiredColumnError(missing)
 
-    df.index.name = "time"
+    input_df.index.name = "time"
 
-    num_ts = len(df.columns)
+    num_ts = len(input_df.columns)
     for c_name, col in columns.items():
         col_list = (
             [col] if isinstance(col, str) or not isinstance(col, Iterable) else col
@@ -321,15 +317,15 @@ def _from_ts(
             continue
         if len(col_list) != 1:
             error_msg = (
-                "Length of column '{}' is incorrect. It should be length "
-                "1 or {}".format(c_name, num_ts)
+                f"Length of column '{c_name}' is incorrect. It should be length "
+                f"1 or {num_ts}"
             )
             raise ValueError(error_msg)
         columns[c_name] = col_list * num_ts
 
-    meta = pd.DataFrame(columns, index=df.columns)
+    meta = pd.DataFrame(columns, index=input_df.columns)
 
-    return df, meta
+    return input_df, meta
 
 
 def _get_target(run: T, inplace: bool) -> T:
@@ -344,7 +340,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     Base class of a data container for timeseries data
     """
 
-    required_cols: Tuple[str, ...] = ("variable", "unit")
+    required_cols: tuple[str, ...] = ("variable", "unit")
     """
     Required metadata columns
 
@@ -365,10 +361,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         data: Any = None,
         index: Any = None,
-        columns: Optional[
-            dict[Hashable, Union[MetadataValue, Iterable[MetadataValue]]]
-        ] = None,
-        metadata: Optional[MetadataType] = None,
+        columns: dict[Hashable, MetadataValue | Iterable[MetadataValue]] | None = None,
+        metadata: MetadataType | None = None,
         copy_data: bool = False,
         **kwargs: Any,
     ):
@@ -431,23 +425,22 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             .. code:: python
 
                 >>> col_1 = {
-                    "scenario": ["rcp26"],
-                    "model": ["model1", "model2", "model3"],
-                    "region": ["unspecified"],
-                    "variable": ["unspecified"],
-                    "unit": ["unspecified"]
-                }
+                ...     "scenario": ["rcp26"],
+                ...     "model": ["model1", "model2", "model3"],
+                ...     "region": ["unspecified"],
+                ...     "variable": ["unspecified"],
+                ...     "unit": ["unspecified"],
+                ... }
                 >>> col_2 = {
-                    "scenario": ["rcp26", "rcp26", "rcp26"],
-                    "model": ["model1", "model2", "model3"],
-                    "region": ["unspecified"],
-                    "variable": ["unspecified"],
-                    "unit": ["unspecified"]
-                }
+                ...     "scenario": ["rcp26", "rcp26", "rcp26"],
+                ...     "model": ["model1", "model2", "model3"],
+                ...     "region": ["unspecified"],
+                ...     "variable": ["unspecified"],
+                ...     "unit": ["unspecified"],
+                ... }
                 >>> assert pd.testing.assert_frame_equal(
-                    ScmRun(d, columns=col_1).meta,
-                    ScmRun(d, columns=col_2).meta
-                )
+                ...     ScmRun(d, columns=col_1).meta, ScmRun(d, columns=col_2).meta
+                ... )
 
         metadata:
             Optional dictionary of metadata for instance as a whole.
@@ -507,9 +500,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         data: Any,
         index: Any = None,
-        columns: Optional[
-            Dict[Hashable, Union[Iterable[MetadataValue], MetadataValue]]
-        ] = None,
+        columns: dict[Hashable, Iterable[MetadataValue] | MetadataValue] | None = None,
         copy_data: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -534,11 +525,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 if isinstance(data, (list, tuple)) and isinstance(
                     data[0], (str, pathlib.PurePath)
                 ):
-                    raise ValueError(
+                    raise TypeError(
                         "Initialising from multiple files not supported, "
                         "use `scmdata.run.ScmRun.append()`"
                     )
-                error_msg = "Cannot load {} from {}".format(type(self), type(data))
+                error_msg = f"Cannot load {type(self)} from {type(data)}"
                 raise TypeError(error_msg)
 
             (_df, _meta) = _read_file(data, required_cols=self.required_cols, **kwargs)
@@ -602,12 +593,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             except ValueError:
                 return self._meta_column(key).astype(float)
 
-        raise KeyError("[{}] is not in metadata".format(key))
+        raise KeyError(f"[{key}] is not in metadata")
 
     def __setitem__(
         self,
         key: str,
-        value: "Optional[Union[Iterable[MetadataValue], MetadataValue]]",
+        value: Iterable[MetadataValue] | MetadataValue | None,
     ) -> Any:
         """
         Update metadata
@@ -670,6 +661,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             raise NonUniqueMetadataError(self.meta)
 
     def __repr__(self):
+        """Generate a repr string"""
+
         def _indent(s):
             lines = ["\t" + line for line in s.split("\n")]
             return "\n".join(lines)
@@ -677,8 +670,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         meta_str = _indent(self.meta.__repr__())
         if len(self.time_points):
             time_str = [
-                "Start: {}".format(self.time_points.values[0]),
-                "End: {}".format(self.time_points.values[-1]),
+                f"Start: {self.time_points.values[0]}",
+                f"End: {self.time_points.values[-1]}",
             ]
         else:
             time_str = ["Start: N/A", "End: N/A"]
@@ -709,11 +702,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 if other.shape[0] != self.shape[1]:
                     raise ValueError(
                         "only vectors with the same number of timesteps "
-                        "as self ({}) are supported".format(self.shape[1])
+                        f"as self ({self.shape[1]}) are supported"
                     )
             else:
                 raise ValueError(
-                    "operations with {}d data are not supported".format(other_ndim)
+                    f"operations with {other_ndim}d data are not supported"
                 )
 
         def _perform_op(df):
@@ -722,7 +715,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                     data = df.values * ur(df.get_unique_meta("unit", True))
                     use_pint = True
                 except KeyError:  # pragma: no cover # emergency valve
-                    raise KeyError(
+                    raise KeyError(  # noqa: TRY200
                         "No `unit` column in your metadata, cannot perform operations "
                         "with pint quantities"
                     )
@@ -755,9 +748,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         run._df.values[:] = np.vstack(res).T
         return run
 
-    def drop_meta(
-        self, columns: Union[Iterable[str], str], inplace: bool = False
-    ) -> Self:
+    def drop_meta(self, columns: Iterable[str] | str, inplace: bool = False) -> Self:
         """
         Drop meta columns out of the Run
 
@@ -821,9 +812,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def timeseries(
         self,
-        meta: Optional[Iterable[str]] = None,
+        meta: Iterable[str] | None = None,
         check_duplicated: bool = True,
-        time_axis: Optional[str] = None,
+        time_axis: str | None = None,
         drop_all_nan_times: bool = False,
     ) -> pd.DataFrame:
         """
@@ -897,12 +888,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             columns = calc_seconds(self._time_points.values).astype(int)
 
         else:
-            raise NotImplementedError("time_axis = '{}'".format(time_axis))
+            raise NotImplementedError(f"time_axis = '{time_axis}'")
 
         if len(np.unique(columns)) != len(columns):
-            raise ValueError(
-                "Ambiguous time values with time_axis = '{}'".format(time_axis)
-            )
+            raise ValueError(f"Ambiguous time values with time_axis = '{time_axis}'")
 
         df.columns = pd.Index(columns, name="time")
         df.index = pd.MultiIndex.from_frame(_meta)
@@ -962,7 +951,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         return self._df.T.shape
 
     @property
-    def values(self) -> "NDArray[np.float_]":
+    def values(self) -> NDArray[np.float_]:
         """
         Timeseries values without metadata
 
@@ -1009,8 +998,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     def set_meta(
         self,
         dimension: str,
-        value: Union[MetadataValue, Iterable[MetadataValue]],
-        **filter_kwargs: Union[MetadataValue, Iterable[MetadataValue]],
+        value: MetadataValue | Iterable[MetadataValue],
+        **filter_kwargs: MetadataValue | Iterable[MetadataValue],
     ) -> Self:
         """
         Update metadata
@@ -1069,7 +1058,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         keep: bool = True,
         inplace: bool = False,
         log_if_empty: bool = True,
-        **kwargs: Union[MetadataValue, Iterable[MetadataValue]],
+        **kwargs: MetadataValue | Iterable[MetadataValue],
     ) -> Self:
         """
         Return a filtered ScmRun (i.e., a subset of the data).
@@ -1208,10 +1197,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return ret
 
-    # pylint doesn't recognise ',' in returns type definition
-    def _apply_filters(  # pylint: disable=missing-return-doc
-        self, filters: Dict[str, Union[MetadataValue, Iterable[MetadataValue]]]
-    ) -> "Tuple[NDArray[np.bool_], NDArray[np.bool_]]":
+    def _apply_filters(  # noqa: PLR0912
+        self, filters: dict[str, MetadataValue | Iterable[MetadataValue]]
+    ) -> tuple[NDArray[np.bool_], NDArray[np.bool_]]:
         """
         Determine rows to keep in data for given set of filters.
 
@@ -1287,7 +1275,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 keep_ts &= datetime_match(self._time_points.values, values)
 
             else:
-                raise ValueError("filter by `{}` not supported".format(col))
+                raise ValueError(f"filter by `{col}` not supported")
 
         return keep_ts, keep_meta
 
@@ -1357,14 +1345,14 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         meta: str,
         no_duplicates: Literal[False] = ...,
-    ) -> List[MetadataValue]:
+    ) -> list[MetadataValue]:
         ...
 
     def get_unique_meta(
         self,
         meta: str,
-        no_duplicates: Optional[bool] = False,
-    ) -> Union[List[MetadataValue], MetadataValue]:
+        no_duplicates: bool | None = False,
+    ) -> list[MetadataValue] | MetadataValue:
         """
         Get unique values in a metadata column.
 
@@ -1392,11 +1380,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             List of unique metadata values. If ``no_duplicates`` is ``True`` the
             metadata value will be returned (rather than a list).
         """
-        vals: List[MetadataValue] = self._meta.get_level_values(meta).unique().to_list()
+        vals: list[MetadataValue] = self._meta.get_level_values(meta).unique().to_list()
         if no_duplicates:
             if len(vals) != 1:
                 raise ValueError(
-                    "`{}` column is not unique (found values: {})".format(meta, vals)
+                    f"`{meta}` column is not unique (found values: {vals})"
                 )
 
             return vals[0]
@@ -1405,9 +1393,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def interpolate(
         self,
-        target_times: Iterable[Union[dt.datetime, dt.date, int, float]],
+        target_times: Iterable[dt.datetime | (dt.date | (int | float))],
         interpolation_type: str = "linear",
-        extrapolation_type: Optional[str] = "linear",
+        extrapolation_type: str | None = "linear",
         uniform_year_length: bool = False,
     ) -> Self:
         """
@@ -1510,7 +1498,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ...         "region": ["World"],
         ...         "variable": ["Primary Energy"],
         ...         "unit": ["EJ/y"],
-        ...     }
+        ...     },
         ... )
         >>> scm_df.timeseries().T
         model             a_iam
@@ -1525,7 +1513,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         An annual timeseries can be the created by interpolating to the start of years
         using the rule 'AS'.
 
-        >>> res = scm_df.resample('AS')
+        >>> res = scm_df.resample("AS")
         >>> res.timeseries().T
         model                        a_iam
         scenario                a_scenario
@@ -1544,7 +1532,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         2008-01-01 00:00:00       8.998175
         2009-01-01 00:00:00      10.00000
 
-        >>> m_df = scm_df.resample('MS')
+        >>> m_df = scm_df.resample("MS")
         >>> m_df.timeseries().T
         model                        a_iam
         scenario                a_scenario
@@ -1622,7 +1610,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         if rule == "AS":
 
             def group_annual_mean_beginning_of_year(x):
-                if x.month <= 6:
+                if x.month <= 6:  # noqa: PLR2004
                     return x.year
                 return x.year + 1
 
@@ -1651,7 +1639,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         if rule == "A":
 
             def group_annual_mean_end_of_year(x):
-                if x.month >= 7:
+                if x.month >= 7:  # noqa: PLR2004
                     return x.year
                 return x.year - 1
 
@@ -1663,15 +1651,15 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             )
             return type(self)(ts_resampled)
 
-        raise ValueError("`rule` = `{}` is not supported".format(rule))
+        raise ValueError(f"`rule` = `{rule}` is not supported")
 
     @overload
     def process_over(
         self,
-        cols: Union[str, List[str]],
-        operation: Union[str, ApplyCallable],
+        cols: str | list[str],
+        operation: str | ApplyCallable,
         na_override: float = -1e6,
-        op_cols: Optional[Dict[str, str]] = None,
+        op_cols: dict[str, str] | None = None,
         as_run: type[T] = ...,
         **kwargs: Any,
     ) -> T:
@@ -1680,10 +1668,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     @overload
     def process_over(
         self,
-        cols: Union[str, List[str]],
-        operation: Union[str, ApplyCallable],
+        cols: str | list[str],
+        operation: str | ApplyCallable,
         na_override: float = -1e6,
-        op_cols: Optional[Dict[str, str]] = None,
+        op_cols: dict[str, str] | None = None,
         as_run: Literal[False] = False,
         **kwargs: Any,
     ) -> pd.DataFrame:
@@ -1692,24 +1680,24 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     @overload
     def process_over(
         self,
-        cols: Union[str, List[str]],
-        operation: Union[str, ApplyCallable],
+        cols: str | list[str],
+        operation: str | ApplyCallable,
         na_override: float = -1e6,
-        op_cols: Optional[Dict[str, str]] = None,
+        op_cols: dict[str, str] | None = None,
         as_run: Literal[True] = ...,
         **kwargs: Any,
     ) -> Self:
         ...
 
-    def process_over(
+    def process_over(  # noqa: PLR0912
         self,
-        cols: Union[str, List[str]],
-        operation: Union[str, ApplyCallable],
+        cols: str | list[str],
+        operation: str | ApplyCallable,
         na_override: float = -1e6,
-        op_cols: Optional[Dict[str, str]] = None,
-        as_run: Union[bool, type[T]] = False,
+        op_cols: dict[str, str] | None = None,
+        as_run: bool | type[T] = False,
         **kwargs: Any,
-    ) -> Union[pd.DataFrame, Self, T]:
+    ) -> pd.DataFrame | (Self | T):
         """
         Process the data over the input columns.
 
@@ -1793,7 +1781,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             ts_idx = ts.index.to_frame()
             if ts_idx[ts_idx == na_override].any().any():
                 raise ValueError(
-                    "na_override clashes with existing meta: {}".format(na_override)
+                    f"na_override clashes with existing meta: {na_override}"
                 )
             ts.index = pd.MultiIndex.from_frame(ts_idx.fillna(na_override))
 
@@ -1862,8 +1850,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def quantiles_over(
         self,
-        cols: Union[str, List[str]],
-        quantiles: Union[str, List[float]],
+        cols: str | list[str],
+        quantiles: str | list[float],
         **kwargs: Any,
     ) -> pd.DataFrame:
         """
@@ -1919,9 +1907,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         return out_concat
 
     @staticmethod
-    def _check_groupby_input(
-        v: Tuple[Union[str, Iterable[str]], ...]
-    ) -> Tuple[str, ...]:
+    def _check_groupby_input(v: tuple[str | Iterable[str], ...]) -> tuple[str, ...]:
         if len(v) == 1 and not isinstance(v[0], str):
             v = tuple(v[0])
 
@@ -1937,7 +1923,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         .. code:: python
 
             >>> for group in df.groupby("scenario"):
-            >>>    print(group)
+            ...     print(group)
+            ...
             <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
             Time:
                 Start: 2005-01-01T00:00:00
@@ -1970,10 +1957,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def apply(
         self,
-        func: Callable[[Self, ...], Union[Self, None]],
+        func: Callable[[Self, ...], Self | None],
         *args: Any,
         **kwargs: Any,
-    ) -> Union[Self, None]:
+    ) -> Self | None:
         """
         Apply a function to each timeseries and append the results
 
@@ -1994,6 +1981,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             ...     if variable == "Surface Temperature":
             ...         return arr * 2
             ...     return arr
+            ...
             >>> run.apply(multiply_by_2)
 
         Parameters
@@ -2014,9 +2002,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         return self.groupby(self.meta.columns).apply(func, *args, **kwargs)
 
-    def get_meta_columns_except(
-        self, *not_group: Union[Iterable[str], str]
-    ) -> list[str]:
+    def get_meta_columns_except(self, *not_group: Iterable[str] | str) -> list[str]:
         """
         Get columns in meta except a set
 
@@ -2059,7 +2045,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
     def convert_unit(
         self,
         unit: str,
-        context: Optional[str] = None,
+        context: str | None = None,
         inplace: bool = False,
         **kwargs: Any,
     ) -> Self:
@@ -2158,9 +2144,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         if non_matching_contexts:
             raise ValueError(
-                "Existing unit conversion context(s), `{}`, doesn't match input "
-                "context, `{}`, drop `unit_context` metadata before doing "
-                "conversion".format(unit_context, context)
+                f"Existing unit conversion context(s), `{unit_context}`, doesn't match input "
+                f"context, `{context}`, drop `unit_context` metadata before doing "
+                "conversion"
             )
 
     def relative_to_ref_period_mean(self, append_str=None, **kwargs):
@@ -2210,8 +2196,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         self,
         other: T,
         inplace: bool = False,
-        duplicate_msg: Union[str, bool] = True,
-        metadata: Optional[MetadataType] = None,
+        duplicate_msg: str | bool = True,
+        metadata: MetadataType | None = None,
         **kwargs: Any,
     ) -> Self:
         """
@@ -2302,7 +2288,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ts_self_aligned = ts_self_aligned.dropna(how="all", axis="columns")
         ts_other_aligned = ts_other_aligned.dropna(how="all", axis="columns")
 
-        # if ts_other_aligned.isnull().any(axis=1):
+        # if ts_other_aligned.isna().any(axis=1):
         #     warning?
 
         out = pd.concat([ts_other_aligned, ts_self_aligned], axis=1)
@@ -2467,11 +2453,11 @@ def _merge_metadata(metadata):
     return res
 
 
-def run_append(
+def run_append(  # noqa: PLR0912, PLR0915
     runs: Sequence[T],
     inplace: bool = False,
-    duplicate_msg: Union[str, bool] = True,
-    metadata: Optional[MetadataType] = None,
+    duplicate_msg: str | bool = True,
+    metadata: MetadataType | None = None,
 ) -> T:
     """
     Append together many objects.
@@ -2558,7 +2544,7 @@ def run_append(
     else:
         ret = runs[0].copy()
 
-    to_join_dfs: List[pd.DataFrame] = []
+    to_join_dfs: list[pd.DataFrame] = []
     to_join_metas = []
     overlapping_times = False
 
@@ -2592,11 +2578,11 @@ def run_append(
         to_join_dfs.append(run_to_join_df)
         to_join_metas.append(run_to_join_meta)
 
-    ret._df = pd.concat([ret._df] + to_join_dfs, axis="columns").sort_index()
+    ret._df = pd.concat([ret._df, *to_join_dfs], axis="columns").sort_index()
     ret._time_points = TimePoints(ret._df.index.values)
     ret._df.index = ret._time_points.to_index()
     ret._meta = pd.MultiIndex.from_frame(
-        pd.concat([ret._meta.to_frame()] + to_join_metas).astype("category")
+        pd.concat([ret._meta.to_frame(), *to_join_metas]).astype("category")
     )
 
     if ret._duplicated_meta():
@@ -2662,7 +2648,7 @@ class ScmRun(BaseScmRun):
     Data container for holding one or many time-series of SCM data.
     """
 
-    required_cols: Tuple[str, ...] = ("model", "scenario", "region", "variable", "unit")
+    required_cols: tuple[str, ...] = ("model", "scenario", "region", "variable", "unit")
     """
     Minimum metadata columns required by an ScmRun.
 

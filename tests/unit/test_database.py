@@ -33,7 +33,7 @@ def start_scmrun():
 
 class DummyBackendBase(BaseDatabaseBackend):
     def __init__(self, **kwargs):
-        super(DummyBackendBase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.keys = {}
 
     def get(self, filters, ext="*.nc"):
@@ -78,7 +78,7 @@ def test_database_passes_config(levels):
 
 @pytest.mark.parametrize("cfg_name", ["levels", "root_dir"])
 def test_database_invalid_config(cfg_name):
-    msg = "backend_config cannot contain key `{}`".format(cfg_name)
+    msg = f"backend_config cannot contain key `{cfg_name}`"
     with pytest.raises(ValueError, match=msg):
         ScmDatabase("root_dir", backend_config={cfg_name: "test"})
 

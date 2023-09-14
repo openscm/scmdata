@@ -33,7 +33,9 @@
 # ## Load some data
 #
 # For this demonstration, we are going to use MAGICC output from [RCMIP Phase 2]
-# as available at [https://zenodo.org/record/4624566/files/data-processed-submission-database-hadcrut5-target-MAGICCv7.5.1.tar.gz?download=1](). Here we have just extracted the air temperature output for the SSPs from 1995 to 2100.
+# as available at
+# [https://zenodo.org/record/4624566/files/data-processed-submission-database-hadcrut5-target-MAGICCv7.5.1.tar.gz?download=1]().
+# Here we have just extracted the air temperature output for the SSPs from 1995 to 2100.
 
 # %%
 
@@ -43,7 +45,7 @@ import pandas as pd
 import seaborn as sns
 
 import scmdata.processing
-from scmdata import ScmRun, run_append
+from scmdata import ScmRun
 
 # %%
 
@@ -150,7 +152,7 @@ pdf = (
     .T.melt(ignore_index=False, value_name="Exceedance probability")
     .reset_index()
 )
-display(pdf)
+display(pdf)  # noqa
 
 ax = sns.barplot(data=pdf, x="scenario", y="Exceedance probability", hue="variable")
 ax.tick_params(labelrotation=30)
@@ -222,7 +224,10 @@ pdf = peak_warming.reset_index().rename({0: label}, axis="columns")
 sns.histplot(data=pdf, x=label, hue="scenario")
 
 # %% [markdown]
-# Similarly to exceedance probabilties, the order of operations matters: calculating the median of the peaks is different to calculating the median then taking the peak of this median timeseries. In general, the max of the median timeseries is less than or equal to the median of the peak in each timeseries.
+# Similarly to exceedance probabilties, the order of operations matters: calculating the median of
+# the peaks is different to calculating the median then taking the peak of this median timeseries.
+# In general, the max of the median timeseries is less than or equal to the median of the peak in
+# each timeseries.
 
 # %%
 comparison = pd.DataFrame(
@@ -261,7 +266,8 @@ ax = sns.histplot(data=pdf, x=label, hue="scenario", bins=np.arange(2025, 2100 +
 # %% [markdown]
 # ## SR1.5 categorisation
 #
-# It is also possible to categorise the scenarios using the same categorisation as in SR1.5. To do this we have to first calculate the appropriate quantiles.
+# It is also possible to categorise the scenarios using the same categorisation as in SR1.5. To do
+# this we have to first calculate the appropriate quantiles.
 
 # %%
 magicc_output_categorisation_quantiles = scmdata.ScmRun(
@@ -277,7 +283,8 @@ scmdata.processing.categorisation_sr15(
 # %% [markdown]
 # ## Set of summary variables
 #
-# It is also possible to calculate a set of summary variables using the convenience function `calculate_summary_stats`. The documentation is given below.
+# It is also possible to calculate a set of summary variables using the convenience function
+# `calculate_summary_stats`. The documentation is given below.
 
 # %%
 print(scmdata.processing.calculate_summary_stats.__doc__)
@@ -313,7 +320,7 @@ index = ["climate_model", "scenario"]
 pivot_merge_unit = summary_stats.to_frame().reset_index()
 pivot_merge_unit["statistic"] = pivot_merge_unit["statistic"] + pivot_merge_unit[
     "unit"
-].apply(lambda x: "({})".format(x) if x else "")
+].apply(lambda x: f"({x})" if x else "")
 pivot_merge_unit = pivot_merge_unit.drop("unit", axis="columns")
 pivot_merge_unit = pivot_merge_unit.set_index(
     list(set(pivot_merge_unit.columns) - {"value"})

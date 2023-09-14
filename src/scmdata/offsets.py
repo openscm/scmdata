@@ -8,7 +8,7 @@ from typing import Iterable
 
 import cftime
 from xarray.coding import cftime_offsets
-from xarray.coding.cftime_offsets import to_offset  # noqa: F401, E402
+from xarray.coding.cftime_offsets import to_offset
 
 
 def generate_range(
@@ -18,8 +18,7 @@ def generate_range(
     date_cls: cftime.datetime = cftime.DatetimeGregorian,
 ) -> Iterable[cftime.datetime]:
     """
-    Generate a range of datetime objects between start and end, using offset to
-    determine the steps.
+    Generate a range of datetime objects between start and end, using offset to determine the steps
 
     The range will extend both ends of the span to the next valid timestep, see
     examples.

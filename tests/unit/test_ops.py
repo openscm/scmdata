@@ -141,9 +141,7 @@ def test_multiple_timeseries(op, base_multiple_scmrun, other_multiple_scmrun):
 
     elif op == "multiply":
         exp_ts["unit"] = (
-            exp_ts["unit"]
-            .apply(lambda x: convert_to_pint_name("({})**2".format(x)))
-            .values
+            exp_ts["unit"].apply(lambda x: convert_to_pint_name(f"({x})**2")).values
         )
 
     elif op == "divide":
@@ -465,9 +463,7 @@ def test_wrong_shape_ops(op, shape):
 
     other = np.arange(np.prod(shape)).reshape(shape)
 
-    error_msg = re.escape(
-        "operations with {}d data are not supported".format(len(shape))
-    )
+    error_msg = re.escape(f"operations with {len(shape)}d data are not supported")
     with pytest.raises(ValueError, match=error_msg):
         if op == "add":
             start + other
@@ -651,12 +647,12 @@ def test_cumtrapz_multiple_ts():
     exp = get_single_ts(
         data=np.array([[0, 7.5, 45], [0, -7.5, -45], [0, 12.5, 125]]).T,
         index=[2020, 2025, 2040],
-        variable=["Cumulative {}".format(v) for v in variables],
+        variable=[f"Cumulative {v}" for v in variables],
         unit=["Mt CO2", "W / m^2 * yr", "K * yr"],
     )
 
     for v in variables:
-        cv = "Cumulative {}".format(v)
+        cv = f"Cumulative {v}"
         exp_comp = exp.filter(variable=cv)
         res_comp = res.filter(variable=cv).convert_unit(
             exp_comp.get_unique_meta("unit", no_duplicates=True),
@@ -714,12 +710,12 @@ def test_cumsum_multiple_ts():
     exp = get_single_ts(
         data=np.array([[1, 3, 6], [-1, -3, -6], [0, 5, 15]]).T,
         index=[2020, 2021, 2022],
-        variable=["Cumulative {}".format(v) for v in variables],
+        variable=[f"Cumulative {v}" for v in variables],
         unit=["Mt CO2", "W / m^2 * yr", "K * yr"],
     )
 
     for v in variables:
-        cv = "Cumulative {}".format(v)
+        cv = f"Cumulative {v}"
         exp_comp = exp.filter(variable=cv)
         res_comp = res.filter(variable=cv).convert_unit(
             exp_comp.get_unique_meta("unit", no_duplicates=True),
@@ -840,12 +836,12 @@ def test_delta_per_delta_time_multiple_ts():
     exp = get_single_ts(
         data=np.array([[1 / 5, 1 / 15], [-1 / 5, -1 / 15], [5 / 5, 5 / 15]]).T,
         index=[2022.5, (2025 + 2040) / 2],
-        variable=["Delta {}".format(v) for v in variables],
+        variable=[f"Delta {v}" for v in variables],
         unit=["Mt CO2 / yr", "J / m^2 / yr", "K / yr"],
     )
 
     for v in variables:
-        cv = "Delta {}".format(v)
+        cv = f"Delta {v}"
         exp_comp = exp.filter(variable=cv)
         res_comp = res.filter(variable=cv).convert_unit(
             exp_comp.get_unique_meta("unit", no_duplicates=True),

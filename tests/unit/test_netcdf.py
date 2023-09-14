@@ -381,8 +381,8 @@ def test_nc_to_run_non_unique_meta(scm_run):
         "extras.".format(["scenario"], [])
     )
     error_msg = (
-        "{}\nNumber of unique values in each column:\n.*\n(\\s|\\S)*"
-        "Existing values in the other metadata:.*".format(error_msg)
+        f"{error_msg}\nNumber of unique values in each column:\n.*\n(\\s|\\S)*"
+        "Existing values in the other metadata:.*"
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
@@ -505,9 +505,7 @@ def test_nc_read_failure(scm_run, test_data_path, caplog):
 
     assert caplog.record_tuples[0][0] == "scmdata.netcdf"
     assert caplog.record_tuples[0][1] == logging.ERROR
-    assert caplog.record_tuples[0][2] == "Failed reading netcdf file: {}".format(
-        test_fname
-    )
+    assert caplog.record_tuples[0][2] == f"Failed reading netcdf file: {test_fname}"
 
 
 @pytest.mark.parametrize(

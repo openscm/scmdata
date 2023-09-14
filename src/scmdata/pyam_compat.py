@@ -1,6 +1,5 @@
 """
-Imports and classes required to ensure compatibility with Pyam is intelligently
-handled.
+Imports and classes required to ensure compatibility with Pyam is intelligently handled.
 """
 import datetime
 
@@ -12,8 +11,7 @@ try:
     # mypy can't work out try-except block forces IamDataFrame to be here
     class LongDatetimeIamDataFrame(IamDataFrame):  # type: ignore
         """
-        Custom implementation of :class:`pyam.IamDataFrame` which handles long datetime
-        data.
+        Custom implementation of :class:`pyam.IamDataFrame` which handles long datetime data.
 
         This custom implementation allows the data frame to handle times outside panda's
         limited time range of 1677-09-22 00:12:43.145225 to 2262-04-11
@@ -42,7 +40,7 @@ try:
                 bad_values = self.data[not_datetime]["time"]
                 error_msg = (
                     "All time values must be convertible to datetime. The following "
-                    "values are not:\n{}".format(bad_values)
+                    f"values are not:\n{bad_values}"
                 )
                 raise ValueError(error_msg)
 

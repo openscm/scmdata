@@ -121,9 +121,7 @@ def test_set_meta_single(benchmark, big_scmrun):
 
 def test_set_meta_all_with_apply(benchmark, big_scmrun):
     def set_meta():
-        big_scmrun["variable"] = big_scmrun["variable"].apply(
-            lambda x: "New|{}".format(x)
-        )
+        big_scmrun["variable"] = big_scmrun["variable"].apply(lambda x: f"New|{x}")
 
         return big_scmrun
 
