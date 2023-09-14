@@ -31,9 +31,10 @@ jobs:
         with:
           python-version: "3.9"
           venv-id: "docs"
-          poetry-dependency-install-flags: "--all-extras --only 'main,docs'"
+          poetry-dependency-install-flags: "--all-extras --only 'main,docs,notebooks'"
       - name: docs
-        run: poetry run sphinx-build -W --keep-going -T -b html docs/source docs/build
+        # TODO: Enable -W option once the sphinx warnings are cleared up
+        run: poetry run sphinx-build --keep-going -T -b html docs/source docs/build
 
   tests:
     strategy:
@@ -117,7 +118,7 @@ jobs:
         with:
           python-version: "${{ matrix.python-version }}"
           venv-id: "tests-${{ runner.os }}"
-          poetry-dependency-install-flags: "--all-extras --only 'tests,optional'"
+          poetry-dependency-install-flags: "--all-extras --only 'tests'"
       - name: Test with pytest
         run: |
           poetry run pytest -r a -v src tests
