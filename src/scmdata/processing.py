@@ -140,7 +140,7 @@ def calculate_crossing_times_quantiles(
                                3                  2006
                                4                  2006
     dtype: object
-    >>> scmdata.processing.calculate_crossing_times_quantiles(
+    >>> calculate_crossing_times_quantiles(
     ...     crossing_times, groupby=["climate_model", "scenario"]
     ... )
     climate_model  scenario    quantile
@@ -150,6 +150,7 @@ def calculate_crossing_times_quantiles(
     z_model        a_scenario  0.05        2006.2
                                0.50        2100.0
                                0.95           NaN
+    dtype: float64
     """
     if pd.api.types.is_datetime64_any_dtype(crossing_times):
         # the issue with datetimes is the fill value, pandas timestamps are

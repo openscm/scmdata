@@ -65,12 +65,12 @@ def generate_range(
     ... )
 
     >>> pprint([d for d in g])
-    [cftime.DatetimeGregorian(2001, 1, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2002, 1, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2003, 1, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2004, 1, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2005, 1, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2006, 1, 1, 0, 0, 0, 0)]
+    [cftime.DatetimeGregorian(2001, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2002, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2003, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2004, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2005, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2006, 1, 1, 0, 0, 0, 0, has_year_zero=False)]
 
     In this example the first timestep is rolled back to 31st Dec 2000 whilst the last
     is extended to 31st Dec 2005.
@@ -81,12 +81,12 @@ def generate_range(
     ...     to_offset("A"),
     ... )
     >>> pprint([d for d in g])
-    [cftime.DatetimeGregorian(2000, 12, 31, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2001, 12, 31, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2002, 12, 31, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2003, 12, 31, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2004, 12, 31, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2005, 12, 31, 0, 0, 0, 0)]
+    [cftime.DatetimeGregorian(2000, 12, 31, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2001, 12, 31, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2002, 12, 31, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2003, 12, 31, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2004, 12, 31, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2005, 12, 31, 0, 0, 0, 0, has_year_zero=False)]
 
     In this example the first timestep is already on the offset so stays there, the last
     timestep is to 1st Sep 2005.
@@ -97,24 +97,24 @@ def generate_range(
     ...     to_offset("QS"),
     ... )
     >>> pprint([d for d in g])
-    [cftime.DatetimeGregorian(2001, 4, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2001, 7, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2001, 10, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2002, 1, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2002, 4, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2002, 7, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2002, 10, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2003, 1, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2003, 4, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2003, 7, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2003, 10, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2004, 1, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2004, 4, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2004, 7, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2004, 10, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2005, 1, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2005, 4, 1, 0, 0, 0, 0),
-     cftime.DatetimeGregorian(2005, 7, 1, 0, 0, 0, 0)]
+    [cftime.DatetimeGregorian(2001, 4, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2001, 7, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2001, 10, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2002, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2002, 4, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2002, 7, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2002, 10, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2003, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2003, 4, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2003, 7, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2003, 10, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2004, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2004, 4, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2004, 7, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2004, 10, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2005, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2005, 4, 1, 0, 0, 0, 0, has_year_zero=False),
+     cftime.DatetimeGregorian(2005, 7, 1, 0, 0, 0, 0, has_year_zero=False)]
     """
     # Uses the Gregorian calendar - allows for adding/subtracting
     # datetime.timedelta in range calc

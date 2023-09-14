@@ -168,6 +168,7 @@ def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
 
     Examples
     --------
+    >>> from scmdata import ScmRun
     >>> scmrun = ScmRun(
     ...     data=np.random.random((10, 3)).T,
     ...     columns={
@@ -184,14 +185,16 @@ def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
 
     Plot the plumes, calculated over the different ensemble members.
 
-    >>> scmrun.plumeplot(quantile_over="ensemble_member")
+    >>> scmrun.plumeplot(quantile_over="ensemble_member")  # doctest: +ELLIPSIS
+    (<Axes: ylabel='K'>, ...)
 
     Pre-calculate the quantiles, then plot
 
     >>> summary_stats = ScmRun(
-    ...     scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
+    ...     scmrun.quantiles_over("ensemble_member", quantiles=[0.05, 0.5, 0.95])
     ... )
-    >>> summary_stats.plumeplot(pre_calculated=True)
+    >>> summary_stats.plumeplot(pre_calculated=True)  # doctest: +ELLIPSIS
+    (<Axes: ylabel='K'>, ...)
 
     Note
     ----

@@ -1500,66 +1500,51 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ...         "unit": ["EJ/y"],
         ...     },
         ... )
-        >>> scm_df.timeseries().T
-        model             a_iam
-        scenario     a_scenario
-        region            World
-        variable Primary Energy
-        unit               EJ/y
-        year
-        2000                  1
-        2010                 10
+        >>> scm_df.timeseries().T  # doctest: +NORMALIZE_WHITESPACE
+        model               a_iam
+        region              World
+        scenario       a_scenario
+        unit                 EJ/y
+        variable   Primary Energy
+        time
+        2000-01-01            1.0
+        2001-01-01            2.0
+        2009-01-01           10.0
 
         An annual timeseries can be the created by interpolating to the start of years
         using the rule 'AS'.
 
         >>> res = scm_df.resample("AS")
         >>> res.timeseries().T
-        model                        a_iam
-        scenario                a_scenario
-        region                       World
-        variable            Primary Energy
-        unit                          EJ/y
+        model               a_iam
+        region              World
+        scenario       a_scenario
+        unit                 EJ/y
+        variable   Primary Energy
         time
-        2000-01-01 00:00:00       1.000000
-        2001-01-01 00:00:00       2.001825
-        2002-01-01 00:00:00       3.000912
-        2003-01-01 00:00:00       4.000000
-        2004-01-01 00:00:00       4.999088
-        2005-01-01 00:00:00       6.000912
-        2006-01-01 00:00:00       7.000000
-        2007-01-01 00:00:00       7.999088
-        2008-01-01 00:00:00       8.998175
-        2009-01-01 00:00:00      10.00000
+        2000-01-01       1.000000
+        2001-01-01       2.000000
+        2002-01-01       2.999316
+        2003-01-01       3.998631
+        2004-01-01       4.997947
+        2005-01-01       6.000000
+        2006-01-01       6.999316
+        2007-01-01       7.998631
+        2008-01-01       8.997947
+        2009-01-01      10.000000
 
         >>> m_df = scm_df.resample("MS")
-        >>> m_df.timeseries().T
-        model                        a_iam
-        scenario                a_scenario
-        region                       World
-        variable            Primary Energy
-        unit                          EJ/y
+        >>> m_df.timeseries().T  # doctest: +ELLIPSIS
+        model               a_iam
+        region              World
+        scenario       a_scenario
+        unit                 EJ/y
+        variable   Primary Energy
         time
-        2000-01-01 00:00:00       1.000000
-        2000-02-01 00:00:00       1.084854
-        2000-03-01 00:00:00       1.164234
-        2000-04-01 00:00:00       1.249088
-        2000-05-01 00:00:00       1.331204
-        2000-06-01 00:00:00       1.416058
-        2000-07-01 00:00:00       1.498175
-        2000-08-01 00:00:00       1.583029
-        2000-09-01 00:00:00       1.667883
-                                    ...
-        2008-05-01 00:00:00       9.329380
-        2008-06-01 00:00:00       9.414234
-        2008-07-01 00:00:00       9.496350
-        2008-08-01 00:00:00       9.581204
-        2008-09-01 00:00:00       9.666058
-        2008-10-01 00:00:00       9.748175
-        2008-11-01 00:00:00       9.833029
-        2008-12-01 00:00:00       9.915146
-        2009-01-01 00:00:00      10.000000
-        [109 rows x 1 columns]
+        2000-01-01       1.000000
+        2000-02-01       1.084699
+        2000-03-01       1.163934
+        ...
 
 
         Note that the values do not fall exactly on integer values as not all years are
@@ -1922,7 +1907,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         .. code:: python
 
-            >>> for group in df.groupby("scenario"):
+            >>> for group in run.groupby("scenario"):
             ...     print(group)
             ...
             <scmdata.ScmRun (timeseries: 2, timepoints: 3)>

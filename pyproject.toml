@@ -124,6 +124,7 @@ addopts = [
     "--ignore=tests/test_data"
 ]
 testpaths = "tests"
+doctest_optionflags ="NORMALIZE_WHITESPACE"
 
 [tool.ruff]
 src = ["src"]

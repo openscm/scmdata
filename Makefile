@@ -38,7 +38,11 @@ ruff-fixes:  ## fix the code using ruff
 
 .PHONY: test
 test:  ## run the tests
-	poetry run pytest tests -r a -v --doctest-modules --cov
+	poetry run pytest tests -r a -v --cov
+
+.PHONY: test-doctests
+test-doctests:  ## run the doctests
+	poetry run pytest src --doctest-modules -r a -v --cov
 
 .PHONY: docs
 docs:  ## build the docs
