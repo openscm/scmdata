@@ -11,11 +11,11 @@ https://myst-parser.readthedocs.io/en/latest/syntax/organising_content.html#inse
 (SCMs aka reduced complexity climate models, RCMs). In particular, it provides a high-performance way of
 handling and serialising (including to netCDF) timeseries data along with attached metadata.
 
-**scmdata** was inspired by `pyam <https://github.com/IAMconsortium/pyam>`_ and was originally part of the
-`openscm <https://github.com/openscm/openscm>`_ package.
+**scmdata** was inspired by [pyam](https://github.com/IAMconsortium/pyam) and was originally part of the
+[openscm](https://github.com/openscm/openscm>) package.
 
 [![CI](https://github.com/openscm/scmdata/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/openscm/scmdata/actions/workflows/ci.yaml)
-[![Coverage](https://codecov.io/gh/climate-resource/scmdata/branch/main/graph/badge.svg)](https://codecov.io/gh/climate-resource/scmdata)
+[![Coverage](https://codecov.io/gh/climate-resource/scmdata/branch/main/graph/badge.svg)](https://codecov.io/gh/openscm/scmdata)
 [![Docs](https://readthedocs.org/projects/scmdata/badge/?version=latest)](https://scmdata.readthedocs.io)
 
 **PyPI :**
@@ -75,10 +75,10 @@ we found that pipx and pip worked better to install on a Mac).
 For all of work, we use our `Makefile`.
 You can read the instructions out and run the commands by hand if you wish,
 but we generally discourage this because it can be error prone.
-In order to create your environment, run `make virtual-environment`.
+In order to create your environment, run `make virtual-envir˚onment`.
 
 If there are any issues, the messages from the `Makefile` should guide you
-through. If not, please raise an issue in the [issue tracker][issue_tracker].
+through. If not, please raise an issue in the [issue tracker](https://github.com/openscm/scmdata/issues)˚.
 
 For the rest of our developer docs, please see [](development-reference).
 

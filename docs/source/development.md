@@ -3,10 +3,55 @@
 
 Notes for developers. If you want to get involved, please do!
 
+
+## Contributing
+
+All contributions are welcome, some possible suggestions include:
+
+- tutorials (or support questions which, once solved, result in a new tutorial :D)
+- blog posts
+- improving the documentation
+- bug reports
+- feature requests
+- pull requests
+
+Please report issues or discuss feature requests in the [SCMData issue tracker](https://github.com/openscm/scmdata/issues).
+If your issue is a feature request or a bug, please use the templates available, otherwise, simply open a normal issue.
+
+As a contributor, please follow a couple of conventions:
+
+- Create issues in the [SCMData issue tracker](https://github.com/openscm/scmdata/issues) for changes and
+   enhancements, this ensures that everyone in the community has a chance to comment
+- Be welcoming to newcomers and encourage diverse new contributors from all backgrounds: see the
+   [Python Community Code of Conduct](https://www.python.org/psf/codeofconduct/)
+- Only push to your own branches, this allows people to force push to their own branches as they need without
+   fear or causing others headaches
+- Start all pull requests as draft pull requests and only mark them as ready for review once they've been
+   rebased onto master, this makes it much simpler for reviewers
+- Try and make lots of small pull requests, this makes it easier for reviewers and faster for everyone as
+   review time grows exponentially with the number of lines in a pull request
+
+## Getting setup
+
+To get setup as a developer, we recommend the following steps:
+
+- Install conda, make and poetry
+- Run `make virtual-environment`, if that fails you can try running the steps in the Makefile manually
+- Make sure the tests pass by running `make test-all`
+
+
 ## Language
 
 We use British English for our development.
 We do this for consistency with the broader work context of our lead developers.
+
+## Docstring style
+
+For our docstrings we use numpy style docstrings.
+For more information on these, [here is the full guide](https://numpydoc.readthedocs.io/en/latest/format.html)
+and [the quick reference])https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html) is
+also useful.
+
 
 ## Versioning
 

@@ -219,9 +219,7 @@ xr.load_dataset(OUTPUT_DIR / "out-ssp585-sparse.nc")
 # %%
 
 # Load all scenarios
-run_append(
-    [ScmRun.from_nc(fname) for fname in (OUTPUT_DIR / "out-ssp*-sparse.nc").glob()]
-)
+run_append([ScmRun.from_nc(fname) for fname in OUTPUT_DIR.glob("out-ssp*-sparse.nc")])
 
 # %% [markdown]
 # An alternative to the sparse arrays is to specify the variables in the `extras` attribute. If

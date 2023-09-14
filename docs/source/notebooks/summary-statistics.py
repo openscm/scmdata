@@ -51,7 +51,7 @@ def new_timeseries(  # noqa: PLR0913
     """
     Create an example timeseries
     """
-    data = generator.rand(n, count) * np.arange(n)[:, np.newaxis]
+    data = generator.random((n, count)) * np.arange(n)[:, np.newaxis]
     index = 2000 + np.arange(n)
     return cls(
         data,
