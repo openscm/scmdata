@@ -27,7 +27,7 @@ def do_basic_to_xarray_checks(res, start_run, dimensions, extras):
         - {"variable", "unit"}
     ):
         meta_val = start_run.get_unique_meta(meta_col, True)
-        assert res.attrs["scmdata_metadata_{}".format(meta_col)] == meta_val
+        assert res.attrs[f"scmdata_metadata_{meta_col}"] == meta_val
 
 
 def do_basic_check_of_data_points(res, start_run, dimensions):
@@ -332,8 +332,8 @@ def test_to_xarray_non_unique_timeseries(scm_run):
     dimensions = ("region",)
 
     error_msg = re.escape(
-        "dimensions: `{}` and extras: `[]` do not uniquely define the timeseries, "
-        "please add extra dimensions and/or extras".format(list(dimensions))
+        f"dimensions: `{list(dimensions)}` and extras: `[]` do not uniquely define the timeseries, "
+        "please add extra dimensions and/or extras"
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run.to_xarray(dimensions=dimensions)
@@ -357,8 +357,8 @@ def test_non_unique_meta(scm_run):
         "extras.".format(["scenario"], [])
     )
     error_msg = (
-        "{}\nNumber of unique values in each column:\n.*\n(\\s|\\S)*"
-        "Existing values in the other metadata:.*".format(error_msg)
+        f"{error_msg}\nNumber of unique values in each column:\n.*\n(\\s|\\S)*"
+        "Existing values in the other metadata:.*"
     )
 
     with pytest.raises(ValueError, match=error_msg):

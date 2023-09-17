@@ -16,7 +16,8 @@
 # %% [markdown]
 # # Summary statistics
 #
-# `ScmRun` objects have methods specific to calculating summary statistics. In this notebook we demonstrate them.
+# `ScmRun` objects have methods specific to calculating summary statistics. In this notebook we
+# demonstrate them.
 #
 # At present, the following methods are available:
 #
@@ -32,12 +33,11 @@ import pandas as pd
 
 from scmdata.run import ScmRun, run_append
 
-# %% [markdown]
-# ## Helper bits and piecs
+generator = np.random.default_rng(0)
 
 
 # %%
-def new_timeseries(
+def new_timeseries(  # noqa: PLR0913
     n=101,
     count=1,
     model="example",
@@ -48,7 +48,10 @@ def new_timeseries(
     cls=ScmRun,
     **kwargs,
 ):
-    data = np.random.rand(n, count) * np.arange(n)[:, np.newaxis]
+    """
+    Create an example timeseries
+    """
+    data = generator.random((n, count)) * np.arange(n)[:, np.newaxis]
     index = 2000 + np.arange(n)
     return cls(
         data,
@@ -65,7 +68,8 @@ def new_timeseries(
 
 
 # %% [markdown]
-# Let's create an `ScmRun` which contains a few variables and a number of runs. Such a dataframe would be used to store the results from an ensemble of simple climate model runs.
+# Let's create an `ScmRun` which contains a few variables and a number of runs. Such a dataframe
+# would be used to store the results from an ensemble of simple climate model runs.
 
 # %%
 
@@ -90,7 +94,8 @@ runs
 # %% [markdown]
 # ## `process_over`
 #
-# The `process_over` method allows us to calculate a specific set of statistics on groups of timeseries. A number of pandas functions can be called including "sum", "mean" and "describe".
+# The `process_over` method allows us to calculate a specific set of statistics on groups of
+# timeseries. A number of pandas functions can be called including "sum", "mean" and "describe".
 
 # %%
 print(runs.process_over.__doc__)
@@ -121,7 +126,9 @@ median
 
 
 def mean_and_invert(df, axis=0):
-    # Take a mean across the group and then invert the result
+    """
+    Take a mean across the group and then invert the result
+    """
     return -df.mean(axis=axis)
 
 
@@ -142,7 +149,8 @@ lower_likely_quantile
 # %% [markdown]
 # ## `quantiles_over`
 #
-# If you want to calculate more than one summary statistic, `quantiles_over` will calculate and label multiple summary statistics before returning them.
+# If you want to calculate more than one summary statistic, `quantiles_over` will calculate and
+# label multiple summary statistics before returning them.
 
 # %%
 print(runs.quantiles_over.__doc__)
@@ -160,10 +168,13 @@ summary_stats
 # %% [markdown]
 # #### Calculate quantiles within plotting function
 #
-# We can use `plumeplot` directly to plot quantiles. This will calculate the quantiles as part of making the plot so if you're doing this lots it might be faster to pre-calculate the quantiles, then make the plot instead (see below)
+# We can use `plumeplot` directly to plot quantiles. This will calculate the quantiles as part of
+# making the plot so if you're doing this lots it might be faster to pre-calculate the quantiles,
+# then make the plot instead (see below)
 
 # %% [markdown]
-# Note that in this case the default setttings in `plumeplot` don't produce anything that helpful, we show how to modify them in the cell below.
+# Note that in this case the default setttings in `plumeplot` don't produce anything that helpful,
+# we show how to modify them in the cell below.
 
 # %%
 
@@ -187,7 +198,8 @@ runs.plumeplot(
 # %% [markdown]
 # #### Pre-calculated quantiles
 #
-# Alternately, we can cast the output of `quantiles_over` to an `ScmRun` object for ease of filtering and plotting.
+# Alternately, we can cast the output of `quantiles_over` to an `ScmRun` object for ease of
+# filtering and plotting.
 
 # %%
 
@@ -195,7 +207,8 @@ summary_stats_scmrun = ScmRun(summary_stats)
 summary_stats_scmrun
 
 # %% [markdown]
-# As discussed above, casting the output of `quantiles_over` to an `ScmRun` object helps avoid repeatedly calculating the quantiles.
+# As discussed above, casting the output of `quantiles_over` to an `ScmRun` object helps avoid
+# repeatedly calculating the quantiles.
 
 # %%
 
@@ -222,7 +235,8 @@ summary_stats_scmrun.filter(variable="Radiative Forcing").lineplot(hue="quantile
 # %% [markdown]
 # ## `groupby`
 #
-# The `groupby` method allows us to group the data by columns in `scmrun.meta` and then perform operations. An example is given below.
+# The `groupby` method allows us to group the data by columns in `scmrun.meta` and then perform
+# operations. An example is given below.
 
 # %%
 
@@ -237,7 +251,10 @@ pd.DataFrame(variable_means)
 # %% [markdown]
 # ## `groupby_all_except`
 #
-# The `groupby_all_except` method allows us to group the data by all columns in `scmrun.meta` except for a certain set. Like with `groupby`, we can then use the groups to perform operations. An example is given below. Note that, in most cases, using `process_over` is likely to be more useful.
+# The `groupby_all_except` method allows us to group the data by all columns in `scmrun.meta`
+# except for a certain set. Like with `groupby`, we can then use the groups to perform operations.
+# An example is given below. Note that, in most cases, using `process_over` is likely to be more
+# useful.
 
 # %%
 
@@ -250,7 +267,8 @@ for edf in runs.groupby_all_except("run_id"):
 pd.DataFrame(ensemble_means)
 
 # %% [markdown]
-# As we said, in most cases using `process_over` is likely to be more useful. For example the above can be done using `process_over` in one line (and more metadata is retained).
+# As we said, in most cases using `process_over` is likely to be more useful. For example the above
+# can be done using `process_over` in one line (and more metadata is retained).
 
 # %%
 

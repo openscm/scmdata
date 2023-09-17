@@ -15,7 +15,8 @@
 # %% [markdown]
 # # xarray compatibility
 #
-# **scmdata** allows datat to be exported to xarray. This makes it easy to use xarray's many helpful features, most of which are not natively provided in scmdata.
+# **scmdata** allows datat to be exported to xarray. This makes it easy to use xarray's many helpful
+# features, most of which are not natively provided in scmdata.
 
 # %%
 
@@ -26,6 +27,9 @@ from scmdata import ScmRun
 
 # %%
 def get_data(years, n_ensemble_members, end_val, rand_pct):
+    """
+    Get sample data
+    """
     return (np.arange(years.shape[0]) / years.shape[0] * end_val)[:, np.newaxis] * (
         rand_pct * np.random.random((years.shape[0], n_ensemble_members)) + 1
     )

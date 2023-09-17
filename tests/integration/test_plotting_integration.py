@@ -220,7 +220,7 @@ def test_plumeplot_non_unique_lines(plumeplot_scmrun):
         summary_stats.plumeplot(pre_calculated=True)
 
 
-def test_plumeplot_args(plumeplot_scmrun):
+def test_plumeplot_args(plumeplot_scmrun):  # noqa: PLR0912
     ax = plt.figure().add_subplot(111)
     palette = {"a_model": "tab:blue", "a_model_2": "tab:red"}
     dashes = {"a_scenario": "-", "a_scenario_2": "--"}
@@ -253,12 +253,10 @@ def test_plumeplot_args(plumeplot_scmrun):
             for qp in quantiles_plumes:
                 q = qp[0]
                 if len(q) == 1:
-                    if value.get_label() == "{:.0f}th".format(q[0] * 100):
+                    if value.get_label() == f"{q[0] * 100:.0f}th":
                         has_a_match = True
                 else:
-                    if value.get_label() == "{:.0f}th - {:.0f}th".format(
-                        q[0] * 100, q[1] * 100
-                    ):
+                    if value.get_label() == f"{q[0] * 100:.0f}th - {q[1] * 100:.0f}th":
                         has_a_match = True
 
             assert has_a_match
@@ -372,7 +370,7 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
             ),
             alpha=alpha,
             color=palette[cm],
-            label="{:.0f}th - {:.0f}th".format(quantiles[0] * 100, quantiles[1] * 100),
+            label=f"{quantiles[0] * 100:.0f}th - {quantiles[1] * 100:.0f}th",
         )
 
     def _make_plot_call(idf, cm, scen, quant_alpha):
@@ -387,7 +385,7 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
             color=palette[cm],
             linestyle=dashes[scen],
             linewidth=linewidth,
-            label="{:.0f}th".format(quantiles[0] * 100),
+            label=f"{quantiles[0] * 100:.0f}th",
             alpha=alpha,
         )
 
@@ -442,7 +440,7 @@ def test_error_missing_palette(plumeplot_scmrun):
 
     # missing definitions raise
     palette_miss = {"a_scenario_2": "red", "b_scenario": "green"}
-    error_msg = re.escape("a_scenario not in palette: {}".format(palette_miss))
+    error_msg = re.escape(f"a_scenario not in palette: {palette_miss}")
     with pytest.raises(KeyError, match=error_msg):
         plumeplot_scmrun.plumeplot(palette=palette_miss)
 
@@ -456,7 +454,7 @@ def test_error_missing_style(plumeplot_scmrun):
     # missing definitions raise
     dashes_miss = {"GMST": "--"}
     error_msg = re.escape(
-        "Surface Air Temperature Change not in dashes: {}".format(dashes_miss)
+        f"Surface Air Temperature Change not in dashes: {dashes_miss}"
     )
     with pytest.raises(KeyError, match=error_msg):
         plumeplot_scmrun.plumeplot(dashes=dashes_miss)

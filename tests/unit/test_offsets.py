@@ -81,8 +81,6 @@ def test_month_start():
 )
 def test_generate_range(start, end, output_cls):
     offset = to_offset("AS")
-    start = start
-    end = end
 
     if output_cls is None:
         res = generate_range(start, end, offset)

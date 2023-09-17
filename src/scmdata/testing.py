@@ -75,9 +75,7 @@ def assert_scmdf_almost_equal(
             # check metadata columns are same set
             if set(left_sorted.index.names) != set(right_ts.index.names):
                 raise AssertionError(
-                    "{} != {}".format(
-                        set(left_sorted.index.names), set(right_ts.index.names)
-                    )
+                    f"{set(left_sorted.index.names)} != {set(right_ts.index.names)}"
                 )
 
             right_sorted = right.timeseries(left_sorted.index.names).sort_index()

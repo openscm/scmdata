@@ -15,7 +15,7 @@ except ImportError:  # pragma: no cover
 
 from datetime import datetime
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Iterable, List
+from typing import TYPE_CHECKING, Any, Iterable
 
 import pandas as pd
 import xarray as xr
@@ -55,8 +55,8 @@ def _get_xr_dataset_to_write(run, dimensions, extras):
 def _write_nc(
     fname: FilePath,
     run: BaseScmRun,
-    dimensions: List[str],
-    extras: List[str],
+    dimensions: list[str],
+    extras: list[str],
     **kwargs: Any,
 ) -> None:
     """
@@ -221,7 +221,7 @@ def nc_to_run(cls: BaseScmRun, fname: FilePath) -> BaseScmRun:
     try:
         return _read_nc(cls, fname)
     except Exception:
-        logger.exception("Failed reading netcdf file: {}".format(fname))
+        logger.exception(f"Failed reading netcdf file: {fname}")
         raise
 
 

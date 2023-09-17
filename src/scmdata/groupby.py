@@ -51,13 +51,13 @@ class _GroupBy(ImplementsArrayReduce):
 
         for indices in self._grouper.groups:
             if not isinstance(indices, Iterable) or isinstance(indices, str):
-                indices = [indices]
+                indices = [indices]  # noqa: PLW2901
 
-            indices = [_try_fill_value(v) for v in indices]
+            indices = [_try_fill_value(v) for v in indices]  # noqa: PLW2901
             res = self.run.filter(**{k: v for k, v in zip(self.group_keys, indices)})
             if not len(res):
                 raise ValueError(
-                    "Empty group for {}".format(list(zip(self.group_keys, indices)))
+                    f"Empty group for {list(zip(self.group_keys, indices))}"
                 )
             yield res
 
@@ -93,7 +93,8 @@ class RunGroupBy(_GroupBy):
 
             >>> def write_csv(arr):
             ...     variable = arr.get_unique_meta("variable")
-            ...     arr.to_csv("out-{}.csv".format(variable)
+            ...     arr.to_csv("out-{}.csv".format(variable))
+            ...
             >>> df.groupby("variable").apply(write_csv)
 
         Parameters
@@ -149,8 +150,7 @@ class RunGroupBy(_GroupBy):
 
     def reduce(self, func, dim=None, axis=None, **kwargs):
         """
-        Reduce the items in this group by applying `func` along some
-        dimension(s).
+        Reduce the items in this group by applying `func` along some dimension(s).
 
         Parameters
         ----------

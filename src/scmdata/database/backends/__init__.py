@@ -1,9 +1,11 @@
 """
-Database backends are responsible for the fetching and storage of ScmRun objects. All
-backends should be based upon :class:`BaseDatabaseBackend`.
+Database backends
+
+Database backends are responsible for the fetching and storage of ScmRun objects. All backends
+should be based upon :class:`BaseDatabaseBackend`.
 """
 
-from .base import BaseDatabaseBackend  # noqa: F401, E402
+from .base import BaseDatabaseBackend  # noqa: F401
 from .netcdf import NetCDFDatabaseBackend
 
 """

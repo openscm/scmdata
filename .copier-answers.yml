@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier
+_commit: v0.2.0
+_src_path: gl:climate-resource/copier-core-python-repository
+email: jared.lewis@climate-resource.com
+initial_setup: false
+name: Jared Lewis
+notebook_dependencies: true
+plot_dependencies: true
+project_description_short: scmdata provides some useful data handling routines for
+    dealing with data related to simple climate models (SCMs aka reduced complexity
+    climate models, RCMs)
+project_name_human: scmdata
+project_name_pip: scmdata
+project_name_python: scmdata
+project_url: https://github.com/openscm/scmdata

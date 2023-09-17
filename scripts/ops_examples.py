@@ -1,4 +1,8 @@
+"""
+Example of ops functionality
+"""
 import numpy as np
+
 from scmdata import ScmRun
 
 IDX = [2010, 2020, 2030]

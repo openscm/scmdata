@@ -12,6 +12,7 @@
 #     language: python
 #     name: python3
 # ---
+import pathlib
 
 # %% [markdown]
 # # NetCDF handling
@@ -19,11 +20,9 @@
 # NetCDF formatted files are much faster to read and write for large datasets.
 # In order to make the most of this, the `ScmRun` objects have the ability to
 # read and write netCDF files.
-
 # %%
-
 import traceback
-from glob import glob
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import seaborn as sns
@@ -36,11 +35,15 @@ from scmdata.run import ScmRun, run_append
 # ## Helper bits and piecs
 
 # %%
-OUT_FNAME = "/tmp/out_runs.nc"
+temp_directory = TemporaryDirectory()
+generator = np.random.default_rng(0)
+OUTPUT_DIR = pathlib.Path(temp_directory.name)
+
+OUT_FNAME = OUTPUT_DIR / "out_runs.nc"
 
 
 # %%
-def new_timeseries(
+def new_timeseries(  # noqa: PLR0913
     n=100,
     count=1,
     model="example",
@@ -51,7 +54,10 @@ def new_timeseries(
     cls=ScmRun,
     **kwargs,
 ):
-    data = np.random.rand(n, count) * np.arange(n)[:, np.newaxis]
+    """
+    Create an example timeseries
+    """
+    data = generator.random((n, count)) * np.arange(n)[:, np.newaxis]
     index = 2000 + np.arange(n)
     return cls(
         data,
@@ -98,7 +104,8 @@ runs
 # %% [markdown]
 # ### Basics
 #
-# Writing the runs to disk is easy. The one trick is that each variable and dimension combination must have unique metadata. If they do not, you will receive an error message like the below.
+# Writing the runs to disk is easy. The one trick is that each variable and dimension combination
+# must have unique metadata. If they do not, you will receive an error message like the below.
 
 # %%
 try:
@@ -107,13 +114,15 @@ except ValueError:
     traceback.print_exc(limit=0, chain=False)
 
 # %% [markdown]
-# In our dataset, there is more than one "run_id" per variable hence we need to use a different dimension, `run_id`, because this will result in each variable's remaining metadata being unique.
+# In our dataset, there is more than one "run_id" per variable hence we need to use a different
+# dimension, `run_id`, because this will result in each variable's remaining metadata being unique.
 
 # %%
 runs.to_nc(OUT_FNAME, dimensions=["run_id"])
 
 # %% [markdown]
-# The output netCDF file can be read using the `from_nc` method, `nc_to_run` function or directly using `xarray`.
+# The output netCDF file can be read using the `from_nc` method, `nc_to_run` function or directly
+# using `xarray`.
 
 # %%
 
@@ -129,7 +138,9 @@ nc_to_run(ScmRun, OUT_FNAME)
 xr.load_dataset(OUT_FNAME)
 
 # %% [markdown]
-# The additional `metadata` in `runs` is also serialized and deserialized in the netCDF files. The `metadata` of the loaded `ScmRun` will also contain some additional fields about the file creation.
+# The additional `metadata` in `runs` is also serialized and deserialized in the netCDF files. The
+# `metadata` of the loaded `ScmRun` will also contain some additional fields about the file
+# creation.
 
 # %%
 
@@ -139,7 +150,8 @@ runs_netcdf.metadata
 # %% [markdown]
 # ### Splitting your data
 #
-# Sometimes if you have complicated ensemble runs it might be more efficient to split the data into smaller subsets.
+# Sometimes if you have complicated ensemble runs it might be more efficient to split the data into
+# smaller subsets.
 #
 # In the below example we iterate over scenarios to produce a netCDF file per scenario.
 
@@ -174,44 +186,54 @@ large_run["run_id"] = large_run.meta.index.values
 large_run
 
 # %% [markdown]
-# Data for each scenario can then be loaded independently instead of having to load all the data and then filtering
+# Data for each scenario can then be loaded independently instead of having to load all the data
+# and then filtering
 
 # %%
 for sce_run in large_run.groupby("scenario"):
     sce = sce_run.get_unique_meta("scenario", True)
     sce_run.to_nc(
-        "/tmp/out-{}-sparse.nc".format(sce),
+        OUTPUT_DIR / f"out-{sce}-sparse.nc",
         dimensions=["run_id", "paraset_id"],
     )
 
 # %%
 
-ScmRun.from_nc("/tmp/out-ssp585-sparse.nc").filter(
+ScmRun.from_nc(OUTPUT_DIR / "out-ssp585-sparse.nc").filter(
     variable="Surface Temperature"
 ).line_plot()
 
 # %% [markdown]
-# For such a data set, since both `run_id` and `paraset_id` vary, both could be added as dimensions in the file.
+# For such a data set, since both `run_id` and `paraset_id` vary, both could be added as dimensions
+# in the file.
 #
-# The one problem with this approach is that you get very sparse arrays because the data is written on a 100 x 30 x 90 (time points x paraset_id x run_id) grid but there's only 90 timeseries so you end up with 180 timeseries worth of nans (although this is a relatively small problem because the netCDF files use compression to minismise the impact of the extra nan values).
+# The one problem with this approach is that you get very sparse arrays because the data is written
+# on a 100 x 30 x 90 (time points x paraset_id x run_id) grid but there's only 90 timeseries so you
+# end up with 180 timeseries worth of nans (although this is a relatively small problem because the
+# netCDF files use compression to minismise the impact of the extra nan values).
 
 # %%
 
-xr.load_dataset("/tmp/out-ssp585-sparse.nc")
+xr.load_dataset(OUTPUT_DIR / "out-ssp585-sparse.nc")
 
 # %%
 
 # Load all scenarios
-run_append([ScmRun.from_nc(fname) for fname in glob("/tmp/out-ssp*-sparse.nc")])
+run_append([ScmRun.from_nc(fname) for fname in OUTPUT_DIR.glob("out-ssp*-sparse.nc")])
 
 # %% [markdown]
-# An alternative to the sparse arrays is to specify the variables in the `extras` attribute. If possible, this adds the metadata to the netCDF file as an extra co-ordinate, which uses one of the dimensions as it's co-ordinate. If using one of the dimensions as a co-ordinate would not specify the metadata uniquely, we add the extra as an additional co-ordinate, which itself has co-ordinates of `_id`. This `_id` co-ordinate provides a unique mapping between the extra metadata and the timeseries.
+# An alternative to the sparse arrays is to specify the variables in the `extras` attribute. If
+# possible, this adds the metadata to the netCDF file as an extra co-ordinate, which uses one of
+# the dimensions as it's co-ordinate. If using one of the dimensions as a co-ordinate would not
+# specify the metadata uniquely, we add the extra as an additional co-ordinate, which itself has
+# co-ordinates of `_id`. This `_id` co-ordinate provides a unique mapping between the extra metadata
+# and the timeseries.
 
 # %%
 for sce_run in large_run.groupby("scenario"):
     sce = sce_run.get_unique_meta("scenario", True)
     sce_run.to_nc(
-        "/tmp/out-{}-extras.nc".format(sce),
+        OUTPUT_DIR / f"out-{sce}-extras.nc",
         dimensions=["run_id"],
         extras=["paraset_id"],
     )
@@ -221,32 +243,34 @@ for sce_run in large_run.groupby("scenario"):
 
 # %%
 
-xr.load_dataset("/tmp/out-ssp585-extras.nc")
+xr.load_dataset(OUTPUT_DIR / "out-ssp585-extras.nc")
 
 # %%
 
-ScmRun.from_nc("/tmp/out-ssp585-extras.nc").filter(
+ScmRun.from_nc(OUTPUT_DIR / "out-ssp585-extras.nc").filter(
     variable="Surface Temperature"
 ).line_plot()
 
 # %% [markdown]
-# If we use dimensions and extra such that our extra co-ordinates are not uniquely defined by the regions, an `_id` dimension is automatically added to ensure we don't lose any information.
+# If we use dimensions and extra such that our extra co-ordinates are not uniquely defined by the
+# regions, an `_id` dimension is automatically added to ensure we don't lose any information.
 
 # %%
 large_run.to_nc(
-    "/tmp/out-extras-sparse.nc",
+    OUTPUT_DIR / "out-extras-sparse.nc",
     dimensions=["scenario"],
     extras=["paraset_id", "run_id"],
 )
 
 # %%
 
-xr.load_dataset("/tmp/out-extras-sparse.nc")
+xr.load_dataset(OUTPUT_DIR / "out-extras-sparse.nc")
 
 # %% [markdown]
 # ### Multi-dimensional data
 #
-# **scmdata** can also handle having more than one dimension. This can be especially helpful if you have output from a number of models (IAMs), scenarios, regions and runs.
+# **scmdata** can also handle having more than one dimension. This can be especially helpful if you
+# have output from a number of models (IAMs), scenarios, regions and runs.
 
 # %%
 multi_dimensional_run = []
@@ -278,7 +302,7 @@ multi_dimensional_run = run_append(multi_dimensional_run)
 multi_dimensional_run
 
 # %%
-multi_dim_outfile = "/tmp/out-multi-dimensional.nc"
+multi_dim_outfile = OUTPUT_DIR / "out-multi-dimensional.nc"
 
 # %%
 multi_dimensional_run.to_nc(

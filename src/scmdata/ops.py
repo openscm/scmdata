@@ -114,8 +114,8 @@ def _perform_op(base, other, op, use_pint_units=True):
                     out.append(base[col] - other[col])
 
             except KeyError:
-                raise KeyError(
-                    "No equivalent in `other` for {}".format(list(zip(col_names, col)))
+                raise KeyError(  # noqa: TRY200
+                    f"No equivalent in `other` for {list(zip(col_names, col))}"
                 )
 
         elif op == "multiply":
@@ -192,49 +192,59 @@ def subtract(self, other, op_cols, **kwargs):
     ...             "Surface Air Temperature Change",
     ...         ],
     ...         "unit": ["GtC / yr", "GtC / yr", "GtC / yr", "GtC / yr", "GtC", "K"],
-    ...         "region": ["World|NH", "World|NH", "World|SH", "World|SH", "World", "World"],
+    ...         "region": [
+    ...             "World|NH",
+    ...             "World|NH",
+    ...             "World|SH",
+    ...             "World|SH",
+    ...             "World",
+    ...             "World",
+    ...         ],
     ...         "model": "idealised",
     ...         "scenario": "idealised",
     ...     },
     ... )
     >>>
     >>> start.head()
-    time                                                            2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable                 unit     region   model     scenario
-    Emissions|CO2|Fossil     GtC / yr World|NH idealised idealised                  0.0                  6.0                 12.0
-    Emissions|CO2|AFOLU      GtC / yr World|NH idealised idealised                  1.0                  7.0                 13.0
-    Emissions|CO2|Fossil     GtC / yr World|SH idealised idealised                  2.0                  8.0                 14.0
-    Emissions|CO2|AFOLU      GtC / yr World|SH idealised idealised                  3.0                  9.0                 15.0
-    Cumulative Emissions|CO2 GtC      World    idealised idealised                  4.0                 10.0                 16.0
+    time                                                            2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|Fossil             0.0         6.0        12.0
+                                          Emissions|CO2|AFOLU              1.0         7.0        13.0
+              World|SH idealised GtC / yr Emissions|CO2|Fossil             2.0         8.0        14.0
+                                          Emissions|CO2|AFOLU              3.0         9.0        15.0
+              World    idealised GtC      Cumulative Emissions|CO2         4.0        10.0        16.0
+
     >>> fos = start.filter(variable="*Fossil")
     >>> fos.head()
-    time                                                        2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable             unit     region   model     scenario
-    Emissions|CO2|Fossil GtC / yr World|NH idealised idealised                  0.0                  6.0                 12.0
-                                  World|SH idealised idealised                  2.0                  8.0                 14.0
+    time                                                        2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|Fossil         0.0         6.0        12.0
+              World|SH idealised GtC / yr Emissions|CO2|Fossil         2.0         8.0        14.0
     >>>
     >>> afolu = start.filter(variable="*AFOLU")
     >>> afolu.head()
-    time                                                       2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable            unit     region   model     scenario
-    Emissions|CO2|AFOLU GtC / yr World|NH idealised idealised                  1.0                  7.0                 13.0
-                                 World|SH idealised idealised                  3.0                  9.0                 15.0
+    time                                                       2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|AFOLU         1.0         7.0        13.0
+              World|SH idealised GtC / yr Emissions|CO2|AFOLU         3.0         9.0        15.0
+
     >>>
     >>> fos_minus_afolu = fos.subtract(
     ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil - AFOLU"}
     ... )
     >>> fos_minus_afolu.head()
-    time                                                                  2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    model     scenario  region   variable                     unit
-    idealised idealised World|NH Emissions|CO2|Fossil - AFOLU gigatC / a                 -1.0                 -1.0                 -1.0
-                        World|SH Emissions|CO2|Fossil - AFOLU gigatC / a                 -1.0                 -1.0                 -1.0
-    >>>
+    time                                                                  2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit       variable
+    idealised World|NH idealised gigatC / a Emissions|CO2|Fossil - AFOLU        -1.0        -1.0        -1.0
+              World|SH idealised gigatC / a Emissions|CO2|Fossil - AFOLU        -1.0        -1.0        -1.0
+    >>> nh = start.filter(region="World|NH")
+    >>> sh = start.filter(region="World|SH")
     >>> nh_minus_sh = nh.subtract(sh, op_cols={"region": "World|NH - SH"})
     >>> nh_minus_sh.head()
-    time                                                               2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    model     scenario  region        variable             unit
-    idealised idealised World|NH - SH Emissions|CO2|Fossil gigatC / a                 -2.0                 -2.0                 -2.0
-                                      Emissions|CO2|AFOLU  gigatC / a                 -2.0                 -2.0                 -2.0
+    time                                                               2010-01-01  2020-01-01  2030-01-01
+    model     region        scenario  unit       variable
+    idealised World|NH - SH idealised gigatC / a Emissions|CO2|Fossil        -2.0        -2.0        -2.0
+                                                 Emissions|CO2|AFOLU         -2.0        -2.0        -2.0
     """
     out = _perform_op(
         prep_for_op(self, op_cols, self.meta.columns, **kwargs),
@@ -298,61 +308,65 @@ def add(self, other, op_cols, **kwargs):
     ...             "Surface Air Temperature Change",
     ...         ],
     ...         "unit": ["GtC / yr", "GtC / yr", "GtC / yr", "GtC / yr", "GtC", "K"],
-    ...         "region": ["World|NH", "World|NH", "World|SH", "World|SH", "World", "World"],
+    ...         "region": [
+    ...             "World|NH",
+    ...             "World|NH",
+    ...             "World|SH",
+    ...             "World|SH",
+    ...             "World",
+    ...             "World",
+    ...         ],
     ...         "model": "idealised",
     ...         "scenario": "idealised",
     ...     },
     ... )
     >>>
     >>> start.head()
-    time                                                            2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable                 unit     region   model     scenario
-    Emissions|CO2|Fossil     GtC / yr World|NH idealised idealised                  0.0                  6.0                 12.0
-    Emissions|CO2|AFOLU      GtC / yr World|NH idealised idealised                  1.0                  7.0                 13.0
-    Emissions|CO2|Fossil     GtC / yr World|SH idealised idealised                  2.0                  8.0                 14.0
-    Emissions|CO2|AFOLU      GtC / yr World|SH idealised idealised                  3.0                  9.0                 15.0
-    Cumulative Emissions|CO2 GtC      World    idealised idealised                  4.0                 10.0                 16.0
+    time                                                            2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|Fossil             0.0         6.0        12.0
+                                          Emissions|CO2|AFOLU              1.0         7.0        13.0
+              World|SH idealised GtC / yr Emissions|CO2|Fossil             2.0         8.0        14.0
+                                          Emissions|CO2|AFOLU              3.0         9.0        15.0
+              World    idealised GtC      Cumulative Emissions|CO2         4.0        10.0        16.0
     >>> fos = start.filter(variable="*Fossil")
     >>> fos.head()
-    time                                                        2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable             unit     region   model     scenario
-    Emissions|CO2|Fossil GtC / yr World|NH idealised idealised                  0.0                  6.0                 12.0
-                                  World|SH idealised idealised                  2.0                  8.0                 14.0
+    time                                                        2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|Fossil         0.0         6.0        12.0
+              World|SH idealised GtC / yr Emissions|CO2|Fossil         2.0         8.0        14.0
     >>>
     >>> afolu = start.filter(variable="*AFOLU")
     >>> afolu.head()
-    time                                                       2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable            unit     region   model     scenario
-    Emissions|CO2|AFOLU GtC / yr World|NH idealised idealised                  1.0                  7.0                 13.0
-                                 World|SH idealised idealised                  3.0                  9.0                 15.0
-    >>>
+    time                                                       2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|AFOLU         1.0         7.0        13.0
+              World|SH idealised GtC / yr Emissions|CO2|AFOLU         3.0         9.0        15.0
+
     >>> total = fos.add(afolu, op_cols={"variable": "Emissions|CO2"})
     >>> total.head()
-    time                                                   2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    model     scenario  region   variable      unit
-    idealised idealised World|NH Emissions|CO2 gigatC / a                  1.0                 13.0                 25.0
-                        World|SH Emissions|CO2 gigatC / a                  5.0                 17.0                 29.0
-    >>>
+    time                                                   2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit       variable
+    idealised World|NH idealised gigatC / a Emissions|CO2         1.0        13.0        25.0
+              World|SH idealised gigatC / a Emissions|CO2         5.0        17.0        29.0
     >>> nh = start.filter(region="*NH")
     >>> nh.head()
-    time                                                        2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable             unit     region   model     scenario
-    Emissions|CO2|Fossil GtC / yr World|NH idealised idealised                  0.0                  6.0                 12.0
-    Emissions|CO2|AFOLU  GtC / yr World|NH idealised idealised                  1.0                  7.0                 13.0
-    >>>
+    time                                                        2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|Fossil         0.0         6.0        12.0
+                                          Emissions|CO2|AFOLU          1.0         7.0        13.0
     >>> sh = start.filter(region="*SH")
     >>> sh.head()
-    time                                                        2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable             unit     region   model     scenario
-    Emissions|CO2|Fossil GtC / yr World|SH idealised idealised                  2.0                  8.0                 14.0
-    Emissions|CO2|AFOLU  GtC / yr World|SH idealised idealised                  3.0                  9.0                 15.0
-    >>>
+    time                                                        2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|SH idealised GtC / yr Emissions|CO2|Fossil         2.0         8.0        14.0
+                                          Emissions|CO2|AFOLU          3.0         9.0        15.0
     >>> world = nh.add(sh, op_cols={"region": "World"})
     >>> world.head()
-    time                                                        2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    model     scenario  region variable             unit
-    idealised idealised World  Emissions|CO2|Fossil gigatC / a                  2.0                 14.0                 26.0
-                               Emissions|CO2|AFOLU  gigatC / a                  4.0                 16.0                 28.0
+    time                                                        2010-01-01  2020-01-01  2030-01-01
+    model     region scenario  unit       variable
+    idealised World  idealised gigatC / a Emissions|CO2|Fossil         2.0        14.0        26.0
+                                          Emissions|CO2|AFOLU          4.0        16.0        28.0
     """
     out = _perform_op(
         prep_for_op(self, op_cols, self.meta.columns, **kwargs),
@@ -414,42 +428,50 @@ def multiply(self, other, op_cols, **kwargs):
     ...             "Surface Air Temperature Change",
     ...         ],
     ...         "unit": ["GtC / yr", "GtC / yr", "GtC / yr", "GtC / yr", "GtC", "K"],
-    ...         "region": ["World|NH", "World|NH", "World|SH", "World|SH", "World", "World"],
+    ...         "region": [
+    ...             "World|NH",
+    ...             "World|NH",
+    ...             "World|SH",
+    ...             "World|SH",
+    ...             "World",
+    ...             "World",
+    ...         ],
     ...         "model": "idealised",
     ...         "scenario": "idealised",
     ...     },
     ... )
     >>>
     >>> start.head()
-    time                                                            2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable                 unit     region   model     scenario
-    Emissions|CO2|Fossil     GtC / yr World|NH idealised idealised                  0.0                  6.0                 12.0
-    Emissions|CO2|AFOLU      GtC / yr World|NH idealised idealised                  1.0                  7.0                 13.0
-    Emissions|CO2|Fossil     GtC / yr World|SH idealised idealised                  2.0                  8.0                 14.0
-    Emissions|CO2|AFOLU      GtC / yr World|SH idealised idealised                  3.0                  9.0                 15.0
-    Cumulative Emissions|CO2 GtC      World    idealised idealised                  4.0                 10.0                 16.0
+    time                                                            2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|Fossil             0.0         6.0        12.0
+                                          Emissions|CO2|AFOLU              1.0         7.0        13.0
+              World|SH idealised GtC / yr Emissions|CO2|Fossil             2.0         8.0        14.0
+                                          Emissions|CO2|AFOLU              3.0         9.0        15.0
+              World    idealised GtC      Cumulative Emissions|CO2         4.0        10.0        16.0
     >>> fos = start.filter(variable="*Fossil")
     >>> fos.head()
-    time                                                        2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable             unit     region   model     scenario
-    Emissions|CO2|Fossil GtC / yr World|NH idealised idealised                  0.0                  6.0                 12.0
-                                  World|SH idealised idealised                  2.0                  8.0                 14.0
+    time                                                        2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|Fossil         0.0         6.0        12.0
+              World|SH idealised GtC / yr Emissions|CO2|Fossil         2.0         8.0        14.0
+
     >>>
     >>> afolu = start.filter(variable="*AFOLU")
     >>> afolu.head()
-    time                                                       2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable            unit     region   model     scenario
-    Emissions|CO2|AFOLU GtC / yr World|NH idealised idealised                  1.0                  7.0                 13.0
-                                 World|SH idealised idealised                  3.0                  9.0                 15.0
+    time                                                       2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|AFOLU         1.0         7.0        13.0
+              World|SH idealised GtC / yr Emissions|CO2|AFOLU         3.0         9.0        15.0
     >>>
     >>> fos_times_afolu = fos.multiply(
     ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil : AFOLU"}
     ... )
     >>> fos_times_afolu.head()
-    time                                                                            2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    model     scenario  region   variable                     unit
-    idealised idealised World|NH Emissions|CO2|Fossil : AFOLU gigatC ** 2 / a ** 2                  0.0                 42.0                156.0
-                        World|SH Emissions|CO2|Fossil : AFOLU gigatC ** 2 / a ** 2                  6.0                 72.0                210.0
+    time                                                                            2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit                 variable
+    idealised World|NH idealised gigatC ** 2 / a ** 2 Emissions|CO2|Fossil : AFOLU         0.0        42.0       156.0
+              World|SH idealised gigatC ** 2 / a ** 2 Emissions|CO2|Fossil : AFOLU         6.0        72.0       210.0
     """
     out = _perform_op(
         prep_for_op(self, op_cols, self.meta.columns, **kwargs),
@@ -511,42 +533,49 @@ def divide(self, other, op_cols, **kwargs):
     ...             "Surface Air Temperature Change",
     ...         ],
     ...         "unit": ["GtC / yr", "GtC / yr", "GtC / yr", "GtC / yr", "GtC", "K"],
-    ...         "region": ["World|NH", "World|NH", "World|SH", "World|SH", "World", "World"],
+    ...         "region": [
+    ...             "World|NH",
+    ...             "World|NH",
+    ...             "World|SH",
+    ...             "World|SH",
+    ...             "World",
+    ...             "World",
+    ...         ],
     ...         "model": "idealised",
     ...         "scenario": "idealised",
     ...     },
     ... )
-    >>>
     >>> start.head()
-    time                                                            2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable                 unit     region   model     scenario
-    Emissions|CO2|Fossil     GtC / yr World|NH idealised idealised                  0.0                  6.0                 12.0
-    Emissions|CO2|AFOLU      GtC / yr World|NH idealised idealised                  1.0                  7.0                 13.0
-    Emissions|CO2|Fossil     GtC / yr World|SH idealised idealised                  2.0                  8.0                 14.0
-    Emissions|CO2|AFOLU      GtC / yr World|SH idealised idealised                  3.0                  9.0                 15.0
-    Cumulative Emissions|CO2 GtC      World    idealised idealised                  4.0                 10.0                 16.0
+    time                                                            2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|Fossil             0.0         6.0        12.0
+                                          Emissions|CO2|AFOLU              1.0         7.0        13.0
+              World|SH idealised GtC / yr Emissions|CO2|Fossil             2.0         8.0        14.0
+                                          Emissions|CO2|AFOLU              3.0         9.0        15.0
+              World    idealised GtC      Cumulative Emissions|CO2         4.0        10.0        16.0
     >>> fos = start.filter(variable="*Fossil")
     >>> fos.head()
-    time                                                        2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable             unit     region   model     scenario
-    Emissions|CO2|Fossil GtC / yr World|NH idealised idealised                  0.0                  6.0                 12.0
-                                  World|SH idealised idealised                  2.0                  8.0                 14.0
+    time                                                        2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|Fossil         0.0         6.0        12.0
+              World|SH idealised GtC / yr Emissions|CO2|Fossil         2.0         8.0        14.0
+
     >>>
     >>> afolu = start.filter(variable="*AFOLU")
     >>> afolu.head()
-    time                                                       2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    variable            unit     region   model     scenario
-    Emissions|CO2|AFOLU GtC / yr World|NH idealised idealised                  1.0                  7.0                 13.0
-                                 World|SH idealised idealised                  3.0                  9.0                 15.0
+    time                                                       2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit     variable
+    idealised World|NH idealised GtC / yr Emissions|CO2|AFOLU         1.0         7.0        13.0
+              World|SH idealised GtC / yr Emissions|CO2|AFOLU         3.0         9.0        15.0
     >>>
     >>> fos_afolu_ratio = fos.divide(
     ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil : AFOLU"}
     ... )
     >>> fos_afolu_ratio.head()
-    time                                                                     2010-01-01 00:00:00  2020-01-01 00:00:00  2030-01-01 00:00:00
-    model     scenario  region   variable                     unit
-    idealised idealised World|NH Emissions|CO2|Fossil : AFOLU dimensionless             0.000000             0.857143             0.923077
-                        World|SH Emissions|CO2|Fossil : AFOLU dimensionless             0.666667             0.888889             0.933333
+    time                                                                     2010-01-01  2020-01-01  2030-01-01
+    model     region   scenario  unit          variable
+    idealised World|NH idealised dimensionless Emissions|CO2|Fossil : AFOLU    0.000000    0.857143    0.923077
+              World|SH idealised dimensionless Emissions|CO2|Fossil : AFOLU    0.666667    0.888889    0.933333
     """
     out = _perform_op(
         prep_for_op(self, op_cols, self.meta.columns, **kwargs),
@@ -622,7 +651,7 @@ def cumsum(self, out_var=None, check_annual=True):
     """
     time_unit = "a"
 
-    if self.timeseries().isnull().sum().sum() > 0:
+    if self.timeseries().isna().sum().sum() > 0:
         warnings.warn(
             "You are integrating data which contains nans so your result will "
             "also contain nans. Perhaps you want to remove the nans before "
@@ -709,7 +738,7 @@ def cumtrapz(self, out_var=None):
     if not has_scipy:
         raise ImportError("scipy is not installed. Run 'pip install scipy'")
 
-    if self.timeseries().isnull().sum().sum() > 0:
+    if self.timeseries().isna().sum().sum() > 0:
         warnings.warn(
             "You are integrating data which contains nans so your result will "
             "also contain nans. Perhaps you want to remove the nans before "
@@ -718,9 +747,9 @@ def cumtrapz(self, out_var=None):
         )
 
     time_unit = "s"
-    times_in_s = self.time_points.values.astype(
-        "datetime64[{}]".format(time_unit)
-    ).astype("int")
+    times_in_s = self.time_points.values.astype(f"datetime64[{time_unit}]").astype(
+        "int"
+    )
     ts = self.timeseries()
 
     ur = scmdata.units.get_unit_registry()
@@ -828,7 +857,7 @@ def delta_per_delta_time(self, out_var=None):
         contain nans.
     """
     time_unit = "s"
-    times_numpy = self.time_points.values.astype("datetime64[{}]".format(time_unit))
+    times_numpy = self.time_points.values.astype(f"datetime64[{time_unit}]")
     times_deltas_numpy = times_numpy[1:] - times_numpy[:-1]
     times_in_s = times_numpy.astype("int")
     time_deltas_in_s = times_in_s[1:] - times_in_s[:-1]
@@ -836,7 +865,7 @@ def delta_per_delta_time(self, out_var=None):
     ur = scmdata.units.get_unit_registry()
 
     ts = self.timeseries()
-    if ts.isnull().sum().sum() > 0:
+    if ts.isna().sum().sum() > 0:
         warnings.warn(
             "You are calculating deltas of data which contains nans so your "
             "result will also contain nans. Perhaps you want to remove the "
@@ -845,7 +874,7 @@ def delta_per_delta_time(self, out_var=None):
         )
 
     out = ts.diff(periods=1, axis="columns")
-    if not out.iloc[:, 0].isnull().all():  # pragma: no cover
+    if not out.iloc[:, 0].isna().all():  # pragma: no cover
         raise AssertionError(
             "Did pandas change their API? The first timestep is not all nan."
         )
@@ -907,7 +936,7 @@ def linear_regression(self):
     ):
         unit = row_meta.pop("unit")
 
-        row_meta["gradient"] = gradient * ur("{} / {}".format(unit, time_unit))
+        row_meta["gradient"] = gradient * ur(f"{unit} / {time_unit}")
         row_meta["intercept"] = intercept * ur(unit)
 
         out.append(row_meta)
@@ -1020,13 +1049,11 @@ def linear_regression_scmrun(self):
 
 def _calculate_linear_regression(in_scmrun):
     time_unit = "s"
-    times_numpy = in_scmrun.time_points.values.astype(
-        "datetime64[{}]".format(time_unit)
-    )
+    times_numpy = in_scmrun.time_points.values.astype(f"datetime64[{time_unit}]")
     times_in_s = times_numpy.astype("int")
 
     ts = in_scmrun.timeseries()
-    if ts.isnull().sum().sum() > 0:
+    if ts.isna().sum().sum() > 0:
         warnings.warn(
             "You are calculating a linear regression of data which contains "
             "nans so your result will also contain nans. Perhaps you want to "

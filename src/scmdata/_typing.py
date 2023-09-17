@@ -3,7 +3,7 @@ Commonly used typehints
 """
 from __future__ import annotations
 
-from os import PathLike  # noqa
+from os import PathLike
 from typing import Callable, Dict, Union
 
 import pandas as pd

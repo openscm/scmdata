@@ -7,9 +7,9 @@ import itertools
 import os
 import os.path
 
-from scmdata import ScmRun, run_append
 from scmdata.database._utils import _check_is_subdir, ensure_dir_exists
 from scmdata.database.backends import BaseDatabaseBackend
+from scmdata.run import ScmRun, run_append
 
 
 def _get_safe_filename(inp, include_glob=False):
@@ -75,7 +75,7 @@ class NetCDFDatabaseBackend(BaseDatabaseBackend):
         out_levels = []
         for database_level in self.kwargs["levels"]:
             if database_level not in data_levels:  # pragma: no cover # emergency valve
-                raise KeyError("expected level: {}".format(database_level))
+                raise KeyError(f"expected level: {database_level}")
             out_levels.append(str(data_levels[database_level]))
 
         out_path = os.path.join(*out_levels)
@@ -130,6 +130,7 @@ class NetCDFDatabaseBackend(BaseDatabaseBackend):
 
     def load(self, key):
         """
+        Load a run using a key
 
         Parameters
         ----------

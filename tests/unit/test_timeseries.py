@@ -52,9 +52,7 @@ def test_timeseries_init_xarray():
     npt.assert_array_equal(res.values, raw_data)
     assert isinstance(res.time_points, TimePoints)
 
-    exp_axis = np.array(
-        ["{:04d}-01-01".format(y) for y in time_points], dtype="datetime64[s]"
-    )
+    exp_axis = np.array([f"{y:04d}-01-01" for y in time_points], dtype="datetime64[s]")
     npt.assert_array_equal(res.time_points.values, exp_axis)
 
 
@@ -223,13 +221,12 @@ def test_timeseries_add_sub_pint_scalar_no_ts_units(ts, inplace, op):
                 ts -= scalar
             else:
                 raise NotImplementedError(op)
+        elif op == "add":
+            ts + scalar
+        elif op == "sub":
+            ts - scalar
         else:
-            if op == "add":
-                ts + scalar
-            elif op == "sub":
-                ts - scalar
-            else:
-                raise NotImplementedError(op)
+            raise NotImplementedError(op)
 
 
 @pytest.mark.parametrize("inplace", [True, False])
@@ -257,11 +254,10 @@ def test_timeseries_div_pint_scalar_no_units(ts, inplace, op):
             ts2 = ts
         else:
             raise NotImplementedError(op)
+    elif op == "div":
+        ts2 = ts / scalar
     else:
-        if op == "div":
-            ts2 = ts / scalar
-        else:
-            raise NotImplementedError(op)
+        raise NotImplementedError(op)
 
     # operation works because units of base assumed to be dimensionless
     npt.assert_allclose(ts2.values, [1 / 2, 1, 3 / 2])

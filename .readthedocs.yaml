@@ -2,6 +2,8 @@
 # Read the Docs configuration file
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
+# Thank you also https://browniebroke.com/blog/specify-docs-dependency-groups-with-poetry-and-read-the-docs/
+
 # Required
 version: 2
 
@@ -10,15 +12,12 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.9"
-
-python:
-  install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
-        - plotting
-        - optional
+  jobs:
+    post_create_environment:
+      - pip install poetry
+      - poetry config virtualenvs.create false
+    post_install:
+      - poetry install --with docs --all-extras
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:

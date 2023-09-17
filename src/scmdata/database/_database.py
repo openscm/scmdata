@@ -8,9 +8,9 @@ import pandas as pd
 import six
 import tqdm.autonotebook as tqdman
 
-from scmdata import run_append
 from scmdata.database._utils import _check_is_subdir
 from scmdata.database.backends import BaseDatabaseBackend, backend_classes
+from scmdata.run import run_append
 
 
 class ScmDatabase:
@@ -74,7 +74,7 @@ class ScmDatabase:
         backend_config = backend_config if backend_config else {}
         for key in ["levels", "root_dir"]:
             if key in backend_config:
-                raise ValueError("backend_config cannot contain key `{}`".format(key))
+                raise ValueError(f"backend_config cannot contain key `{key}`")
         backend_config["levels"] = self.levels
         backend_config["root_dir"] = root_dir
 
@@ -86,18 +86,16 @@ class ScmDatabase:
                 cls = backend_classes[backend.lower()]
                 return cls(**backend_config)
             except KeyError:
-                raise ValueError("Unknown database backend: {}".format(backend))
+                raise TypeError(f"Unknown database backend: {backend}")  # noqa: TRY200
         else:
             if not isinstance(backend, BaseDatabaseBackend):
-                raise ValueError(
+                raise TypeError(
                     "Backend must be an instance of scmdata.database.BaseDatabaseBackend"
                 )
             return backend
 
     def __repr__(self):
-        return "<scmdata.database.SCMDatabase (root_dir: {}, levels: {})>".format(
-            self._root_dir, self.levels
-        )
+        return f"<scmdata.database.SCMDatabase (root_dir: {self._root_dir}, levels: {self.levels})>"
 
     @property
     def root_dir(self):
@@ -113,7 +111,7 @@ class ScmDatabase:
     def _clean_filters(self, filters):
         for level in filters:
             if level not in self.levels:
-                raise ValueError("Unknown level: {}".format(level))
+                raise ValueError(f"Unknown level: {level}")
             if os.sep in filters[level]:
                 filters[level] = filters[level].replace(os.sep, "_")
         return filters

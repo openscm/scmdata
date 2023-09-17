@@ -31,9 +31,7 @@ _TARGET_DTYPE = "datetime64[s]"
 def _float_year_to_datetime(inp: float) -> np.datetime64:
     year = int(inp)
     fractional_part = inp - year
-    return np.datetime64(  # pylint: disable=too-many-function-args
-        year - 1970, "Y"
-    ) + np.timedelta64(  # pylint: disable=too-many-function-args
+    return np.datetime64(year - 1970, "Y") + np.timedelta64(
         int(
             (datetime(year + 1, 1, 1) - datetime(year, 1, 1)).total_seconds()
             * fractional_part
@@ -350,7 +348,7 @@ class TimeseriesConverter:
                 ]
             )
 
-        if len(values) < 2:
+        if len(values) < 2:  # noqa:  PLR2004
             raise InsufficientDataError
 
         try:
@@ -379,8 +377,7 @@ class TimeseriesConverter:
 
     def convert_from(self, values: np.ndarray) -> np.ndarray:
         """
-        Convert value **from** source timeseries time points to target timeseries time
-        points.
+        Convert value **from** source timeseries time points to target timeseries time points.
 
         Parameters
         ----------
@@ -396,8 +393,7 @@ class TimeseriesConverter:
 
     def convert_to(self, values: np.ndarray) -> np.ndarray:
         """
-        Convert value from target timeseries time points **to** source timeseries time
-        points.
+        Convert value from target timeseries time points **to** source timeseries time points.
 
         Parameters
         ----------

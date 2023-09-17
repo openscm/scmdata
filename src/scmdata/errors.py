@@ -23,7 +23,7 @@ class NonUniqueMetadataError(ValueError):
         dup = dup[dup.repeats > 1]
         msg = (
             "Duplicate metadata (numbers show how many times the given "
-            "metadata is repeated).\n{}".format(dup)
+            f"metadata is repeated).\n{dup}"
         )
 
         super().__init__(msg)
@@ -36,7 +36,7 @@ class MissingRequiredColumnError(ValueError):
 
     def __init__(self, columns):
         self.columns = columns
-        msg = "Missing required columns `{}`!".format(columns)
+        msg = f"Missing required columns `{columns}`!"
 
         super().__init__(msg)
 
@@ -53,7 +53,7 @@ class DuplicateTimesError(ValueError):
 
         msg = (
             "Duplicate times (numbers show how many times the given time is "
-            "repeated):\n{}".format(dup)
+            f"repeated):\n{dup}"
         )
 
         super().__init__(msg)

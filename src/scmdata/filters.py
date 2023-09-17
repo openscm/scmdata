@@ -94,7 +94,7 @@ def find_depth(
             return _level <= x
 
     else:
-        raise ValueError("Unknown level type: {}".format(level))
+        raise ValueError(f"Unknown level type: {level}")
 
     # determine depth
     pipe = re.compile(re.escape(separator))
@@ -159,15 +159,17 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     )
 
     for s in _values:
+        comparison_value: str | float = s
         if isinstance(s, str) and s == "":
-            s = np.nan
+            comparison_value = np.nan
 
-        use_string_comparison = isinstance(s, str) or (
-            not np.isnan(s) and pd.api.types.is_string_dtype(meta_col.categories.dtype)
+        use_string_comparison = isinstance(comparison_value, str) or (
+            not np.isnan(comparison_value)
+            and pd.api.types.is_string_dtype(meta_col.categories.dtype)
         )
 
         if use_string_comparison:
-            if not regexp and s == "*" and level is None:
+            if not regexp and comparison_value == "*" and level is None:
                 matches |= True
             else:
                 _regexp = (
@@ -181,23 +183,25 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
                     .replace("$", "\\$")
                     .replace("^", "\\^")
                 ) + "$"
-                pattern = re.compile(_regexp if not regexp else str(s))
+                pattern = re.compile(_regexp if not regexp else str(comparison_value))
 
                 subset = [m for m in meta_col.categories if pattern.match(str(m))]
 
                 if level is not None:
-                    depth = find_depth(meta_col, str(s), level, separator=separator)
+                    depth = find_depth(
+                        meta_col, str(comparison_value), level, separator=separator
+                    )
                     subset = set(subset).intersection(set(depth))
 
                 matches |= meta_col.isin(subset)
         else:
-            s = float(s)
-            if np.isnan(s):
+            s_float = float(comparison_value)
+            if np.isnan(s_float):
                 matches |= [
                     c == -1 for c in meta_col.codes
                 ]  # nan's are missing from categoricals
             else:
-                matches |= np.isclose(s, meta_col.astype(float))
+                matches |= np.isclose(s_float, meta_col.astype(float))
 
     return matches
 
@@ -363,9 +367,7 @@ def time_match(
                 continue
 
         if res is None:
-            error_msg = "Could not convert {} '{}' to integer".format(
-                name, strs_to_convert
-            )
+            error_msg = f"Could not convert {name} '{strs_to_convert}' to integer"
             raise ValueError(error_msg)
         return res
 
@@ -379,7 +381,7 @@ def time_match(
                 if ints[0] > ints[1]:
                     error_msg = (
                         "string ranges must lead to increasing integer ranges,"
-                        " {} becomes {}".format(timeset, ints)
+                        f" {timeset} becomes {ints}"
                     )
                     raise ValueError(error_msg)
 

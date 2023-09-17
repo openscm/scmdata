@@ -124,6 +124,7 @@ class TimeSeries(OpsMixin):
             self._data = xr.DataArray(values, coords=[("time", time)], **kwargs)
 
     def __repr__(self):
+        """Generate a repr string"""
         return self._data.__repr__()
 
     @property
@@ -192,12 +193,18 @@ class TimeSeries(OpsMixin):
         return self._data.values
 
     def __getitem__(self, item):
+        """
+        Get metadata about the timeseries
+        """
         res = self._data.__getitem__(item)
         if res.ndim == 0:
             return res
         return TimeSeries(res)
 
     def __setitem__(self, key, value):
+        """
+        Set metadata about the timeseries
+        """
         self._data.__setitem__(key, value)
 
     def _binary_op(
@@ -276,6 +283,7 @@ class TimeSeries(OpsMixin):
             Interpolation type. Options are 'linear'
         extrapolation_type: str or None
             Extrapolation type. Options are None, 'linear' or 'constant'
+
         Returns
         -------
         :class:`TimeSeries`

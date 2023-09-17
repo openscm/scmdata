@@ -33,7 +33,7 @@ def start_scmrun():
 
 class DummyBackendBase(BaseDatabaseBackend):
     def __init__(self, **kwargs):
-        super(DummyBackendBase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.keys = {}
 
     def get(self, filters, ext="*.nc"):
@@ -78,7 +78,7 @@ def test_database_passes_config(levels):
 
 @pytest.mark.parametrize("cfg_name", ["levels", "root_dir"])
 def test_database_invalid_config(cfg_name):
-    msg = "backend_config cannot contain key `{}`".format(cfg_name)
+    msg = f"backend_config cannot contain key `{cfg_name}`"
     with pytest.raises(ValueError, match=msg):
         ScmDatabase("root_dir", backend_config={cfg_name: "test"})
 
@@ -96,13 +96,13 @@ def test_database_custom_backend_invalid():
 
     backend = WrongBackend()
     msg = "Backend must be an instance of scmdata.database.BaseDatabaseBackend"
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(TypeError, match=msg):
         ScmDatabase("root_dir", backend=backend)
 
 
 def test_database_custom_backend_missing():
     msg = "Unknown database backend: other"
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(TypeError, match=msg):
         ScmDatabase("root_dir", backend="other")
 
 
