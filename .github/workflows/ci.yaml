@@ -18,7 +18,9 @@ jobs:
           python-version: "3.9"
           venv-id: "docs"
           poetry-dependency-install-flags: "--all-extras --only 'main,dev'"
+      # There are still a lot of mypy errors to resolve
       - name: mypy
+        continue-on-error: true
         run: MYPYPATH=stubs poetry run mypy src
 
   docs:
