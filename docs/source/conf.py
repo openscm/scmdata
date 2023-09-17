@@ -15,7 +15,7 @@ import scmdata
 
 project = "SCMData"
 # put the authors in their own variable, so they can be reused later
-authors = ", ".join(["Jared Lewis", "Zebedee Nicholls"])
+authors = ", ".join(["Jared Lewis", "Zebedee Nicholls", "Mika Pflüger"])
 # add a copyright year variable, we can extend this over time in future as
 # needed
 copyright_year = "2023"

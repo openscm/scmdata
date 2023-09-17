@@ -2,7 +2,11 @@
 name = "scmdata"
 version = "0.15.2"
 description = "scmdata provides some useful data handling routines for dealing with data related to simple climate models (SCMs aka reduced complexity climate models, RCMs)"
-authors = ["Jared Lewis <jared.lewis@climate-resource.com>", "Zeb Nicholls <zebedee.nicholls@climate-energy-college.org>"]
+authors = [
+    "Jared Lewis <jared.lewis@climate-resource.com>",
+    "Zeb Nicholls <zebedee.nicholls@climate-energy-college.org>",
+    "Mika Pflüger <mika.pflueger@climate-resource.com>",
+]
 readme = "README.md"
 packages = [{include = "scmdata", from = "src"}]
 keywords = [
