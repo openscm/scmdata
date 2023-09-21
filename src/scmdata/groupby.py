@@ -41,7 +41,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
     """
 
     def __init__(
-        self, run: "GenericRun", groups: Iterable[str], na_fill_value: float = -10000
+        self, run: "GenericRun", groups: "Iterable[str]", na_fill_value: float = -10000
     ):
         self.run = run
         self.group_keys = groups
