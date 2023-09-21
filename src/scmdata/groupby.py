@@ -3,7 +3,7 @@ Functionality for grouping and filtering ScmRun objects
 """
 import warnings
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Callable, Iterator, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Callable, Generic, Iterator, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -11,14 +11,13 @@ from numpy.typing import NDArray
 from xarray.core import ops
 from xarray.core.common import ImplementsArrayReduce
 
-import scmdata
 from scmdata._typing import MetadataValue
 
 if TYPE_CHECKING:
     from pandas.core.groupby.generic import DataFrameGroupBy
     from typing_extensions import Concatenate, ParamSpec
 
-    from scmdata.run import ScmRun
+    from scmdata.run import GenericRun
 
     P = ParamSpec("P")
 
@@ -37,13 +36,13 @@ def _maybe_wrap_array(original, new_array):
         return new_array
 
 
-class RunGroupBy(ImplementsArrayReduce):
+class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
     """
     GroupBy object specialized to grouping ScmRun objects
     """
 
     def __init__(
-        self, run: "ScmRun", groups: Iterable[str], na_fill_value: float = -10000
+        self, run: "GenericRun", groups: Iterable[str], na_fill_value: float = -10000
     ):
         self.run = run
         self.group_keys = groups
@@ -52,7 +51,7 @@ class RunGroupBy(ImplementsArrayReduce):
         self.na_fill_value = float(na_fill_value)
 
         # Work around the bad handling of NaN values in groupbys
-        if any([np.issubdtype(m[c].dtype, np.number) for c in m]):  # type: ignore
+        if any([np.issubdtype(m[c].dtype, np.number) for c in m]):
             if (m == na_fill_value).any(axis=None):
                 raise ValueError(
                     "na_fill_value conflicts with data value. Choose a na_fill_value "
@@ -63,7 +62,7 @@ class RunGroupBy(ImplementsArrayReduce):
 
         self._grouper: "DataFrameGroupBy" = m.groupby(list(groups), group_keys=True)
 
-    def _iter_grouped(self) -> "Iterator[ScmRun]":
+    def _iter_grouped(self) -> "Iterator[GenericRun]":
         def _try_fill_value(v: MetadataValue) -> MetadataValue:
             try:
                 if float(v) == float(self.na_fill_value):
@@ -74,7 +73,7 @@ class RunGroupBy(ImplementsArrayReduce):
 
         groups: Iterable[
             Union[MetadataValue, tuple[MetadataValue, ...]]
-        ] = self._grouper.groups  # type: ignore
+        ] = self._grouper.groups
         for indices in groups:
             if not isinstance(indices, Iterable) or isinstance(indices, str):
                 indices_clean: tuple[MetadataValue, ...] = (indices,)
@@ -90,7 +89,7 @@ class RunGroupBy(ImplementsArrayReduce):
                 )
             yield res
 
-    def __iter__(self) -> "Iterator[ScmRun]":
+    def __iter__(self) -> "Iterator[GenericRun]":
         """
         Iterate over the groups
         """
@@ -98,10 +97,10 @@ class RunGroupBy(ImplementsArrayReduce):
 
     def apply(
         self,
-        func: "Callable[Concatenate[ScmRun, P], Union[ScmRun, pd.DataFrame, None]]",
+        func: "Callable[Concatenate[GenericRun, P], Union[GenericRun, pd.DataFrame, None]]",
         *args: "P.args",
         **kwargs: "P.kwargs",
-    ) -> "ScmRun":
+    ) -> "GenericRun":
         """
         Apply a function to each group and append the results
 
@@ -146,12 +145,12 @@ class RunGroupBy(ImplementsArrayReduce):
 
     def apply_parallel(
         self,
-        func: "Callable[Concatenate[ScmRun, P], Union[ScmRun, pd.DataFrame, None]]",
+        func: "Callable[Concatenate[GenericRun, P], Union[GenericRun, pd.DataFrame, None]]",
         n_jobs: int = 1,
         backend: str = "loky",
         *args: "P.args",
         **kwargs: "P.kwargs",
-    ) -> "ScmRun":
+    ) -> "GenericRun":
         """
         Apply a function to each group in parallel and append the results
 
@@ -199,7 +198,7 @@ class RunGroupBy(ImplementsArrayReduce):
             ) from e
 
         grouped = self._iter_grouped()
-        applied: list[Union[ScmRun, pd.DataFrame]] = joblib.Parallel(
+        applied: "list[Union[GenericRun, pd.DataFrame, None]]" = joblib.Parallel(
             n_jobs=n_jobs, backend=backend
         )(joblib.delayed(func)(arr, *args, **kwargs) for arr in grouped)
         return self._combine(applied)
@@ -220,8 +219,8 @@ class RunGroupBy(ImplementsArrayReduce):
         return self.apply(func, *args, **kwargs)
 
     def _combine(
-        self, applied: "Sequence[Union[ScmRun, pd.DataFrame, None]]"
-    ) -> "ScmRun":
+        self, applied: "Sequence[Union[GenericRun, pd.DataFrame, None]]"
+    ) -> "GenericRun":
         """
         Recombine the applied objects like the original.
         """
@@ -231,7 +230,7 @@ class RunGroupBy(ImplementsArrayReduce):
         applied_clean = [df for df in applied if df is not None]
 
         if len(applied_clean) == 0:
-            return scmdata.ScmRun()
+            return self.run.__class__()
         else:
             return run_append(applied_clean)
 
@@ -242,7 +241,7 @@ class RunGroupBy(ImplementsArrayReduce):
         axis: Optional[Union[str, Iterable[int]]] = None,
         *args: "P.args",
         **kwargs: "P.kwargs",
-    ) -> "ScmRun":
+    ) -> "GenericRun":
         """
         Reduce the items in this group by applying `func` along some dimension(s).
 

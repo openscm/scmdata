@@ -79,7 +79,7 @@ def test_groupby_return_none_all(scm_run):
     def func(_):
         return None
 
-    assert scm_run.groupby("variable").apply(func) is None
+    assert scm_run.groupby("variable").apply(func).empty
 
 
 def test_groupby_integer_metadata_single_grouper(scm_run):
