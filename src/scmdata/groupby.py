@@ -21,20 +21,6 @@ if TYPE_CHECKING:
     P = ParamSpec("P")
 
 
-def _maybe_wrap_array(original, new_array):
-    """
-    Wrap a transformed array with ``__array_wrap__`` if it can be done safely.
-
-    This lets us treat arbitrary functions that take and return ndarray objects
-    like ufuncs, as long as they return an array with the same shape.
-    """
-    # in case func lost array's metadata
-    if isinstance(new_array, np.ndarray) and new_array.shape == original.shape:
-        return original.__array_wrap__(new_array)
-    else:
-        return new_array
-
-
 class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
     """
     GroupBy object specialized to grouping ScmRun objects
@@ -137,9 +123,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
             The result of splitting, applying and combining this array.
         """
         grouped = self._iter_grouped()
-        applied = [
-            _maybe_wrap_array(arr, func(arr, *args, **kwargs)) for arr in grouped
-        ]
+        applied = [func(arr, *args, **kwargs) for arr in grouped]
         return self._combine(applied)
 
     def apply_parallel(
@@ -191,7 +175,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         """
         try:
             import joblib  # type: ignore
-        except ImportError as e:
+        except ImportError as e:  # pragma: no cover
             raise ImportError(
                 "joblib is not installed. Run 'pip install joblib'"
             ) from e
@@ -236,8 +220,8 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
     def reduce(
         self,
         func: "Callable[Concatenate[NDArray[np.float_], P], NDArray[np.float_]]",
-        dim: Optional[Union[str, Iterable[str]]] = None,
-        axis: Optional[Union[str, Iterable[int]]] = None,
+        dim: "Optional[Union[str, Iterable[str]]]" = None,
+        axis: "Optional[Union[str, Iterable[int]]]" = None,
         *args: "P.args",
         **kwargs: "P.kwargs",
     ) -> "GenericRun":

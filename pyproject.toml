@@ -103,7 +103,7 @@ show_missing = true
 # Regexes for lines to exclude from consideration in addition to the defaults
 exclude_also = [
     # Don't complain about missing type checking code:
-    "if TYPE_CHECKING",
+    "if TYPE_CHECKING:",
 ]
 
 [tool.mypy]
