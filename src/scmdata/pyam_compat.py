@@ -6,7 +6,7 @@ import datetime
 from dateutil import parser
 
 try:
-    from pyam import IamDataFrame
+    from pyam import IamDataFrame  # type: ignore
 
     # mypy can't work out try-except block forces IamDataFrame to be here
     class LongDatetimeIamDataFrame(IamDataFrame):  # type: ignore

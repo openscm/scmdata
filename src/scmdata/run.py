@@ -55,7 +55,6 @@ from .filters import (
     pattern_match,
     years_match,
 )
-from .groupby import RunGroupBy
 from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .ops import inject_ops_methods
@@ -73,6 +72,8 @@ GenericRun = TypeVar("GenericRun", bound="BaseScmRun")
 if TYPE_CHECKING:
     from numpy.typing import NDArray
     from typing_extensions import Concatenate, ParamSpec
+
+    from scmdata.groupby import RunGroupBy
 
     P = ParamSpec("P")
 
@@ -690,11 +691,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
     def _binary_op(
         self,
-        other: Self,
+        other: Self | pint.Quantity | float | int,
         f: Callable[[pd.DataFrame, pd.DataFrame], pd.DataFrame],
         reflexive: bool = False,
         **kwargs: Any,
-    ) -> pd.DataFrame:
+    ) -> Self:
         if isinstance(other, ScmRun):
             return NotImplemented
 
@@ -713,10 +714,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                     f"operations with {other_ndim}d data are not supported"
                 )
 
-        def _perform_op(df):
+        def _perform_op(run: Self) -> Self:
             if isinstance(other, pint.Quantity):
                 try:
-                    data = df.values * ur(df.get_unique_meta("unit", True))
+                    data = run.values * ur(run.get_unique_meta("unit", True))
                     use_pint = True
                 except KeyError:  # pragma: no cover # emergency valve
                     raise KeyError(  # noqa: TRY200
@@ -724,7 +725,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                         "with pint quantities"
                     )
             else:
-                data = df.values
+                data = run.values
                 use_pint = False
 
             res = []
@@ -736,11 +737,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             res_stacked = np.vstack(res)
 
             if use_pint:
-                df._df.values[:] = res_stacked.magnitude.T
-                df["unit"] = str(res_stacked.units)
+                run._df.values[:] = res_stacked.magnitude.T
+                run["unit"] = str(res_stacked.units)
             else:
-                df._df.values[:] = res_stacked.T
-            return df
+                run._df.values[:] = res_stacked.T
+            return run
 
         return self.copy().groupby("unit").apply(_perform_op)
 
@@ -1299,7 +1300,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         return day_match(days, values)
 
-    def head(self, *args: Any, **kwargs: Any) -> pd.DataFrame[float]:
+    def head(self, *args: Any, **kwargs: Any) -> pd.DataFrame:
         """
         Return head of :func:`self.timeseries()`.
 
@@ -1318,7 +1319,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         """
         return self.timeseries().head(*args, **kwargs)  # type: ignore
 
-    def tail(self, *args: Any, **kwargs: Any) -> pd.DataFrame[float]:
+    def tail(self, *args: Any, **kwargs: Any) -> pd.DataFrame:
         """
         Return tail of :func:`self.timeseries()`.
 
@@ -1941,6 +1942,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         :class:`RunGroupBy`
             See the documentation for :class:`RunGroupBy` for more information
         """
+        from .groupby import RunGroupBy
+
         group = self._check_groupby_input(group)
 
         return RunGroupBy(self, group)
@@ -2028,6 +2031,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         :class:`RunGroupBy`
             See the documentation for :class:`RunGroupBy` for more information
         """
+        from .groupby import RunGroupBy
+
         group = self.get_meta_columns_except(not_group)
 
         return RunGroupBy(self, group)
