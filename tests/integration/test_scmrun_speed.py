@@ -10,7 +10,7 @@ import scmdata
 import scmdata.testing
 
 
-@pytest.fixture(params=[10, 10**2, 10**3, 10**3.5, 10**4, 10**4.5])
+@pytest.fixture(params=[10, 10**2, 10**3, 10**4, 10**5 / 2])
 def big_scmrun(request):
     length = int(request.param)
     t_steps = 750
@@ -230,4 +230,16 @@ def test_to_from_nc(benchmark, tmpdir, n_models, n_ensemble_members):
     res = benchmark.pedantic(round_trip, iterations=1, rounds=1)
     scmdata.testing.assert_scmdf_almost_equal(
         start, res, allow_unordered=True, check_ts_names=False
+    )
+
+
+@pytest.mark.parametrize("as_run", [True, False])
+def test_process_over(benchmark, big_scmrun, as_run):
+    def round_trip(arr):
+        return arr.process_over(
+            "variable", "sum", as_run=as_run, op_cols={"variable": "squashed"}
+        )
+
+    benchmark.pedantic(
+        lambda: big_scmrun.groupby("region").apply(round_trip), iterations=1, rounds=1
     )

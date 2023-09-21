@@ -23,6 +23,7 @@ from typing import (
     Literal,
     Sequence,
     TypeVar,
+    cast,
     overload,
 )
 
@@ -1058,6 +1059,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         keep: bool = True,
         inplace: bool = False,
         log_if_empty: bool = True,
+        # mypy doesn't really support mapping unpacking https://github.com/python/mypy/issues/11583
         **kwargs: MetadataValue | Iterable[MetadataValue],
     ) -> Self:
         """
@@ -2439,7 +2441,7 @@ def _merge_metadata(metadata):
 
 
 def run_append(  # noqa: PLR0912, PLR0915
-    runs: Sequence[T],
+    runs: Sequence[T | pd.DataFrame],
     inplace: bool = False,
     duplicate_msg: str | bool = True,
     metadata: MetadataType | None = None,
@@ -2479,7 +2481,7 @@ def run_append(  # noqa: PLR0912, PLR0915
 
     Parameters
     ----------
-    runs: list of :class:`ScmRun <scmdata.run.ScmRun>`
+    runs: list of :class:`ScmRun <scmdata.run.ScmRun>` or :class:`pd.DataFrame`
         The runs to append. Values will be attempted to be cast to :class:`ScmRun <scmdata.run.ScmRun>`.
 
     inplace
@@ -2526,8 +2528,10 @@ def run_append(  # noqa: PLR0912, PLR0915
         if not isinstance(runs[0], BaseScmRun):
             raise TypeError("Can only append inplace to an ScmRun")
         ret: T = runs[0]
+    elif isinstance(runs[0], pd.DataFrame):
+        ret = scmdata.ScmRun(runs[0])
     else:
-        ret = runs[0].copy()
+        ret = cast(T, runs[0]).copy()
 
     to_join_dfs: list[pd.DataFrame] = []
     to_join_metas = []
@@ -2539,14 +2543,19 @@ def run_append(  # noqa: PLR0912, PLR0915
 
     min_idx = ret._df.shape[1]
     for run in runs[1:]:
-        run_to_join_df: pd.DataFrame = run._df
+        is_dataframe = isinstance(run, pd.DataFrame)
+        if is_dataframe:
+            run_to_join_df: pd.DataFrame = run.T
+            run_to_join_meta: pd.DataFrame = run.index.to_frame()
+        else:
+            run_to_join_df: pd.DataFrame = run._df
+            run_to_join_meta = run._meta.to_frame()
 
         max_idx = min_idx + run_to_join_df.shape[1]
         new_index = pd.Index(range(min_idx, max_idx))
         min_idx = max_idx
 
         run_to_join_df.columns = new_index
-        run_to_join_meta = run._meta.to_frame()
         run_to_join_meta.index = new_index
 
         # check everything still makes sense
@@ -2603,7 +2612,9 @@ def run_append(  # noqa: PLR0912, PLR0915
     if metadata is not None:
         ret.metadata = metadata
     else:
-        ret.metadata = _merge_metadata([r.metadata for r in runs])
+        ret.metadata = _merge_metadata(
+            [r.metadata if hasattr(r, "metadata") else {} for r in runs]
+        )
     return ret
 
 
