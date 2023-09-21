@@ -3,7 +3,7 @@ Functionality for grouping and filtering ScmRun objects
 """
 import warnings
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Callable, Generic, Iterator, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Callable, Iterator, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -36,7 +36,7 @@ def _maybe_wrap_array(original, new_array):
         return new_array
 
 
-class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
+class RunGroupBy(ImplementsArrayReduce, "Generic[GenericRun]"):
     """
     GroupBy object specialized to grouping ScmRun objects
     """
