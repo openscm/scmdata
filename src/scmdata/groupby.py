@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Callable, Generic, Iterator, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
     P = ParamSpec("P")
     Q = ParamSpec("Q")
-    T = TypeVar("T")
     RunLike = TypeVar("RunLike", bound=BaseScmRun)
 
     ApplyCallableReturnType = Union[RunLike, pd.DataFrame, None]
@@ -267,6 +266,8 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
 def get_joblib_parallel_processor(
     n_jobs: int = -1,
     backend: str = "loky",
+    *args: Any,
+    **kwargs: Any,
 ) -> ParallelProcessor[RunLike, Q]:
     """
     Get parallel processor using :mod:`joblib` as the backend.
@@ -284,14 +285,22 @@ def get_joblib_parallel_processor(
         See :class:`joblib.Parallel` for a more complete description of the available
         options.
 
+    *args
+        Passed to initialiser of :class:`joblib.Parallel`
+
+    **kwargs
+        Passed to initialiser of :class:`joblib.Parallel`
+
     Returns
     -------
     Function that can be used for parallel processing in :meth:`RunGroupBy.apply_parallel`
     """
     try:
-        import joblib  # type: ignore
+        import joblib
     except ImportError as e:  # pragma: no cover
         raise ImportError("joblib is not installed. Run 'pip install joblib'") from e
+
+    processor = joblib.Parallel(*args, n_jobs=n_jobs, backend=backend, **kwargs)
 
     def joblib_parallel_processor(
         func: ApplyCallable[RunLike, Q],
@@ -300,25 +309,9 @@ def get_joblib_parallel_processor(
         *args: Q.args,
         **kwargs: Q.kwargs,
     ) -> Iterable[ApplyCallableReturnType[RunLike]]:
-        processor: Callable[
-            [
-                Iterable[
-                    tuple[
-                        ApplyCallable[RunLike, Q],
-                        tuple[RunLike, Q.args],
-                        Q.kwargs,
-                    ],
-                ],
-            ],
-            Iterable[ApplyCallableReturnType[RunLike]],
-        ] = joblib.Parallel(n_jobs=n_jobs, backend=backend)
-        prepped_groups: Iterable[
-            tuple[
-                ApplyCallable[RunLike, Q],
-                tuple[RunLike, Q.args],
-                Q.kwargs,
-            ],
-        ] = (joblib.delayed(func)(group, *args, **kwargs) for group in groups)
+        prepped_groups = (
+            joblib.delayed(func)(group, *args, **kwargs) for group in groups
+        )
         applied = processor(prepped_groups)
 
         return applied
