@@ -23,12 +23,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI_COMMIT_EMAIL: "ci-runner@scmdata.com"
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           token: "${{ secrets.PERSONAL_ACCESS_TOKEN }}"
+
       # towncrier imports the package as part of building so just do the full
       # setup here
       - uses: ./.github/actions/setup
@@ -37,18 +39,19 @@ jobs:
           venv-id: "bump"
           # another test that we can import if we only install the main library
           poetry-dependency-install-flags: "--only main"
+
       - name: Install towncrier
         run: |
           poetry run pip install towncrier
-      - name: Create bump and changelog
 
+      - name: Create bump and changelog
         run: |
           BASE_VERSION=`poetry version -s`
           NEW_VERSION=`poetry version -s ${{ github.event.inputs.bump_rule }}`
           poetry run towncrier build --yes --version v$NEW_VERSION
 
           git config --global user.name "$GITHUB_ACTOR"
-          git config --global user.email "${{ vars.CI_COMMIT_EMAIL }}"
+          git config --global user.email "$CI_COMMIT_EMAIL"
 
           git commit -a -m "bump: version $BASE_VERSION -> $NEW_VERSION"
           git tag v$NEW_VERSION
