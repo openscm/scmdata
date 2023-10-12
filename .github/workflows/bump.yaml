@@ -43,7 +43,6 @@ jobs:
       - name: Create bump and changelog
 
         run: |
-          echo $BUMP_RULE
           BASE_VERSION=`poetry version -s`
           NEW_VERSION=`poetry version -s ${{ github.event.inputs.bump_rule }}`
           poetry run towncrier build --yes --version v$NEW_VERSION
