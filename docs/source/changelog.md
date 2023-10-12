@@ -19,6 +19,23 @@ of rst and use slightly different categories.
 
 <!-- towncrier release notes start -->
 
+## scmdata v0.15.3 (2023-10-12)
+
+
+### Improvements
+
+- Added support for pandas>=2
+
+  Requirement now set to 'pandas>=1.1' ([#235](https://github.com/openscm/scmdata/pulls/235))
+- Migrated to use the Climate Resource copier template
+
+  This migration adds support for ruff and pre-commit hooks to improve code quality ([#260](https://github.com/openscm/scmdata/pulls/260))
+
+### Trivial/Internal Changes
+
+- [#235](https://github.com/openscm/scmdata/pulls/235)
+
+
 ## v0.15.2
 
 - ([#257](https://github.com/openscm/scmdata/pull/257)) Updated to support the latest version of {mod}`notebook`
