@@ -19,8 +19,7 @@ of rst and use slightly different categories.
 
 <!-- towncrier release notes start -->
 
-v0.15.2
--------
+## v0.15.2
 
 - ([#257](https://github.com/openscm/scmdata/pull/257)) Updated to support the latest version of {mod}`notebook`
 - ([#252](https://github.com/openscm/scmdata/pull/252)) Add ``py.typed`` file do downstream packages can use
