@@ -106,7 +106,6 @@ jobs:
           poetry run pytest -r a -v src tests
 
   test-no-plotting:
-    # seaborn imports scipy which can make it available without being explicit.
     # This test makes sure that everything works even if the plotting
     # dependencies aren't installed.
     runs-on: ubuntu-latest
@@ -121,7 +120,7 @@ jobs:
         with:
           python-version: "${{ matrix.python-version }}"
           venv-id: "tests-${{ runner.os }}"
-          poetry-dependency-install-flags: "--all-extras --only 'tests'"
+          poetry-dependency-install-flags: "--extras optional --with tests"
       - name: Test with pytest
         run: |
           poetry run pytest -r a -v src tests
