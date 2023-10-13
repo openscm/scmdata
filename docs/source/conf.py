@@ -173,6 +173,10 @@ intersphinx_mapping = {
         "https://pint.readthedocs.io/en/latest",
         None,
     ),
+    "joblib": (
+        "https://joblib.readthedocs.io/en/latest",
+        None,
+    ),
 }
 
 

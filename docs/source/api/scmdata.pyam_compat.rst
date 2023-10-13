@@ -5,3 +5,10 @@ scmdata.pyam\_compat
 
 .. currentmodule:: scmdata.pyam_compat
 
+
+
+LongDatetimeIamDataFrame
+========================
+
+.. autoclass:: LongDatetimeIamDataFrame
+   :members:

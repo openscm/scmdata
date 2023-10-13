@@ -1240,6 +1240,17 @@ def test_append_nans(scm_run, value):
     )
 
 
+def test_append_dataframes(scm_run):
+    run_1 = scm_run.set_meta("run_id", 1)
+    run_2 = scm_run.set_meta("run_id", 2)
+
+    exp = run_append([run_1, run_2])
+
+    res = run_append([run_1.timeseries(), run_2.timeseries()])
+
+    assert_scmdf_almost_equal(exp, res)
+
+
 times_to_check = (
     np.arange(1, 1000),
     np.arange(1750, 2100),

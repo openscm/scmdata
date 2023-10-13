@@ -16,7 +16,8 @@ group_tests = pytest.mark.parametrize(
 
 
 @group_tests
-def test_groupby(scm_run, g):
+@pytest.mark.parametrize("parallel", [True, False])
+def test_groupby(scm_run, g, parallel):
     # Check that the metadata for each group is unique for the dimensions being grouped
     # together
     def func(df):
@@ -26,7 +27,10 @@ def test_groupby(scm_run, g):
             assert len(sub_df[c].unique()) == 1
         return df
 
-    res = scm_run.groupby(*g).apply(func)
+    if parallel:
+        res = scm_run.groupby(*g).apply_parallel(func, n_jobs=-1)
+    else:
+        res = scm_run.groupby(*g).apply(func)
 
     assert isinstance(res, ScmRun)
     assert_scmdf_almost_equal(res, scm_run, check_ts_names=False)
@@ -75,7 +79,7 @@ def test_groupby_return_none_all(scm_run):
     def func(_):
         return None
 
-    assert scm_run.groupby("variable").apply(func) is None
+    assert scm_run.groupby("variable").apply(func).empty
 
 
 def test_groupby_integer_metadata_single_grouper(scm_run):

@@ -47,12 +47,13 @@ netCDF4 = { version = "*", optional = true }
 openpyxl = { version = "*", optional = true }
 xlrd = { version = "*", optional = true }
 scipy = { version = "*", optional = true }
+joblib = { version = "*", optional = true }
 notebook = { version = ">=7", optional = true }
 pyam-iamc = { version = "<2", optional = true }
 
 [tool.poetry.extras]
 plots = ["matplotlib", "seaborn" , "nc-time-axis"]
-optional = ["netCDF4", "openpyxl", "xlrd", "scipy", "pyam-iamc"]
+optional = ["netCDF4", "openpyxl", "xlrd", "scipy", "pyam-iamc", "joblib" ]
 notebooks = ["notebook"]
 
 [tool.poetry.group.tests.dependencies]
@@ -77,6 +78,7 @@ ruff = "0.0.288"
 pre-commit = "^3.3.1"
 towncrier = "^23.6.0"
 liccheck = "^0.9.1"
+pandas-stubs = "<2"
 
 [tool.poetry.group.notebooks.dependencies]
 myst-nb = "^0.17.0"
@@ -101,7 +103,7 @@ show_missing = true
 # Regexes for lines to exclude from consideration in addition to the defaults
 exclude_also = [
     # Don't complain about missing type checking code:
-    "if TYPE_CHECKING",
+    "if TYPE_CHECKING:",
 ]
 
 [tool.mypy]

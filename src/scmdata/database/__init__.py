@@ -10,4 +10,6 @@ and then filter. For example, one could save model results from a number of diff
 climate models and then load just the ``Surface Temperature`` data for all models.
 """
 
-from ._database import ScmDatabase  # noqa: F401
+from ._database import ScmDatabase
+
+__all__ = ["ScmDatabase"]
