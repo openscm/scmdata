@@ -1,9 +1,11 @@
 """
 Functionality for grouping and filtering ScmRun objects
 """
+from __future__ import annotations
+
 import warnings
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Callable, Generic, Iterator, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Callable, Generic, Iterator, Sequence
 
 import numpy as np
 import pandas as pd
@@ -27,7 +29,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
     """
 
     def __init__(
-        self, run: "GenericRun", groups: "Iterable[str]", na_fill_value: float = -10000
+        self, run: GenericRun, groups: Iterable[str], na_fill_value: float = -10000
     ):
         self.run = run
         self.group_keys = groups
@@ -45,9 +47,9 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
             else:
                 m = m.fillna(na_fill_value)
 
-        self._grouper: "DataFrameGroupBy" = m.groupby(list(groups), group_keys=True)
+        self._grouper: DataFrameGroupBy = m.groupby(list(groups), group_keys=True)
 
-    def _iter_grouped(self) -> "Iterator[GenericRun]":
+    def _iter_grouped(self) -> Iterator[GenericRun]:
         def _try_fill_value(v: MetadataValue) -> MetadataValue:
             try:
                 if float(v) == float(self.na_fill_value):
@@ -57,7 +59,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
             return v
 
         groups: Iterable[
-            Union[MetadataValue, tuple[MetadataValue, ...]]
+            MetadataValue | tuple[MetadataValue, ...]
         ] = self._grouper.groups
         for indices in groups:
             if not isinstance(indices, Iterable) or isinstance(indices, str):
@@ -82,10 +84,10 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
 
     def apply(
         self,
-        func: "Callable[Concatenate[GenericRun, P], Union[GenericRun, pd.DataFrame, None]]",
-        *args: "P.args",
-        **kwargs: "P.kwargs",
-    ) -> "GenericRun":
+        func: Callable[Concatenate[GenericRun, P], GenericRun | (pd.DataFrame | None)],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> GenericRun:
         """
         Apply a function to each group and append the results
 
@@ -128,12 +130,12 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
 
     def apply_parallel(
         self,
-        func: "Callable[Concatenate[GenericRun, P], Union[GenericRun, pd.DataFrame, None]]",
+        func: Callable[Concatenate[GenericRun, P], GenericRun | (pd.DataFrame | None)],
         n_jobs: int = 1,
         backend: str = "loky",
-        *args: "P.args",
-        **kwargs: "P.kwargs",
-    ) -> "GenericRun":
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> GenericRun:
         """
         Apply a function to each group in parallel and append the results
 
@@ -181,7 +183,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
             ) from e
 
         grouped = self._iter_grouped()
-        applied: "list[Union[GenericRun, pd.DataFrame, None]]" = joblib.Parallel(
+        applied: list[GenericRun | (pd.DataFrame | None)] = joblib.Parallel(
             n_jobs=n_jobs, backend=backend
         )(joblib.delayed(func)(arr, *args, **kwargs) for arr in grouped)
         return self._combine(applied)
@@ -202,8 +204,8 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         return self.apply(func, *args, **kwargs)
 
     def _combine(
-        self, applied: "Sequence[Union[GenericRun, pd.DataFrame, None]]"
-    ) -> "GenericRun":
+        self, applied: Sequence[GenericRun | (pd.DataFrame | None)]
+    ) -> GenericRun:
         """
         Recombine the applied objects like the original.
         """
@@ -219,12 +221,12 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
 
     def reduce(
         self,
-        func: "Callable[Concatenate[NDArray[np.float_], P], NDArray[np.float_]]",
-        dim: "Optional[Union[str, Iterable[str]]]" = None,
-        axis: "Optional[Union[str, Iterable[int]]]" = None,
-        *args: "P.args",
-        **kwargs: "P.kwargs",
-    ) -> "GenericRun":
+        func: Callable[Concatenate[NDArray[np.float_], P], NDArray[np.float_]],
+        dim: str | Iterable[str] | None = None,
+        axis: str | Iterable[int] | None = None,
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> GenericRun:
         """
         Reduce the items in this group by applying `func` along some dimension(s).
 
