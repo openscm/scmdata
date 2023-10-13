@@ -29,9 +29,7 @@ def test_groupby(scm_run, g, parallel):
         return df
 
     if parallel:
-        res = scm_run.groupby(*g).apply_parallel(
-            func, parallel_processor=get_joblib_parallel_processor(n_jobs=-1)
-        )
+        res = scm_run.groupby(*g).apply_parallel(func)
     else:
         res = scm_run.groupby(*g).apply(func)
 

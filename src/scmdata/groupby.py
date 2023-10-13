@@ -166,7 +166,8 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
 
         parallel_processor
             Parallel processor to use to process the groups. If not provided,
-            the return value of :func:`get_joblib_parallel_processor` is used.
+            a default joblib parallel processor is used (for details, see
+             :func:`get_joblib_parallel_processor`).
 
         *args
             Positional arguments passed to `func`.
