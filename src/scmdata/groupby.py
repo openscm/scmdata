@@ -133,7 +133,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
 
         Returns
         -------
-        The result of applying and combining.
+            The result of applying and combining.
         """
         grouped = self._iter_grouped()
         applied = [func(arr, *args, **kwargs) for arr in grouped]
@@ -177,7 +177,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
 
         Returns
         -------
-        The result of applying and combining.
+            The result of applying and combining.
         """
         if parallel_processor is None:
             parallel_processor = get_joblib_parallel_processor()
@@ -287,7 +287,8 @@ def get_joblib_parallel_processor(
 
     Returns
     -------
-    Function that can be used for parallel processing in :meth:`RunGroupBy.apply_parallel`
+        Function that can be used for parallel processing in
+        :meth:`RunGroupBy.apply_parallel`
     """
     try:
         import joblib
