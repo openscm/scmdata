@@ -103,13 +103,13 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         """
         Apply a function to each group and append the results
 
-        `func` is called like `func(ar, *args, **kwargs)` for each :class:`ScmRun <scmdata.run.ScmRun>` ``ar``
-        in this group. If the result of this function call is None, than it is
+        `func` is called like `func(ar, *args, **kwargs)` for each :class:`ScmRun <scmdata.run.ScmRun>`
+        group. If the result of this function call is ``None``, than it is
         excluded from the results.
 
         The results are appended together using :func:`run_append`. The function
-        can change the size of the input :class:`ScmRun <scmdata.run.ScmRun>` as long as :func:`run_append`
-        can be applied to all results.
+        can change the size of the input :class:`ScmRun <scmdata.run.ScmRun>`
+        as long as :func:`run_append` can be applied to all results.
 
         Examples
         --------
@@ -123,18 +123,17 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         Parameters
         ----------
         func
-            Callable to apply to each timeseries.
+            Callable to apply to each group.
 
-        ``*args``
+        *args
             Positional arguments passed to `func`.
 
-        ``**kwargs``
-            Used to call `func(ar, **kwargs)` for each array `ar`.
+        **kwargs
+            Keyword arguments passed to `func`.
 
         Returns
         -------
-        applied : :class:`ScmRun <scmdata.run.ScmRun>`
-            The result of splitting, applying and combining this array.
+        The result of applying and combining.
         """
         grouped = self._iter_grouped()
         applied = [func(arr, *args, **kwargs) for arr in grouped]
@@ -164,18 +163,20 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         ----------
         func
             Callable to apply to each group.
+
         parallel_processor
             Parallel processor to use to process the groups. If not provided,
             the return value of :func:`get_joblib_parallel_processor` is used.
-        ``*args``
+
+        *args
             Positional arguments passed to `func`.
-        ``**kwargs``
+
+        **kwargs
             Keyword arguments passed to `func`.
 
         Returns
         -------
-        applied : :class:`ScmRun <scmdata.run.ScmRun>`
-            The result of splitting, applying and combining this array.
+        The result of applying and combining.
         """
         if parallel_processor is None:
             parallel_processor = get_joblib_parallel_processor()
