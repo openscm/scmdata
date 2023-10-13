@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from scmdata import ScmRun
+from scmdata.groupby import get_joblib_parallel_processor
 from scmdata.testing import assert_scmdf_almost_equal
 
 group_tests = pytest.mark.parametrize(
@@ -28,7 +29,9 @@ def test_groupby(scm_run, g, parallel):
         return df
 
     if parallel:
-        res = scm_run.groupby(*g).apply_parallel(func, n_jobs=-1)
+        res = scm_run.groupby(*g).apply_parallel(
+            func, parallel_processor=get_joblib_parallel_processor(n_jobs=-1)
+        )
     else:
         res = scm_run.groupby(*g).apply(func)
 

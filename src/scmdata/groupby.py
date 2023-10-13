@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Callable, Generic, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -14,13 +14,25 @@ from xarray.core import ops
 from xarray.core.common import ImplementsArrayReduce
 
 from scmdata._typing import MetadataValue
-from scmdata.run import GenericRun
+from scmdata.run import BaseScmRun, GenericRun
 
 if TYPE_CHECKING:
     from pandas.core.groupby.generic import DataFrameGroupBy
     from typing_extensions import Concatenate, ParamSpec
 
     P = ParamSpec("P")
+    Q = ParamSpec("Q")
+    RunLike = TypeVar("RunLike", bound=BaseScmRun)
+    ApplyCallableReturnType = Union[RunLike, pd.DataFrame, None]
+    ApplyCallable = Callable[Concatenate[RunLike, Q], ApplyCallableReturnType[RunLike]]
+    ParallelProcessor = Callable[
+        Concatenate[
+            ApplyCallable[RunLike, Q],
+            Iterable[RunLike],
+            Q,
+        ],
+        Iterable[ApplyCallableReturnType[RunLike]],
+    ]
 
 
 class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
@@ -130,16 +142,16 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
 
     def apply_parallel(
         self,
-        func: Callable[Concatenate[GenericRun, P], GenericRun | (pd.DataFrame | None)],
-        n_jobs: int = 1,
-        backend: str = "loky",
+        func: ApplyCallable[GenericRun, P],
+        parallel_processor: ParallelProcessor[GenericRun, P] | None = None,
         *args: P.args,
         **kwargs: P.kwargs,
     ) -> GenericRun:
         """
         Apply a function to each group in parallel and append the results
 
-        Provides the same functionality as :func:`~apply` except that :mod:`joblib` is used to apply
+        Provides the same functionality as :func:`~apply` except that parallel processing can be
+        used via the ``parallel_processor`` argument. By default, :mod:`joblib` is used to apply
         `func` to each group in parallel. This can be slower than using :func:`~apply` for small
         numbers of groups or in the case where `func` is fast as there is overhead setting up the
         processing pool.
@@ -151,41 +163,26 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         Parameters
         ----------
         func
-            Callable to apply to each timeseries.
-
-        n_jobs
-            Number of jobs to run in parallel (defaults to a single job which is useful for
-            debugging purposes). If `-1` all CPUs are used.
-
-        backend
-            Backend used for parallelisation. Defaults to 'loky' which uses separate processes for
-            each worker.
-
-            See :class:`joblib.Parallel` for a more complete description of the available
-            options.
-
+            Callable to apply to each group.
+        parallel_processor
+            Parallel processor to use to process the groups. If not provided,
+            the return value of :func:`get_joblib_parallel_processor` is used.
         ``*args``
             Positional arguments passed to `func`.
-
         ``**kwargs``
-            Used to call `func(ar, **kwargs)` for each array `ar`.
+            Keyword arguments passed to `func`.
 
         Returns
         -------
         applied : :class:`ScmRun <scmdata.run.ScmRun>`
             The result of splitting, applying and combining this array.
         """
-        try:
-            import joblib  # type: ignore
-        except ImportError as e:  # pragma: no cover
-            raise ImportError(
-                "joblib is not installed. Run 'pip install joblib'"
-            ) from e
+        if parallel_processor is None:
+            parallel_processor = get_joblib_parallel_processor()
 
         grouped = self._iter_grouped()
-        applied: list[GenericRun | (pd.DataFrame | None)] = joblib.Parallel(
-            n_jobs=n_jobs, backend=backend
-        )(joblib.delayed(func)(arr, *args, **kwargs) for arr in grouped)
+        applied = parallel_processor(func, grouped, *args, **kwargs)
+
         return self._combine(applied)
 
     def map(self, func, *args, **kwargs):
@@ -204,7 +201,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         return self.apply(func, *args, **kwargs)
 
     def _combine(
-        self, applied: Sequence[GenericRun | (pd.DataFrame | None)]
+        self, applied: Iterable[GenericRun | (pd.DataFrame | None)]
     ) -> GenericRun:
         """
         Recombine the applied objects like the original.
@@ -260,6 +257,58 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             return self.apply(reduce_array)
+
+
+def get_joblib_parallel_processor(
+    n_jobs: int = -1,
+    backend: str = "loky",
+    *args: Any,
+    **kwargs: Any,
+) -> ParallelProcessor[RunLike, Q]:
+    """
+    Get parallel processor using :mod:`joblib` as the backend.
+
+    Parameters
+    ----------
+    n_jobs
+        Number of jobs to run in parallel (defaults to a single job which is useful for
+        debugging purposes). If `-1` all CPUs are used.
+    backend
+        Backend used for parallelisation. Defaults to 'loky' which uses separate processes for
+        each worker.
+        See :class:`joblib.Parallel` for a more complete description of the available
+        options.
+    *args
+        Passed to initialiser of :class:`joblib.Parallel`
+    **kwargs
+        Passed to initialiser of :class:`joblib.Parallel`
+
+    Returns
+    -------
+    Function that can be used for parallel processing in :meth:`RunGroupBy.apply_parallel`
+    """
+    try:
+        import joblib
+    except ImportError as e:  # pragma: no cover
+        raise ImportError("joblib is not installed. Run 'pip install joblib'") from e
+
+    processor = joblib.Parallel(*args, n_jobs=n_jobs, backend=backend, **kwargs)
+
+    def joblib_parallel_processor(
+        func: ApplyCallable[RunLike, Q],
+        groups: Iterable[RunLike],
+        /,
+        *args: Q.args,
+        **kwargs: Q.kwargs,
+    ) -> Iterable[ApplyCallableReturnType[RunLike]]:
+        prepped_groups = (
+            joblib.delayed(func)(group, *args, **kwargs) for group in groups
+        )
+        applied = processor(prepped_groups)
+
+        return applied
+
+    return joblib_parallel_processor
 
 
 ops.inject_reduce_methods(RunGroupBy)
