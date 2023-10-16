@@ -273,15 +273,17 @@ def get_joblib_parallel_processor(
     Parameters
     ----------
     n_jobs
-        Number of jobs to run in parallel (defaults to a single job which is useful for
-        debugging purposes). If `-1` all CPUs are used.
+        Number of jobs to run in parallel. If `-1` all CPUs are used.
+
     backend
         Backend used for parallelisation. Defaults to 'loky' which uses separate processes for
         each worker.
         See :class:`joblib.Parallel` for a more complete description of the available
         options.
+
     *args
         Passed to initialiser of :class:`joblib.Parallel`
+
     **kwargs
         Passed to initialiser of :class:`joblib.Parallel`
 
