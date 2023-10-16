@@ -1982,10 +1982,10 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         func : function
             Callable to apply to each timeseries.
 
-        ``*args``
+        *args
             Positional arguments passed to `func`.
 
-        ``**kwargs``
+        **kwargs
             Used to call `func(ar, **kwargs)` for each array `ar`.
 
         Returns
