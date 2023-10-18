@@ -429,6 +429,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
             .. code:: python
 
+                >>> d = [[1, 2, 3]]
+                >>> index = [2010]
                 >>> col_1 = {
                 ...     "scenario": ["rcp26"],
                 ...     "model": ["model1", "model2", "model3"],
@@ -436,6 +438,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 ...     "variable": ["unspecified"],
                 ...     "unit": ["unspecified"],
                 ... }
+                >>> single_value_init = ScmRun(d, index, columns=col_1)
                 >>> col_2 = {
                 ...     "scenario": ["rcp26", "rcp26", "rcp26"],
                 ...     "model": ["model1", "model2", "model3"],
@@ -443,8 +446,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
                 ...     "variable": ["unspecified"],
                 ...     "unit": ["unspecified"],
                 ... }
-                >>> assert pd.testing.assert_frame_equal(
-                ...     ScmRun(d, columns=col_1).meta, ScmRun(d, columns=col_2).meta
+                >>> multi_value_init = ScmRun(d, index, columns=col_2)
+                >>> pd.testing.assert_frame_equal(
+                ...     single_value_init.meta, multi_value_init.meta
                 ... )
 
         metadata:
@@ -1071,61 +1075,71 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         .. code:: python
 
+            >>> from scmdata import ScmRun
+            >>> df = ScmRun(
+            ...     data=[[1, 2, 3], [4, 5, 6], [3, 3, 1]],
+            ...     index=[2005, 2010, 2015],
+            ...     columns={
+            ...         "model": "a_iam",
+            ...         "scenario": ["a_scenario", "a_scenario", "a_scenario2"],
+            ...         "region": "World",
+            ...         "variable": [
+            ...             "Primary Energy",
+            ...             "Primary Energy|Coal",
+            ...             "Primary Energy",
+            ...         ],
+            ...         "unit": "EJ/yr",
+            ...     },
+            ... )
             >>> df
-            <scmdata.ScmRun (timeseries: 3, timepoints: 3)>
+            <ScmRun (timeseries: 3, timepoints: 3)>
             Time:
                 Start: 2005-01-01T00:00:00
                 End: 2015-01-01T00:00:00
             Meta:
-                   model     scenario region             variable   unit climate_model
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-                [3 rows x 7 columns]
+                   model region     scenario   unit             variable
+                0  a_iam  World   a_scenario  EJ/yr       Primary Energy
+                1  a_iam  World   a_scenario  EJ/yr  Primary Energy|Coal
+                2  a_iam  World  a_scenario2  EJ/yr       Primary Energy
 
             >>> df.filter(scenario="a_scenario")
-            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+            <ScmRun (timeseries: 2, timepoints: 3)>
             Time:
                 Start: 2005-01-01T00:00:00
                 End: 2015-01-01T00:00:00
             Meta:
-                   model     scenario region             variable   unit climate_model
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-                [2 rows x 7 columns]
+                   model region    scenario   unit             variable
+                0  a_iam  World  a_scenario  EJ/yr       Primary Energy
+                1  a_iam  World  a_scenario  EJ/yr  Primary Energy|Coal
 
             >>> df.filter(scenario="a_scenario", keep=False)
-            <scmdata.ScmRun (timeseries: 1, timepoints: 3)>
+            <ScmRun (timeseries: 1, timepoints: 3)>
             Time:
                 Start: 2005-01-01T00:00:00
                 End: 2015-01-01T00:00:00
             Meta:
-                   model     scenario region             variable   unit climate_model
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-                [1 rows x 7 columns]
+                   model region     scenario   unit        variable
+                2  a_iam  World  a_scenario2  EJ/yr  Primary Energy
 
             >>> df.filter(level=1)
-            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+            <ScmRun (timeseries: 1, timepoints: 3)>
             Time:
                 Start: 2005-01-01T00:00:00
                 End: 2015-01-01T00:00:00
             Meta:
-                   model     scenario region             variable   unit climate_model
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-                [2 rows x 7 columns]
+                   model region    scenario   unit             variable
+                1  a_iam  World  a_scenario  EJ/yr  Primary Energy|Coal
 
             >>> df.filter(year=range(2000, 2011))
-            <scmdata.ScmRun (timeseries: 3, timepoints: 2)>
+            <ScmRun (timeseries: 3, timepoints: 2)>
             Time:
                 Start: 2005-01-01T00:00:00
                 End: 2010-01-01T00:00:00
             Meta:
-                   model     scenario region             variable   unit climate_model
-                0  a_iam   a_scenario  World       Primary Energy  EJ/yr       a_model
-                1  a_iam   a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-                2  a_iam  a_scenario2  World       Primary Energy  EJ/yr       a_model
-                [2 rows x 7 columns]
+                   model region     scenario   unit             variable
+                0  a_iam  World   a_scenario  EJ/yr       Primary Energy
+                1  a_iam  World   a_scenario  EJ/yr  Primary Energy|Coal
+                2  a_iam  World  a_scenario2  EJ/yr       Primary Energy
 
         Parameters
         ----------
@@ -1913,24 +1927,41 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         .. code:: python
 
+            >>> from scmdata import ScmRun
+            >>> run = ScmRun(
+            ...     data=[[1, 2, 3], [4, 5, 6], [3, 3, 1]],
+            ...     index=[2005, 2010, 2015],
+            ...     columns={
+            ...         "model": "a_iam",
+            ...         "scenario": ["a_scenario", "a_scenario", "a_scenario2"],
+            ...         "region": "World",
+            ...         "variable": [
+            ...             "Primary Energy",
+            ...             "Primary Energy|Coal",
+            ...             "Primary Energy",
+            ...         ],
+            ...         "unit": "EJ/yr",
+            ...     },
+            ... )
+
             >>> for group in run.groupby("scenario"):
             ...     print(group)
             ...
-            <scmdata.ScmRun (timeseries: 2, timepoints: 3)>
+            <ScmRun (timeseries: 2, timepoints: 3)>
             Time:
                 Start: 2005-01-01T00:00:00
                 End: 2015-01-01T00:00:00
             Meta:
-                   model    scenario region             variable   unit climate_model
-                0  a_iam  a_scenario  World       Primary Energy  EJ/yr       a_model
-                1  a_iam  a_scenario  World  Primary Energy|Coal  EJ/yr       a_model
-            <scmdata.ScmRun (timeseries: 1, timepoints: 3)>
+                   model region    scenario   unit             variable
+                0  a_iam  World  a_scenario  EJ/yr       Primary Energy
+                1  a_iam  World  a_scenario  EJ/yr  Primary Energy|Coal
+            <ScmRun (timeseries: 1, timepoints: 3)>
             Time:
                 Start: 2005-01-01T00:00:00
                 End: 2015-01-01T00:00:00
             Meta:
-                   model     scenario region        variable   unit climate_model
-                2  a_iam  a_scenario2  World  Primary Energy  EJ/yr       a_model
+                   model region     scenario   unit        variable
+                2  a_iam  World  a_scenario2  EJ/yr  Primary Energy
 
         Parameters
         ----------
@@ -1969,13 +2000,36 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         --------
         .. code:: python
 
+            >>> from scmdata import ScmRun
             >>> def multiply_by_2(arr):
             ...     variable = arr.get_unique_meta("variable", True)
             ...     if variable == "Surface Temperature":
             ...         return arr * 2
             ...     return arr
             ...
-            >>> run.apply(multiply_by_2)
+
+            >>> run = ScmRun(
+            ...     data=[[1, 2], [3, 4]],
+            ...     index=[2010, 2020],
+            ...     columns={
+            ...         "variable": ["Surface Temperature", "Carbon Uptake"],
+            ...         "model": "model",
+            ...         "scenario": "scenario",
+            ...         "region": "World",
+            ...         "unit": ["K", "GtC / yr"],
+            ...     },
+            ... )
+            >>> run.timeseries().sort_index()
+            time                                                2010-01-01  2020-01-01
+            model region scenario unit     variable
+            model World  scenario GtC / yr Carbon Uptake               2.0         4.0
+                                  K        Surface Temperature         1.0         3.0
+
+            >>> run.apply(multiply_by_2).timeseries().sort_index()
+            time                                                2010-01-01  2020-01-01
+            model region scenario unit     variable
+            model World  scenario GtC / yr Carbon Uptake               2.0         4.0
+                                  K        Surface Temperature         2.0         6.0
 
         Parameters
         ----------
@@ -2468,33 +2522,6 @@ def run_append(  # noqa: PLR0912, PLR0915
 
     When appending many objects, it may be more efficient to call this routine once with
     a list of :class:`ScmRun <scmdata.run.ScmRun>`'s, than using :func:`ScmRun.append` multiple times.
-
-    If timeseries with duplicate metadata are found, the timeseries are appended and
-    values falling on the same timestep are averaged if :obj:`duplicate_msg` is not
-    "return". If :obj:`duplicate_msg` is "return", then the result will contain the
-    duplicated timeseries for further inspection.
-
-    .. code:: python
-
-        >>> res = base.append(other, duplicate_msg="return")
-        <scmdata.ScmRun (timeseries: 5, timepoints: 3)>
-        Time:
-            Start: 2005-01-01T00:00:00
-            End: 2015-06-12T00:00:00
-        Meta:
-                  scenario             variable  model climate_model region   unit
-            0   a_scenario       Primary Energy  a_iam       a_model  World  EJ/yr
-            1   a_scenario  Primary Energy|Coal  a_iam       a_model  World  EJ/yr
-            2  a_scenario2       Primary Energy  a_iam       a_model  World  EJ/yr
-            3  a_scenario3       Primary Energy  a_iam       a_model  World  EJ/yr
-            4   a_scenario       Primary Energy  a_iam       a_model  World  EJ/yr
-        >>> ts = res.timeseries(check_duplicated=False)
-        >>> ts[ts.index.duplicated(keep=False)]
-        time                                                        2005-01-01  ...  2015-06-12
-        scenario   variable       model climate_model region unit               ...
-        a_scenario Primary Energy a_iam a_model       World  EJ/yr         1.0  ...         7.0
-                                                             EJ/yr        -1.0  ...         1.0
-
 
     Parameters
     ----------
