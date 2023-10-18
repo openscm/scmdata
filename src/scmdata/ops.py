@@ -440,20 +440,20 @@ def multiply(self, other, op_cols, **kwargs):
     ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil * AFOLU"}
     ... )
     >>> # The rows align and the units are handled automatically
-    >>> fos_times_afolu.head()
-    time                                                                                2010-01-01  2020-01-01
-    model     region   scenario  unit                     variable
-    idealised World|NH idealised gigatC * megatC / a ** 2 Emissions|CO2|Fossil * AFOLU         0.0        20.0
-              World|SH idealised gigatC * megatC / a ** 2 Emissions|CO2|Fossil * AFOLU         6.0        42.0
+    >>> fos_times_afolu.convert_unit("(GtC / yr) ** 2").head()
+    time                                                                       2010-01-01  2020-01-01
+    model     region   scenario  unit            variable
+    idealised World|NH idealised (GtC / yr) ** 2 Emissions|CO2|Fossil * AFOLU       0.000       0.020
+              World|SH idealised (GtC / yr) ** 2 Emissions|CO2|Fossil * AFOLU       0.006       0.042
 
     >>> nh = start.filter(region="World|NH")
     >>> sh = start.filter(region="World|SH")
     >>> nh_times_sh = nh.multiply(sh, op_cols={"region": "World|NH * SH"})
-    >>> nh_times_sh.head()
-    time                                                                         2010-01-01  2020-01-01
-    model     region        scenario  unit                 variable
-    idealised World|NH * SH idealised gigatC ** 2 / a ** 2 Emissions|CO2|Fossil         0.0        24.0
-                                      megatC ** 2 / a ** 2 Emissions|CO2|AFOLU          3.0        35.0
+    >>> nh_times_sh.convert_unit("(GtC / yr) ** 2").head()
+    time                                                                    2010-01-01  2020-01-01
+    model     region        scenario  unit            variable
+    idealised World|NH * SH idealised (GtC / yr) ** 2 Emissions|CO2|Fossil    0.000000   24.000000
+                                                      Emissions|CO2|AFOLU     0.000003    0.000035
     """
     out = _perform_op(
         prep_for_op(self, op_cols, self.meta.columns, **kwargs),
