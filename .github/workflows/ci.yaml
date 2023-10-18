@@ -56,7 +56,7 @@ jobs:
       - name: Run tests
         # TODO: Add --doctest-modules option
         run: |
-          poetry run pytest -r a -v src tests --cov --cov-report=term-missing --cov-report=xml
+          poetry run pytest -r a -v src tests --doctest-modules --cov --cov-report=term-missing --cov-report=xml
           poetry run coverage report
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3

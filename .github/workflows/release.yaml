@@ -28,7 +28,7 @@ jobs:
           echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
       - name: Run tests
         run: |
-          poetry run pytest -r a --doctest-modules
+          poetry run pytest -r a -v src tests --doctest-modules
       - name: Build package
         run: |
           poetry build --no-interaction
