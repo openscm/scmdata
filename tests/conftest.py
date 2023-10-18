@@ -170,6 +170,14 @@ def reset_default_name():
     get_default_name.reset()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def pandas_terminal_width():
+    # Examples should be short, anything more than this is too wide
+    # to read in the source anyway
+    pd.set_option("display.width", 120)
+    pd.set_option("display.max_columns", 1000)
+
+
 @pytest.fixture
 def doesnt_warn():
     @contextmanager

@@ -1566,7 +1566,6 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         2000-03-01       1.163934
         ...
 
-
         Note that the values do not fall exactly on integer values as not all years are
         exactly the same length.
 
