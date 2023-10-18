@@ -34,13 +34,13 @@ openscm-units = "*"
 packaging = "*"
 pandas = ">=1.1"
 pint = "*"
-pint-pandas = ">=0.5"
+pint-pandas = "*"
 python-dateutil = "*"
 tqdm = "*"
 six = "*"
 xarray = "*"
 nc-time-axis = { version = ">=1.2.0", optional = true }
-typing-extensions = "<5"
+typing-extensions = "*"
 matplotlib = { version = "^3.7.1", optional = true }
 seaborn = { version = "*", optional = true }
 netCDF4 = { version = "*", optional = true }
