@@ -19,6 +19,34 @@ of rst and use slightly different categories.
 
 <!-- towncrier release notes start -->
 
+## scmdata v0.16.0 (2023-10-18)
+
+
+### Breaking Changes
+
+- Dropped support for Python 3.8 and relaxed requirements of pint and pyam-iamc
+
+  This has led to a number of follow up issues:
+
+  - documentation of our supported dependency versions ([#277](https://github.com/openscm/scmdata/issues/277))
+  - moving to NEP29 ([#276](https://github.com/openscm/scmdata/issues/276))
+  - a full review of dependencies ([#278](https://github.com/openscm/scmdata/issues/278))
+  - need to test against development versions of upstream repositories ([#279](https://github.com/openscm/scmdata/issues/279))
+
+  ([#275](https://github.com/openscm/scmdata/pulls/275))
+
+### Improvements
+
+- Added support for {func}`scmdata.run_append` to append {class}`pd.DataFrame` objects
+
+  This provides some performance benefits when performing large groupby operations in certain circumstances by
+  reducing the number of required append operations. ([#262](https://github.com/openscm/scmdata/pulls/262))
+
+### Trivial/Internal Changes
+
+- [#267](https://github.com/openscm/scmdata/pulls/267), [#268](https://github.com/openscm/scmdata/pulls/268)
+
+
 ## scmdata v0.15.3 (2023-10-12)
 
 
