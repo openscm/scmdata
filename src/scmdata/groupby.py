@@ -115,10 +115,36 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         --------
         .. code:: python
 
-            >>> def write_csv(arr: scmdata.ScmRun) -> None:
-            ...     variable = arr.get_unique_meta("variable")
-            ...     arr.to_csv("out-{}.csv".format(variable))
-            >>> df.groupby("variable").apply(write_csv)
+            >>> from scmdata import ScmRun
+            >>> def show_var_and_convert_unit(arr: scmdata.ScmRun) -> None:
+            ...     variable = arr.get_unique_meta("variable", True)
+            ...     unit = arr.get_unique_meta("unit", True)
+            ...     print(f"{variable}'s original unit was {unit}")
+            ...
+            ...     return arr.convert_unit("MtC")
+
+            >>> df = ScmRun(
+            ...     data=[[1, 2], [3, 4]],
+            ...     index=[2010, 2020],
+            ...     columns={
+            ...         "variable": ["v1", "v2"],
+            ...         "model": "model",
+            ...         "scenario": "scenario",
+            ...         "region": "World",
+            ...         "unit": ["tC", "GtC"],
+            ...     },
+            ... )
+            >>> df.groupby("variable").apply(show_var_and_convert_unit)
+            v1's original unit was tC
+            v2's original unit was GtC
+            <ScmRun (timeseries: 2, timepoints: 2)>
+            Time:
+                Start: 2010-01-01T00:00:00
+                End: 2020-01-01T00:00:00
+            Meta:
+                   model region  scenario unit variable
+                0  model  World  scenario  MtC       v1
+                1  model  World  scenario  MtC       v2
 
         Parameters
         ----------
