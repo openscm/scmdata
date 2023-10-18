@@ -27,14 +27,14 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 cftime = ">=1.5"
 numpy = "*"
 openscm-units = "*"
 packaging = "*"
 pandas = ">=1.1"
-pint = "<0.20"
-pint-pandas = "*"
+pint = "*"
+pint-pandas = ">=0.5"
 python-dateutil = "*"
 tqdm = "*"
 six = "*"
@@ -49,7 +49,7 @@ xlrd = { version = "*", optional = true }
 scipy = { version = "*", optional = true }
 joblib = { version = "*", optional = true }
 notebook = { version = ">=7", optional = true }
-pyam-iamc = { version = "<2", optional = true }
+pyam-iamc = { version = "*", optional = true }
 
 [tool.poetry.extras]
 plots = ["matplotlib", "seaborn" , "nc-time-axis"]
