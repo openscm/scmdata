@@ -19,6 +19,18 @@ of rst and use slightly different categories.
 
 <!-- towncrier release notes start -->
 
+## scmdata v0.16.1 (2023-10-18)
+
+
+### Improved Documentation
+
+- Fixed documentation examples ([#274](https://github.com/openscm/scmdata/pulls/274))
+
+### Trivial/Internal Changes
+
+- [#274](https://github.com/openscm/scmdata/pulls/274)
+
+
 ## scmdata v0.16.0 (2023-10-18)
 
 
