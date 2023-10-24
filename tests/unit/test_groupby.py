@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from scmdata import ScmRun
-from scmdata.groupby import get_joblib_parallel_processor
 from scmdata.testing import assert_scmdf_almost_equal
 
 group_tests = pytest.mark.parametrize(
