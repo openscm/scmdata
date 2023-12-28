@@ -2617,9 +2617,10 @@ def run_append(  # noqa: PLR0912, PLR0915
     ret._df = pd.concat([ret._df, *to_join_dfs], axis="columns").sort_index()
     ret._time_points = TimePoints(ret._df.index.values)
     ret._df.index = ret._time_points.to_index()
-    ret._meta = pd.MultiIndex.from_frame(
-        pd.concat([ret._meta.to_frame(), *to_join_metas]).astype("category")
-    )
+    if not all(m.empty for m in to_join_metas):
+        ret._meta = pd.MultiIndex.from_frame(
+            pd.concat([ret._meta.to_frame(), *to_join_metas]).astype("category")
+        )
 
     if ret._duplicated_meta():
         if overlapping_times and duplicate_msg:
