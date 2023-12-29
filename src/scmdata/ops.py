@@ -10,7 +10,7 @@ import warnings
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
-import pint_pandas
+import pint
 
 import scmdata.units
 
@@ -55,19 +55,10 @@ def prep_for_op(inp, op_cols, meta, ur=None):
         `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
         to handle unit conversions automatically.
     """
-    pint_pandas.PintType.ureg = ur or scmdata.units.get_unit_registry()
-
     key_cols = list(op_cols.keys())
 
-    out = inp.timeseries(meta=meta).reset_index(key_cols, drop=True)
-
-    out = out.T
-
-    if "unit" not in op_cols:
-        unit_level = out.columns.names.index(
-            "unit",
-        )
-        out = out.pint.quantify(level=unit_level)
+    meta_keep = list(set(meta) - set(key_cols))
+    out = inp.timeseries(meta=meta_keep)
 
     return out
 
@@ -101,43 +92,61 @@ def set_op_values(output, op_cols):
 
 
 def _perform_op(base, other, op, use_pint_units=True):
-    # pint handling means we have to do series by series
-    out = []
-    col_names = base.columns.names
-    for col in base:
-        if op in ["add", "subtract"]:
-            try:
-                if op == "add":
-                    out.append(base[col] + other[col])
+    base_no_unit, other_no_unit = base.reset_index("unit", drop=True).align(
+        other.reset_index("unit", drop=True), copy=False
+    )
 
-                elif op == "subtract":
-                    out.append(base[col] - other[col])
+    assert not base_no_unit.isna().any().any()
+    assert not other_no_unit.isna().any().any()
 
-            except KeyError:
-                raise KeyError(  # noqa: TRY200
-                    f"No equivalent in `other` for {list(zip(col_names, col))}"
-                )
+    if base.index.names[-1] != "unit":
+        # Reorder before doing next bit
+        new_order = [*[v for v in base.index.names if v != "unit"], "unit"]
+        base.index = base.index.reorder_levels(new_order)
+
+    base_units = {tuple(v[:-1]): v[-1] for v in base.index.tolist()}
+
+    if other.index.names[-1] != "unit":
+        # Reorder before doing next bit
+        new_order = [*[v for v in other.index.names if v != "unit"], "unit"]
+        other.index = other.index.reorder_levels(new_order)
+
+    other_units = {tuple(v[:-1]): v[-1] for v in other.index.tolist()}
+
+    out_arr = np.zeros_like(base)
+    out_units = [""] * base.shape[0]
+    # TODO: think about this more
+    ur = pint.get_application_registry()
+    for i, (idx, row) in enumerate(base_no_unit.iterrows()):
+        base_arr = ur.Quantity(row.values, base_units[idx])
+        other_arr = ur.Quantity(other_no_unit.iloc[i].values, other_units[idx])
+        if op == "add":
+            res = base_arr + other_arr
+
+        elif op == "subtract":
+            res = base_arr - other_arr
 
         elif op == "multiply":
-            out.append(base[col] * other[col])
+            res = base_arr * other_arr
 
         elif op == "divide":
-            out.append(base[col] / other[col])
+            res = base_arr / other_arr
 
         else:  # pragma: no cover
             raise NotImplementedError(op)
 
-    if len(out) == 1:
-        out = out[0].to_frame()
-    else:
-        out = pd.concat(out, axis="columns")
+        out_arr[i, :] = res.m
+        out_units[i] = str(res.u)
 
-    out.columns.names = base.columns.names
-
-    if use_pint_units:
-        out = out.pint.dequantify()
-
-    out = out.T
+    out = (
+        pd.DataFrame(
+            data=out_arr,
+            index=base_no_unit.index,
+            columns=base_no_unit.columns,
+        )
+        .assign(unit=out_units)
+        .set_index("unit", append=True)
+    )
 
     return out
 
@@ -239,9 +248,11 @@ def subtract(self, other, op_cols, **kwargs):
     idealised World|NH - SH idealised gigatC / a Emissions|CO2|Fossil        -2.0        -2.0
                                       megatC / a Emissions|CO2|AFOLU         -2.0        -2.0
     """
+    self_prepped = prep_for_op(self, op_cols, self.meta.columns, **kwargs)
+    other_prepped = prep_for_op(other, op_cols, self.meta.columns, **kwargs)
     out = _perform_op(
-        prep_for_op(self, op_cols, self.meta.columns, **kwargs),
-        prep_for_op(other, op_cols, self.meta.columns, **kwargs),
+        self_prepped,
+        other_prepped,
         "subtract",
         use_pint_units="unit" not in op_cols,
     )

@@ -2,11 +2,13 @@ import cProfile
 
 import numpy as np
 import openscm_units
+import pint
 from line_profiler import LineProfiler
 
 from scmdata.run import BaseScmRun
 
 UR = openscm_units.unit_registry
+pint.set_application_registry(UR)
 
 scenarios = ["a", "b", "c"]
 variables = ["T|upper", "T|lower", "Heat uptake", "Carbon uptake"]
@@ -171,12 +173,12 @@ for call, cprofile_out_file, profile_funcs in [
     (
         "op_scmrun(model_res, model_res, normalisation)",
         "op_scmrun.prof",
-        [op_scmrun],
+        [op_scmrun, BaseScmRun.subtract, BaseScmRun.divide],
     ),
     (
         "op_scmrun(model_res, model_res_diff_unit, normalisation)",
         "op_scmrun.prof",
-        [op_scmrun],
+        [op_scmrun, BaseScmRun.subtract, BaseScmRun.divide],
     ),
     (
         "op_pandas_align_then_pint(model_res, model_res, normalisation)",
