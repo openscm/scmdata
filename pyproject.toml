@@ -79,6 +79,7 @@ pre-commit = "^3.3.1"
 towncrier = "^23.6.0"
 liccheck = "^0.9.1"
 pandas-stubs = "<3"
+line-profiler = "^4.1.2"
 
 [tool.poetry.group.notebooks.dependencies]
 myst-nb = "^0.17.0"

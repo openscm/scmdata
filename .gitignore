@@ -4,6 +4,9 @@ example-outputs
 # Databases
 *.db
 
+# Profiling results
+*.prof
+
 # Licence check
 licence-check.txt
 
