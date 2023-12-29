@@ -6,6 +6,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pandas.testing as pdt
+import pint
 import pint_pandas
 import pytest
 from openscm_units import unit_registry
@@ -19,6 +20,7 @@ from scmdata.testing import (
 )
 
 pint_pandas.PintType.ureg = unit_registry
+pint.set_application_registry(unit_registry)
 
 
 def get_multiple_ts(
