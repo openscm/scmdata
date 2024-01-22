@@ -3571,7 +3571,7 @@ def test_lineplot_time_axis(scm_run, time_axis, mod_func):
         x="time",
         y="value",
         estimator=np.median,
-        ci="sd",
+        errorbar="sd",
         hue="scenario",
         other_kwarg="value",
         data=mock_return,
