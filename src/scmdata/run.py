@@ -514,6 +514,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         copy_data: bool = False,
         **kwargs: Any,
     ) -> None:
+        # Lazy load
         from .pyam_compat import IamDataFrame
 
         if isinstance(data, np.ndarray):
