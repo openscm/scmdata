@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -23,7 +23,6 @@
 # more than the most basic plots.
 
 # %%
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -36,7 +35,6 @@ from scmdata.run import ScmRun
 # For this notebook we use the RCMIP radiative forcings, available at rcmip.org.
 
 # %%
-
 rcmip_db = ScmRun("rcmip-radiative-forcing-annual-means-v4-0-0.csv")
 rcmip_db.head()
 
@@ -46,7 +44,6 @@ rcmip_db.head()
 # For the most common plotting patterns, we provide a very simple `lineplot` method in `ScmRun`.
 
 # %%
-
 out = rcmip_db.filter(variable="Effective Radiative Forcing").lineplot()
 out
 
@@ -60,7 +57,6 @@ out
 # specify the order to display the scenarios in.
 
 # %%
-
 ax = plt.figure(figsize=(16, 9)).add_subplot(111)
 rcmip_db.filter(variable="Effective Radiative Forcing").lineplot(
     ax=ax,
@@ -82,7 +78,6 @@ rcmip_db.filter(variable="Effective Radiative Forcing").lineplot(
 print(rcmip_db.lineplot.__doc__)
 
 # %%
-
 fig, axes = plt.subplots(figsize=(16, 9), nrows=2, ncols=2)
 
 pdb = rcmip_db.filter(variable="Effective Radiative Forcing")
@@ -113,11 +108,9 @@ plt.tight_layout()
 # These same options can also be passed to the `timeseries` and `long_data` methods.
 
 # %%
-
 rcmip_db.timeseries(time_axis="year-month")
 
 # %%
-
 rcmip_db.long_data(time_axis="days since 1970-01-01")
 
 # %% [markdown]
@@ -146,7 +139,6 @@ vars_to_plot = ["Effective Radiative Forcing"] + [
 vars_to_plot
 
 # %%
-
 seaborn_df = rcmip_db.filter(variable=vars_to_plot).long_data()
 seaborn_df.head()
 
@@ -155,7 +147,6 @@ seaborn_df.head()
 # [seaborn.relplot](https://seaborn.pydata.org/generated/seaborn.relplot.html).
 
 # %%
-
 sns.relplot(
     data=seaborn_df,
     x="time",
@@ -178,17 +169,14 @@ sns.relplot(
 # different scenarios. In such a case we can reshape the data using pandas before using seaborn.
 
 # %%
-
 ts = rcmip_db.filter(variable=vars_to_plot[:4]).timeseries()
 ts.head()
 
 # %%
-
 ts_reshaped = ts.unstack("variable").stack("time").reset_index()
 ts_reshaped.head()
 
 # %%
-
 sns.pairplot(
     ts_reshaped,
     hue="scenario",

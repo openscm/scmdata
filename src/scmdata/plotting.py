@@ -75,7 +75,7 @@ def lineplot(self, time_axis=None, **kwargs):  # pragma: no cover
     if "scenario" in self.meta_attributes:
         kwargs.setdefault("hue", "scenario")
 
-    kwargs.setdefault("ci", "sd")
+    kwargs.setdefault("errorbar", "sd")
     kwargs.setdefault("estimator", np.median)
 
     ax = sns.lineplot(data=plt_df, **kwargs)

@@ -59,7 +59,6 @@ from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .ops import inject_ops_methods
 from .plotting import inject_plotting_methods
-from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
 from .time import _TARGET_DTYPE, TimePoints, TimeseriesConverter
 from .units import UnitConverter
 
@@ -74,6 +73,8 @@ if TYPE_CHECKING:
     from typing_extensions import Concatenate, ParamSpec
 
     from scmdata.groupby import RunGroupBy
+
+    from .pyam_compat import LongDatetimeIamDataFrame
 
     P = ParamSpec("P")
 
@@ -513,6 +514,8 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         copy_data: bool = False,
         **kwargs: Any,
     ) -> None:
+        from .pyam_compat import IamDataFrame
+
         if isinstance(data, np.ndarray):
             if columns is None:
                 raise ValueError("`columns` argument is required")
@@ -2366,6 +2369,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ImportError
             If `pyam <https://github.com/IAMconsortium/pyam>`_ is not installed
         """
+        # Lazy load
+        from .pyam_compat import LongDatetimeIamDataFrame
+
         if LongDatetimeIamDataFrame is None:
             raise ImportError(
                 "pyam is not installed. Features involving IamDataFrame are unavailable"
