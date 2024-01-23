@@ -875,7 +875,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             raise NonUniqueMetadataError(_meta)
 
         if time_axis is None:
-            columns = self._time_points.to_index()
+            columns = self._time_points.to_index().infer_objects()
         elif time_axis == "year":
             columns = self._time_points.years()
         elif time_axis == "year-month":
@@ -906,8 +906,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         if len(np.unique(columns)) != len(columns):
             raise ValueError(f"Ambiguous time values with time_axis = '{time_axis}'")
 
-        df.columns = pd.Index(columns, name="time")
         df.index = pd.MultiIndex.from_frame(_meta)
+        if isinstance(columns, pd.Index):
+            df.columns = columns
+        else:
+            df.columns = pd.Index(columns, name="time")
 
         if drop_all_nan_times:
             df = df.dropna(how="all", axis="columns")
