@@ -19,6 +19,20 @@ of rst and use slightly different categories.
 
 <!-- towncrier release notes start -->
 
+## scmdata v0.17.0 (2024-01-29)
+
+
+### Improvements
+
+- Update to avoid hitting DeprecationWarning in pandas and seaborn
+
+  This should help reduce so many warnings appearing when doing common operations. ([#298](https://github.com/openscm/scmdata/pulls/298))
+
+### Trivial/Internal Changes
+
+- [#298](https://github.com/openscm/scmdata/pulls/298)
+
+
 ## scmdata v0.16.1 (2023-10-18)
 
 
