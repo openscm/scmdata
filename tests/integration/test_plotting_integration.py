@@ -162,7 +162,7 @@ def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other_different
             style_var="climate_model",
         )
 
-    assert len(record) == 3
+    assert len(record) == 3, record
     assert (
         record[0].message.args[0]
         == "Quantile 0.05 not available for a_scenario a_model"
@@ -202,19 +202,12 @@ def test_plumeplot_non_unique_lines(plumeplot_scmrun):
 
     error_msg = re.escape(
         "More than one timeseries for "
-        "quantile: {}, "
-        "scenario: {}, "
-        "variable: {}.\n"
+        f"quantile: {quantile}, "
+        f"scenario: {scenario}, "
+        f"variable: {variable}.\n"
         "Please process your data to create unique quantile timeseries "
         "before calling :meth:`plumeplot`.\n"
-        "Found: {}".format(
-            quantile,
-            scenario,
-            variable,
-            summary_stats.filter(
-                quantile=quantile, scenario=scenario, variable=variable
-            ),
-        )
+        f"Found: {summary_stats.filter(quantile=quantile, scenario=scenario, variable=variable)}"
     )
     with pytest.raises(ValueError, match=error_msg):
         summary_stats.plumeplot(pre_calculated=True)

@@ -59,7 +59,6 @@ from .netcdf import inject_nc_methods
 from .offsets import generate_range, to_offset
 from .ops import inject_ops_methods
 from .plotting import inject_plotting_methods
-from .pyam_compat import IamDataFrame, LongDatetimeIamDataFrame
 from .time import _TARGET_DTYPE, TimePoints, TimeseriesConverter
 from .units import UnitConverter
 
@@ -74,6 +73,8 @@ if TYPE_CHECKING:
     from typing_extensions import Concatenate, ParamSpec
 
     from scmdata.groupby import RunGroupBy
+
+    from .pyam_compat import LongDatetimeIamDataFrame
 
     P = ParamSpec("P")
 
@@ -513,6 +514,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         copy_data: bool = False,
         **kwargs: Any,
     ) -> None:
+        # Lazy load
+        from .pyam_compat import IamDataFrame
+
         if isinstance(data, np.ndarray):
             if columns is None:
                 raise ValueError("`columns` argument is required")
@@ -871,7 +875,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             raise NonUniqueMetadataError(_meta)
 
         if time_axis is None:
-            columns = self._time_points.to_index()
+            columns = self._time_points.to_index().infer_objects()
         elif time_axis == "year":
             columns = self._time_points.years()
         elif time_axis == "year-month":
@@ -902,8 +906,11 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         if len(np.unique(columns)) != len(columns):
             raise ValueError(f"Ambiguous time values with time_axis = '{time_axis}'")
 
-        df.columns = pd.Index(columns, name="time")
         df.index = pd.MultiIndex.from_frame(_meta)
+        if isinstance(columns, pd.Index):
+            df.columns = columns
+        else:
+            df.columns = pd.Index(columns, name="time")
 
         if drop_all_nan_times:
             df = df.dropna(how="all", axis="columns")
@@ -2366,6 +2373,9 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
         ImportError
             If `pyam <https://github.com/IAMconsortium/pyam>`_ is not installed
         """
+        # Lazy load
+        from .pyam_compat import LongDatetimeIamDataFrame
+
         if LongDatetimeIamDataFrame is None:
             raise ImportError(
                 "pyam is not installed. Features involving IamDataFrame are unavailable"
@@ -2617,9 +2627,10 @@ def run_append(  # noqa: PLR0912, PLR0915
     ret._df = pd.concat([ret._df, *to_join_dfs], axis="columns").sort_index()
     ret._time_points = TimePoints(ret._df.index.values)
     ret._df.index = ret._time_points.to_index()
-    ret._meta = pd.MultiIndex.from_frame(
-        pd.concat([ret._meta.to_frame(), *to_join_metas]).astype("category")
-    )
+    if not all(m.empty for m in to_join_metas):
+        ret._meta = pd.MultiIndex.from_frame(
+            pd.concat([ret._meta.to_frame(), *to_join_metas]).astype("category")
+        )
 
     if ret._duplicated_meta():
         if overlapping_times and duplicate_msg:

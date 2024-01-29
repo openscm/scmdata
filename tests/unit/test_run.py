@@ -2031,7 +2031,7 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
             "Duplicate time points detected, the output will be the average of "
             "the duplicates.  Set `duplicate_msg=False` to silence this message."
         )
-        assert len(mock_warn_taking_average) == 1
+        assert len(mock_warn_taking_average) == 1, mock_warn_taking_average
         assert str(mock_warn_taking_average[0].message) == warn_msg
     else:
         assert not mock_warn_taking_average
@@ -2050,7 +2050,7 @@ def test_append_doesnt_warn_if_continuous_times(test_append_scm_runs):
     with warnings.catch_warnings(record=True) as mock_warn_taking_average:
         base.append(other)
 
-    assert len(mock_warn_taking_average) == 0
+    assert len(mock_warn_taking_average) == 0, mock_warn_taking_average
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -3571,7 +3571,7 @@ def test_lineplot_time_axis(scm_run, time_axis, mod_func):
         x="time",
         y="value",
         estimator=np.median,
-        ci="sd",
+        errorbar="sd",
         hue="scenario",
         other_kwarg="value",
         data=mock_return,

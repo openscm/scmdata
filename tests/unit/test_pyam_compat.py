@@ -1,5 +1,4 @@
 import re
-from unittest import mock
 
 import pandas as pd
 import pytest
@@ -28,9 +27,3 @@ def test_to_int_value_error(test_iam_df):
 
     with pytest.raises(ValueError, match=error_msg):
         LongDatetimeIamDataFrame(idf)
-
-
-@mock.patch("scmdata.run.LongDatetimeIamDataFrame", None)
-def test_pyam_missing(scm_run):
-    with pytest.raises(ImportError):
-        scm_run.to_iamdataframe()

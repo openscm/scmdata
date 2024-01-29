@@ -74,7 +74,12 @@ def test_lineplot(mock_long_data, mock_seaborn_lineplot, scm_run):
     mock_long_data.assert_called_with(time_axis="year")
 
     mock_seaborn_lineplot.assert_called_with(
-        ci="sd", data=trv, estimator=np.median, hue="scenario", x="time", y="value"
+        errorbar="sd",
+        data=trv,
+        estimator=np.median,
+        hue="scenario",
+        x="time",
+        y="value",
     )
 
 
@@ -85,7 +90,7 @@ def test_lineplot_kwargs(mock_long_data, mock_seaborn_lineplot, scm_run):
         "x": "x",
         "y": "y",
         "hue": "hue",
-        "ci": "ci",
+        "errorbar": "errorbar",
         "estimator": "estimator",
     }
     trv = "test long_data return value"
