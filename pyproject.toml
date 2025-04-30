@@ -92,6 +92,9 @@ sphinx-autodocgen = "^1.3"
 jupytext = "^1.14.5"
 sphinx-copybutton = "^0.5.2"
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
