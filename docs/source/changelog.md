@@ -19,6 +19,13 @@ of rst and use slightly different categories.
 
 <!-- towncrier release notes start -->
 
+## scmdata v0.18.0 (2025-04-30)
+
+### Bug Fixes
+
+- Fixed up incompatibility with latest xarray releases ([#316](https://github.com/openscm/scmdata/pulls/316))
+
+
 ## scmdata v0.17.0 (2024-01-29)
 
 
