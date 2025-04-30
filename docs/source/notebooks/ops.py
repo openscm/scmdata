@@ -217,7 +217,7 @@ ssp126_to_rcp26.lineplot()
 # [Pint](https://pint.readthedocs.io) and some other work, this operation
 # is also unit aware.
 #
-# There are two methods of integration available, `cumtrapz` and `cumsum`.
+# There are two methods of integration available, `cumulative_trapezoid` and `cumsum`.
 # The method that should be used depends on the data you are integrating,
 # specifically whether the data are piecewise linear or piecewise constant.
 #
@@ -226,7 +226,7 @@ ssp126_to_rcp26.lineplot()
 #
 # Other output such as effective radiative forcing, concentrations or decadal
 # timeseries of emissions, represent a  point estimate or an average over a period.
-# These timeseries are therefore piecewise linear and should use the `cumtrapz`
+# These timeseries are therefore piecewise linear and should use the `cumulative_trapezoid`
 # method.
 
 # %%
@@ -234,10 +234,10 @@ with warnings.catch_warnings():
     # Ignore warning about nans in the historical timeseries
     warnings.filterwarnings("ignore", module="scmdata.ops")
 
-    # Radiative Forcings are piecewise-linear so `cumtrapz` should be used
+    # Radiative Forcings are piecewise-linear so `cumulative_trapezoid` should be used
     erf_integral = (
         db_forcing.filter(variable="Effective Radiative Forcing")
-        .cumtrapz()
+        .cumulative_trapezoid()
         .convert_unit("TJ / m^2")
     )
 
@@ -416,13 +416,7 @@ erf_total_for_shift_rel_to_ref_period_shifted = (
 )
 erf_total_for_shift_rel_to_ref_period_shifted[
     "label"
-] = "rel. to {} - {} (median of {} - {} mean adjusted to {})".format(
-    ref_period[0],
-    ref_period[-1],
-    evaluation_period[0],
-    evaluation_period[-1],
-    target,
-)
+] = f"rel. to {ref_period[0]} - {ref_period[-1]} (median of {evaluation_period[0]} - {evaluation_period[-1]} mean adjusted to {target})"  # noqa: E501
 
 # %%
 pdf = run_append(

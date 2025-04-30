@@ -267,6 +267,7 @@ authorized_licenses = [
     "mit",
     "mit license",
     "Mozilla Public License 2.0 (MPL 2.0)",
+    "psf-2.0",
     "python software foundation",
     "python software foundation license",
     "zpl 2.1",

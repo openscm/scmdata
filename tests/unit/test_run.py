@@ -2890,7 +2890,7 @@ def test_convert_unit_unknown_unit(scm_run):
 
 
 def test_convert_unit_dimensionality(scm_run):
-    error_msg = "Cannot convert from 'exajoule / a' .* to 'kelvin'"
+    error_msg = "Cannot convert from 'exajoule / yr' .* to 'kelvin'"
     with pytest.raises(DimensionalityError, match=error_msg):
         scm_run.convert_unit("kelvin")
 
@@ -3000,9 +3000,9 @@ def test_convert_unit_context(scm_run):
     assert all(obs["unit_context"] == "AR4GWP100")
 
     error_msg = (
-        "Cannot convert from 'SF5CF3 * kilogram / a' "
+        "Cannot convert from 'SF5CF3 * kilogram / yr' "
         "([SF5CF3] * [mass] / [time]) to "
-        "'CO2 * kilogram / a' ([carbon] * [mass] / [time])"
+        "'CO2 * kilogram / yr' ([carbon] * [mass] / [time])"
     )
     with pytest.raises(DimensionalityError, match=re.escape(error_msg)):
         scm_run.convert_unit("kg CO2 / yr")
