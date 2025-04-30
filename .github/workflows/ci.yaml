@@ -64,8 +64,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.9" ]
-        xarray-version: [ "0.16.2", "0.17.0", "0.18.2" ]
+        python-version: [ "3.11" ]
+        xarray-version: [ "0.18.2", "2025.01", "2025.03" ]
 
     steps:
       - name: Checkout repository

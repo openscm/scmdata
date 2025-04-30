@@ -19,11 +19,7 @@ def test_to_int_value_error(test_iam_df):
         )
 
     else:
-        error_msg = re.escape(
-            f'time data "{bad_val}" '
-            "doesn't match format "
-            '"%Y/%m/%d", at position 4. You might want to try:'
-        )
+        error_msg = re.escape(f"Invalid time domain: {bad_val}")
 
     with pytest.raises(ValueError, match=error_msg):
         LongDatetimeIamDataFrame(idf)

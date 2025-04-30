@@ -1,6 +1,7 @@
 """
 Functionality for grouping and filtering ScmRun objects
 """
+
 from __future__ import annotations
 
 import warnings
@@ -9,12 +10,19 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, TypeVar, Uni
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 from numpy.typing import NDArray
-from xarray.core import ops
 from xarray.core.common import ImplementsArrayReduce
 
 from scmdata._typing import MetadataValue
 from scmdata.run import BaseScmRun, GenericRun
+
+# Hack central, a better way to do this would be nice
+xr_version_split = xr.__version__.split(".")
+if int(xr_version_split[0]) < 2025 or xr_version_split[1] == "01":  # noqa: PLR2004
+    from xarray.core import ops
+else:
+    from xarray.computation import ops
 
 if TYPE_CHECKING:
     from pandas.core.groupby.generic import DataFrameGroupBy
@@ -246,7 +254,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
 
     def reduce(
         self,
-        func: Callable[Concatenate[NDArray[np.float_], P], NDArray[np.float_]],
+        func: Callable[Concatenate[NDArray[np.float64], P], NDArray[np.float64]],
         dim: str | Iterable[str] | None = None,
         axis: str | Iterable[int] | None = None,
         *args: P.args,

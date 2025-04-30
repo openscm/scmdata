@@ -5,6 +5,7 @@ These largely rely on
 `Pint's Pandas interface <https://pint.readthedocs.io/en/0.13/pint-pandas.html>`_
 to handle unit conversions automatically
 """
+
 import warnings
 
 import numpy as np
@@ -113,10 +114,9 @@ def _perform_op(base, other, op, use_pint_units=True):
                 elif op == "subtract":
                     out.append(base[col] - other[col])
 
-            except KeyError:
-                raise KeyError(  # noqa: TRY200
-                    f"No equivalent in `other` for {list(zip(col_names, col))}"
-                )
+            except KeyError as exc:
+                msg = f"No equivalent in `other` for {list(zip(col_names, col))}"
+                raise KeyError(msg) from exc
 
         elif op == "multiply":
             out.append(base[col] * other[col])
@@ -227,8 +227,8 @@ def subtract(self, other, op_cols, **kwargs):
     >>> fos_minus_afolu.head()
     time                                                                  2010-01-01  2020-01-01
     model     region   scenario  unit       variable
-    idealised World|NH idealised gigatC / a Emissions|CO2|Fossil - AFOLU      -0.001       3.995
-              World|SH idealised gigatC / a Emissions|CO2|Fossil - AFOLU       1.997       5.993
+    idealised World|NH idealised gigatC / yr Emissions|CO2|Fossil - AFOLU      -0.001       3.995
+              World|SH idealised gigatC / yr Emissions|CO2|Fossil - AFOLU       1.997       5.993
 
     >>> nh = start.filter(region="World|NH")
     >>> sh = start.filter(region="World|SH")
@@ -236,8 +236,8 @@ def subtract(self, other, op_cols, **kwargs):
     >>> nh_minus_sh.head()
     time                                                               2010-01-01  2020-01-01
     model     region        scenario  unit       variable
-    idealised World|NH - SH idealised gigatC / a Emissions|CO2|Fossil        -2.0        -2.0
-                                      megatC / a Emissions|CO2|AFOLU         -2.0        -2.0
+    idealised World|NH - SH idealised gigatC / yr Emissions|CO2|Fossil        -2.0        -2.0
+                                      megatC / yr Emissions|CO2|AFOLU         -2.0        -2.0
     """
     out = _perform_op(
         prep_for_op(self, op_cols, self.meta.columns, **kwargs),
@@ -336,8 +336,8 @@ def add(self, other, op_cols, **kwargs):
     >>> fos_plus_afolu.head()
     time                                                                  2010-01-01  2020-01-01
     model     region   scenario  unit       variable
-    idealised World|NH idealised gigatC / a Emissions|CO2|Fossil + AFOLU       0.001       4.005
-              World|SH idealised gigatC / a Emissions|CO2|Fossil + AFOLU       2.003       6.007
+    idealised World|NH idealised gigatC / yr Emissions|CO2|Fossil + AFOLU       0.001       4.005
+              World|SH idealised gigatC / yr Emissions|CO2|Fossil + AFOLU       2.003       6.007
 
     >>> nh = start.filter(region="World|NH")
     >>> sh = start.filter(region="World|SH")
@@ -345,8 +345,8 @@ def add(self, other, op_cols, **kwargs):
     >>> nh_plus_sh.head()
     time                                                               2010-01-01  2020-01-01
     model     region        scenario  unit       variable
-    idealised World|NH + SH idealised gigatC / a Emissions|CO2|Fossil         2.0        10.0
-                                      megatC / a Emissions|CO2|AFOLU          4.0        12.0
+    idealised World|NH + SH idealised gigatC / yr Emissions|CO2|Fossil         2.0        10.0
+                                      megatC / yr Emissions|CO2|AFOLU          4.0        12.0
     """
     out = _perform_op(
         prep_for_op(self, op_cols, self.meta.columns, **kwargs),
@@ -544,14 +544,14 @@ def divide(self, other, op_cols, **kwargs):
               World|SH idealised MtC / yr Emissions|CO2|AFOLU         3.0         7.0
 
     >>> fos_divide_afolu = fos.divide(
-    ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil / AFOLU"}
+    ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil / yrFOLU"}
     ... )
     >>> # The rows align and the units are handled automatically
     >>> fos_divide_afolu.convert_unit("dimensionless").head()
     time                                                                     2010-01-01  2020-01-01
     model     region   scenario  unit          variable
-    idealised World|NH idealised dimensionless Emissions|CO2|Fossil / AFOLU    0.000000  800.000000
-              World|SH idealised dimensionless Emissions|CO2|Fossil / AFOLU  666.666667  857.142857
+    idealised World|NH idealised dimensionless Emissions|CO2|Fossil / yrFOLU    0.000000  800.000000
+              World|SH idealised dimensionless Emissions|CO2|Fossil / yrFOLU  666.666667  857.142857
 
     >>> nh = start.filter(region="World|NH")
     >>> sh = start.filter(region="World|SH")
@@ -597,7 +597,7 @@ def cumsum(self, out_var=None, check_annual=True):
     arbitrary day/month of the year has not been implemented, if that would be
     useful raise an issue on GitHub.
 
-    If the timeseries are piecewise-linear, :meth:`cumtrapz` should be used instead.
+    If the timeseries are piecewise-linear, :meth:`cumulative_trapezoid` should be used instead.
 
     Parameters
     ----------
@@ -618,7 +618,7 @@ def cumsum(self, out_var=None, check_annual=True):
 
     See Also
     --------
-    :func:`cumtrapz`
+    :func:`cumulative_trapezoid`
 
     Raises
     ------
@@ -677,7 +677,7 @@ def cumsum(self, out_var=None, check_annual=True):
     return out
 
 
-def cumtrapz(self, out_var=None):
+def cumulative_trapezoid(self, out_var=None):
     """
     Integrate with respect to time using the trapezoid rule
 
@@ -743,7 +743,9 @@ def cumtrapz(self, out_var=None):
     # some thinking about unit handling
     _initial = 0.0
     out = pd.DataFrame(
-        scipy.integrate.cumtrapz(y=ts, x=times_in_s, axis=1, initial=_initial)
+        scipy.integrate.cumulative_trapezoid(
+            y=ts, x=times_in_s, axis=1, initial=_initial
+        )
     )
     out.index = ts.index
     out.columns = ts.columns
@@ -790,7 +792,7 @@ def integrate(self, out_var=None):
     See Also
     --------
     :meth:`cumsum`
-    :meth:`cumtrapz`
+    :meth:`cumulative_trapezoid`
 
     Raises
     ------
@@ -805,14 +807,14 @@ def integrate(self, out_var=None):
         data will also contain nans.
     DeprecationWarning
         This function has been deprecated in preference to :meth:`cumsum` and
-        :meth:`cumtrapz`.
+        :meth:`cumulative_trapezoid`.
     """
     warnings.warn(
-        "integrate has been deprecated in preference of cumsum and cumtrapz",
+        "integrate has been deprecated in preference of cumsum and cumulative_trapezoid",
         DeprecationWarning,
     )
 
-    return cumtrapz(self, out_var)
+    return cumulative_trapezoid(self, out_var)
 
 
 def delta_per_delta_time(self, out_var=None):
@@ -1144,7 +1146,7 @@ def inject_ops_methods(cls):
         ("divide", divide),
         ("integrate", integrate),
         ("cumsum", cumsum),
-        ("cumtrapz", cumtrapz),
+        ("cumulative_trapezoid", cumulative_trapezoid),
         ("delta_per_delta_time", delta_per_delta_time),
         ("linear_regression", linear_regression),
         ("linear_regression_gradient", linear_regression_gradient),

@@ -566,7 +566,7 @@ class TestSetItem:
 
     @pytest.mark.parametrize("key", ("model", "junk"))
     def test_nan(self, scm_run, key):
-        scm_run[key] = ["hi", np.NaN, "bye"]
+        scm_run[key] = ["hi", np.nan, "bye"]
         assert all(scm_run[key] == ["hi", "nan", "bye"])
 
     @pytest.mark.parametrize("key", ("model", "junk"))
@@ -576,7 +576,7 @@ class TestSetItem:
 
     @pytest.mark.parametrize("key", ("model", "junk"))
     def test_nan_float(self, scm_run, key):
-        scm_run[key] = [1, np.NaN, 2]
+        scm_run[key] = [1, np.nan, 2]
         assert scm_run[key][0] == 1
         assert np.isnan(scm_run[key][1])
         assert scm_run[key][2] == 2
@@ -2890,7 +2890,7 @@ def test_convert_unit_unknown_unit(scm_run):
 
 
 def test_convert_unit_dimensionality(scm_run):
-    error_msg = "Cannot convert from 'exajoule / a' .* to 'kelvin'"
+    error_msg = "Cannot convert from 'exajoule / yr' .* to 'kelvin'"
     with pytest.raises(DimensionalityError, match=error_msg):
         scm_run.convert_unit("kelvin")
 
@@ -3000,9 +3000,9 @@ def test_convert_unit_context(scm_run):
     assert all(obs["unit_context"] == "AR4GWP100")
 
     error_msg = (
-        "Cannot convert from 'SF5CF3 * kilogram / a' "
-        "([SF5CF3] * [mass] / [time]) to "
-        "'CO2 * kilogram / a' ([carbon] * [mass] / [time])"
+        "Cannot convert from 'kilogram * SF5CF3 / yr' "
+        "([mass] * [SF5CF3] / [time]) to "
+        "'kilogram * CO2 / yr' ([mass] * [carbon] / [time])"
     )
     with pytest.raises(DimensionalityError, match=re.escape(error_msg)):
         scm_run.convert_unit("kg CO2 / yr")

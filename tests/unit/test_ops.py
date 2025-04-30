@@ -99,7 +99,7 @@ def test_no_scipy(scm_run):
     with pytest.raises(
         ImportError, match="scipy is not installed. Run 'pip install scipy'"
     ):
-        scm_run.cumtrapz()
+        scm_run.cumulative_trapezoid()
 
 
 @OPS_MARK
@@ -113,10 +113,10 @@ def test_single_timeseries(op, base_single_scmrun, other_single_scmrun):
     exp_ts["variable"] = "Emissions|CO2|AFOLU"
 
     if op in ["add", "subtract"]:
-        exp_ts["unit"] = "gigatC / a"
+        exp_ts["unit"] = "gigatC / yr"
 
     elif op == "multiply":
-        exp_ts["unit"] = "gigatC ** 2 / a ** 2"
+        exp_ts["unit"] = "gigatC ** 2 / yr ** 2"
 
     elif op == "divide":
         exp_ts["unit"] = "dimensionless"
@@ -170,7 +170,7 @@ def test_different_unit_error():
 
     error_msg = re.escape(
         "Cannot convert from 'kelvin' ([temperature]) to "
-        "'gigatC' ([carbon] * [mass])"
+        "'gigatC' ([mass] * [carbon])"
     )
     with pytest.raises(DimensionalityError, match=error_msg):
         base.add(other, op_cols={"variable": "Warming plus Cumulative emissions CO2"})
@@ -262,10 +262,10 @@ def test_scalar_ops_pint(op):
     exp = ScmRun(exp_ts)
 
     if op in ["add", "subtract"]:
-        exp["unit"] = "gigatC / a"
+        exp["unit"] = "gigatC / yr"
 
     elif op == "multiply":
-        exp["unit"] = "gigatC * megatC / a ** 2"
+        exp["unit"] = "gigatC * megatC / yr ** 2"
 
     elif op == "divide":
         exp["unit"] = "gigatC / megatC"
@@ -315,7 +315,7 @@ def test_scalar_multiply_pint_by_run():
     exp_ts = perform_pint_op(start, scalar, "multiply_inverse")
     exp = ScmRun(exp_ts)
 
-    exp["unit"] = "megatC * gigatC / a**2"
+    exp["unit"] = "megatC * gigatC / yr**2"
 
     res = scalar * start
 
@@ -330,8 +330,8 @@ def test_scalar_ops_pint_wrong_unit(op):
     )
 
     error_msg = re.escape(
-        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) "
-        "to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
+        "Cannot convert from 'gigatC / yr' ([mass] * [carbon] / [time]) "
+        "to 'megametric_ton * CH4 / yr' ([mass] * [methane] / [time])"
     )
     with pytest.raises(DimensionalityError, match=error_msg):
         if op == "add":
@@ -356,10 +356,10 @@ def test_vector_ops_pint(op):
     exp = ScmRun(exp_ts)
 
     if op in ["add", "subtract"]:
-        exp["unit"] = "gigatC / a"
+        exp["unit"] = "gigatC / yr"
 
     elif op == "multiply":
-        exp["unit"] = "gigatC * megatC / a ** 2"
+        exp["unit"] = "gigatC * megatC / yr ** 2"
 
     elif op == "divide":
         exp["unit"] = "gigatC / megatC"
@@ -391,8 +391,8 @@ def test_vector_ops_pint_wrong_unit(op, start_unit):
     )
 
     error_msg = re.escape(
-        "Cannot convert from 'gigatC / a' ([carbon] * [mass] / [time]) "
-        "to 'CH4 * megametric_ton / a' ([mass] * [methane] / [time])"
+        "Cannot convert from 'gigatC / yr' ([mass] * [carbon] / [time]) "
+        "to 'megametric_ton * CH4 / yr' ([mass] * [methane] / [time])"
     )
     with pytest.raises(DimensionalityError, match=error_msg):
         if op == "add":
@@ -549,11 +549,11 @@ def test_wrong_length_ops(op):
 # We can add initial back if use case arises. At the moment I can't see an easy
 # way to make the units behave.
 # @pytest.mark.parametrize("initial", (None, 0, 1, -1.345))
-def test_cumtrapz(out_var):
+def test_cumulative_trapezoid(out_var):
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[1, 2, 3], unit="GtC / yr")
 
-    res = start.cumtrapz(out_var=out_var)
+    res = start.cumulative_trapezoid(out_var=out_var)
 
     if out_var is None:
         exp_var = ("Cumulative " + start["variable"]).values
@@ -570,10 +570,10 @@ def test_cumtrapz(out_var):
     )
 
 
-def test_cumtrapz_time_handling_big_jumps():
+def test_cumulative_trapezoid_time_handling_big_jumps():
     start = get_single_ts(data=[1, 2, 3], index=[10, 20, 50], unit="GtC / yr")
 
-    res = start.cumtrapz()
+    res = start.cumulative_trapezoid()
 
     npt.assert_allclose(
         res.values.squeeze(),
@@ -582,12 +582,12 @@ def test_cumtrapz_time_handling_big_jumps():
     )
 
 
-def test_cumtrapz_time_handling_all_over_jumps():
+def test_cumulative_trapezoid_time_handling_all_over_jumps():
     start = get_single_ts(
         data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC / yr"
     )
 
-    res = start.cumtrapz()
+    res = start.cumulative_trapezoid()
 
     first = 0
     second = first + 1.5 * 0.1
@@ -603,7 +603,7 @@ def test_cumtrapz_time_handling_all_over_jumps():
     "method,exp",
     [
         ("cumsum", [1, 3, 6, np.nan, np.nan, np.nan, np.nan, np.nan]),
-        ("cumtrapz", [0, 1.5, 4, np.nan, np.nan, np.nan, np.nan, np.nan]),
+        ("cumulative_trapezoid", [0, 1.5, 4, np.nan, np.nan, np.nan, np.nan, np.nan]),
     ],
 )
 def test_integration_nan_handling(method, exp):
@@ -633,7 +633,7 @@ def test_integration_nan_handling(method, exp):
 @pytest.mark.xfail(
     _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
 )
-def test_cumtrapz_multiple_ts():
+def test_cumulative_trapezoid_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
     start = get_multiple_ts(
         data=np.array([[1, 2, 3], [-1, -2, -3], [0, 5, 10]]).T,
@@ -642,7 +642,7 @@ def test_cumtrapz_multiple_ts():
         unit=["Mt CO2 / yr", "W / m^2", "K"],
     )
 
-    res = start.cumtrapz()
+    res = start.cumulative_trapezoid()
 
     exp = get_single_ts(
         data=np.array([[0, 7.5, 45], [0, -7.5, -45], [0, 12.5, 125]]).T,
@@ -730,7 +730,9 @@ def test_integrate_deprecated():
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[2020, 2021, 2024], unit="GtC / yr")
 
-    match = "integrate has been deprecated in preference of cumsum and cumtrapz"
+    match = (
+        "integrate has been deprecated in preference of cumsum and cumulative_trapezoid"
+    )
     with pytest.warns(DeprecationWarning, match=match):
         start.integrate()
 
