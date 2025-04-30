@@ -3000,9 +3000,9 @@ def test_convert_unit_context(scm_run):
     assert all(obs["unit_context"] == "AR4GWP100")
 
     error_msg = (
-        "Cannot convert from 'SF5CF3 * kilogram / yr' "
-        "([SF5CF3] * [mass] / [time]) to "
-        "'CO2 * kilogram / yr' ([carbon] * [mass] / [time])"
+        "Cannot convert from 'kilogram * SF5CF3 / yr' "
+        "([mass] * [SF5CF3] / [time]) to "
+        "'kilogram * CO2 / yr' ([mass] * [carbon] / [time])"
     )
     with pytest.raises(DimensionalityError, match=re.escape(error_msg)):
         scm_run.convert_unit("kg CO2 / yr")
