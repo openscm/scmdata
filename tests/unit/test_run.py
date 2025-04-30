@@ -213,7 +213,6 @@ def test_init_unrecognised_type_error():
         ScmRun(fail_type)
 
 
-@pytest.skip()
 def test_init_remote_files():
     remote_file = (
         "https://rcmip-protocols-au.s3-ap-southeast-2.amazonaws.com"
