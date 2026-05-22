@@ -159,3 +159,56 @@ def test_groupby_nan_metadata():
     exp["has_nan"] = [False, True]
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
+
+
+def test_groupby_with_string_extension_dtype():
+    """
+    Regression test for issue #318.
+
+    Under pandas 3.x, string-valued meta columns of a DataFrame round-
+    tripped through MultiIndex can come back as ``pandas.StringDtype``
+    rather than ``object``. ``RunGroupBy.__init__`` previously called
+    ``np.issubdtype(StringDtype, np.number)`` directly, which numpy
+    2.x rejects with ``TypeError: Cannot interpret <StringDtype(...)>``.
+    The fix routes that check through ``_is_numeric_dtype``, which
+    returns ``False`` for any dtype numpy cannot classify.
+
+    The test exercises ``ScmRun.groupby`` directly to keep the
+    regression surface tight; ``convert_unit`` (the path that
+    originally tripped this for downstream users) has unrelated
+    pandas 3.x issues that are not in scope here.
+    """
+    import pandas as pd
+
+    run = ScmRun(
+        pd.DataFrame(
+            [[1.0, 2.0]],
+            index=pd.MultiIndex.from_tuples(
+                [("FaIR", "ssp245", "m", "World", "Emissions|CO2", "GtC/yr", 0)],
+                names=[
+                    "climate_model",
+                    "scenario",
+                    "model",
+                    "region",
+                    "variable",
+                    "unit",
+                    "run_id",
+                ],
+            ),
+            columns=[2010, 2020],
+        )
+    )
+
+    # Sanity check: under pandas 3.x at least one meta column should be
+    # StringDtype after the MultiIndex round-trip. On older stacks they
+    # are plain object; the test still passes (the fix is a no-op on
+    # numpy 1.x where np.issubdtype handled the inputs anyway).
+    meta = run.meta.reset_index(drop=True)
+    dtypes = [str(meta[c].dtype) for c in meta]
+
+    # Pre-fix, ScmRun.groupby raised TypeError when any meta column was
+    # StringDtype. Post-fix it should return a single group.
+    groups = list(run.groupby("variable"))
+    assert len(groups) == 1
+    assert groups[0].get_unique_meta("variable", no_duplicates=True) == "Emissions|CO2"
+    assert "string" in dtypes or "str" in dtypes or "object" in dtypes
