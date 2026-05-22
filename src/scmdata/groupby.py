@@ -43,6 +43,22 @@ if TYPE_CHECKING:
     ]
 
 
+def _is_numeric_dtype(dtype: Any) -> bool:
+    """
+    Return ``True`` if ``dtype`` is a numpy numeric dtype.
+
+    Wraps :func:`numpy.issubdtype` to gracefully handle pandas extension
+    dtypes such as :class:`pandas.StringDtype`, which numpy 2.x rejects
+    with a ``TypeError`` (``Cannot interpret <StringDtype(...)> as a data
+    type``). Semantically, an extension dtype that numpy cannot classify
+    is not a numpy numeric dtype, so ``False`` is the correct fallback.
+    """
+    try:
+        return bool(np.issubdtype(dtype, np.number))
+    except TypeError:
+        return False
+
+
 class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
     """
     GroupBy object specialized to grouping ScmRun objects
@@ -58,7 +74,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         self.na_fill_value = float(na_fill_value)
 
         # Work around the bad handling of NaN values in groupbys
-        if any([np.issubdtype(m[c].dtype, np.number) for c in m]):
+        if any(_is_numeric_dtype(m[c].dtype) for c in m):
             if (m == na_fill_value).any(axis=None):
                 raise ValueError(
                     "na_fill_value conflicts with data value. Choose a na_fill_value "
