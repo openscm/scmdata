@@ -198,7 +198,10 @@ def _many_to_one(df, col1, col2):
     # thanks https://stackoverflow.com/a/59091549
     checker = df[[col1, col2]].drop_duplicates()
 
-    max_count = checker.groupby(col2).count().max()[0]
+    # ``.iloc[0]`` rather than ``[0]``: pandas 3.0 removed positional
+    # integer indexing on label-indexed Series, so ``[0]`` would raise
+    # ``KeyError: 0`` on the Series returned by the chained ``.max()``.
+    max_count = checker.groupby(col2).count().max().iloc[0]
     if max_count < 1:  # pragma: no cover # emergency valve
         raise AssertionError
 

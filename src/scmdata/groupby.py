@@ -57,8 +57,12 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         m = run.meta.reset_index(drop=True)
         self.na_fill_value = float(na_fill_value)
 
-        # Work around the bad handling of NaN values in groupbys
-        if any([np.issubdtype(m[c].dtype, np.number) for c in m]):
+        # Work around the bad handling of NaN values in groupbys.
+        # pd.api.types.is_numeric_dtype accepts every dtype scmdata
+        # ever emits; np.issubdtype(..., np.number) raises on
+        # pandas 3.0's default StringDtype with
+        # ``TypeError: Cannot interpret '<StringDtype(...)>'``.
+        if any([pd.api.types.is_numeric_dtype(m[c]) for c in m]):
             if (m == na_fill_value).any(axis=None):
                 raise ValueError(
                     "na_fill_value conflicts with data value. Choose a na_fill_value "
