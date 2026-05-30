@@ -747,3 +747,31 @@ def test_run_to_nc_different_eras(scm_run, shift_times):
 
         res = nc_to_run(scm_run.__class__, out_fname)
     assert_scmdf_almost_equal(scm_run, res)
+
+
+def test_nc_to_run_does_not_emit_use_cftime_futurewarning(scm_run):
+    # Regression test: xarray 2025+ deprecates the bare ``use_cftime``
+    # kwarg on ``xr.load_dataset`` in favour of passing a
+    # ``CFDatetimeCoder`` via ``decode_times``. The deprecation
+    # previously fired a FutureWarning on every ``ScmRun.from_nc()`` /
+    # ``nc_to_run`` call. The fix routes through the new API when
+    # available.
+    import warnings
+
+    if not hasattr(xr, "coders") or not hasattr(xr.coders, "CFDatetimeCoder"):
+        pytest.skip("xarray too old for CFDatetimeCoder; legacy path is fine")
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        out_fname = join(tempdir, "out.nc")
+        run_to_nc(scm_run, out_fname, dimensions=("scenario",))
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            nc_to_run(scm_run.__class__, out_fname)
+
+        use_cftime_warnings = [
+            w for w in caught
+            if issubclass(w.category, FutureWarning)
+            and "use_cftime" in str(w.message)
+        ]
+    assert not use_cftime_warnings, [str(w.message) for w in use_cftime_warnings]
