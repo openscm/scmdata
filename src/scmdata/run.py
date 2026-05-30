@@ -745,10 +745,12 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             res_stacked = np.vstack(res)
 
             if use_pint:
-                run._df.values[:] = res_stacked.magnitude.T
+                run._df.iloc[:, :] = np.asarray(
+                    res_stacked.magnitude.T, dtype=float
+                )
                 run["unit"] = str(res_stacked.units)
             else:
-                run._df.values[:] = res_stacked.T
+                run._df.iloc[:, :] = np.asarray(res_stacked.T, dtype=float)
             return run
 
         return self.copy().groupby("unit").apply(_perform_op)
@@ -758,7 +760,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
 
         res = [f(v) for v in run.values]
 
-        run._df.values[:] = np.vstack(res).T
+        run._df.iloc[:, :] = np.asarray(np.vstack(res).T, dtype=float)
         return run
 
     def drop_meta(self, columns: Iterable[str] | str, inplace: bool = False) -> Self:
@@ -2177,7 +2179,7 @@ class BaseScmRun(OpsMixin):  # pylint: disable=too-many-public-methods
             orig_unit = group.get_unique_meta("unit", no_duplicates=True)
             uc = UnitConverter(orig_unit, unit, context=context)
 
-            group._df.values[:] = uc.convert_from(group._df.values)
+            group._df.iloc[:, :] = uc.convert_from(group._df.values)
             group["unit"] = unit
 
             return group
