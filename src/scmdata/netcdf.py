@@ -75,7 +75,13 @@ def _write_nc(
 
 
 def _read_nc(cls: BaseScmRun, fname: FilePath) -> BaseScmRun:
-    loaded = xr.load_dataset(fname, use_cftime=True)
+    try:
+        time_coder = xr.coders.CFDatetimeCoder(use_cftime=True)
+        loaded = xr.load_dataset(fname, decode_times=time_coder)
+    except AttributeError:
+        # xarray older than 2024.09 has no ``xr.coders.CFDatetimeCoder``;
+        # fall back to the deprecated bare ``use_cftime`` kwarg.
+        loaded = xr.load_dataset(fname, use_cftime=True)
     dataframe = loaded.to_dataframe()
 
     dataframe = _reshape_to_scmrun_dataframe(dataframe, loaded)
