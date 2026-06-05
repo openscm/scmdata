@@ -27,6 +27,33 @@ def _assert_frame_equal(left, right, **kwargs):
     pdt.assert_frame_equal(left.T, right.T, **kwargs)
 
 
+# TODO: rename to assert_scmrun_allclose
+# # TODO: do something like this i.e. just limit to showing
+# #       timesteps that changed
+# def _assert_frame_equal(left, right, **kwargs):
+#     import pandas.testing as pdt
+
+#     # if _check_pandas_less_110():
+#     #     kwargs.pop("rtol", None)
+#     #     kwargs.pop("atol", None)
+
+#     if not left.index.equals(right.index):
+#         error_msg = (
+#             "Indexes don't match\n"
+#             f"Only in left: {left.index.difference(right.index)}\n"
+#             f"Only in right: {right.index.difference(left.index)}"
+#         )
+#         raise AssertionError(error_msg)
+
+#     left = left.T
+#     right = right.T
+#     differences = ~np.isclose(left.values, right.values, **kwargs)
+#     if differences.any().any():
+#         pdt.assert_frame_equal(
+#             left.loc[differences.any(axis=1), differences.any(axis=0)],
+#             right.loc[differences.any(axis=1), differences.any(axis=0)],
+#             **kwargs,
+#         )
 def assert_scmdf_almost_equal(
     left, right, allow_unordered=False, check_ts_names=True, rtol=1e-5, atol=1e-8
 ):
