@@ -3367,6 +3367,60 @@ def test_read_from_disk(test_file, test_kwargs, test_data_path, use_pathlib):
     )
 
 
+def _write_two_timeseries_csv(tmp_path):
+    df = pd.DataFrame(
+        {
+            "model": "idealised",
+            "scenario": "idealised",
+            "region": ["World", "Europe"],
+            "variable": "Emissions|CO2",
+            "unit": "GtC / yr",
+            "2020": [1.0, 2.0],
+        }
+    )
+    fname = tmp_path / "two_timeseries.csv"
+    df.to_csv(fname, index=False)
+    return fname
+
+
+def _capture_read_csv_kwargs(call):
+    """Run ``call`` while spying on ``pd.read_csv``; return the kwargs it received."""
+    captured = {}
+    real_read_csv = pd.read_csv
+
+    def _spy(*args, **kwargs):
+        captured.update(kwargs)
+        return real_read_csv(*args, **kwargs)
+
+    with patch.object(pd, "read_csv", _spy):
+        call()
+    return captured
+
+
+def test_read_csv_defaults_to_low_memory_false(tmp_path):
+    # pandas' default low_memory=True infers each column's dtype per-chunk, which
+    # is non-deterministic for mostly-null / mixed-type metadata columns and emits
+    # a DtypeWarning. ScmRun should read in a single deterministic, quiet pass.
+    fname = _write_two_timeseries_csv(tmp_path)
+    captured = _capture_read_csv_kwargs(lambda: ScmRun(fname))
+    assert captured["low_memory"] is False
+
+
+def test_read_csv_respects_explicit_low_memory(tmp_path):
+    # An explicit low_memory must win over the injected default.
+    fname = _write_two_timeseries_csv(tmp_path)
+    captured = _capture_read_csv_kwargs(lambda: ScmRun(fname, low_memory=True))
+    assert captured["low_memory"] is True
+
+
+def test_read_csv_python_engine_omits_low_memory(tmp_path):
+    # low_memory is rejected by the python parser engine, so it must not be
+    # injected when the caller selects it -- otherwise read_csv raises ValueError.
+    fname = _write_two_timeseries_csv(tmp_path)
+    captured = _capture_read_csv_kwargs(lambda: ScmRun(fname, engine="python"))
+    assert "low_memory" not in captured
+
+
 def test_read_from_disk_different_number_of_digits_years(test_data_path):
     loaded = ScmRun(
         os.path.join(test_data_path, "different_number_of_digits_years.csv")
