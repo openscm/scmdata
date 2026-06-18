@@ -149,6 +149,13 @@ def _read_pandas(
 
     else:
         _logger.debug("Reading with pandas read_csv")
+        # pandas' default ``low_memory=True`` reads the file in chunks and infers
+        # each column's dtype per chunk. For mostly-null or mixed-type metadata
+        # columns this is non-deterministic across runs and emits a ``DtypeWarning``.
+        # Reading the whole column at once makes inference deterministic and quiet.
+        # ``low_memory`` is only accepted by the C parser, so leave other engines be.
+        if (kwargs.get("engine") or "c") == "c":
+            kwargs.setdefault("low_memory", False)
         dateframe = pd.read_csv(fname, *args, **kwargs)
 
     def _to_lower(c):
