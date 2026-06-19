@@ -1,6 +1,7 @@
 """
 Interface with `xarray <https://xarray.pydata.org/en/stable/index.html>`_
 """
+
 import numpy as np
 import pint.errors
 import xarray as xr
@@ -64,34 +65,22 @@ def to_xarray(self, dimensions=("region",), extras=(), unify_units=True):
     timeseries_dims = list(set(dimensions) - {"time"} - {"_id"})
 
     self_unified_units = _unify_scmrun_units(self, unify_units)
-    timeseries = _get_timeseries_for_xr_dataset(
-        self_unified_units, timeseries_dims, extras
-    )
-    non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(
-        self_unified_units, dimensions, extras
-    )
+    timeseries = _get_timeseries_for_xr_dataset(self_unified_units, timeseries_dims, extras)
+    non_dimension_extra_metadata = _get_other_metdata_for_xr_dataset(self_unified_units, dimensions, extras)
 
     if extras:
-        ids, ids_dimensions = _get_ids_for_xr_dataset(
-            self_unified_units, extras, timeseries_dims
-        )
+        ids, ids_dimensions = _get_ids_for_xr_dataset(self_unified_units, extras, timeseries_dims)
     else:
         ids = None
         ids_dimensions = None
 
-    for_xarray = _get_dataframe_for_xr_dataset(
-        timeseries, timeseries_dims, extras, ids, ids_dimensions
-    )
+    for_xarray = _get_dataframe_for_xr_dataset(timeseries, timeseries_dims, extras, ids, ids_dimensions)
     xr_ds = xr.Dataset.from_dataframe(for_xarray)
 
     if extras:
         xr_ds = _add_extras(xr_ds, ids, ids_dimensions, self_unified_units)
 
-    unit_map = (
-        self_unified_units.meta[["variable", "unit"]]
-        .drop_duplicates()
-        .set_index("variable")["unit"]
-    )
+    unit_map = self_unified_units.meta[["variable", "unit"]].drop_duplicates().set_index("variable")["unit"]
     xr_ds = _add_units(xr_ds, unit_map)
     xr_ds = _add_scmdata_metadata(xr_ds, non_dimension_extra_metadata)
     xr_ds = _set_dimensions(xr_ds, dimensions)
@@ -111,9 +100,7 @@ def _unify_scmrun_units(run, unify_units):
                 "The following variables are reported in more than one unit. "
                 "Found variable-unit combinations are:\n{}".format(
                     variable_unit_table[
-                        variable_unit_table["variable"].isin(
-                            more_than_one_unit_variables.index.values
-                        )
+                        variable_unit_table["variable"].isin(more_than_one_unit_variables.index.values)
                     ]
                 )
             )
@@ -155,9 +142,7 @@ def _get_timeseries_for_xr_dataset(run, dimensions, extras):
 
 
 def _get_other_metdata_for_xr_dataset(run, dimensions, extras):
-    other_dimensions = list(
-        set(run.meta.columns) - set(dimensions) - set(extras) - {"variable", "unit"}
-    )
+    other_dimensions = list(set(run.meta.columns) - set(dimensions) - set(extras) - {"variable", "unit"})
     other_metdata = run.meta[other_dimensions].drop_duplicates()
     if other_metdata.shape[0] > 1 and not other_metdata.empty:
         error_msg = (
@@ -226,17 +211,13 @@ def _get_dataframe_for_xr_dataset(timeseries, dimensions, extras, ids, ids_dimen
 
     timeseries.columns.names = ["time"]
 
-    if (
-        len(timeseries.index.unique()) != timeseries.shape[0]
-    ):  # pragma: no cover # emergency valve
+    if len(timeseries.index.unique()) != timeseries.shape[0]:  # pragma: no cover # emergency valve
         # shouldn't be able to get here because any issues should be caught
         # by initial creation of timeseries but just in case
         raise AssertionError("something not unique")
 
     for_xarray = (
-        timeseries.T.stack([*dimensions, "_id"])
-        if add_id_dimension
-        else timeseries.T.stack(dimensions)
+        timeseries.T.stack([*dimensions, "_id"]) if add_id_dimension else timeseries.T.stack(dimensions)
     )
 
     return for_xarray
@@ -249,11 +230,7 @@ def _add_extras(xr_ds, ids, ids_dimensions, run):
         if id_dimension in ids:
             ids_extra = ids.reset_index().set_index(id_dimension)
         else:
-            ids_extra = (
-                run.meta[[extra, id_dimension]]
-                .drop_duplicates()
-                .set_index(id_dimension)
-            )
+            ids_extra = run.meta[[extra, id_dimension]].drop_duplicates().set_index(id_dimension)
 
         extra_coords[extra] = (
             id_dimension,
@@ -268,9 +245,7 @@ def _add_extras(xr_ds, ids, ids_dimensions, run):
 def _add_units(xr_ds, unit_map):
     for data_var in xr_ds.data_vars:
         unit = unit_map[data_var]
-        if (
-            not isinstance(unit, str) and len(unit) > 1
-        ):  # pragma: no cover # emergency valve
+        if not isinstance(unit, str) and len(unit) > 1:  # pragma: no cover # emergency valve
             # should have already been caught...
             raise AssertionError(f"Found multiple units ({unit}) for {data_var}")
 

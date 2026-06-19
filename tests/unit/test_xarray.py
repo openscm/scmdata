@@ -20,12 +20,7 @@ def do_basic_to_xarray_checks(res, start_run, dimensions, extras):
         assert data_var.units in unit
 
     # all other metadata should be in attrs
-    for meta_col in (
-        set(start_run.meta.columns)
-        - set(dimensions)
-        - set(extras)
-        - {"variable", "unit"}
-    ):
+    for meta_col in set(start_run.meta.columns) - set(dimensions) - set(extras) - {"variable", "unit"}:
         meta_val = start_run.get_unique_meta(meta_col, True)
         assert res.attrs[f"scmdata_metadata_{meta_col}"] == meta_val
 
@@ -100,9 +95,7 @@ def test_to_xarray_extras_no_id_coord(scm_run, extras):
 
         for xarray_extra_val, extra_xarray_coord in zip(xarray_vals, xarray_coords):
             scm_run_extra_val = (
-                scm_run_meta[scm_run_meta[extra_dims] == extra_xarray_coord][extra_col]
-                .unique()
-                .tolist()
+                scm_run_meta[scm_run_meta[extra_dims] == extra_xarray_coord][extra_col].unique().tolist()
             )
             assert len(scm_run_extra_val) == 1
             scm_run_extra_val = scm_run_extra_val[0]
@@ -138,9 +131,7 @@ def test_to_xarray_extras_no_id_coord(scm_run, extras):
         ),
     ),
 )
-def test_to_xarray_extras_with_id_coord(
-    scm_run, extras, dimensions, expected_dimensions
-):
+def test_to_xarray_extras_with_id_coord(scm_run, extras, dimensions, expected_dimensions):
     df = scm_run.timeseries()
     val_cols = df.columns.tolist()
     df = df.reset_index()
@@ -194,16 +185,10 @@ def test_to_xarray_extras_with_id_coord(
             scm_run_filter = row.to_dict()
             scm_run_spot = scm_run.filter(**scm_run_filter)
 
-            xarray_sel = {
-                k: v for k, v in scm_run_filter.items() if k in xarray_timeseries.dims
-            }
-            xarray_spot = xarray_timeseries.sel(**xarray_sel)[
-                scm_run_filter["variable"]
-            ]
+            xarray_sel = {k: v for k, v in scm_run_filter.items() if k in xarray_timeseries.dims}
+            xarray_spot = xarray_timeseries.sel(**xarray_sel)[scm_run_filter["variable"]]
 
-            npt.assert_array_equal(
-                scm_run_spot.values.squeeze(), xarray_spot.values.squeeze()
-            )
+            npt.assert_array_equal(scm_run_spot.values.squeeze(), xarray_spot.values.squeeze())
 
 
 @pytest.mark.parametrize("ch", "!@#$%^&*()~`+={}]<>,;:'\".")
@@ -253,9 +238,7 @@ def test_to_xarray_multiple_units_error(scm_run):
         "The following variables are reported in more than one unit. "
         "Found variable-unit combinations are:\n{}".format(
             variable_unit_table[
-                variable_unit_table["variable"].isin(
-                    more_than_one_unit_variables.index.values
-                )
+                variable_unit_table["variable"].isin(more_than_one_unit_variables.index.values)
             ]
         )
     )
@@ -285,8 +268,7 @@ def test_to_xarray_unify_multiple_units_incompatible_units(scm_run):
 
     first_var = scm_run.get_unique_meta("variable")[0]
     error_msg = re.escape(
-        "Variable `{}` cannot be converted to a common unit. "
-        "Units in the provided dataset: {}.".format(
+        "Variable `{}` cannot be converted to a common unit. Units in the provided dataset: {}.".format(
             first_var, scm_run.filter(variable=first_var).get_unique_meta("unit")
         )
     )

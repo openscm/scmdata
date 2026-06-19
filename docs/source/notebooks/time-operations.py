@@ -95,9 +95,7 @@ rcp26_start_of_year.head()
 
 # %%
 rcp26_middle_of_year = rcp26.interpolate(
-    target_times=sorted(
-        [dt.datetime(v, 7, 1) for v in set([v.year for v in rcp26["time"]])]
-    )
+    target_times=sorted([dt.datetime(v, 7, 1) for v in set([v.year for v in rcp26["time"]])])
 )
 rcp26_middle_of_year["time operation"] = "middle of year"
 rcp26_middle_of_year.head()
@@ -108,9 +106,7 @@ rcp26_middle_of_year.head()
 # Extrapolating is also supported by scmdata.
 
 # %%
-rcp26_extrap = rcp26.interpolate(
-    target_times=sorted([dt.datetime(v, 7, 1) for v in range(1700, 2551)])
-)
+rcp26_extrap = rcp26.interpolate(target_times=sorted([dt.datetime(v, 7, 1) for v in range(1700, 2551)]))
 rcp26_extrap["time operation"] = "extrapolated"
 rcp26_extrap.head()
 
@@ -237,9 +233,7 @@ ax = fig.add_subplot(121)
 pdf.filter(variable=var_to_plot).lineplot(ax=ax, hue="time operation")
 
 ax = fig.add_subplot(122)
-pdf.filter(variable=var_to_plot, year=range(1998, 2001)).lineplot(
-    ax=ax, hue="time operation"
-)
+pdf.filter(variable=var_to_plot, year=range(1998, 2001)).lineplot(ax=ax, hue="time operation")
 
 plt.tight_layout()
 
@@ -257,9 +251,7 @@ ax = fig.add_subplot(121)
 pdf.filter(variable=var_to_plot).lineplot(ax=ax, hue="time operation")
 
 ax = fig.add_subplot(122)
-pdf.filter(variable=var_to_plot, year=range(1998, 2001)).lineplot(
-    ax=ax, hue="time operation", legend=False
-)
+pdf.filter(variable=var_to_plot, year=range(1998, 2001)).lineplot(ax=ax, hue="time operation", legend=False)
 
 plt.tight_layout()
 
@@ -269,15 +261,11 @@ plt.tight_layout()
 
 # %%
 
-rcp26_monthly.filter(
-    variable=var_to_plot, year=range(1998, 2001), month=[2, 3, 4, 5]
-).timeseries()
+rcp26_monthly.filter(variable=var_to_plot, year=range(1998, 2001), month=[2, 3, 4, 5]).timeseries()
 
 # %%
 
-pdf.filter(variable=var_to_plot, year=range(1998, 2001)).timeseries().T.plot(
-    figsize=(16, 9)
-)
+pdf.filter(variable=var_to_plot, year=range(1998, 2001)).timeseries().T.plot(figsize=(16, 9))
 
 # %%
 pdf.filter(variable=var_to_plot, year=range(1998, 2001)).timeseries().T.sort_index()

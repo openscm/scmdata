@@ -54,9 +54,9 @@ db_emms = ScmRun("rcp26_emissions.csv", lowercase_cols=True)
 db_emms.tail()
 
 # %%
-db_forcing = ScmRun(
-    "rcmip-radiative-forcing-annual-means-v4-0-0.csv", lowercase_cols=True
-).drop_meta(["mip_era", "activity_id"], inplace=False)
+db_forcing = ScmRun("rcmip-radiative-forcing-annual-means-v4-0-0.csv", lowercase_cols=True).drop_meta(
+    ["mip_era", "activity_id"], inplace=False
+)
 
 db_forcing.head()
 
@@ -86,9 +86,7 @@ plt_df.filter(variable="*CO2*").lineplot(hue="variable", ax=ax)
 # but give the output a different name as shown below.
 
 # %%
-emms_co2_different_name = db_emms.filter(
-    variable="Emissions|CO2|MAGICC Fossil and Industrial"
-).add(
+emms_co2_different_name = db_emms.filter(variable="Emissions|CO2|MAGICC Fossil and Industrial").add(
     db_emms.filter(variable="Emissions|CO2|MAGICC AFOLU"),
     op_cols={"variable": "Emissions|CO2|Total"},
 )
@@ -111,9 +109,7 @@ non_co2_rf.head()
 
 ax = plt.figure(figsize=(12, 7)).add_subplot(111)
 plt_df_forcing = run_append([db_forcing, non_co2_rf])
-plt_df_forcing.filter(
-    variable=["Effective Radiative Forcing", "Effective*CO2*"]
-).lineplot(style="variable")
+plt_df_forcing.filter(variable=["Effective Radiative Forcing", "Effective*CO2*"]).lineplot(style="variable")
 
 # %% [markdown]
 # We could also calculate the difference between some SSP and RCP scenarios. The
@@ -140,9 +136,7 @@ except KeyError:
 
 # %%
 
-ssp126_minus_rcp26 = db_forcing.filter(
-    scenario="ssp126", variable="Effective Radiative Forcing"
-).subtract(
+ssp126_minus_rcp26 = db_forcing.filter(scenario="ssp126", variable="Effective Radiative Forcing").subtract(
     db_forcing.filter(scenario="rcp26", variable="Radiative Forcing"),
     op_cols={
         "scenario": "ssp126 - rcp26",
@@ -195,9 +189,7 @@ ssp_rcp_diffs.lineplot(ax=ax, style="model")
 # automatically returned as `dimensionless`.
 
 # %%
-ssp126_to_rcp26 = db_forcing.filter(
-    scenario="ssp126", variable="Effective Radiative Forcing"
-).divide(
+ssp126_to_rcp26 = db_forcing.filter(scenario="ssp126", variable="Effective Radiative Forcing").divide(
     db_forcing.filter(scenario="rcp26", variable="Radiative Forcing"),
     op_cols={
         "scenario": "ssp126 / rcp26",
@@ -287,9 +279,7 @@ erf_delta
 
 fig, axes = plt.subplots(figsize=(16, 9), ncols=2)
 erf_delta.lineplot(ax=axes[0], style="model")
-erf_delta.filter(year=range(2000, 2500)).lineplot(
-    ax=axes[1], style="model", legend=False
-)
+erf_delta.filter(year=range(2000, 2500)).lineplot(ax=axes[1], style="model", legend=False)
 axes[1].set_ylim([-0.1, 0.2])
 
 # %% [markdown]
@@ -397,26 +387,20 @@ pdf.lineplot(ax=axes, style="label")
 
 # %%
 ref_period = range(2010, 2040 + 1)
-erf_total_for_shift_rel_to_ref_period = erf_total_for_shift.relative_to_ref_period_mean(
-    year=ref_period
-)
-erf_total_for_shift_rel_to_ref_period[
-    "label"
-] = f"rel. to {ref_period[0]} - {ref_period[-1]}"
+erf_total_for_shift_rel_to_ref_period = erf_total_for_shift.relative_to_ref_period_mean(year=ref_period)
+erf_total_for_shift_rel_to_ref_period["label"] = f"rel. to {ref_period[0]} - {ref_period[-1]}"
 
 # %%
 target = -5
 evaluation_period = range(2020, 2030 + 1)
-erf_total_for_shift_rel_to_ref_period_shifted = (
-    erf_total_for_shift_rel_to_ref_period.adjust_median_to_target(
-        target=target,
-        evaluation_period=evaluation_period,
-        process_over=("scenario", "model"),
-    )
+erf_total_for_shift_rel_to_ref_period_shifted = erf_total_for_shift_rel_to_ref_period.adjust_median_to_target(
+    target=target,
+    evaluation_period=evaluation_period,
+    process_over=("scenario", "model"),
 )
-erf_total_for_shift_rel_to_ref_period_shifted[
-    "label"
-] = f"rel. to {ref_period[0]} - {ref_period[-1]} (median of {evaluation_period[0]} - {evaluation_period[-1]} mean adjusted to {target})"  # noqa: E501
+erf_total_for_shift_rel_to_ref_period_shifted["label"] = (
+    f"rel. to {ref_period[0]} - {ref_period[-1]} (median of {evaluation_period[0]} - {evaluation_period[-1]} mean adjusted to {target})"  # noqa: E501
+)
 
 # %%
 pdf = run_append(

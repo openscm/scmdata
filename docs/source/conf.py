@@ -4,6 +4,7 @@ Configuration file for the Sphinx documentation builder.
 For the full list of built-in configuration values, see the documentation:
 https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
+
 from functools import wraps
 
 from sphinxcontrib_autodocgen import AutoDocGen
@@ -84,9 +85,7 @@ autodocgen_config = [
         "modules": [scmdata],
         "generated_source_dir": "docs/source/api",
         # choose a different title for specific modules, e.g. the toplevel one
-        "module_title_decider": lambda modulename: "API Reference"
-        if modulename == "scmdata"
-        else modulename,
+        "module_title_decider": lambda modulename: "API Reference" if modulename == "scmdata" else modulename,
     }
 ]
 

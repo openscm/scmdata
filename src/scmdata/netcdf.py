@@ -3,6 +3,7 @@ NetCDF4 file operations
 
 Reading and writing :class:`ScmRun <scmdata.run.ScmRun>` to disk as binary
 """
+
 from __future__ import annotations
 
 try:
@@ -13,9 +14,10 @@ except ImportError:  # pragma: no cover
     nc = None
     has_netcdf = False
 
+from collections.abc import Iterable
 from datetime import datetime
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 import xarray as xr
@@ -91,6 +93,13 @@ def _read_nc(cls: BaseScmRun, fname: FilePath) -> BaseScmRun:
 
 
 def _reshape_to_scmrun_dataframe(dataframe, loaded):
+    # ``Dataset.to_dataframe`` densifies the full (dimensions x _id) grid, so
+    # combinations that were never written appear as rows where every data
+    # variable is NaN. Drop them up front; otherwise, once the ``_id`` level is
+    # removed below, the remaining index is no longer unique and ``unstack``
+    # fails with "Index contains duplicate entries".
+    dataframe = dataframe.dropna(subset=list(loaded.data_vars), how="all")
+
     index_cols = list(set(dataframe.columns) - set(loaded.data_vars))
     dataframe = dataframe.set_index(index_cols, append=True)
     if "_id" in dataframe.index.names:
@@ -103,12 +112,15 @@ def _reshape_to_scmrun_dataframe(dataframe, loaded):
     # Can revert to below once https://github.com/pandas-dev/pandas/issues/47071 is resolved
     # dataframe = dataframe.stack("variable").unstack("time").reset_index()
     dataframe = dataframe.stack("variable").unstack("time")
+    # A variable may exist for only some dimension combinations, so stacking
+    # produces all-NaN timeseries for the combinations where it is absent.
+    # pandas < 2.1 dropped these inside ``stack`` (dropna=True default); pandas
+    # >= 2.1 keeps them, so drop the fully empty timeseries explicitly.
+    dataframe = dataframe.dropna(how="all")
     dataframe.columns = pd.Index(dataframe.columns.values)
     dataframe = dataframe.reset_index()
 
-    unit_map = {
-        data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars
-    }
+    unit_map = {data_var: loaded[data_var].attrs["units"] for data_var in loaded.data_vars}
     dataframe["unit"] = dataframe["variable"].map(_var_to_nc).map(unit_map).values
 
     return dataframe

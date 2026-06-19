@@ -1,106 +1,110 @@
-[tool.poetry]
+[project]
 name = "scmdata"
 version = "0.19.0"
 description = "scmdata provides some useful data handling routines for dealing with data related to simple climate models (SCMs aka reduced complexity climate models, RCMs)"
 authors = [
-    "Jared Lewis <jared.lewis@climate-resource.com>",
-    "Zeb Nicholls <zebedee.nicholls@climate-energy-college.org>",
-    "Mika Pflüger <mika.pflueger@climate-resource.com>",
+    { name = "Jared Lewis", email = "jared.lewis@climate-resource.com" },
+    { name = "Zeb Nicholls", email = "zebedee.nicholls@climate-energy-college.org" },
+    { name = "Mika Pflüger", email = "mika.pflueger@climate-resource.com" },
 ]
 readme = "README.md"
-packages = [{include = "scmdata", from = "src"}]
+license = { text = "BSD-3-Clause" }
+requires-python = ">=3.11"
 keywords = [
     "data",
     "simple climate model",
     "climate",
-    "scm"
+    "scm",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: BSD License",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "cftime>=1.5",
+    "numpy",
+    "openscm-units",
+    "packaging",
+    "pandas>=1.1",
+    "pint",
+    "pint-pandas",
+    "python-dateutil",
+    "tqdm",
+    "six",
+    "xarray>=2025.12",  # earlier xarray is incompatible with pandas>=3 round-trips
+    "typing-extensions",
 ]
 
-[tool.poetry.dependencies]
-# TODO: get rid of this stupid upper level bound
-python = ">=3.10,<4"
-cftime = ">=1.5"
-numpy = "*"
-openscm-units = "*"
-packaging = "*"
-pandas = ">=1.1"
-pint = "*"
-pint-pandas = "*"
-python-dateutil = "*"
-tqdm = "*"
-six = "*"
-xarray = "*"
-nc-time-axis = { version = ">=1.2.0", optional = true }
-typing-extensions = "*"
-matplotlib = { version = ">=3.7.1", optional = true }
-seaborn = { version = ">=0.12.0", optional = true }
-netCDF4 = { version = "*", optional = true }
-openpyxl = { version = "*", optional = true }
-xlrd = { version = "*", optional = true }
-scipy = { version = "*", optional = true }
-joblib = { version = "*", optional = true }
-notebook = { version = ">=7", optional = true }
-pyam-iamc = { version = "*", optional = true }
+[project.optional-dependencies]
+plots = [
+    "matplotlib>=3.7.1",
+    "seaborn>=0.12.0",
+    "nc-time-axis>=1.2.0",
+]
+optional = [
+    "netCDF4",
+    "openpyxl",
+    "xlrd",
+    "scipy>=1.13",  # first numpy-2-compatible scipy
+    "pyam-iamc",
+    "joblib",
+]
+notebooks = [
+    "notebook>=7",
+]
 
-[tool.poetry.extras]
-plots = ["matplotlib", "seaborn" , "nc-time-axis"]
-optional = ["netCDF4", "openpyxl", "xlrd", "scipy", "pyam-iamc", "joblib" ]
-notebooks = ["notebook"]
+[project.urls]
+Homepage = "https://github.com/openscm/scmdata"
+Documentation = "https://scmdata.readthedocs.io"
+Repository = "https://github.com/openscm/scmdata"
 
-[tool.poetry.group.tests.dependencies]
-pytest = "^7.3.1"
-pytest-benchmark = "*"
-
-[tool.poetry.group.docs.dependencies]
-myst-nb = "^0.17.0"
-sphinx-rtd-theme = "^1.2.0"
-sphinx-autodoc-typehints = "^1.23.0"
-sphinx-autodocgen = "^1.3"
-jupytext = "^1.14.5"
-sphinx-copybutton = "^0.5.2"
-
-[tool.poetry.group.dev.dependencies]
-pytest-cov = "^4.0.0"
-coverage = "^7.2.0"
-black = "23.11.0"
-blackdoc = "0.3.8"
-mypy = "^1.2.0"
-ruff = "0.1.6"
-pre-commit = "^3.3.1"
-towncrier = "^23.6.0"
-liccheck = "^0.9.1"
-pandas-stubs = "<3"
-setuptools = "<81"  # liccheck imports pkg_resources, removed in setuptools 81
-
-[tool.poetry.group.notebooks.dependencies]
-myst-nb = "^0.17.0"
-sphinx-rtd-theme = "^1.2.0"
-sphinx-autodoc-typehints = "^1.23.0"
-sphinx-autodocgen = "^1.3"
-jupytext = "^1.14.5"
-sphinx-copybutton = "^0.5.2"
-
-[tool.poetry.requires-plugins]
-poetry-plugin-export = ">=1.8"
+[dependency-groups]
+tests = [
+    "pytest>=7.3.1",
+    "pytest-benchmark",
+    "pytest-cov>=4.0.0",
+    "coverage>=7.2.0",
+]
+docs = [
+    "myst-nb>=0.17.0",
+    "sphinx-rtd-theme>=1.2.0",
+    "sphinx-autodoc-typehints>=1.23.0",
+    "sphinx-autodocgen>=1.3",
+    "jupytext>=1.14.5",
+    "sphinx-copybutton>=0.5.2",
+]
+dev = [
+    "mypy>=1.2.0",
+    "ruff>=0.8",
+    "pre-commit>=3.3.1",
+    "towncrier>=23.6.0",
+    "liccheck>=0.9.1",
+    "pandas-stubs<3",
+    "setuptools<81",  # liccheck imports pkg_resources, removed in setuptools 81
+    "pip>=24.2",  # liccheck imports pip internals, not installed in uv venvs by default
+    { include-group = "tests" },
+    { include-group = "docs" },
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scmdata"]
 
 [tool.coverage.run]
 source = ["src"]
 branch = true
 
 [tool.coverage.report]
-fail_under = 95
+# Keep the existing gate (the previous .coveragerc, which took precedence, used 90).
+fail_under = 90
 skip_empty = true
 show_missing = true
 # Regexes for lines to exclude from consideration in addition to the defaults
@@ -137,7 +141,11 @@ doctest_optionflags ="NORMALIZE_WHITESPACE"
 
 [tool.ruff]
 src = ["src"]
-target-version = "py38"
+target-version = "py311"
+# Provide some leeway for long docstrings.
+line-length = 110
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle error
     "W",  # pycodestyle warning
@@ -158,11 +166,11 @@ ignore = [
     "D200",  # One-line docstring should fit on one line with quotes
     "D400",  # First line should end with a period
     "TRY003",  # Avoid specifying long messages outside the exception class
+    "UP007",  # Keep Optional[X]/Union[X, Y] (consistent with other openscm/CR projects)
+    "PLC0415",  # `import` outside top-level is intentional for optional-dependency lazy imports
 ]
-# Provide some leeway for long docstring, this is otherwise handled by black
-line-length = 110
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "test*.py" = [
     "D",  # Documentation not needed in tests
     "S101",  # S101 Use of `assert` detected
@@ -171,11 +179,16 @@ line-length = 110
     "PLR5501",  # Use `elif` instead of `else` then `if`
     "NPY002",  # Replace legacy `np.random.rand`
     "S311",  # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "RUF043",  # Pattern passed to pytest.raises(match=) need not be escaped/raw in tests
+    "RUF059",  # Unpacked-but-unused variables are common in test fixtures
+    "RUF061",  # Allow the legacy pytest.raises form in existing tests
+    "PLW0108",  # Lambdas in test helpers are fine for readability
 ]
 "docs/source/notebooks/*" = [
     "D100",  # Missing docstring at the top of file
     "E402",  # Module level import not at top of file
     "S101",  # Use of `assert` detected
+    "NPY002",  # Legacy np.random is fine for example notebooks
 ]
 "scripts/*" = [
     "S101" # S101 Use of `assert` detected
@@ -183,19 +196,21 @@ line-length = 110
 "src/scmdata/ops.py" = [
     "E501" # Line too long
 ]
-
 "src/scmdata/processing.py" = [
     "PLR2004" # Magic value used in comparison
 ]
 
-[tool.ruff.pylint]
+[tool.ruff.lint.pylint]
 max-args = 7
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["src"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.towncrier]
 package = "scmdata"
@@ -240,52 +255,3 @@ issue_format = "[#{issue}](https://github.com/openscm/scmdata/pulls/{issue})"
   directory = "trivial"
   name = "Trivial/Internal Changes"
   showcontent = false
-
-[tool.liccheck]
-authorized_licenses = [
-    "bsd",
-    "bsd license",
-    "BSD 3-Clause",
-    "BSD-2-Clause",
-    "BSD-3-Clause",
-    "CC0",
-    "CC0-1.0",
-    "apache",
-    "apache 2.0",
-    "apache software",
-    "apache software license",
-    "Apache License, Version 2.0",
-    "Apache-2.0",
-    # SPDX AND-expressions are not split by liccheck, so list as-is
-    "MPL-2.0 AND MIT",
-    "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
-    "Historical Permission Notice and Disclaimer (HPND)",
-    "isc license",
-    "isc license (iscl)",
-    "gnu lgpl",
-    "lgpl with exceptions or zpl",
-    "LGPLv2+",
-    "GNU Lesser General Public License v2 (LGPLv2)",
-    "GNU Lesser General Public License v2 or later (LGPLv2+)",
-    "mit",
-    "mit license",
-    "MIT",
-    "Mozilla Public License 2.0 (MPL 2.0)",
-    "MPL-2.0",
-    "psf-2.0",
-    "python software foundation",
-    "python software foundation license",
-    "zpl 2.1",
-]
-# This starting list is relatively conservative. Depending on the project, it
-# may make sense to move some of these into the authorized list
-unauthorized_licenses = [
-    "agpl",
-    "gnu agpl",
-    "gpl v3",
-    "gplv3",
-    "gpl v2",
-    "gplv2",
-    "gpl v1",
-    "gplv1",
-]

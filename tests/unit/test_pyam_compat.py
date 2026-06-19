@@ -14,9 +14,7 @@ def test_to_int_value_error(test_iam_df):
     idf.loc[postion, "time"] = bad_val
 
     if pd.__version__.startswith("1"):
-        error_msg = re.escape(
-            f"Unknown string format: {bad_val} present at position {postion}"
-        )
+        error_msg = re.escape(f"Unknown string format: {bad_val} present at position {postion}")
 
     else:
         error_msg = re.escape(f"Invalid time domain: {bad_val}")

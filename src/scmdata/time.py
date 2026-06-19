@@ -6,7 +6,7 @@ Thanks to the original author, Sven Willner
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 import cftime
 import numpy as np
@@ -32,10 +32,7 @@ def _float_year_to_datetime(inp: float) -> np.datetime64:
     year = int(inp)
     fractional_part = inp - year
     return np.datetime64(year - 1970, "Y") + np.timedelta64(
-        int(
-            (datetime(year + 1, 1, 1) - datetime(year, 1, 1)).total_seconds()
-            * fractional_part
-        ),
+        int((datetime(year + 1, 1, 1) - datetime(year, 1, 1)).total_seconds() * fractional_part),
         "s",
     )
 
@@ -133,9 +130,7 @@ class TimePoints:
         """
         return pd.Index(self._values.astype(object), dtype=object, name="time")
 
-    def as_cftime(
-        self, date_cls: Type[cftime.datetime] = cftime.DatetimeGregorian
-    ) -> list:
+    def as_cftime(self, date_cls: type[cftime.datetime] = cftime.DatetimeGregorian) -> list:
         """
         Format time points as :class:`cftime.datetime`
 
@@ -237,18 +232,10 @@ class TimeseriesConverter:
         source_time_points: np.ndarray,
         target_time_points: np.ndarray,
         interpolation_type: str = "linear",
-        extrapolation_type: Optional[str] = "linear",
+        extrapolation_type: str | None = "linear",
     ):
-        self.source = (
-            np.array(source_time_points)
-            .astype(_TARGET_DTYPE)
-            .astype(_TARGET_TYPE, copy=True)
-        )
-        self.target = (
-            np.array(target_time_points)
-            .astype(_TARGET_DTYPE)
-            .astype(_TARGET_TYPE, copy=True)
-        )
+        self.source = np.array(source_time_points).astype(_TARGET_DTYPE).astype(_TARGET_TYPE, copy=True)
+        self.target = np.array(target_time_points).astype(_TARGET_DTYPE).astype(_TARGET_TYPE, copy=True)
         self.interpolation_type = interpolation_type
         self.extrapolation_type = extrapolation_type
 
@@ -275,14 +262,12 @@ class TimeseriesConverter:
         bool
             Can I convert between the time points?
         """
-        if self.extrapolation_type is None and (
-            source[0] > target[0] or source[-1] < target[-1]
-        ):
+        if self.extrapolation_type is None and (source[0] > target[0] or source[-1] < target[-1]):
             return False
 
         return True
 
-    def _get_scipy_extrapolation_args(self, values: np.ndarray) -> Dict[str, Any]:
+    def _get_scipy_extrapolation_args(self, values: np.ndarray) -> dict[str, Any]:
         if self.extrapolation_type == "linear":
             return {"fill_value": "extrapolate"}
         if self.extrapolation_type == "constant":

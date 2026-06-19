@@ -59,9 +59,7 @@ class NetCDFDatabaseBackend(BaseDatabaseBackend):
             Path in which to save the data without spaces or special characters
         """
         levels = {
-            database_level: sr.get_unique_meta(
-                database_level, no_duplicates=True
-            ).replace(os.sep, "_")
+            database_level: sr.get_unique_meta(database_level, no_duplicates=True).replace(os.sep, "_")
             for database_level in self.kwargs["levels"]
         }
 
@@ -186,8 +184,7 @@ class NetCDFDatabaseBackend(BaseDatabaseBackend):
         load_files = [
             v
             for vlist in [
-                glob.glob(os.path.join(self.kwargs["root_dir"], g), recursive=True)
-                for g in globs_to_check
+                glob.glob(os.path.join(self.kwargs["root_dir"], g), recursive=True) for g in globs_to_check
             ]
             for v in vlist
         ]

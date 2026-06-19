@@ -102,9 +102,7 @@ def test_map_deprecated(scm_run):
     with pytest.warns(DeprecationWarning, match="Use RunGroupby.apply instead"):
         res = scm_run.groupby("scenario").map(func)
 
-    assert_scmdf_almost_equal(
-        res, scm_run * 2, allow_unordered=True, check_ts_names=False
-    )
+    assert_scmdf_almost_equal(res, scm_run * 2, allow_unordered=True, check_ts_names=False)
 
 
 def test_groupby_integer_metadata():

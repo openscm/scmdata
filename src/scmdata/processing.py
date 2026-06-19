@@ -4,6 +4,7 @@ Miscellaneous functions for processing :class:`scmdata.ScmRun`
 These functions are intended to be able to be used directly with
 :meth:`scmdata.ScmRun.process_over`.
 """
+
 import numpy as np
 import pandas as pd
 import tqdm.autonotebook as tqdman
@@ -140,9 +141,7 @@ def calculate_crossing_times_quantiles(
                                3                  2006
                                4                  2006
     dtype: object
-    >>> calculate_crossing_times_quantiles(
-    ...     crossing_times, groupby=["climate_model", "scenario"]
-    ... )
+    >>> calculate_crossing_times_quantiles(crossing_times, groupby=["climate_model", "scenario"])
     climate_model  scenario    quantile
     x_model        a_scenario  0.05        2006.0
                                0.50        2007.0
@@ -165,9 +164,7 @@ def calculate_crossing_times_quantiles(
     crossing_times_quantiles = crossing_times_full.groupby(groupby).quantile(
         q=quantiles, interpolation=interpolation
     )
-    out = crossing_times_quantiles.where(
-        crossing_times_quantiles < out_nan_threshold, other=pd.NA
-    )
+    out = crossing_times_quantiles.where(crossing_times_quantiles < out_nan_threshold, other=pd.NA)
     out.index = out.index.set_names("quantile", level=-1)
 
     return out
@@ -175,9 +172,7 @@ def calculate_crossing_times_quantiles(
 
 def _assert_only_one_value(scmrun, col):
     if len(scmrun.get_unique_meta(col)) > 1:
-        raise ValueError(
-            f"More than one value for {col}. " "This is unlikely to be what you want."
-        )
+        raise ValueError(f"More than one value for {col}. This is unlikely to be what you want.")
 
 
 def _get_exceedance_fraction(ts, group_cols):
@@ -205,9 +200,7 @@ def _set_index_level_to(inp, col, val):
     return inp
 
 
-def calculate_exceedance_probabilities(
-    scmrun, threshold, process_over_cols, output_name=None
-):
+def calculate_exceedance_probabilities(scmrun, threshold, process_over_cols, output_name=None):
     """
     Calculate exceedance probability over all time
 
@@ -266,9 +259,7 @@ def calculate_exceedance_probabilities(
     return out
 
 
-def calculate_exceedance_probabilities_over_time(
-    scmrun, threshold, process_over_cols, output_name=None
-):
+def calculate_exceedance_probabilities_over_time(scmrun, threshold, process_over_cols, output_name=None):
     """
     Calculate exceedance probability at each point in time
 
@@ -398,9 +389,7 @@ def calculate_peak_time(scmrun, output_name=None, return_year=True):
     if return_year:
         out = out.apply(lambda x: x.year)
 
-    out = _set_peak_output_name(
-        out, output_name, "Year of peak" if return_year else "Time of peak"
-    )
+    out = _set_peak_output_name(out, output_name, "Year of peak" if return_year else "Time of peak")
 
     return out
 
@@ -473,9 +462,7 @@ def categorisation_sr15(scmrun, index):
     peak_median = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.5)))
     peak_p33 = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.33)))
     peak_p66 = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.66)))
-    end_of_century_median = _get_comp_series(
-        calculate_peak(scmrun.filter(quantile=0.5, year=2100))
-    )
+    end_of_century_median = _get_comp_series(calculate_peak(scmrun.filter(quantile=0.5, year=2100)))
 
     categories[peak_median > 2.0] = "Above 2C"
     categories[peak_median <= 1.5] = "Below 1.5C"
@@ -490,9 +477,7 @@ def categorisation_sr15(scmrun, index):
 
     still_uncategorised = categories.isna()
     peak_p66_lte_2 = peak_p66 <= 2.0  # p exceed < 0.34
-    categories[
-        still_uncategorised & (peak_median <= 2.0) & ~peak_p66_lte_2
-    ] = "Higher 2C"
+    categories[still_uncategorised & (peak_median <= 2.0) & ~peak_p66_lte_2] = "Higher 2C"
     categories[still_uncategorised & peak_p66_lte_2] = "Lower 2C"
 
     if categories.isna().any():  # pragma: no cover # emergency valve
@@ -506,7 +491,7 @@ def _calculate_quantile_groupby(base, index, quantile):
 
 
 def _raise_missing_variable_error(name, requested, scmrun):
-    msg = "{} `{}` is not available. " "Available variables:{}".format(
+    msg = "{} `{}` is not available. Available variables:{}".format(
         name, requested, scmrun.get_unique_meta("variable")
     )
     raise ValueError(msg)
@@ -670,16 +655,12 @@ def calculate_summary_stats(  # noqa: PLR0912, PLR0913, PLR0915
 
     scmrun_categorisation = scmrun.filter(variable=categorisation_variable)
     if scmrun_categorisation.empty:
-        _raise_missing_variable_error(
-            "categorisation_variable", categorisation_variable, scmrun
-        )
+        _raise_missing_variable_error("categorisation_variable", categorisation_variable, scmrun)
 
     _categorisation_quantile_cols = categorisation_quantile_cols
     if isinstance(_categorisation_quantile_cols, str):
         _categorisation_quantile_cols = [_categorisation_quantile_cols]
-    if not all(
-        [v in scmrun_categorisation.meta for v in _categorisation_quantile_cols]
-    ):
+    if not all([v in scmrun_categorisation.meta for v in _categorisation_quantile_cols]):
         msg = (
             f"categorisation_quantile_cols `{categorisation_quantile_cols}` not in `scmrun`. "
             f"Available columns:{scmrun.meta.columns.tolist()}"
@@ -700,9 +681,7 @@ def calculate_summary_stats(  # noqa: PLR0912, PLR0913, PLR0915
             "SR1.5 category",
         )
     ]
-    func_calls_args_kwargs = (
-        exceedance_prob_calls + peak_calls + peak_time_calls + categorisation_calls
-    )
+    func_calls_args_kwargs = exceedance_prob_calls + peak_calls + peak_time_calls + categorisation_calls
 
     if progress:
         iterator = tqdman.tqdm(func_calls_args_kwargs)
@@ -716,8 +695,7 @@ def calculate_summary_stats(  # noqa: PLR0912, PLR0913, PLR0915
         return res
 
     series = [
-        get_result(func, args, kwargs, name).reorder_levels(_index)
-        for func, args, kwargs, name in iterator
+        get_result(func, args, kwargs, name).reorder_levels(_index) for func, args, kwargs, name in iterator
     ]
     if not peak_return_year:
         series = [s.astype("object") for s in series]

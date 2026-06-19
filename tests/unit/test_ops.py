@@ -60,9 +60,7 @@ def base_multiple_scmrun():
 
 @pytest.fixture
 def other_multiple_scmrun():
-    return get_multiple_ts(
-        data=np.array([[-1, 0, 3.2], [11.1, 20, 32.3]]).T, scenario="Scenario B"
-    )
+    return get_multiple_ts(data=np.array([[-1, 0, 3.2], [11.1, 20, 32.3]]).T, scenario="Scenario B")
 
 
 def convert_to_pint_name(unit):
@@ -96,18 +94,14 @@ def perform_op(base, other, op, reset_index):
 
 @patch("scmdata.ops.has_scipy", False)
 def test_no_scipy(scm_run):
-    with pytest.raises(
-        ImportError, match="scipy is not installed. Run 'pip install scipy'"
-    ):
+    with pytest.raises(ImportError, match="scipy is not installed. Run 'pip install scipy'"):
         scm_run.cumulative_trapezoid()
 
 
 @OPS_MARK
 @pytest.mark.filterwarnings("ignore:divide by zero")
 def test_single_timeseries(op, base_single_scmrun, other_single_scmrun):
-    res = getattr(base_single_scmrun, op)(
-        other_single_scmrun, op_cols={"variable": "Emissions|CO2|AFOLU"}
-    )
+    res = getattr(base_single_scmrun, op)(other_single_scmrun, op_cols={"variable": "Emissions|CO2|AFOLU"})
 
     exp_ts = perform_op(base_single_scmrun, other_single_scmrun, op, "variable")
     exp_ts["variable"] = "Emissions|CO2|AFOLU"
@@ -129,9 +123,7 @@ def test_single_timeseries(op, base_single_scmrun, other_single_scmrun):
 @OPS_MARK
 @pytest.mark.filterwarnings("ignore:divide by zero")
 def test_multiple_timeseries(op, base_multiple_scmrun, other_multiple_scmrun):
-    res = getattr(base_multiple_scmrun, op)(
-        other_multiple_scmrun, op_cols={"scenario": "A to B"}
-    )
+    res = getattr(base_multiple_scmrun, op)(other_multiple_scmrun, op_cols={"scenario": "A to B"})
 
     exp_ts = perform_op(base_multiple_scmrun, other_multiple_scmrun, op, "scenario")
     exp_ts["scenario"] = "A to B"
@@ -140,9 +132,7 @@ def test_multiple_timeseries(op, base_multiple_scmrun, other_multiple_scmrun):
         exp_ts["unit"] = exp_ts["unit"].apply(convert_to_pint_name).values
 
     elif op == "multiply":
-        exp_ts["unit"] = (
-            exp_ts["unit"].apply(lambda x: convert_to_pint_name(f"({x})**2")).values
-        )
+        exp_ts["unit"] = exp_ts["unit"].apply(lambda x: convert_to_pint_name(f"({x})**2")).values
 
     elif op == "divide":
         exp_ts["unit"] = "dimensionless"
@@ -157,8 +147,7 @@ def test_missing_series_error():
     other = get_multiple_ts(region=["World|R5LAM", "World|R5OECD"])
 
     error_msg = re.escape(
-        "No equivalent in `other` for "
-        "[('model', 'mod'), ('region', 'World|R5REF'), ('scenario', 'scen')]"
+        "No equivalent in `other` for [('model', 'mod'), ('region', 'World|R5REF'), ('scenario', 'scen')]"
     )
     with pytest.raises(KeyError, match=error_msg):
         base.add(other, op_cols={"variable": "Warming plus Cumulative emissions CO2"})
@@ -168,10 +157,7 @@ def test_different_unit_error():
     base = get_single_ts(variable="Surface Temperature", unit="K")
     other = get_single_ts(variable="Cumulative Emissions|CO2", unit="GtC")
 
-    error_msg = re.escape(
-        "Cannot convert from 'kelvin' ([temperature]) to "
-        "'gigatC' ([mass] * [carbon])"
-    )
+    error_msg = re.escape("Cannot convert from 'kelvin' ([temperature]) to 'gigatC' ([mass] * [carbon])")
     with pytest.raises(DimensionalityError, match=error_msg):
         base.add(other, op_cols={"variable": "Warming plus Cumulative emissions CO2"})
 
@@ -201,9 +187,7 @@ def test_warming_per_gt():
     base = get_single_ts(variable="Surface Temperature", unit="K")
     other = get_single_ts(variable="Cumulative Emissions|CO2", unit="GtC")
 
-    res = base.divide(
-        other, op_cols={"variable": "Warming per Cumulative emissions CO2"}
-    )
+    res = base.divide(other, op_cols={"variable": "Warming per Cumulative emissions CO2"})
 
     exp_ts = perform_op(base, other, "divide", ["variable", "unit"])
     exp_ts["variable"] = "Warming per Cumulative emissions CO2"
@@ -254,9 +238,7 @@ def perform_pint_op(base, pint_obj, op):
 @OPS_MARK
 def test_scalar_ops_pint(op):
     scalar = 1 * unit_registry("MtC / yr")
-    start = get_multiple_ts(
-        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
-    )
+    start = get_multiple_ts(variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"])
 
     exp_ts = perform_pint_op(start, scalar, op)
     exp = ScmRun(exp_ts)
@@ -291,9 +273,7 @@ def test_scalar_ops_pint(op):
 @pytest.mark.xfail(reason="pint doesn't recognise ScmRun")
 def test_scalar_divide_pint_by_run():
     scalar = 1 * unit_registry("MtC / yr")
-    start = get_multiple_ts(
-        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
-    )
+    start = get_multiple_ts(variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"])
 
     exp_ts = perform_pint_op(start, scalar, "divide_inverse")
     exp = ScmRun(exp_ts)
@@ -308,9 +288,7 @@ def test_scalar_divide_pint_by_run():
 @pytest.mark.xfail(reason="pint doesn't recognise ScmRun")
 def test_scalar_multiply_pint_by_run():
     scalar = 1 * unit_registry("MtC / yr")
-    start = get_multiple_ts(
-        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
-    )
+    start = get_multiple_ts(variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"])
 
     exp_ts = perform_pint_op(start, scalar, "multiply_inverse")
     exp = ScmRun(exp_ts)
@@ -325,9 +303,7 @@ def test_scalar_multiply_pint_by_run():
 @pytest.mark.parametrize("op", ["add", "subtract"])
 def test_scalar_ops_pint_wrong_unit(op):
     scalar = 1 * unit_registry("Mt CH4 / yr")
-    start = get_multiple_ts(
-        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
-    )
+    start = get_multiple_ts(variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"])
 
     error_msg = re.escape(
         "Cannot convert from 'gigatC / yr' ([mass] * [carbon] / [time]) "
@@ -348,9 +324,7 @@ def test_scalar_ops_pint_wrong_unit(op):
 @pytest.mark.filterwarnings("ignore:divide by zero")
 def test_vector_ops_pint(op):
     vector = np.arange(3) * unit_registry("MtC / yr")
-    start = get_multiple_ts(
-        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
-    )
+    start = get_multiple_ts(variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"])
 
     exp_ts = perform_pint_op(start, vector, op)
     exp = ScmRun(exp_ts)
@@ -386,9 +360,7 @@ def test_vector_ops_pint(op):
 @pytest.mark.parametrize("start_unit", ("GtC / yr", ["Mt CH4 / yr", "GtC / yr"]))
 def test_vector_ops_pint_wrong_unit(op, start_unit):
     vector = np.arange(3) * unit_registry("Mt CH4 / yr")
-    start = get_multiple_ts(
-        variable="Emissions|Gas", unit=start_unit, scenario=["scen_a", "scen_b"]
-    )
+    start = get_multiple_ts(variable="Emissions|Gas", unit=start_unit, scenario=["scen_a", "scen_b"])
 
     error_msg = re.escape(
         "Cannot convert from 'gigatC / yr' ([mass] * [carbon] / [time]) "
@@ -429,9 +401,7 @@ def perform_op_float_int(base, scalar, op):
 @OPS_MARK
 @pytest.mark.parametrize("scalar", (1, 1.0))
 def test_scalar_ops_float_int(op, scalar):
-    start = get_multiple_ts(
-        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
-    )
+    start = get_multiple_ts(variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"])
 
     exp_ts = perform_op_float_int(start, scalar, op)
     exp = ScmRun(exp_ts)
@@ -457,9 +427,7 @@ def test_scalar_ops_float_int(op, scalar):
 @OPS_MARK
 @pytest.mark.parametrize("shape", ((2, 2), (3, 2), (3, 3, 3)))
 def test_wrong_shape_ops(op, shape):
-    start = get_multiple_ts(
-        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
-    )
+    start = get_multiple_ts(variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"])
 
     other = np.arange(np.prod(shape)).reshape(shape)
 
@@ -482,9 +450,7 @@ def test_wrong_shape_ops(op, shape):
 
 
 @OPS_MARK
-@pytest.mark.parametrize(
-    "vector", (np.arange(3).astype(int), np.arange(3).astype(float))
-)
+@pytest.mark.parametrize("vector", (np.arange(3).astype(int), np.arange(3).astype(float)))
 @pytest.mark.filterwarnings("ignore:divide by zero")
 def test_vector_ops_float_int(op, vector):
     start = get_multiple_ts(
@@ -516,15 +482,11 @@ def test_vector_ops_float_int(op, vector):
 
 @OPS_MARK
 def test_wrong_length_ops(op):
-    start = get_multiple_ts(
-        variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"]
-    )
+    start = get_multiple_ts(variable="Emissions|CO2", unit="GtC / yr", scenario=["scen_a", "scen_b"])
 
     other = np.arange(start.shape[1] - 1)
 
-    error_msg = re.escape(
-        "only vectors with the same number of timesteps as self (3) are supported"
-    )
+    error_msg = re.escape("only vectors with the same number of timesteps as self (3) are supported")
     with pytest.raises(ValueError, match=error_msg):
         if op == "add":
             start + other
@@ -542,9 +504,7 @@ def test_wrong_length_ops(op):
             raise NotImplementedError(op)
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 @pytest.mark.parametrize("out_var", (None, "new out var"))
 # We can add initial back if use case arises. At the moment I can't see an easy
 # way to make the units behave.
@@ -560,14 +520,10 @@ def test_cumulative_trapezoid(out_var):
     else:
         exp_var = out_var
 
-    exp = get_single_ts(
-        data=np.array([0, 1.5, 4]), index=[1, 2, 3], variable=exp_var, unit="gigatC"
-    )
+    exp = get_single_ts(data=np.array([0, 1.5, 4]), index=[1, 2, 3], variable=exp_var, unit="gigatC")
     # rtol is because our calculation uses seconds, which doesn't work out
     # quite the same as assuming a regular year
-    assert_scmdf_almost_equal(
-        res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
-    )
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3)
 
 
 def test_cumulative_trapezoid_time_handling_big_jumps():
@@ -583,9 +539,7 @@ def test_cumulative_trapezoid_time_handling_big_jumps():
 
 
 def test_cumulative_trapezoid_time_handling_all_over_jumps():
-    start = get_single_ts(
-        data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC / yr"
-    )
+    start = get_single_ts(data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC / yr")
 
     res = start.cumulative_trapezoid()
 
@@ -594,9 +548,7 @@ def test_cumulative_trapezoid_time_handling_all_over_jumps():
     third = second + 2.5 * 0.9
     fourth = third + 3 * 9
     fifth = fourth + 2.4 * 30
-    npt.assert_allclose(
-        res.values.squeeze(), [first, second, third, fourth, fifth], rtol=1e-3
-    )
+    npt.assert_allclose(res.values.squeeze(), [first, second, third, fourth, fifth], rtol=1e-3)
 
 
 @pytest.mark.parametrize(
@@ -630,9 +582,7 @@ def test_integration_nan_handling(method, exp):
     )
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 def test_cumulative_trapezoid_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
     start = get_multiple_ts(
@@ -658,9 +608,7 @@ def test_cumulative_trapezoid_multiple_ts():
             exp_comp.get_unique_meta("unit", no_duplicates=True),
         )
 
-        assert_scmdf_almost_equal(
-            res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3
-        )
+        assert_scmdf_almost_equal(res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3)
 
 
 @pytest.mark.parametrize("out_var", (None, "new out var"))
@@ -721,25 +669,19 @@ def test_cumsum_multiple_ts():
             exp_comp.get_unique_meta("unit", no_duplicates=True),
         )
 
-        assert_scmdf_almost_equal(
-            res_comp, exp_comp, allow_unordered=True, check_ts_names=False
-        )
+        assert_scmdf_almost_equal(res_comp, exp_comp, allow_unordered=True, check_ts_names=False)
 
 
 def test_integrate_deprecated():
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[2020, 2021, 2024], unit="GtC / yr")
 
-    match = (
-        "integrate has been deprecated in preference of cumsum and cumulative_trapezoid"
-    )
+    match = "integrate has been deprecated in preference of cumsum and cumulative_trapezoid"
     with pytest.warns(DeprecationWarning, match=match):
         start.integrate()
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 @pytest.mark.parametrize("out_var", (None, "new out var"))
 def test_delta_per_delta_time(out_var):
     dat = [1, 2, 3]
@@ -752,14 +694,10 @@ def test_delta_per_delta_time(out_var):
     else:
         exp_var = out_var
 
-    exp = get_single_ts(
-        data=np.array([1, 1]), index=[1.5, 2.5], variable=exp_var, unit="GtC / yr^2"
-    )
+    exp = get_single_ts(data=np.array([1, 1]), index=[1.5, 2.5], variable=exp_var, unit="GtC / yr^2")
     # rtol is because our calculation uses seconds, which doesn't work out
     # quite the same as assuming a regular year
-    assert_scmdf_almost_equal(
-        res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
-    )
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3)
 
 
 def test_delta_per_delta_time_handling_big_jumps():
@@ -775,9 +713,7 @@ def test_delta_per_delta_time_handling_big_jumps():
 
 
 def test_delta_per_delta_time_handling_all_over_jumps():
-    start = get_single_ts(
-        data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC"
-    )
+    start = get_single_ts(data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC")
 
     res = start.delta_per_delta_time().convert_unit("GtC / yr")
 
@@ -807,9 +743,7 @@ def test_delta_per_delta_time_nan_handling():
     )
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 def test_delta_per_delta_time_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature"]
     start = get_multiple_ts(
@@ -849,14 +783,10 @@ def test_delta_per_delta_time_multiple_ts():
             exp_comp.get_unique_meta("unit", no_duplicates=True),
         )
 
-        assert_scmdf_almost_equal(
-            res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3
-        )
+        assert_scmdf_almost_equal(res_comp, exp_comp, allow_unordered=True, check_ts_names=False, rtol=1e-3)
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 def test_linear_regression():
     dat = [1, 2, 3]
     start = get_single_ts(data=dat, index=[1970, 1971, 1972], unit="GtC / yr")
@@ -881,15 +811,11 @@ def test_linear_regression_handling_big_jumps():
 
 
 def test_linear_regression_handling_all_over_jumps():
-    start = get_single_ts(
-        data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC"
-    )
+    start = get_single_ts(data=[1, 2, 3, 3, 1.8], index=[10, 10.1, 11, 20, 50], unit="GtC")
 
     res = start.linear_regression()
 
-    npt.assert_allclose(
-        res[0]["gradient"].to("GtC / yr").magnitude, -0.00439, rtol=1e-3
-    )
+    npt.assert_allclose(res[0]["gradient"].to("GtC / yr").magnitude, -0.00439, rtol=1e-3)
 
 
 def test_linear_regression_nan_handling():
@@ -912,9 +838,7 @@ def test_linear_regression_nan_handling():
     assert np.isnan(res[0]["intercept"])
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 def test_linear_regression_multiple_ts():
     variables = ["Emissions|CO2", "Heat Uptake", "Temperature", "Temperature Ocean"]
     start = get_multiple_ts(
@@ -931,9 +855,7 @@ def test_linear_regression_multiple_ts():
         if r["variable"] == "Emissions|CO2":
             npt.assert_allclose(r["gradient"].to("Mt CO2 / yr").magnitude, 1, rtol=1e-3)
         elif r["variable"] == "Heat Uptake":
-            npt.assert_allclose(
-                r["gradient"].to("J / m^2 / yr").magnitude, -1, rtol=1e-3
-            )
+            npt.assert_allclose(r["gradient"].to("J / m^2 / yr").magnitude, -1, rtol=1e-3)
         elif r["variable"] == "Temperature":
             npt.assert_allclose(r["gradient"].to("K / yr").magnitude, 5, rtol=1e-3)
         elif r["variable"] == "Temperature Ocean":
@@ -942,9 +864,7 @@ def test_linear_regression_multiple_ts():
             raise NotImplementedError(r["variable"])
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 @pytest.mark.parametrize(
     "unit,exp_values",
     (
@@ -980,9 +900,7 @@ def test_linear_regression_gradient(unit, exp_values):
     pdt.assert_frame_equal(res, exp, rtol=1e-3, check_like=True)
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 @pytest.mark.parametrize(
     "unit,exp_values",
     (
@@ -1026,9 +944,7 @@ def test_linear_regression_intercept(unit, exp_values):
     pdt.assert_frame_equal(res, exp, rtol=1e-3, check_like=True)
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 def test_linear_regression_scmrun():
     start = get_multiple_ts(
         data=np.array([[1, 2, 3], [-1, -2, -3], [0, 8, 10], [0, 5, 10]]).T,
@@ -1048,9 +964,7 @@ def test_linear_regression_scmrun():
         scenario=["a", "b", "c", "d"],
     )
 
-    assert_scmdf_almost_equal(
-        res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3
-    )
+    assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False, rtol=1e-3)
 
 
 @pytest.mark.parametrize(
@@ -1169,9 +1083,7 @@ def test_adjust_median_to_target_single_ts(evaluation_period, exp_shift, target_
 
     exp = start.copy() - exp_shift + target_median
 
-    res = start.adjust_median_to_target(
-        target_median, evaluation_period, process_over="ensemble_member"
-    )
+    res = start.adjust_median_to_target(target_median, evaluation_period, process_over="ensemble_member")
 
     assert_scmdf_almost_equal(res, exp, allow_unordered=True, check_ts_names=False)
 
@@ -1188,9 +1100,7 @@ def test_adjust_median_to_target_single_ts(evaluation_period, exp_shift, target_
     ),
 )
 @pytest.mark.parametrize("target_median", (0.43, 1.0))
-def test_adjust_median_to_target_multiple_ts(
-    evaluation_period, exp_shift, target_median
-):
+def test_adjust_median_to_target_multiple_ts(evaluation_period, exp_shift, target_median):
     start = get_single_ts(
         np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T,
         [2000, 2010, 2020],
@@ -1238,15 +1148,9 @@ def test_adjust_median_to_target_process_over(process_over):
         ensemble_member=[0, 1, 2],
     )
     index = [2000, 2010, 2020]
-    start = get_single_ts(
-        np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T, index, **get_ts_kwargs
-    )
+    start = get_single_ts(np.array([[1, 2, 3], [2, 3.5, 4], [3, 4, 5]]).T, index, **get_ts_kwargs)
 
-    if (
-        process_over is None
-        or process_over == "not supplied"
-        or process_over in ["scenario", ["scenario"]]
-    ):
+    if process_over is None or process_over == "not supplied" or process_over in ["scenario", ["scenario"]]:
         exp = get_single_ts(
             np.array([[0.5, 1.5, 2.5], [0.25, 1.75, 2.25], [0.5, 1.5, 2.5]]).T,
             index,
@@ -1332,13 +1236,11 @@ def test_custom_registry(custom_unit_registry):
     pop = get_single_ts(variable="Population", unit="million population")
 
     with patch("scmdata.units.get_unit_registry", return_value=custom_unit_registry):
-        res = emms.divide(
-            pop, op_cols={"variable": "Emissions|CO2 per capita"}
-        ).convert_unit("ktCO2 / yr / population")
+        res = emms.divide(pop, op_cols={"variable": "Emissions|CO2 per capita"}).convert_unit(
+            "ktCO2 / yr / population"
+        )
 
         assert res.get_unique_meta("unit", True) == "ktCO2 / yr / population"
 
-    with pytest.raises(
-        UndefinedUnitError, match="'million' is not defined in the unit registry"
-    ):
+    with pytest.raises(UndefinedUnitError, match="'million' is not defined in the unit registry"):
         emms.divide(pop, op_cols={"variable": "Emissions|CO2 per capita"})

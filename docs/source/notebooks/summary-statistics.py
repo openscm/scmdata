@@ -157,9 +157,7 @@ print(runs.quantiles_over.__doc__)
 
 # %%
 
-summary_stats = runs.quantiles_over(
-    cols="run_id", quantiles=[0.05, 0.17, 0.5, 0.83, 0.95, "mean", "median"]
-)
+summary_stats = runs.quantiles_over(cols="run_id", quantiles=[0.05, 0.17, 0.5, 0.83, 0.95, "mean", "median"])
 summary_stats
 
 # %% [markdown]

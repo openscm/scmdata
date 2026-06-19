@@ -3,6 +3,7 @@ scmdata, simple data handling for simple climate model data.
 
 See README and docs for more info.
 """
+
 try:
     from importlib.metadata import version as _version
 except ImportError:
@@ -18,4 +19,4 @@ except Exception:  # pylint: disable=broad-except  # pragma: no cover
 from scmdata.database import ScmDatabase
 from scmdata.run import ScmRun, run_append
 
-__all__ = ["ScmRun", "ScmDatabase", "run_append"]
+__all__ = ["ScmDatabase", "ScmRun", "run_append"]

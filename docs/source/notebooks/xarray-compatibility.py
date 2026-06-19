@@ -67,9 +67,7 @@ start
 
 # %%
 
-start.plumeplot(
-    quantile_over="ensemble_member", hue_var="variable", hue_label="Variable"
-)
+start.plumeplot(quantile_over="ensemble_member", hue_var="variable", hue_label="Variable")
 
 # %% [markdown]
 # However, we can cast to an xarray DataSet and then all the xarray methods become available too.
@@ -98,9 +96,7 @@ xr_ds["gsat"].plot.line(hue="ensemble_member", add_legend=False)
 
 # %%
 
-xr_ds["gsat"].sel(ensemble_member=range(10)).plot.line(
-    hue="ensemble_member", add_legend=False
-)
+xr_ds["gsat"].sel(ensemble_member=range(10)).plot.line(hue="ensemble_member", add_legend=False)
 
 # %% [markdown]
 # Scatter plots.

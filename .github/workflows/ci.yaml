@@ -12,75 +12,75 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
-      - uses: ./.github/actions/setup
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
         with:
-          python-version: "3.10"
-          venv-id: "docs"
-          poetry-dependency-install-flags: "--all-extras --only 'main,dev'"
+          python-version: "3.11"
+      - name: Install dependencies
+        run: uv sync --all-extras
       # There are still a lot of mypy errors to resolve
       - name: mypy
         continue-on-error: true
-        run: MYPYPATH=stubs poetry run mypy src
+        run: MYPYPATH=stubs uv run mypy src
 
   docs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
-      - uses: ./.github/actions/setup
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
         with:
-          python-version: "3.10"
-          venv-id: "docs"
-          poetry-dependency-install-flags: "--all-extras --only 'main,docs,notebooks'"
+          python-version: "3.11"
+      - name: Install dependencies
+        run: uv sync --all-extras --group docs
       - name: docs
         # TODO: Enable -W option once the sphinx warnings are cleared up
-        run: poetry run sphinx-build --keep-going -T -b html docs/source docs/build
+        run: uv run sphinx-build --keep-going -T -b html docs/source docs/build
 
   tests:
     strategy:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest" ]
-        python-version: [ "3.10", "3.11" ]
+        python-version: [ "3.11", "3.12", "3.13" ]
     runs-on: "${{ matrix.os }}"
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
-      - uses: ./.github/actions/setup
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
         with:
           python-version: "${{ matrix.python-version }}"
-          venv-id: "tests-${{ runner.os }}"
-          poetry-dependency-install-flags: "--all-extras"
+      - name: Install dependencies
+        run: uv sync --all-extras
       - name: Run tests
         run: |
-          poetry run pytest -r a -v src tests --doctest-modules --cov=src --cov-report=term-missing --cov-report=xml
-          poetry run coverage report
+          uv run pytest -r a -v src tests --doctest-modules --cov=src --cov-report=term-missing --cov-report=xml
+          uv run coverage report
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
 
   test-xarray-versions:
+    # Guard the minimum supported xarray (see the floor in pyproject.toml).
+    # Older xarray is incompatible with pandas >= 3, so the floor tracks the
+    # first pandas-3-compatible release; the latest xarray is covered by `tests`.
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [ "3.11" ]
-        xarray-version: [ "0.18.2", "2025.01", "2025.03" ]
+        xarray-version: [ "2025.12.0" ]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-      - uses: ./.github/actions/setup
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
         with:
           python-version: "${{ matrix.python-version }}"
-          venv-id: "tests-${{ runner.os }}"
-          poetry-dependency-install-flags: "--all-extras"
-      - name: Install test dependencies
-        run: |
-          pip install xarray==${{ matrix.xarray-version }}
+      - name: Install dependencies
+        run: uv sync --all-extras
       - name: Test with pytest
         run: |
-          poetry run pytest -r a -v src tests
+          uv run --with "xarray==${{ matrix.xarray-version }}" pytest -r a -v src tests
 
   test-no-plotting:
     # This test makes sure that everything works even if the plotting
@@ -88,52 +88,48 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.11"]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-      - uses: ./.github/actions/setup
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
         with:
           python-version: "${{ matrix.python-version }}"
-          venv-id: "tests-${{ runner.os }}"
-          poetry-dependency-install-flags: "--extras optional --with tests"
+      - name: Install dependencies (no plotting extras)
+        run: uv sync --no-default-groups --extra optional --group tests
       - name: Test with pytest
         run: |
-          poetry run pytest -r a -v src tests
+          uv run --no-sync pytest -r a -v src tests
 
   imports-without-extras:
     strategy:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest" ]
-        python-version: [ "3.10", "3.11" ]
+        python-version: [ "3.11", "3.13" ]
     runs-on: "${{ matrix.os }}"
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
-      - uses: ./.github/actions/setup
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
         with:
           python-version: "${{ matrix.python-version }}"
-          venv-id: "imports-without-extras-${{ runner.os }}"
-          poetry-dependency-install-flags: "--only main"
+      - name: Install package without extras
+        run: uv sync --no-default-groups
       - name: Check importable without extras
-        run: poetry run python scripts/test-install.py
+        run: uv run --no-sync python scripts/test-install.py
 
   check-build:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
-      - uses: ./.github/actions/setup
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
         with:
-          python-version: "3.10"
-          venv-id: "check-build-${{ runner.os }}"
-          run-poetry-install: false
-          poetry-dependency-install-flags: "not used"
+          python-version: "3.11"
       - name: Build package
-        run: |
-          poetry build --no-interaction
+        run: uv build
       - name: Check build
         run: |
           tar -tvf dist/scmdata-*.tar.gz --wildcards '*scmdata/py.typed'
@@ -142,16 +138,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
-      - uses: ./.github/actions/setup
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-uv
         with:
-          python-version: "3.10"
-          venv-id: "licence-check"
-          poetry-dependency-install-flags: "--all-extras"
+          python-version: "3.11"
+      - name: Install dependencies
+        run: uv sync --all-extras
       - name: Check licences of dependencies
         shell: bash
         run: |
-          TEMP_FILE=$(mktemp)
-          poetry export --without=tests --without=docs --without=dev > $TEMP_FILE
-          poetry run liccheck -r $TEMP_FILE -R licence-check.txt
+          ./scripts/check-licences.sh
           cat licence-check.txt

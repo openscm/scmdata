@@ -38,28 +38,20 @@ def test_plumeplot(plumeplot_scmrun, quantiles_plumes):
 @sample_quantiles_plumes
 def test_plumeplot_pre_calculated(plumeplot_scmrun, quantiles_plumes):
     quantiles = [v for qv in quantiles_plumes for v in qv[0]]
-    summary_stats = ScmRun(
-        plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
-    )
+    summary_stats = ScmRun(plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles))
     summary_stats.plumeplot(
         quantiles_plumes=quantiles_plumes,
         pre_calculated=True,
     )
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 spews warnings everywhere"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 spews warnings everywhere")
 def test_plumeplot_pre_calculated_no_plume_for_one(plumeplot_scmrun):
     quantiles_plumes = (((0.05, 0.95), 0.5), ((0.5,), 1.0))
     quantiles = [v for qv in quantiles_plumes for v in qv[0]]
-    summary_stats = ScmRun(
-        plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
-    )
+    summary_stats = ScmRun(plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles))
     # drop out the plume for one of the climate models
-    summary_stats = summary_stats.filter(
-        climate_model="a_model", quantile=[0.05, 0.95], keep=False
-    )
+    summary_stats = summary_stats.filter(climate_model="a_model", quantile=[0.05, 0.95], keep=False)
 
     with pytest.warns(UserWarning) as record:
         warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -82,17 +74,11 @@ def test_plumeplot_pre_calculated_no_plume_for_one(plumeplot_scmrun):
 def test_plumeplot_pre_calculated_no_median_for_one(plumeplot_scmrun):
     quantiles_plumes = (((0.05, 0.95), 0.5), ((0.5,), 1.0))
     quantiles = [v for qv in quantiles_plumes for v in qv[0]]
-    summary_stats = ScmRun(
-        plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
-    )
+    summary_stats = ScmRun(plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles))
     # drop out the plume for one of the climate models
-    summary_stats = summary_stats.filter(
-        climate_model="a_model", quantile=0.5, keep=False
-    )
+    summary_stats = summary_stats.filter(climate_model="a_model", quantile=0.5, keep=False)
 
-    warn_msg = re.escape(
-        "Quantile 0.5 not available for a_scenario Surface Air Temperature Change"
-    )
+    warn_msg = re.escape("Quantile 0.5 not available for a_scenario Surface Air Temperature Change")
     with pytest.warns(UserWarning, match=warn_msg):
         summary_stats.plumeplot(
             quantiles_plumes=quantiles_plumes,
@@ -100,21 +86,17 @@ def test_plumeplot_pre_calculated_no_median_for_one(plumeplot_scmrun):
         )
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 spews warnings everywhere"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 spews warnings everywhere")
 def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other(
     plumeplot_scmrun,
 ):
     quantiles_plumes = (((0.05, 0.95), 0.5), ((0.5,), 1.0))
     quantiles = [v for qv in quantiles_plumes for v in qv[0]]
-    summary_stats = ScmRun(
-        plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
-    )
+    summary_stats = ScmRun(plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles))
     # drop out the plume for one of the climate models
-    summary_stats = summary_stats.filter(
-        climate_model="a_model", quantile=[0.05, 0.95], keep=False
-    ).filter(climate_model="a_model_2", quantile=0.5, keep=False)
+    summary_stats = summary_stats.filter(climate_model="a_model", quantile=[0.05, 0.95], keep=False).filter(
+        climate_model="a_model_2", quantile=0.5, keep=False
+    )
 
     with pytest.warns(UserWarning) as record:
         warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -138,21 +120,17 @@ def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other(
     )
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 spews warnings everywhere"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 spews warnings everywhere")
 def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other_different_styles(
     plumeplot_scmrun,
 ):
     quantiles_plumes = (((0.05, 0.95), 0.5), ((0.5,), 1.0))
     quantiles = [v for qv in quantiles_plumes for v in qv[0]]
-    summary_stats = ScmRun(
-        plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
-    )
+    summary_stats = ScmRun(plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles))
     # drop out the plume for one of the climate models
-    summary_stats = summary_stats.filter(
-        climate_model="a_model", quantile=[0.05, 0.95], keep=False
-    ).filter(climate_model="a_model_2", quantile=0.5, keep=False)
+    summary_stats = summary_stats.filter(climate_model="a_model", quantile=[0.05, 0.95], keep=False).filter(
+        climate_model="a_model_2", quantile=0.5, keep=False
+    )
 
     with pytest.warns(UserWarning) as record:
         warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -163,25 +141,13 @@ def test_plumeplot_pre_calculated_no_plume_for_one_no_median_for_other_different
         )
 
     assert len(record) == 3, record
-    assert (
-        record[0].message.args[0]
-        == "Quantile 0.05 not available for a_scenario a_model"
-    )
-    assert (
-        record[1].message.args[0]
-        == "Quantile 0.95 not available for a_scenario a_model"
-    )
-    assert (
-        record[2].message.args[0]
-        == "Quantile 0.5 not available for a_scenario_2 a_model_2"
-    )
+    assert record[0].message.args[0] == "Quantile 0.05 not available for a_scenario a_model"
+    assert record[1].message.args[0] == "Quantile 0.95 not available for a_scenario a_model"
+    assert record[2].message.args[0] == "Quantile 0.5 not available for a_scenario_2 a_model_2"
 
 
 def test_plumeplot_warns_dashes_without_lines(scm_run):
-    warn_msg = re.escape(
-        "`dashes` was passed but no lines were plotted, the style "
-        "settings will not be used"
-    )
+    warn_msg = re.escape("`dashes` was passed but no lines were plotted, the style settings will not be used")
     with pytest.warns(UserWarning, match=warn_msg):
         scm_run.plumeplot(
             quantiles_plumes=(((0.17, 0.83), 0.7),),
@@ -196,9 +162,7 @@ def test_plumeplot_non_unique_lines(plumeplot_scmrun):
     scenario = "a_scenario"
     variable = "Surface Air Temperature Change"
 
-    summary_stats = ScmRun(
-        plumeplot_scmrun.quantiles_over(quantile_over, quantiles=(0.05, 0.5, 0.95))
-    )
+    summary_stats = ScmRun(plumeplot_scmrun.quantiles_over(quantile_over, quantiles=(0.05, 0.5, 0.95)))
 
     error_msg = re.escape(
         "More than one timeseries for "
@@ -301,9 +265,7 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
     dashes = {"a_scenario": "-", "a_scenario_2": "--"}
 
     quantiles = [v for qv in quantiles_plumes for v in qv[0]]
-    summary_stats = ScmRun(
-        plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles)
-    )
+    summary_stats = ScmRun(plumeplot_scmrun.quantiles_over("ensemble_member", quantiles=quantiles))
     summary_stats.plumeplot(
         ax=mock_ax,
         quantiles_plumes=quantiles_plumes,
@@ -355,12 +317,8 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
 
         return call(
             xaxis,
-            _get_with_empty_check(
-                idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[0])
-            ),
-            _get_with_empty_check(
-                idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[1])
-            ),
+            _get_with_empty_check(idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[0])),
+            _get_with_empty_check(idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[1])),
             alpha=alpha,
             color=palette[cm],
             label=f"{quantiles[0] * 100:.0f}th - {quantiles[1] * 100:.0f}th",
@@ -372,9 +330,7 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
 
         return call(
             xaxis,
-            _get_with_empty_check(
-                idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[0])
-            ),
+            _get_with_empty_check(idf.filter(climate_model=cm, scenario=scen, quantile=quantiles[0])),
             color=palette[cm],
             linestyle=dashes[scen],
             linewidth=linewidth,
@@ -387,24 +343,15 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
 
     plume_qa = [q for q in quantiles_plumes if len(q[0]) == 2]
     fill_between_calls = [
-        _make_fill_between_call(summary_stats, cm, scen, qa)
-        for cm, scen in cm_scen_combos
-        for qa in plume_qa
+        _make_fill_between_call(summary_stats, cm, scen, qa) for cm, scen in cm_scen_combos for qa in plume_qa
     ]
 
     # debug by looking at mock_ax.fill_between.call_args_list
-    assert all(
-        [
-            _is_in_calls(c, mock_ax.fill_between.call_args_list)
-            for c in fill_between_calls
-        ]
-    )
+    assert all([_is_in_calls(c, mock_ax.fill_between.call_args_list) for c in fill_between_calls])
 
     line_qa = [q for q in quantiles_plumes if len(q[0]) == 1]
     plot_calls = [
-        _make_plot_call(summary_stats, cm, scen, qa)
-        for cm, scen in cm_scen_combos
-        for qa in line_qa
+        _make_plot_call(summary_stats, cm, scen, qa) for cm, scen in cm_scen_combos for qa in line_qa
     ]
 
     # debug by looking at mock_ax.plot.call_args_list
@@ -414,9 +361,9 @@ def test_plumeplot_values(plumeplot_scmrun, quantiles_plumes, time_axis, linewid
 def test_plumeplot_no_dashes_single_dash_style(plumeplot_scmrun):
     # if there's only a single variable and it is used for style, without
     # specifying dashes then all the lines should come out solid
-    ax, legend_items = plumeplot_scmrun.filter(
-        variable="Surface Air Temperature Change"
-    ).plumeplot(style_var="variable")
+    ax, legend_items = plumeplot_scmrun.filter(variable="Surface Air Temperature Change").plumeplot(
+        style_var="variable"
+    )
 
     assert legend_items[-1].get_linestyle() == "-"
 
@@ -427,9 +374,7 @@ def test_plumeplot_no_dashes_single_dash_style(plumeplot_scmrun):
 # sensible error if missing style etc.
 def test_error_missing_palette(plumeplot_scmrun):
     # extra definitions are fine
-    plumeplot_scmrun.plumeplot(
-        palette={"a_scenario": "blue", "a_scenario_2": "red", "b_scenario": "green"}
-    )
+    plumeplot_scmrun.plumeplot(palette={"a_scenario": "blue", "a_scenario_2": "red", "b_scenario": "green"})
 
     # missing definitions raise
     palette_miss = {"a_scenario_2": "red", "b_scenario": "green"}
@@ -440,14 +385,10 @@ def test_error_missing_palette(plumeplot_scmrun):
 
 def test_error_missing_style(plumeplot_scmrun):
     # extra definitions are fine
-    plumeplot_scmrun.plumeplot(
-        dashes={"Surface Air Temperature Change": "-", "GMST": "--"}
-    )
+    plumeplot_scmrun.plumeplot(dashes={"Surface Air Temperature Change": "-", "GMST": "--"})
 
     # missing definitions raise
     dashes_miss = {"GMST": "--"}
-    error_msg = re.escape(
-        f"Surface Air Temperature Change not in dashes: {dashes_miss}"
-    )
+    error_msg = re.escape(f"Surface Air Temperature Change not in dashes: {dashes_miss}")
     with pytest.raises(KeyError, match=error_msg):
         plumeplot_scmrun.plumeplot(dashes=dashes_miss)

@@ -1,19 +1,34 @@
 name: Bump version
 
+# Bumps the project version with `uv version --bump`, builds the changelog with
+# towncrier, commits, tags and pushes, then lands a follow-up pre-release commit
+# on main (e.g. 0.20.0 -> 0.20.1.dev0) so subsequent commits don't share the
+# tagged version. This mirrors the process in climate-resource/github-actions,
+# vendored here via ./.github/actions/{setup-uv,bump-version}.
+
 on:
   workflow_dispatch:
     inputs:
       bump_rule:
         type: choice
-        description: How to bump the project's version (see https://python-poetry.org/docs/cli/#version)
+        description: >
+          How to bump the version. Whitespace-separated segments are passed to
+          `uv version --bump`; from a stable version a prerelease segment must
+          be combined with a release segment (e.g. "minor alpha").
         options:
           - patch
           - minor
           - major
-          - prepatch
-          - preminor
-          - premajor
-          - prerelease
+          - stable
+          - patch alpha
+          - patch beta
+          - patch rc
+          - minor alpha
+          - minor beta
+          - minor rc
+          - major alpha
+          - major beta
+          - major rc
         required: true
 
 jobs:
@@ -21,39 +36,22 @@ jobs:
     name: "Bump version and create changelog"
     if: "!startsWith(github.event.head_commit.message, 'bump:')"
     runs-on: ubuntu-latest
-    env:
-      CI_COMMIT_EMAIL: "ci-runner@scmdata.com"
-
+    permissions:
+      contents: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: "${{ secrets.PERSONAL_ACCESS_TOKEN }}"
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
 
-      # towncrier imports the package as part of building so just do the full
-      # setup here
-      - uses: ./.github/actions/setup
+      - name: Setup uv
+        uses: ./.github/actions/setup-uv
         with:
           python-version: "3.11"
-          venv-id: "bump"
-          # another test that we can import if we only install the main library
-          poetry-dependency-install-flags: "--only main"
 
-      - name: Install towncrier
-        run: |
-          poetry run pip install towncrier
-
-      - name: Create bump and changelog
-        run: |
-          BASE_VERSION=`poetry version -s`
-          NEW_VERSION=`poetry version -s ${{ github.event.inputs.bump_rule }}`
-          poetry run towncrier build --yes --version v$NEW_VERSION
-
-          git config --global user.name "$GITHUB_ACTOR"
-          git config --global user.email "$CI_COMMIT_EMAIL"
-
-          git commit -a -m "bump: version $BASE_VERSION -> $NEW_VERSION"
-          git tag v$NEW_VERSION
-          git push && git push --tags
-          echo "Bumped to version $NEW_VERSION"
+      - name: Bump version
+        uses: ./.github/actions/bump-version
+        with:
+          bump-rule: ${{ inputs.bump_rule }}
+          commit-email: "ci-runner@scmdata.invalid"

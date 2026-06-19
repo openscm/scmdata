@@ -206,9 +206,7 @@ ar4gwp100_converted["unit_context"]
 
 # %%
 # set_meta returns a new `ScmRun` with the updated metadata
-ar4gwp100_converted.set_meta(
-    "unit_context", "updated-in-set_meta", variable="Emissions|CO2|*"
-)
+ar4gwp100_converted.set_meta("unit_context", "updated-in-set_meta", variable="Emissions|CO2|*")
 
 # %%
 # The original `ScmRun` was not modified by `set_meta`

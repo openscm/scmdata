@@ -276,9 +276,7 @@ magicc_output_categorisation_quantiles = scmdata.ScmRun(
 magicc_output_categorisation_quantiles
 
 # %%
-scmdata.processing.categorisation_sr15(
-    magicc_output_categorisation_quantiles, ["climate_model", "scenario"]
-)
+scmdata.processing.categorisation_sr15(magicc_output_categorisation_quantiles, ["climate_model", "scenario"])
 
 # %% [markdown]
 # ## Set of summary variables
@@ -318,11 +316,11 @@ summary_stats.unstack(["climate_model", "statistic", "unit"])
 
 index = ["climate_model", "scenario"]
 pivot_merge_unit = summary_stats.to_frame().reset_index()
-pivot_merge_unit["statistic"] = pivot_merge_unit["statistic"] + pivot_merge_unit[
-    "unit"
-].apply(lambda x: f"({x})" if x else "")
+pivot_merge_unit["statistic"] = pivot_merge_unit["statistic"] + pivot_merge_unit["unit"].apply(
+    lambda x: f"({x})" if x else ""
+)
 pivot_merge_unit = pivot_merge_unit.drop("unit", axis="columns")
-pivot_merge_unit = pivot_merge_unit.set_index(
-    list(set(pivot_merge_unit.columns) - {"value"})
-).unstack("statistic")
+pivot_merge_unit = pivot_merge_unit.set_index(list(set(pivot_merge_unit.columns) - {"value"})).unstack(
+    "statistic"
+)
 pivot_merge_unit

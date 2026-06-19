@@ -2,23 +2,16 @@
 # Read the Docs configuration file
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
-# Thank you also https://browniebroke.com/blog/specify-docs-dependency-groups-with-poetry-and-read-the-docs/
-
 # Required
 version: 2
 
-# Set the version of Python and other tools you might need
+# Build the docs with uv. When build.commands is set, Read the Docs runs these
+# commands verbatim and the `sphinx:`/`python:` keys are ignored.
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
-    python: "3.10"
-  jobs:
-    post_create_environment:
-      - pip install poetry
-      - poetry config virtualenvs.create false
-    post_install:
-      - poetry install --with docs --all-extras
-
-# Build documentation in the docs/ directory with Sphinx
-sphinx:
-   configuration: docs/source/conf.py
+    python: "3.11"
+  commands:
+    - pip install uv
+    - uv sync --all-extras --group docs
+    - uv run sphinx-build -T -b html docs/source $READTHEDOCS_OUTPUT/html

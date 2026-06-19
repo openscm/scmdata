@@ -102,9 +102,7 @@ def _get_expected_crossing_times(exp_vals, conv_to_year):
     ),
 )
 @crossing_times_year_conversions
-def test_crossing_times(
-    threshold, exp_vals, return_year, conv_to_year, test_processing_scm_df
-):
+def test_crossing_times(threshold, exp_vals, return_year, conv_to_year, test_processing_scm_df):
     call_kwargs = _get_calculate_crossing_times_call_kwargs(return_year)
     res = scmdata.processing.calculate_crossing_times(
         test_processing_scm_df,
@@ -123,18 +121,12 @@ def test_crossing_times(
     "end_year",
     (
         5000,
-        pytest.param(
-            10**3, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")
-        ),
-        pytest.param(
-            10**4, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")
-        ),
+        pytest.param(10**3, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")),
+        pytest.param(10**4, marks=pytest.mark.xfail(reason="ScmRun fails to initialise #179")),
     ),
 )
 @crossing_times_year_conversions
-def test_crossing_times_long_runs(
-    end_year, return_year, conv_to_year, test_processing_scm_df
-):
+def test_crossing_times_long_runs(end_year, return_year, conv_to_year, test_processing_scm_df):
     test_processing_scm_df = test_processing_scm_df.timeseries(time_axis="year").rename(
         {2100: end_year}, axis="columns"
     )
@@ -210,9 +202,7 @@ def _get_expected_crossing_time_quantiles(
     return out
 
 
-@pytest.mark.parametrize(
-    "groups", (["model", "scenario"], ["climate_model", "model", "scenario"])
-)
+@pytest.mark.parametrize("groups", (["model", "scenario"], ["climate_model", "model", "scenario"]))
 @pytest.mark.parametrize(
     "quantiles,exp_quantiles",
     (
@@ -261,9 +251,7 @@ def test_crossing_times_quantiles(
     if interpolation is not None:
         call_kwargs["interpolation"] = interpolation
 
-    res = scmdata.processing.calculate_crossing_times_quantiles(
-        crossing_times, **call_kwargs
-    )
+    res = scmdata.processing.calculate_crossing_times_quantiles(crossing_times, **call_kwargs)
 
     if _check_pandas_less_120():
         check_dtype = False
@@ -282,9 +270,7 @@ def test_crossing_times_quantiles_datetime_error(
         return_year=False,
     )
     with pytest.raises(NotImplementedError):
-        scmdata.processing.calculate_crossing_times_quantiles(
-            crossing_times, ["model", "scenario"]
-        )
+        scmdata.processing.calculate_crossing_times_quantiles(crossing_times, ["model", "scenario"])
 
 
 @pytest.mark.parametrize(
@@ -304,9 +290,7 @@ def test_crossing_times_quantiles_datetime_error(
         (3000, 2805, [2025.4, 2027.0, np.nan]),
     ),
 )
-def test_crossing_times_quantiles_nan_fill_values(
-    nan_fill_value, out_nan_threshold, exp_vals
-):
+def test_crossing_times_quantiles_nan_fill_values(nan_fill_value, out_nan_threshold, exp_vals):
     data = np.array(
         [
             [1.3, 1.35, 1.5, 1.52],
@@ -365,9 +349,7 @@ def test_crossing_times_quantiles_nan_fill_values(
     pdt.assert_series_equal(res, exp, check_dtype=check_dtype)
 
 
-output_name_options = pytest.mark.parametrize(
-    "output_name", (None, "test", "test other")
-)
+output_name_options = pytest.mark.parametrize("output_name", (None, "test", "test other"))
 
 
 def _get_calculate_exceedance_probs_call_kwargs(output_name):
@@ -394,9 +376,7 @@ def _get_calculate_exeedance_probs_expected_name(output_name, threshold):
     ),
 )
 @output_name_options
-def test_exceedance_probabilities_over_time(
-    output_name, threshold, exp_vals, test_processing_scm_df
-):
+def test_exceedance_probabilities_over_time(output_name, threshold, exp_vals, test_processing_scm_df):
     call_kwargs = _get_calculate_exceedance_probs_call_kwargs(output_name)
     res = scmdata.processing.calculate_exceedance_probabilities_over_time(
         test_processing_scm_df,
@@ -406,9 +386,7 @@ def test_exceedance_probabilities_over_time(
     )
 
     exp_idx = pd.MultiIndex.from_frame(
-        test_processing_scm_df.meta.drop(
-            "ensemble_member", axis="columns"
-        ).drop_duplicates()
+        test_processing_scm_df.meta.drop("ensemble_member", axis="columns").drop_duplicates()
     )
 
     exp = pd.DataFrame(
@@ -442,9 +420,7 @@ def test_exceedance_probabilities_over_time_multiple_res(
         threshold=threshold,
     )
 
-    exp_idx = pd.MultiIndex.from_frame(
-        start.meta.drop(["ensemble_member"], axis="columns").drop_duplicates()
-    )
+    exp_idx = pd.MultiIndex.from_frame(start.meta.drop(["ensemble_member"], axis="columns").drop_duplicates())
 
     exp = pd.DataFrame(
         exp_vals,
@@ -476,9 +452,7 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
     )
 
     exp_idx = pd.MultiIndex.from_frame(
-        start.meta.drop(
-            ["climate_model", "ensemble_member"], axis="columns"
-        ).drop_duplicates()
+        start.meta.drop(["climate_model", "ensemble_member"], axis="columns").drop_duplicates()
     )
 
     exp = pd.DataFrame(
@@ -506,9 +480,7 @@ def test_exceedance_probabilities_over_time_multiple_grouping(
     ),
 )
 @output_name_options
-def test_exceedance_probabilities(
-    output_name, threshold, exp_val, test_processing_scm_df
-):
+def test_exceedance_probabilities(output_name, threshold, exp_val, test_processing_scm_df):
     call_kwargs = _get_calculate_exceedance_probs_call_kwargs(output_name)
     res = scmdata.processing.calculate_exceedance_probabilities(
         test_processing_scm_df,
@@ -518,9 +490,7 @@ def test_exceedance_probabilities(
     )
 
     exp_idx = pd.MultiIndex.from_frame(
-        test_processing_scm_df.meta.drop(
-            "ensemble_member", axis="columns"
-        ).drop_duplicates()
+        test_processing_scm_df.meta.drop("ensemble_member", axis="columns").drop_duplicates()
     )
 
     exp = pd.Series(exp_val, index=exp_idx)
@@ -546,9 +516,7 @@ def test_exceedance_probabilities_multiple_res(
         threshold=threshold,
     )
 
-    exp_idx = pd.MultiIndex.from_frame(
-        start.meta.drop("ensemble_member", axis="columns").drop_duplicates()
-    )
+    exp_idx = pd.MultiIndex.from_frame(start.meta.drop("ensemble_member", axis="columns").drop_duplicates())
 
     exp = pd.Series(exp_vals, index=exp_idx)
     exp.name = _get_calculate_exeedance_probs_expected_name(None, threshold)
@@ -574,9 +542,7 @@ def test_exceedance_probabilities_multiple_grouping(
     )
 
     exp_idx = pd.MultiIndex.from_frame(
-        start.meta.drop(
-            ["ensemble_member", "climate_model"], axis="columns"
-        ).drop_duplicates()
+        start.meta.drop(["ensemble_member", "climate_model"], axis="columns").drop_duplicates()
     )
 
     exp = pd.Series(exp_vals, index=exp_idx)
@@ -601,13 +567,9 @@ def test_exceedance_probabilities_multiple_grouping(
     ),
 )
 def test_requires_preprocessing(test_processing_scm_df, col, func, kwargs):
-    test_processing_scm_df[col] = [
-        str(i) for i in range(test_processing_scm_df.shape[0])
-    ]
+    test_processing_scm_df[col] = [str(i) for i in range(test_processing_scm_df.shape[0])]
 
-    error_msg = (
-        f"More than one value for {col}. " "This is unlikely to be what you want."
-    )
+    error_msg = f"More than one value for {col}. This is unlikely to be what you want."
     with pytest.raises(ValueError, match=error_msg):
         func(
             test_processing_scm_df,
@@ -722,9 +684,7 @@ def test_peak_time(output_name, return_year, conv_to_year, test_processing_scm_d
 
 
 @crossing_times_year_conversions
-def test_peak_time_multi_variable(
-    return_year, conv_to_year, test_processing_scm_df_multi_climate_model
-):
+def test_peak_time_multi_variable(return_year, conv_to_year, test_processing_scm_df_multi_climate_model):
     test_processing_scm_df_multi_climate_model["variable"] = [
         str(i) for i in range(test_processing_scm_df_multi_climate_model.shape[0])
     ]
@@ -739,9 +699,7 @@ def test_peak_time_multi_variable(
         dt.datetime(2007, 1, 1),
     ] * 2
 
-    res = scmdata.processing.calculate_peak_time(
-        test_processing_scm_df_multi_climate_model, **call_kwargs
-    )
+    res = scmdata.processing.calculate_peak_time(test_processing_scm_df_multi_climate_model, **call_kwargs)
 
     if conv_to_year:
         exp_vals = [v.year if conv_to_year else v for v in exp_vals]
@@ -778,9 +736,7 @@ def sr15_inferred_temperature_quantiles(test_data_path):
         for p in [0.67, 0.5, 0.34]:
             quantile = 1 - p
             cm_q = cm_median.reset_index()
-            cm_q["variable"] = cm_q["variable"].str.replace(
-                "MED", f"P{int(np.round(quantile * 100, 0))}"
-            )
+            cm_q["variable"] = cm_q["variable"].str.replace("MED", f"P{int(np.round(quantile * 100, 0))}")
             cm_q = cm_q.set_index(cm_median.index.names).sort_index()
             cm_q.iloc[:, :] = 10
             for t in [2.0, 1.5]:
@@ -800,9 +756,7 @@ def sr15_inferred_temperature_quantiles(test_data_path):
 @pytest.fixture(scope="session")
 def sr15_temperatures_unmangled_names(sr15_inferred_temperature_quantiles):
     out = sr15_inferred_temperature_quantiles.copy()
-    out["quantile"] = out["variable"].apply(
-        lambda x: float(x.split("|")[-1].strip("P")) / 100
-    )
+    out["quantile"] = out["variable"].apply(lambda x: float(x.split("|")[-1].strip("P")) / 100)
     out["variable"] = out["variable"].apply(lambda x: "|".join(x.split("|")[:-1]))
 
     return out
@@ -875,9 +829,7 @@ def test_categorisation_sr15_multi_variable(sr15_temperatures_unmangled_names):
     inp = sr15_temperatures_unmangled_names.copy()
     inp["variable"] = range(inp["variable"].shape[0])
 
-    error_msg = (
-        "More than one value for variable. " "This is unlikely to be what you want."
-    )
+    error_msg = "More than one value for variable. This is unlikely to be what you want."
     with pytest.raises(ValueError, match=error_msg):
         scmdata.processing.categorisation_sr15(inp, index=["model", "scenario"])
 
@@ -898,9 +850,7 @@ def test_categorisation_sr15_no_quantile(sr15_temperatures_unmangled_names):
     )
     with pytest.raises(MissingRequiredColumnError, match=error_msg):
         scmdata.processing.categorisation_sr15(
-            sr15_temperatures_unmangled_names.filter(quantile=0.5).drop_meta(
-                "quantile"
-            ),
+            sr15_temperatures_unmangled_names.filter(quantile=0.5).drop_meta("quantile"),
             index=["model", "scenario"],
         )
 
@@ -1107,9 +1057,7 @@ def test_calculate_summary_stats(  # noqa: PLR0912, PLR0915
         exp.append(tmp)
 
     peaks = scmdata.processing.calculate_peak(inp)
-    peak_times = scmdata.processing.calculate_peak_time(
-        inp, return_year=exp_peak_return_year
-    )
+    peak_times = scmdata.processing.calculate_peak_time(inp, return_year=exp_peak_return_year)
     for q in exp_peak_quantiles:
         peak_q = peaks.groupby(exp_index).quantile(q)
         peak_q.name = exp_peak_naming_base.format(q)
@@ -1120,9 +1068,7 @@ def test_calculate_summary_stats(  # noqa: PLR0912, PLR0915
         exp.append(peak_q)
         exp.append(peak_time_q)
 
-    inp_categories = scmdata.ScmRun(
-        inp.quantiles_over("ensemble_member", quantiles=[0.33, 0.5, 0.66])
-    )
+    inp_categories = scmdata.ScmRun(inp.quantiles_over("ensemble_member", quantiles=[0.33, 0.5, 0.66]))
     sr15_cats = scmdata.processing.categorisation_sr15(
         inp_categories,
         exp_index,
@@ -1138,21 +1084,15 @@ def test_calculate_summary_stats(  # noqa: PLR0912, PLR0915
 
     call_kwargs = {}
     if exceedance_probabilities_thresholds is not None:
-        call_kwargs[
-            "exceedance_probabilities_thresholds"
-        ] = exceedance_probabilities_thresholds
+        call_kwargs["exceedance_probabilities_thresholds"] = exceedance_probabilities_thresholds
 
     if exceedance_probabilities_output_name is not None:
-        call_kwargs[
-            "exceedance_probabilities_naming_base"
-        ] = exceedance_probabilities_output_name
+        call_kwargs["exceedance_probabilities_naming_base"] = exceedance_probabilities_output_name
 
     inp_renamed = inp.copy()
     inp_renamed["variable"] = exp_exceedance_probabilities_variable
     if exceedance_probabilities_variable is not None:
-        call_kwargs[
-            "exceedance_probabilities_variable"
-        ] = exceedance_probabilities_variable
+        call_kwargs["exceedance_probabilities_variable"] = exceedance_probabilities_variable
 
     if peak_quantiles is not None:
         call_kwargs["peak_quantiles"] = peak_quantiles
@@ -1213,8 +1153,7 @@ def test_calculate_summary_stats_no_exceedance_probability_var(
     test_processing_scm_df_multi_climate_model,
 ):
     error_msg = re.escape(
-        "exceedance_probabilities_variable `junk` is not available. "
-        "Available variables:{}".format(
+        "exceedance_probabilities_variable `junk` is not available. Available variables:{}".format(
             test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
         )
     )
@@ -1230,8 +1169,7 @@ def test_calculate_summary_stats_no_peak_variable(
     test_processing_scm_df_multi_climate_model,
 ):
     error_msg = re.escape(
-        "peak_variable `junk` is not available. "
-        "Available variables:{}".format(
+        "peak_variable `junk` is not available. Available variables:{}".format(
             test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
         )
     )
@@ -1247,8 +1185,7 @@ def test_calculate_summary_stats_no_categorisation_variable(
     test_processing_scm_df_multi_climate_model,
 ):
     error_msg = re.escape(
-        "categorisation_variable `junk` is not available. "
-        "Available variables:{}".format(
+        "categorisation_variable `junk` is not available. Available variables:{}".format(
             test_processing_scm_df_multi_climate_model.get_unique_meta("variable")
         )
     )

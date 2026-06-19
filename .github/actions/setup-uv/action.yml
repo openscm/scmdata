@@ -1,0 +1,44 @@
+name: "Setup uv"
+description: "Install uv (and optionally a Python version) with caching enabled"
+
+inputs:
+  python-version:
+    description: "Python version to install"
+    required: false
+  uv-version:
+    description: "Version of uv to install (defaults to the latest release)"
+    required: false
+  working-directory:
+    description: "Working directory for uv commands"
+    required: false
+    default: "."
+
+  # Cache configuration
+  enable-cache:
+    description: "Enable caching of the uv cache"
+    required: false
+    default: "auto"
+  cache-dependency-glob:
+    description: "Glob pattern for cache dependency files"
+    required: false
+    default: "**/uv.lock"
+  cache-suffix:
+    description: "Suffix for the cache key"
+    required: false
+  cache-local-path:
+    description: "Path to a local cache directory"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v8.1.0
+      with:
+        version: ${{ inputs.uv-version }}
+        python-version: ${{ inputs.python-version }}
+        working-directory: ${{ inputs.working-directory }}
+        enable-cache: ${{ inputs.enable-cache }}
+        cache-dependency-glob: ${{ inputs.cache-dependency-glob }}
+        cache-suffix: ${{ inputs.cache-suffix }}
+        cache-local-path: ${{ inputs.cache-local-path }}

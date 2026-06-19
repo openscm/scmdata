@@ -1,6 +1,7 @@
 """
 Imports and classes required to ensure compatibility with Pyam is intelligently handled.
 """
+
 import datetime
 
 from dateutil import parser
@@ -32,10 +33,7 @@ try:
 
                 self.data["time"] = self.data["time"].apply(convert_str_to_datetime)
 
-            not_datetime = [
-                not isinstance(x, (datetime.datetime, datetime.date))
-                for x in self.data["time"]
-            ]
+            not_datetime = [not isinstance(x, (datetime.datetime, datetime.date)) for x in self.data["time"]]
             if any(not_datetime):
                 bad_values = self.data[not_datetime]["time"]
                 error_msg = (
