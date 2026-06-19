@@ -1,6 +1,7 @@
 """
 Example of ops functionality
 """
+
 import numpy as np
 
 from scmdata import ScmRun
@@ -47,17 +48,13 @@ sh.head()
 world = nh.add(sh, op_cols={"region": "World"})
 world.head()
 
-fos_minus_afolu = fos.subtract(
-    afolu, op_cols={"variable": "Emissions|CO2|Fossil - AFOLU"}
-)
+fos_minus_afolu = fos.subtract(afolu, op_cols={"variable": "Emissions|CO2|Fossil - AFOLU"})
 fos_minus_afolu.head()
 
 nh_minus_sh = nh.subtract(sh, op_cols={"region": "World|NH - SH"})
 nh_minus_sh.head()
 
-fos_times_afolu = fos.multiply(
-    afolu, op_cols={"variable": "Emissions|CO2|Fossil : AFOLU"}
-)
+fos_times_afolu = fos.multiply(afolu, op_cols={"variable": "Emissions|CO2|Fossil : AFOLU"})
 fos_times_afolu.head()
 
 warming_per_co2 = start.filter(variable="*Temperature*").divide(

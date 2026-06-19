@@ -1,6 +1,7 @@
 """
 Fixtures and data for tests.
 """
+
 import datetime as dt
 from collections import namedtuple
 from contextlib import contextmanager
@@ -185,9 +186,7 @@ def doesnt_warn():
         with pytest.warns(None) as record:
             yield
         if record:
-            pytest.fail(
-                f"The following warnings were raised: {[w.message for w in record.list]}"
-            )
+            pytest.fail(f"The following warnings were raised: {[w.message for w in record.list]}")
 
     return check_context
 
@@ -442,9 +441,7 @@ append_scm_df_pairs = [
     {
         "base": append_scm_df_base,
         "other": {
-            "data": np.array(
-                [[3, 3.5, 3.7], [1, 7, 11], [-2, 1, -1.4], [-3, -4, -5]]
-            ).T,
+            "data": np.array([[3, 3.5, 3.7], [1, 7, 11], [-2, 1, -1.4], [-3, -4, -5]]).T,
             "index": append_scm_df_pairs_times,
             "columns": {
                 "scenario": ["a_scenario", "b_scenario", "b_scenario2", "a_scenario3"],
@@ -484,9 +481,7 @@ append_scm_df_pairs = [
     {
         "base": append_scm_df_base,
         "other": {
-            "data": np.array(
-                [[-1, 0, 1], [3, 4, 4.5], [0.1, 0.2, 0.3], [-4, -8, 10]]
-            ).T,
+            "data": np.array([[-1, 0, 1], [3, 4, 4.5], [0.1, 0.2, 0.3], [-4, -8, 10]]).T,
             "index": append_scm_df_pairs_times,
             "columns": {
                 "scenario": append_scm_df_pairs_scens,
@@ -496,9 +491,7 @@ append_scm_df_pairs = [
         },
         "duplicate_rows": 4,
         "expected": {
-            "data": np.array(
-                [[0, 3, 4], [1.75, 3.5, 3.25], [1.05, 3.6, 0.15], [-2.5, -5, 6.5]]
-            ).T,
+            "data": np.array([[0, 3, 4], [1.75, 3.5, 3.25], [1.05, 3.6, 0.15], [-2.5, -5, 6.5]]).T,
             "index": append_scm_df_pairs_times,
             "columns": {
                 "scenario": append_scm_df_pairs_scens,
@@ -582,9 +575,7 @@ possible_target_values = [
 test_combinations = []
 
 
-def create_time_points(
-    start_time: np.datetime64, period_length: np.timedelta64, points_num: int
-):
+def create_time_points(start_time: np.datetime64, period_length: np.timedelta64, points_num: int):
     end_time_output = start_time + (points_num - 1) * period_length
     return np.linspace(
         start_time.astype("datetime64[s]").astype(float),

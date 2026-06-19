@@ -1,6 +1,7 @@
 """
 Database for handling large datasets in a performant, but flexible way
 """
+
 import os
 import os.path
 
@@ -86,12 +87,10 @@ class ScmDatabase:
                 cls = backend_classes[backend.lower()]
                 return cls(**backend_config)
             except KeyError:
-                raise TypeError(f"Unknown database backend: {backend}")  # noqa: TRY200
+                raise TypeError(f"Unknown database backend: {backend}")
         else:
             if not isinstance(backend, BaseDatabaseBackend):
-                raise TypeError(
-                    "Backend must be an instance of scmdata.database.BaseDatabaseBackend"
-                )
+                raise TypeError("Backend must be an instance of scmdata.database.BaseDatabaseBackend")
             return backend
 
     def __repr__(self):

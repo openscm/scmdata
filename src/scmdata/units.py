@@ -5,8 +5,10 @@ Unit handling and conversion
 built on top of :mod:`pint` and includes some additional quantity definitions to support the tracking of
 emissions timeseries.
 """
+
 import warnings
-from typing import Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Union
 
 import numpy as np
 import openscm_units
@@ -27,7 +29,7 @@ class UnitConverter:
     Converts numbers between two units.
     """
 
-    def __init__(self, source: str, target: str, context: Optional[str] = None):
+    def __init__(self, source: str, target: str, context: str | None = None):
         """
         Initialize.
 
@@ -69,8 +71,7 @@ class UnitConverter:
 
         if np.isnan(t1) or np.isnan(t2):
             warn_msg = (
-                f"No conversion from {source} to {target} available, nan will be returned "
-                "upon conversion"
+                f"No conversion from {source} to {target} available, nan will be returned upon conversion"
             )
             warnings.warn(warn_msg)
 

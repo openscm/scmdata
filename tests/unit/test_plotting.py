@@ -21,9 +21,7 @@ def test_plotting_long_data(scm_run):
     assert len(long_data) == scm_run.shape[0] * scm_run.shape[1]
 
     exp = scm_run.filter(year=2005, scenario="a_scenario2").values.squeeze()
-    obs = long_data[
-        (long_data.scenario == "a_scenario2") & (long_data.time.dt.year == 2005)
-    ].value.squeeze()
+    obs = long_data[(long_data.scenario == "a_scenario2") & (long_data.time.dt.year == 2005)].value.squeeze()
 
     assert exp == obs
 
@@ -50,16 +48,12 @@ def hide_seaborn(monkeypatch):
 
 
 def test_no_matplotlib(scm_run, hide_matplotlib):
-    with pytest.raises(
-        ImportError, match="matplotlib is not installed. Run 'pip install matplotlib'"
-    ):
+    with pytest.raises(ImportError, match="matplotlib is not installed. Run 'pip install matplotlib'"):
         scm_run.plumeplot()
 
 
 def test_no_seaborn(scm_run, hide_seaborn):
-    with pytest.raises(
-        ImportError, match="seaborn is not installed. Run 'pip install seaborn'"
-    ):
+    with pytest.raises(ImportError, match="seaborn is not installed. Run 'pip install seaborn'"):
         scm_run.lineplot()
 
 

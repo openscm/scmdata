@@ -220,9 +220,7 @@ def subtract(self, other, op_cols, **kwargs):
     idealised World|NH idealised MtC / yr Emissions|CO2|AFOLU         1.0         5.0
               World|SH idealised MtC / yr Emissions|CO2|AFOLU         3.0         7.0
 
-    >>> fos_minus_afolu = fos.subtract(
-    ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil - AFOLU"}
-    ... )
+    >>> fos_minus_afolu = fos.subtract(afolu, op_cols={"variable": "Emissions|CO2|Fossil - AFOLU"})
     >>> # The rows align and the units are handled automatically
     >>> fos_minus_afolu.head()
     time                                                                  2010-01-01  2020-01-01
@@ -329,9 +327,7 @@ def add(self, other, op_cols, **kwargs):
     idealised World|NH idealised MtC / yr Emissions|CO2|AFOLU         1.0         5.0
               World|SH idealised MtC / yr Emissions|CO2|AFOLU         3.0         7.0
 
-    >>> fos_plus_afolu = fos.add(
-    ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil + AFOLU"}
-    ... )
+    >>> fos_plus_afolu = fos.add(afolu, op_cols={"variable": "Emissions|CO2|Fossil + AFOLU"})
     >>> # The rows align and the units are handled automatically
     >>> fos_plus_afolu.head()
     time                                                                  2010-01-01  2020-01-01
@@ -436,9 +432,7 @@ def multiply(self, other, op_cols, **kwargs):
     idealised World|NH idealised MtC / yr Emissions|CO2|AFOLU         1.0         5.0
               World|SH idealised MtC / yr Emissions|CO2|AFOLU         3.0         7.0
 
-    >>> fos_times_afolu = fos.multiply(
-    ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil * AFOLU"}
-    ... )
+    >>> fos_times_afolu = fos.multiply(afolu, op_cols={"variable": "Emissions|CO2|Fossil * AFOLU"})
     >>> # The rows align and the units are handled automatically
     >>> fos_times_afolu.convert_unit("(GtC / yr) ** 2").head()
     time                                                                       2010-01-01  2020-01-01
@@ -543,9 +537,7 @@ def divide(self, other, op_cols, **kwargs):
     idealised World|NH idealised MtC / yr Emissions|CO2|AFOLU         1.0         5.0
               World|SH idealised MtC / yr Emissions|CO2|AFOLU         3.0         7.0
 
-    >>> fos_divide_afolu = fos.divide(
-    ...     afolu, op_cols={"variable": "Emissions|CO2|Fossil / yrFOLU"}
-    ... )
+    >>> fos_divide_afolu = fos.divide(afolu, op_cols={"variable": "Emissions|CO2|Fossil / yrFOLU"})
     >>> # The rows align and the units are handled automatically
     >>> fos_divide_afolu.convert_unit("dimensionless").head()
     time                                                                     2010-01-01  2020-01-01
@@ -647,9 +639,7 @@ def cumsum(self, out_var=None, check_annual=True):
     # Check that all intervals are uniform and equal
     years = self["year"]
     if check_annual and not (years.diff().iloc[1:] == 1).all():
-        raise ValueError(
-            'Annual data are required for "cumsum" integration. Use ScmRun.resample first'
-        )
+        raise ValueError('Annual data are required for "cumsum" integration. Use ScmRun.resample first')
 
     ts = self.timeseries()
     ur = scmdata.units.get_unit_registry()
@@ -732,9 +722,7 @@ def cumulative_trapezoid(self, out_var=None):
         )
 
     time_unit = "s"
-    times_in_s = self.time_points.values.astype(f"datetime64[{time_unit}]").astype(
-        "int"
-    )
+    times_in_s = self.time_points.values.astype(f"datetime64[{time_unit}]").astype("int")
     ts = self.timeseries()
 
     ur = scmdata.units.get_unit_registry()
@@ -742,11 +730,7 @@ def cumulative_trapezoid(self, out_var=None):
     # If required, we can remove the hard-coding of initial, it just requires
     # some thinking about unit handling
     _initial = 0.0
-    out = pd.DataFrame(
-        scipy.integrate.cumulative_trapezoid(
-            y=ts, x=times_in_s, axis=1, initial=_initial
-        )
-    )
+    out = pd.DataFrame(scipy.integrate.cumulative_trapezoid(y=ts, x=times_in_s, axis=1, initial=_initial))
     out.index = ts.index
     out.columns = ts.columns
 
@@ -862,9 +846,7 @@ def delta_per_delta_time(self, out_var=None):
 
     out = ts.diff(periods=1, axis="columns")
     if not out.iloc[:, 0].isna().all():  # pragma: no cover
-        raise AssertionError(
-            "Did pandas change their API? The first timestep is not all nan."
-        )
+        raise AssertionError("Did pandas change their API? The first timestep is not all nan.")
 
     out = out.iloc[:, 1:] / time_deltas_in_s
 
@@ -934,9 +916,7 @@ def linear_regression(self):
 def _convert_linear_regression_raw_to_pdf(raw, key_to_keep, unit):
     pdf_dicts = []
     for r in raw:
-        transformed = {
-            k: v for k, v in r.items() if k not in ["gradient", "intercept", "unit"]
-        }
+        transformed = {k: v for k, v in r.items() if k not in ["gradient", "intercept", "unit"]}
         if unit is None:
             transformed[key_to_keep] = r[key_to_keep].magnitude
             transformed["unit"] = str(r["gradient"].units)
@@ -1013,7 +993,7 @@ def linear_regression_scmrun(self):
     (
         times_numpy,
         times_in_s,
-        time_unit,
+        _time_unit,
         gradients,
         intercepts,
         meta,
@@ -1021,8 +1001,7 @@ def linear_regression_scmrun(self):
 
     out_shape = (meta.shape[0], len(times_in_s))
     regression_timeseries = (
-        np.broadcast_to(gradients, out_shape[::-1]).T * times_in_s
-        + intercepts[:, np.newaxis]
+        np.broadcast_to(gradients, out_shape[::-1]).T * times_in_s + intercepts[:, np.newaxis]
     )
 
     out = type(self)(
@@ -1109,18 +1088,10 @@ def adjust_median_to_target(
 
     groups = list(set(self.meta.columns) - set(process_over))
 
-    current_medians = (
-        self.filter(year=evaluation_period)
-        .timeseries()
-        .mean(axis=1)
-        .groupby(groups)
-        .median()
-    )
+    current_medians = self.filter(year=evaluation_period).timeseries().mean(axis=1).groupby(groups).median()
 
     if check_groups_identical:
-        npt.assert_allclose(
-            current_medians, current_medians.iloc[0], **check_groups_identical_kwargs
-        )
+        npt.assert_allclose(current_medians, current_medians.iloc[0], **check_groups_identical_kwargs)
 
     # have to align ourselves, see
     # https://github.com/pandas-dev/pandas/issues/43321

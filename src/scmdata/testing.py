@@ -27,9 +27,7 @@ def _assert_frame_equal(left, right, **kwargs):
     pdt.assert_frame_equal(left.T, right.T, **kwargs)
 
 
-def assert_scmdf_almost_equal(
-    left, right, allow_unordered=False, check_ts_names=True, rtol=1e-5, atol=1e-8
-):
+def assert_scmdf_almost_equal(left, right, allow_unordered=False, check_ts_names=True, rtol=1e-5, atol=1e-8):
     """
     Check that left and right :class:`ScmRun <scmdata.run.ScmRun>` are equal.
 
@@ -63,9 +61,7 @@ def assert_scmdf_almost_equal(
             df1_index = np.argsort(left.meta.index)
             df2_index = np.argsort(right.meta.index)
             _assert_frame_equal(left.meta, right.meta, check_like=True)
-            npt.assert_allclose(
-                left.values[df1_index], right.values[df2_index], rtol=rtol, atol=atol
-            )
+            npt.assert_allclose(left.values[df1_index], right.values[df2_index], rtol=rtol, atol=atol)
 
         else:
             # ignore differing meta index labels
@@ -74,9 +70,7 @@ def assert_scmdf_almost_equal(
             right_ts = right.timeseries()
             # check metadata columns are same set
             if set(left_sorted.index.names) != set(right_ts.index.names):
-                raise AssertionError(
-                    f"{set(left_sorted.index.names)} != {set(right_ts.index.names)}"
-                )
+                raise AssertionError(f"{set(left_sorted.index.names)} != {set(right_ts.index.names)}")
 
             right_sorted = right.timeseries(left_sorted.index.names).sort_index()
             # this checks both the index (i.e. sorted meta) and values are the same

@@ -5,8 +5,8 @@ Functionality for grouping and filtering ScmRun objects
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, TypeVar, Union
+from collections.abc import Callable, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -25,8 +25,10 @@ else:
     from xarray.computation import ops
 
 if TYPE_CHECKING:
+    from typing import Concatenate
+
     from pandas.core.groupby.generic import DataFrameGroupBy
-    from typing_extensions import Concatenate, ParamSpec
+    from typing_extensions import ParamSpec
 
     P = ParamSpec("P")
     Q = ParamSpec("Q")
@@ -48,9 +50,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
     GroupBy object specialized to grouping ScmRun objects
     """
 
-    def __init__(
-        self, run: GenericRun, groups: Iterable[str], na_fill_value: float = -10000
-    ):
+    def __init__(self, run: GenericRun, groups: Iterable[str], na_fill_value: float = -10000):
         self.run = run
         self.group_keys = groups
 
@@ -65,8 +65,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         if any([pd.api.types.is_numeric_dtype(m[c]) for c in m]):
             if (m == na_fill_value).any(axis=None):
                 raise ValueError(
-                    "na_fill_value conflicts with data value. Choose a na_fill_value "
-                    "not in meta"
+                    "na_fill_value conflicts with data value. Choose a na_fill_value not in meta"
                 )
             else:
                 m = m.fillna(na_fill_value)
@@ -82,9 +81,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
                 pass
             return v
 
-        groups: Iterable[
-            MetadataValue | tuple[MetadataValue, ...]
-        ] = self._grouper.groups
+        groups: Iterable[MetadataValue | tuple[MetadataValue, ...]] = self._grouper.groups
         for indices in groups:
             if not isinstance(indices, Iterable) or isinstance(indices, str):
                 indices_clean: tuple[MetadataValue, ...] = (indices,)
@@ -95,9 +92,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
             filter_kwargs = {k: v for k, v in zip(self.group_keys, indices_clean)}
             res = self.run.filter(**filter_kwargs)  # type: ignore
             if not len(res):
-                raise ValueError(
-                    f"Empty group for {list(zip(self.group_keys, indices_clean))}"
-                )
+                raise ValueError(f"Empty group for {list(zip(self.group_keys, indices_clean))}")
             yield res
 
     def __iter__(self) -> Iterator[GenericRun]:
@@ -240,9 +235,7 @@ class RunGroupBy(ImplementsArrayReduce, Generic[GenericRun]):
         warnings.warn("Use RunGroupby.apply instead", DeprecationWarning)
         return self.apply(func, *args, **kwargs)
 
-    def _combine(
-        self, applied: Iterable[GenericRun | (pd.DataFrame | None)]
-    ) -> GenericRun:
+    def _combine(self, applied: Iterable[GenericRun | (pd.DataFrame | None)]) -> GenericRun:
         """
         Recombine the applied objects like the original.
         """
@@ -344,9 +337,7 @@ def get_joblib_parallel_processor(
         *args: Q.args,
         **kwargs: Q.kwargs,
     ) -> Iterable[ApplyCallableReturnType[RunLike]]:
-        prepped_groups = (
-            joblib.delayed(func)(group, *args, **kwargs) for group in groups
-        )
+        prepped_groups = (joblib.delayed(func)(group, *args, **kwargs) for group in groups)
         applied = processor(prepped_groups)
 
         return applied

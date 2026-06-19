@@ -15,9 +15,7 @@ from scmdata.timeseries import TimeSeries
 
 @pytest.fixture(scope="function")
 def ts():
-    times = np.asarray(
-        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1)]
-    )
+    times = np.asarray([datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1)])
     return TimeSeries([1, 2, 3], time=times)
 
 
@@ -61,9 +59,7 @@ def test_timeseries_init_xarray():
     (
         [[1, 2], [2, 4]],
         np.array([[1, 2], [2, 4]]),
-        xr.DataArray(
-            [[1, 2], [2, 4]], coords=[("time", [2000, 2001]), ("lat", [-45, 45])]
-        ),
+        xr.DataArray([[1, 2], [2, 4]], coords=[("time", [2000, 2001]), ("lat", [-45, 45])]),
     ),
 )
 def test_timeseries_init_2d_data(data):
@@ -85,20 +81,14 @@ def test_timeseries_init_xarray_no_time_coord(coord_name):
     raw_data = [-1, -2, -3]
     time_points = [20, 2020, 5050]
     data = xr.DataArray(raw_data, coords=[(coord_name, time_points)])
-    error_msg = (
-        "If data is an :class:`xarray.DataArray` instance, its only dimension must "
-        "be named `'time'`"
-    )
+    error_msg = "If data is an :class:`xarray.DataArray` instance, its only dimension must be named `'time'`"
     with pytest.raises(ValueError, match=re.escape(error_msg)):
         TimeSeries(data)
 
 
 @pytest.mark.parametrize("data", ([1, 2, 3], (1, 2, 3), np.array([1, 2, 3])))
 def test_timeseries_init_no_time_list(data):
-    error_msg = (
-        "If data is not an :class:`xarray.DataArray` instance, `time` must not be "
-        "`None`"
-    )
+    error_msg = "If data is not an :class:`xarray.DataArray` instance, `time` must not be `None`"
     with pytest.raises(TypeError, match=re.escape(error_msg)):
         TimeSeries(data)
 
@@ -149,9 +139,7 @@ def test_timeseries_mul(ts, inplace):
 
 @pytest.fixture(scope="function")
 def ts_gtc_per_yr_units():
-    times = np.asarray(
-        [datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1)]
-    )
+    times = np.asarray([datetime(2000, 1, 1), datetime(2001, 1, 1), datetime(2002, 1, 1)])
     return TimeSeries([1, 2, 3], time=times, attrs={"unit": "GtC / yr"})
 
 
@@ -441,9 +429,7 @@ def test_interpolate(combo):
     npt.assert_array_almost_equal(res.values.squeeze(), combo.target_values)
 
 
-@pytest.mark.parametrize(
-    "dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day]
-)
+@pytest.mark.parametrize("dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day])
 def test_extrapolation_long(dt):
     source = np.arange(800, 1000)
     source_times = [dt(y, 1, 1) for y in source]
@@ -460,9 +446,7 @@ def test_extrapolation_long(dt):
     npt.assert_array_almost_equal(res.values.squeeze(), target, decimal=0)
 
 
-@pytest.mark.parametrize(
-    "dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day]
-)
+@pytest.mark.parametrize("dt", [datetime, cftime.datetime, cftime.DatetimeNoLeap, cftime.Datetime360Day])
 def test_extrapolation_nan(dt):
     source = np.arange(2000, 2005, dtype=float)
     source_times = [dt(int(y), 1, 1) for y in source]

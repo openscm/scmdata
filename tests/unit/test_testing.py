@@ -15,6 +15,4 @@ def test_almost_equal_message(scm_run):
     msg = r"\'a_scenario\', \'EJ/yr\', \'Primary Energy\'"
 
     with pytest.raises(AssertionError, match=msg):
-        scmdata.testing.assert_scmdf_almost_equal(
-            scm_run, other, allow_unordered=True, check_ts_names=False
-        )
+        scmdata.testing.assert_scmdf_almost_equal(scm_run, other, allow_unordered=True, check_ts_names=False)

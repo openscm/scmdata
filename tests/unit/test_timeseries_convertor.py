@@ -17,9 +17,7 @@ def test_no_scipy(scm_run):
         "linear",
     )
 
-    with pytest.raises(
-        ImportError, match="scipy is not installed. Run 'pip install scipy'"
-    ):
+    with pytest.raises(ImportError, match="scipy is not installed. Run 'pip install scipy'"):
         timeseriesconverter.convert_to([1, 2, 3])
 
 
@@ -51,8 +49,7 @@ def test_none_extrapolation_error(combo):
     )
 
     error_msg = re.escape(
-        "Target time points are outside the source time points, use an "
-        "extrapolation type other than None"
+        "Target time points are outside the source time points, use an extrapolation type other than None"
     )
     with pytest.raises(InsufficientDataError, match=error_msg):
         TimeseriesConverter(combo.source, target, combo.interpolation_type, None)

@@ -55,6 +55,4 @@ def test_convert_to_scen_units():
         conv_factor,
         _,
     ) in var_start_units_scen_units_conv_factor:
-        np.testing.assert_allclose(
-            res.filter(variable=variable).timeseries(), conv_factor, rtol=1e-15
-        )
+        np.testing.assert_allclose(res.filter(variable=variable).timeseries(), conv_factor, rtol=1e-15)

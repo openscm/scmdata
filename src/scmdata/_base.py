@@ -3,7 +3,7 @@ import operator
 import numpy as np
 
 
-class OpsMixin:
+class OpsMixin:  # noqa: PLW1641  # rich comparisons return new objects, not booleans; hashing is intentionally inherited
     """
     Mixin for common binary operators
     """

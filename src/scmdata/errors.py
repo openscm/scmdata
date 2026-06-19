@@ -1,6 +1,7 @@
 """
 Custom errors and exceptions used by scmdata
 """
+
 import pandas as pd
 
 
@@ -21,10 +22,7 @@ class NonUniqueMetadataError(ValueError):
             dup = dup.rename(columns={"size": "repeats"})
 
         dup = dup[dup.repeats > 1]
-        msg = (
-            "Duplicate metadata (numbers show how many times the given "
-            f"metadata is repeated).\n{dup}"
-        )
+        msg = f"Duplicate metadata (numbers show how many times the given metadata is repeated).\n{dup}"
 
         super().__init__(msg)
 
@@ -51,10 +49,7 @@ class DuplicateTimesError(ValueError):
         dup = time_index.value_counts()
         dup = dup[dup > 1]
 
-        msg = (
-            "Duplicate times (numbers show how many times the given time is "
-            f"repeated):\n{dup}"
-        )
+        msg = f"Duplicate times (numbers show how many times the given time is repeated):\n{dup}"
 
         super().__init__(msg)
 

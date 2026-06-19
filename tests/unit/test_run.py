@@ -37,10 +37,7 @@ inplace_params = pytest.mark.parametrize("inplace", [True, False])
 @pytest.fixture
 def scm_run_interpolated(scm_run):
     return scm_run.interpolate(
-        [
-            dt.datetime(y, 1, 1)
-            for y in range(scm_run["year"].min(), scm_run["year"].max() + 1)
-        ]
+        [dt.datetime(y, 1, 1) for y in range(scm_run["year"].min(), scm_run["year"].max() + 1)]
     )
 
 
@@ -48,8 +45,7 @@ def test_init_df_year_converted_to_datetime(test_pd_df):
     res = ScmRun(test_pd_df)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
-        res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
+        res["time"].unique() == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
 
 
@@ -70,17 +66,13 @@ def test_init_df_year_converted_to_datetime(test_pd_df):
 def test_init_df_formats(test_pd_run_df, in_format):
     if in_format == "pd.Series":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
-        test_init = test_pd_run_df.melt(id_vars=idx, var_name="year").set_index(
-            [*idx, "year"]
-        )["value"]
+        test_init = test_pd_run_df.melt(id_vars=idx, var_name="year").set_index([*idx, "year"])["value"]
     elif in_format == "year_col":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
     elif in_format == "year_col_index":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
-        test_init = test_pd_run_df.melt(id_vars=idx, var_name="year").set_index(
-            [*idx, "year"]
-        )
+        test_init = test_pd_run_df.melt(id_vars=idx, var_name="year").set_index([*idx, "year"])
     elif in_format == "time_col":
         idx = ["climate_model", "model", "scenario", "region", "variable", "unit"]
         test_init = test_pd_run_df.melt(id_vars=idx, var_name="year")
@@ -106,15 +98,12 @@ def test_init_df_formats(test_pd_run_df, in_format):
         test_init = test_pd_run_df[test_pd_run_df.columns[::-1]]
     elif in_format == "str_times":
         test_init = test_pd_run_df.copy()
-        test_init.columns = test_init.columns.map(
-            lambda x: f"{x}/1/1" if isinstance(x, int) else x
-        )
+        test_init.columns = test_init.columns.map(lambda x: f"{x}/1/1" if isinstance(x, int) else x)
 
     res = ScmRun(test_init)
     assert (res["year"].unique() == [2005, 2010, 2015]).all()
     assert (
-        res["time"].unique()
-        == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
+        res["time"].unique() == [dt.datetime(2005, 1, 1), dt.datetime(2010, 1, 1), dt.datetime(2015, 1, 1)]
     ).all()
     assert "Start: 2005" in res.__repr__()
     assert "End: 2015" in res.__repr__()
@@ -146,10 +135,7 @@ def test_init_df_missing_time_columns_error(test_pd_df):
         test_init.columns[test_init.columns.map(lambda x: isinstance(x, int))],
         axis="columns",
     )
-    error_msg = re.escape(
-        "invalid column format, must contain some time (int, float or datetime) "
-        "columns!"
-    )
+    error_msg = re.escape("invalid column format, must contain some time (int, float or datetime) columns!")
     with pytest.raises(ValueError, match=error_msg):
         ScmRun(test_init)
 
@@ -198,10 +184,7 @@ def test_init_required_cols(test_pd_df):
 
 
 def test_init_multiple_file_error():
-    error_msg = re.escape(
-        "Initialising from multiple files not supported, use "
-        "`scmdata.run.ScmRun.append()`"
-    )
+    error_msg = re.escape("Initialising from multiple files not supported, use `scmdata.run.ScmRun.append()`")
     with pytest.raises(ValueError, match=error_msg):
         ScmRun(["file_1", "filepath_2"])
 
@@ -289,9 +272,7 @@ def test_init_with_ts(test_ts, test_pd_df):
     )
 
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
-    pd.testing.assert_frame_equal(
-        df.timeseries().reset_index(), tdf, check_like=True, check_names=False
-    )
+    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True, check_names=False)
 
     b = ScmRun(test_pd_df)
 
@@ -306,13 +287,9 @@ def test_init_with_scmdf(test_scm_run_datetimes, test_scm_datetime_run):
     assert_scmdf_almost_equal(df, test_scm_datetime_run, check_ts_names=False)
 
 
-@pytest.mark.parametrize(
-    "years", [["2005.0", "2010.0", "2015.0"], ["2005", "2010", "2015"]]
-)
+@pytest.mark.parametrize("years", [["2005.0", "2010.0", "2015.0"], ["2005", "2010", "2015"]])
 def test_init_with_years_as_str(test_pd_df, years):
-    df = copy.deepcopy(
-        test_pd_df
-    )  # This needs to be a deep copy so it doesn't break the other tests
+    df = copy.deepcopy(test_pd_df)  # This needs to be a deep copy so it doesn't break the other tests
     cols = copy.deepcopy(test_pd_df.columns.values)
     cols[-3:] = years
     df.columns = cols
@@ -331,9 +308,7 @@ def test_init_with_years_as_str(test_pd_df, years):
 def test_init_with_year_columns(test_pd_df):
     df = ScmRun(test_pd_df)
     tdf = get_test_pd_df_with_datetime_columns(test_pd_df)
-    pd.testing.assert_frame_equal(
-        df.timeseries().reset_index(), tdf, check_like=True, check_names=False
-    )
+    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True, check_names=False)
 
 
 def test_init_with_decimal_years():
@@ -376,9 +351,7 @@ def test_init_df_with_extra_col(test_pd_df):
 
     tdf = get_test_pd_df_with_datetime_columns(tdf)
     assert extra_col in df.meta
-    pd.testing.assert_frame_equal(
-        df.timeseries().reset_index(), tdf, check_like=True, check_names=False
-    )
+    pd.testing.assert_frame_equal(df.timeseries().reset_index(), tdf, check_like=True, check_names=False)
 
 
 def test_init_df_without_required_arguments(test_run_ts):
@@ -446,9 +419,7 @@ def test_init_with_copy_dataframe(copy_data, test_pd_df):
 
 
 def test_init_duplicate_columns(test_pd_df):
-    exp_msg = (
-        "Duplicate times (numbers show how many times the given " "time is repeated)"
-    )
+    exp_msg = "Duplicate times (numbers show how many times the given time is repeated)"
     inp = pd.concat([test_pd_df, test_pd_df[2015]], axis=1)
     with pytest.raises(DuplicateTimesError) as exc_info:
         ScmRun(inp)
@@ -796,9 +767,7 @@ def test_filter_day(test_scm_run_datetimes, test_day):
 def test_filter_hour(test_scm_run_datetimes, test_hour):
     obs = test_scm_run_datetimes.filter(hour=test_hour)
     test_hour = [test_hour] if isinstance(test_hour, int) else test_hour
-    expected_rows = (
-        test_scm_run_datetimes["time"].apply(lambda x: x.hour).isin(test_hour)
-    )
+    expected_rows = test_scm_run_datetimes["time"].apply(lambda x: x.hour).isin(test_hour)
     expected = test_scm_run_datetimes["time"].loc[expected_rows].unique()
 
     unique_time = obs["time"].unique()
@@ -827,9 +796,7 @@ def test_filter_time_exact_match(test_scm_run_datetimes):
 def test_filter_time_range(test_scm_run_datetimes):
     error_msg = r".*datetime.datetime.*"
     with pytest.raises(TypeError, match=error_msg):
-        test_scm_run_datetimes.filter(
-            year=range(dt.datetime(2000, 6, 17), dt.datetime(2009, 6, 17))
-        )
+        test_scm_run_datetimes.filter(year=range(dt.datetime(2000, 6, 17), dt.datetime(2009, 6, 17)))
 
 
 def test_filter_time_range_year(test_scm_run_datetimes):
@@ -855,9 +822,7 @@ def test_filter_time_range_month(test_scm_run_datetimes, month_range):
 def test_filter_time_range_month_unrecognised_error(test_scm_run_datetimes):
     fail_filter = "Marb-Jun"
     error_msg = re.escape(
-        "Could not convert month '{}' to integer".format(
-            [m for m in fail_filter.split("-")]
-        )
+        "Could not convert month '{}' to integer".format([m for m in fail_filter.split("-")])
     )
     with pytest.raises(ValueError, match=error_msg):
         test_scm_run_datetimes.filter(month=fail_filter)
@@ -865,10 +830,7 @@ def test_filter_time_range_month_unrecognised_error(test_scm_run_datetimes):
 
 @pytest.mark.parametrize("month_range", [["Mar-Jun", "Nov-Feb"]])
 def test_filter_time_range_round_the_clock_error(test_scm_run_datetimes, month_range):
-    error_msg = re.escape(
-        "string ranges must lead to increasing integer ranges, "
-        "Nov-Feb becomes [11, 2]"
-    )
+    error_msg = re.escape("string ranges must lead to increasing integer ranges, Nov-Feb becomes [11, 2]")
     with pytest.raises(ValueError, match=error_msg):
         test_scm_run_datetimes.filter(month=month_range)
 
@@ -884,11 +846,7 @@ def test_filter_time_range_day(test_scm_run_datetimes, day_range):
 
 def test_filter_time_range_day_unrecognised_error(test_scm_run_datetimes):
     fail_filter = "Thud-Sat"
-    error_msg = re.escape(
-        "Could not convert day '{}' to integer".format(
-            [m for m in fail_filter.split("-")]
-        )
-    )
+    error_msg = re.escape("Could not convert day '{}' to integer".format([m for m in fail_filter.split("-")]))
     with pytest.raises(ValueError, match=error_msg):
         test_scm_run_datetimes.filter(day=fail_filter)
 
@@ -897,9 +855,7 @@ def test_filter_time_range_day_unrecognised_error(test_scm_run_datetimes):
 def test_filter_time_range_hour(test_scm_run_datetimes, hour_range):
     obs = test_scm_run_datetimes.filter(hour=hour_range)
 
-    expected_rows = (
-        test_scm_run_datetimes["time"].apply(lambda x: x.hour).isin(hour_range)
-    )
+    expected_rows = test_scm_run_datetimes["time"].apply(lambda x: x.hour).isin(hour_range)
     expected = test_scm_run_datetimes["time"][expected_rows].unique()
 
     unique_time = obs["time"].unique()
@@ -959,9 +915,7 @@ def test_filter_keep_false_time_and_metadata(scm_run):
 
 
 def test_filter_keep_false_successive(scm_run):
-    df = scm_run.filter(variable="Primary Energy|Coal", keep=False).filter(
-        year=2005, keep=False
-    )
+    df = scm_run.filter(variable="Primary Energy|Coal", keep=False).filter(year=2005, keep=False)
     obs = df.filter(scenario="a_scenario").timeseries().values.ravel()
     npt.assert_array_equal(obs, [6, 6])
 
@@ -1014,9 +968,7 @@ def test_filter_timeseries_different_length():
     # This is different to how `ScmDataFrame` deals with nans
     # Nan and empty timeseries remain in the Run
     df = ScmRun(
-        pd.DataFrame(
-            np.array([[1.0, 2.0, 3.0], [4.0, 5.0, np.nan]]).T, index=[2000, 2001, 2002]
-        ),
+        pd.DataFrame(np.array([[1.0, 2.0, 3.0], [4.0, 5.0, np.nan]]).T, index=[2000, 2001, 2002]),
         columns={
             "model": ["a_iam"],
             "climate_model": ["a_model"],
@@ -1027,9 +979,7 @@ def test_filter_timeseries_different_length():
         },
     )
 
-    npt.assert_array_equal(
-        df.filter(scenario="a_scenario2").timeseries().squeeze(), [4.0, 5.0, np.nan]
-    )
+    npt.assert_array_equal(df.filter(scenario="a_scenario2").timeseries().squeeze(), [4.0, 5.0, np.nan])
     npt.assert_array_equal(df.filter(year=2002).timeseries().squeeze(), [3.0, np.nan])
 
     exp = pd.Series(["a_scenario", "a_scenario2"], name="scenario")
@@ -1040,9 +990,7 @@ def test_filter_timeseries_different_length():
 
 def test_filter_timeseries_nan_meta():
     df = ScmRun(
-        pd.DataFrame(
-            np.array([[1.0, 2.0], [4.0, 5.0], [7.0, 8.0]]).T, index=[2000, 2001]
-        ),
+        pd.DataFrame(np.array([[1.0, 2.0], [4.0, 5.0], [7.0, 8.0]]).T, index=[2000, 2001]),
         columns={
             "model": ["a_iam"],
             "climate_model": ["a_model"],
@@ -1055,9 +1003,7 @@ def test_filter_timeseries_nan_meta():
 
     def with_nan_assertion(a, b):
         assert len(a) == len(b)
-        assert all(
-            [(v == b[i]) or (np.isnan(v) and np.isnan(b[i])) for i, v in enumerate(a)]
-        )
+        assert all([(v == b[i]) or (np.isnan(v) and np.isnan(b[i])) for i, v in enumerate(a)])
 
     res = df.filter(scenario="*")["scenario"].unique()
     exp = ["a_scenario", "a_scenario2", np.nan]
@@ -1201,10 +1147,7 @@ def test_set_meta_keep(scm_run):
 
     # Note that the order has changed here (hence the sort_values)
     pd.testing.assert_frame_equal(
-        res.meta[["variable", "region"]]
-        .drop_duplicates()
-        .sort_values(by="variable")
-        .reset_index(drop=True),
+        res.meta[["variable", "region"]].drop_duplicates().sort_values(by="variable").reset_index(drop=True),
         pd.DataFrame(
             {
                 "variable": ["Primary Energy", "Primary Energy|Coal"],
@@ -1216,9 +1159,7 @@ def test_set_meta_keep(scm_run):
 
 
 def test_set_meta_inplace(scm_run):
-    with pytest.raises(
-        ValueError, match="Inplace updating of metadata is not supported"
-    ):
+    with pytest.raises(ValueError, match="Inplace updating of metadata is not supported"):
         scm_run.set_meta("test", "value", inplace=True)
 
 
@@ -1322,17 +1263,13 @@ def test_timeseries(scm_run):
         "years": [2005, 2010, 2015],
         "value": [1, 6, 6],
     }
-    exp = pd.DataFrame(dct).pivot_table(
-        index=["model", "scenario"], columns=["years"], values="value"
-    )
+    exp = pd.DataFrame(dct).pivot_table(index=["model", "scenario"], columns=["years"], values="value")
     obs = scm_run.filter(variable="Primary Energy", scenario="a_scenario").timeseries()
     npt.assert_array_equal(obs, exp)
 
 
 def test_timeseries_meta(scm_run):
-    obs = scm_run.filter(variable="Primary Energy").timeseries(
-        meta=["scenario", "model"]
-    )
+    obs = scm_run.filter(variable="Primary Energy").timeseries(meta=["scenario", "model"])
     npt.assert_array_equal(obs.index.names, ["scenario", "model"])
 
 
@@ -1520,9 +1457,7 @@ def test_median_over(test_processing_scm_df):
     )
     obs = test_processing_scm_df.process_over("scenario", "median")
 
-    pd.testing.assert_frame_equal(
-        exp, obs.reset_index(), check_like=True, check_names=False
-    )
+    pd.testing.assert_frame_equal(exp, obs.reset_index(), check_like=True, check_names=False)
 
 
 def test_arb_function_over(test_processing_scm_df):
@@ -1531,17 +1466,13 @@ def test_arb_function_over(test_processing_scm_df):
 
     obs = test_processing_scm_df.process_over("scenario", same)
 
-    pd.testing.assert_frame_equal(
-        test_processing_scm_df.timeseries(), obs, check_like=True
-    )
+    pd.testing.assert_frame_equal(test_processing_scm_df.timeseries(), obs, check_like=True)
 
     def add_2(df):
         return df + 2
 
     obs = test_processing_scm_df.process_over("scenario", add_2)
-    pd.testing.assert_frame_equal(
-        (test_processing_scm_df + 2).timeseries(), obs, check_like=True
-    )
+    pd.testing.assert_frame_equal((test_processing_scm_df + 2).timeseries(), obs, check_like=True)
 
 
 def test_arb_function_returns_none(test_processing_scm_df):
@@ -1552,9 +1483,7 @@ def test_arb_function_returns_none(test_processing_scm_df):
         # implicit return None for any other variables
 
     obs = test_processing_scm_df.process_over("scenario", add_2_only_coal)
-    exp = (
-        test_processing_scm_df.filter(variable="Primary Energy|Coal") + 2
-    ).timeseries()
+    exp = (test_processing_scm_df.filter(variable="Primary Energy|Coal") + 2).timeseries()
     pd.testing.assert_frame_equal(
         exp,
         obs,
@@ -1785,9 +1714,7 @@ def test_quantiles_over(test_processing_scm_df):
         cols=["model", "scenario"],
         quantiles=[0, 0.5, 1, "mean", "median"],
     )
-    pd.testing.assert_frame_equal(
-        exp.set_index(obs.index.names), obs, check_like=True, check_names=False
-    )
+    pd.testing.assert_frame_equal(exp.set_index(obs.index.names), obs, check_like=True, check_names=False)
 
 
 def test_quantiles_over_operation_in_kwargs(test_processing_scm_df):
@@ -1917,9 +1844,7 @@ def test_relative_to_ref_period_mean(test_processing_scm_df, tfilter):
     obs_ts = obs.timeseries()
     exp_ts = exp.timeseries()
 
-    pd.testing.assert_frame_equal(
-        exp_ts.reorder_levels(obs_ts.index.names), obs_ts, check_like=True
-    )
+    pd.testing.assert_frame_equal(exp_ts.reorder_levels(obs_ts.index.names), obs_ts, check_like=True)
 
 
 def test_append(scm_run):
@@ -1936,9 +1861,7 @@ def test_append(scm_run):
     assert "col1" in scm_run.meta_attributes
 
     # assert that merging of meta works as expected
-    npt.assert_array_equal(
-        df.meta.sort_values(["scenario", "variable"])["col1"].values, [5, 6, 7, 2]
-    )
+    npt.assert_array_equal(df.meta.sort_values(["scenario", "variable"])["col1"].values, [5, 6, 7, 2])
     pd.testing.assert_series_equal(
         df.meta.sort_values(["scenario", "variable"])["col2"].reset_index(drop=True),
         pd.Series([np.nan, np.nan, np.nan, "b"]),
@@ -1994,9 +1917,7 @@ def test_append_duplicates_order_doesnt_matter(scm_run):
 
     obs = res.filter(scenario="a_scenario2").timeseries().squeeze()
     exp = [2.0, 7.0, 7.0, 2.0, 7.0, 5.0]
-    npt.assert_array_equal(
-        res._time_points.years(), [2005, 2010, 2015, 2020, 2030, 2040]
-    )
+    npt.assert_array_equal(res._time_points.years(), [2005, 2010, 2015, 2020, 2030, 2040])
     npt.assert_almost_equal(obs, exp)
 
 
@@ -2008,18 +1929,13 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     expected = test_append_scm_runs["expected"]
 
     if duplicate_msg and not isinstance(duplicate_msg, str):
-        exp_msg = (
-            "Duplicate metadata (numbers show how many times the given "
-            "metadata is repeated)."
-        )
+        exp_msg = "Duplicate metadata (numbers show how many times the given metadata is repeated)."
         with pytest.raises(NonUniqueMetadataError) as exc_info:
             base.append(other, duplicate_msg=duplicate_msg)
 
         error_msg = exc_info.value.args[0]
         assert error_msg.startswith(exp_msg)
-        pd.testing.assert_frame_equal(
-            pd.concat([base.meta, other.meta]), exc_info.value.meta
-        )
+        pd.testing.assert_frame_equal(pd.concat([base.meta, other.meta]), exc_info.value.meta)
 
         return
 
@@ -2036,9 +1952,7 @@ def test_append_duplicate_times(test_append_scm_runs, duplicate_msg):
     else:
         assert not mock_warn_taking_average
 
-    pd.testing.assert_frame_equal(
-        res.timeseries(), expected.timeseries(), check_like=True
-    )
+    pd.testing.assert_frame_equal(res.timeseries(), expected.timeseries(), check_like=True)
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -2174,9 +2088,7 @@ def test_run_append_empty(scm_run):
 def test_append_chain_column_order_time_interpolation(scm_run):
     base, other, other_2, exp = get_append_col_order_time_dfs(scm_run)
 
-    res = scm_run.append(other, duplicate_msg="warn").append(
-        other_2, duplicate_msg="warn"
-    )
+    res = scm_run.append(other, duplicate_msg="warn").append(other_2, duplicate_msg="warn")
 
     pd.testing.assert_frame_equal(
         res.timeseries().sort_index(),
@@ -2209,9 +2121,7 @@ def test_append_inplace_preexisting_nan(scm_run):
     # make sure underlying hasn't changed when not appending inplace
     pd.testing.assert_frame_equal(original_ts, scm_run.timeseries())
 
-    exp = pd.concat(
-        [scm_run.timeseries().reset_index(), other.timeseries().reset_index()]
-    )
+    exp = pd.concat([scm_run.timeseries().reset_index(), other.timeseries().reset_index()])
     exp["junk"] = np.nan
     exp = exp.set_index(res.meta_attributes)
 
@@ -2327,9 +2237,7 @@ def test_append_timewise_align_columns_many_to_many(scm_run_interpolated):
         start.filter(year=range(join_year, 3000)),
     )
 
-    for scenario, df in (
-        res.filter(year=range(1, join_year)).timeseries().groupby("scenario")
-    ):
+    for scenario, df in res.filter(year=range(1, join_year)).timeseries().groupby("scenario"):
         # check that correct history has been written into all timeseries
         exp_vals = history.filter(scenario=scenario).values.squeeze()
         res_vals = df.values.squeeze()
@@ -2338,8 +2246,7 @@ def test_append_timewise_align_columns_many_to_many(scm_run_interpolated):
 
 def test_append_timewise_ambiguous_history(scm_run_interpolated):
     error_msg = re.escape(
-        "Calling ``other.timeseries(meta=align_columns)`` must "
-        "result in umabiguous timeseries"
+        "Calling ``other.timeseries(meta=align_columns)`` must result in umabiguous timeseries"
     )
     with pytest.raises(ValueError, match=error_msg):
         scm_run_interpolated.append_timewise(
@@ -2366,9 +2273,7 @@ def test_append_timewise_no_match(scm_run_interpolated):
 
     join_year = 2010
     base = start.filter(year=range(join_year, 3000))
-    other = start.filter(
-        year=range(1, join_year), variable="Primary Energy", scenario="a_scenario"
-    )
+    other = start.filter(year=range(1, join_year), variable="Primary Energy", scenario="a_scenario")
     other["scenario"] = "other"
     other["model"] = "test"
 
@@ -2382,9 +2287,7 @@ def test_append_timewise_no_match(scm_run_interpolated):
         allow_unordered=True,
     )
 
-    for variable, df in (
-        res.filter(year=range(1, join_year)).timeseries().groupby("variable")
-    ):
+    for variable, df in res.filter(year=range(1, join_year)).timeseries().groupby("variable"):
         # check that correct other has been written into all timeseries
         exp_vals = other.filter(variable=variable)
         if exp_vals.empty:
@@ -2457,9 +2360,7 @@ def test_interpolate_nan(source):
         extrapolation_type="linear",
     )
 
-    npt.assert_array_almost_equal(
-        res.values.squeeze(), [1.0, 2.0, 3.0, 4.0, 5.0], decimal=4
-    )
+    npt.assert_array_almost_equal(res.values.squeeze(), [1.0, 2.0, 3.0, 4.0, 5.0], decimal=4)
 
 
 def test_interpolate_nan_constant():
@@ -2480,9 +2381,7 @@ def test_interpolate_nan_constant():
         extrapolation_type="constant",
     )
 
-    npt.assert_array_almost_equal(
-        res.values.squeeze(), [1.0, 2.0, 3.0, 3.0, 3.0], decimal=4
-    )
+    npt.assert_array_almost_equal(res.values.squeeze(), [1.0, 2.0, 3.0, 3.0, 3.0], decimal=4)
 
 
 @pytest.mark.parametrize(
@@ -2648,12 +2547,7 @@ def test_time_mean_year_beginning_of_year(test_scm_df_monthly):
             return x.year
         return x.year + 1
 
-    ts_resampled = (
-        test_scm_df_monthly.timeseries()
-        .T.groupby(group_annual_mean_beginning_of_year)
-        .mean()
-        .T
-    )
+    ts_resampled = test_scm_df_monthly.timeseries().T.groupby(group_annual_mean_beginning_of_year).mean().T
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 1, 1))
 
     pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, check_like=True)
@@ -2679,9 +2573,7 @@ def test_time_mean_year(test_scm_df_monthly):
     def group_annual_mean(x):
         return x.year
 
-    ts_resampled = (
-        test_scm_df_monthly.timeseries().T.groupby(group_annual_mean).mean().T
-    )
+    ts_resampled = test_scm_df_monthly.timeseries().T.groupby(group_annual_mean).mean().T
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 7, 1))
 
     pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, check_like=True)
@@ -2709,12 +2601,7 @@ def test_time_mean_year_end_of_year(test_scm_df_monthly):
             return x.year
         return x.year - 1
 
-    ts_resampled = (
-        test_scm_df_monthly.timeseries()
-        .T.groupby(group_annual_mean_end_of_year)
-        .mean()
-        .T
-    )
+    ts_resampled = test_scm_df_monthly.timeseries().T.groupby(group_annual_mean_end_of_year).mean().T
     ts_resampled.columns = ts_resampled.columns.map(lambda x: dt.datetime(x, 12, 31))
 
     pd.testing.assert_frame_equal(res.timeseries(), ts_resampled, check_like=True)
@@ -2828,9 +2715,7 @@ def test_filter_empty_times():
     np.testing.assert_equal(result, expected)
 
 
-@pytest.mark.xfail(
-    _check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument"
-)
+@pytest.mark.xfail(_check_pandas_less_110(), reason="pandas<=1.1.0 does not have rtol argument")
 @pytest.mark.parametrize(
     ("target_unit", "input_units", "filter_kwargs", "expected", "expected_units"),
     [
@@ -2867,9 +2752,7 @@ def test_filter_empty_times():
         ),
     ],
 )
-def test_convert_unit(
-    scm_run, target_unit, input_units, filter_kwargs, expected, expected_units
-):
+def test_convert_unit(scm_run, target_unit, input_units, filter_kwargs, expected, expected_units):
     scm_run["unit"] = input_units
     obs = scm_run.convert_unit(target_unit, **filter_kwargs)
 
@@ -2903,9 +2786,7 @@ def test_convert_unit_inplace(scm_run):
     assert ret is None
 
     assert (scm_run["unit"] != units).all()
-    npt.assert_array_almost_equal(
-        scm_run.filter(year=2005).values.squeeze(), [1000.0, 500.0, 2000.0]
-    )
+    npt.assert_array_almost_equal(scm_run.filter(year=2005).values.squeeze(), [1000.0, 500.0, 2000.0])
 
 
 def test_convert_unit_target_unit_in_input():
@@ -3054,33 +2935,25 @@ def test_unit_context_no_existing_contexts(scm_run, context):
             "unit_context", no_duplicates=True
         )
         assert np.isnan(
-            res.filter(variable=to_convert, keep=False).get_unique_meta(
-                "unit_context", no_duplicates=True
-            )
+            res.filter(variable=to_convert, keep=False).get_unique_meta("unit_context", no_duplicates=True)
         )
 
 
 def _check_context_or_nan(run, variable, exp, keep=True):
     if exp is None:
         assert np.isnan(
-            run.filter(variable=variable, keep=keep).get_unique_meta(
-                "unit_context", no_duplicates=True
-            )
+            run.filter(variable=variable, keep=keep).get_unique_meta("unit_context", no_duplicates=True)
         )
     else:
         assert (
-            run.filter(variable=variable, keep=keep).get_unique_meta(
-                "unit_context", no_duplicates=True
-            )
+            run.filter(variable=variable, keep=keep).get_unique_meta("unit_context", no_duplicates=True)
             == exp
         )
 
 
 @pytest.mark.parametrize("to_not_convert_matches", (True, False))
 @pytest.mark.parametrize("context", (None, "AR4GWP100"))
-def test_unit_context_both_have_existing_context(
-    scm_run, context, to_not_convert_matches
-):
+def test_unit_context_both_have_existing_context(scm_run, context, to_not_convert_matches):
     to_convert = "*Coal"
 
     scm_run["unit_context"] = context
@@ -3103,9 +2976,7 @@ def test_unit_context_both_have_existing_context(
 
 @pytest.mark.parametrize("to_not_convert_matches", (True, False))
 @pytest.mark.parametrize("context", (None, "AR4GWP100"))
-def test_unit_context_both_have_existing_context_error(
-    scm_run, context, to_not_convert_matches
-):
+def test_unit_context_both_have_existing_context_error(scm_run, context, to_not_convert_matches):
     to_convert = "*Coal"
 
     scm_run["unit_context"] = "junk"
@@ -3132,16 +3003,8 @@ def test_unit_context_to_convert_has_existing_context(scm_run, context):
 
     _check_context_or_nan(start, to_convert, context)
     _check_context_or_nan(start, to_convert, None, keep=False)
-    assert (
-        res.filter(variable=to_convert).get_unique_meta("unit", no_duplicates=True)
-        == "GJ/yr"
-    )
-    assert (
-        res.filter(variable=to_convert, keep=False).get_unique_meta(
-            "unit", no_duplicates=True
-        )
-        == "EJ/yr"
-    )
+    assert res.filter(variable=to_convert).get_unique_meta("unit", no_duplicates=True) == "GJ/yr"
+    assert res.filter(variable=to_convert, keep=False).get_unique_meta("unit", no_duplicates=True) == "EJ/yr"
 
 
 @pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100"))
@@ -3165,16 +3028,10 @@ def test_unit_context_to_convert_has_existing_context_error(scm_run, context):
 
 @pytest.mark.parametrize("context", ("AR5GWP100", "AR4GWP100", None))
 @pytest.mark.parametrize("to_not_convert_context", ("AR5GWP100", "AR4GWP100"))
-def test_unit_context_to_not_convert_has_existing_context(
-    scm_run, context, to_not_convert_context
-):
+def test_unit_context_to_not_convert_has_existing_context(scm_run, context, to_not_convert_context):
     to_convert = "*Coal"
-    to_not_convert = scm_run.filter(variable=to_convert, keep=False).get_unique_meta(
-        "variable"
-    )
-    start = scm_run.convert_unit(
-        "MJ/yr", variable=to_not_convert, context=to_not_convert_context
-    )
+    to_not_convert = scm_run.filter(variable=to_convert, keep=False).get_unique_meta("variable")
+    start = scm_run.convert_unit("MJ/yr", variable=to_not_convert, context=to_not_convert_context)
 
     _check_context_or_nan(start, to_convert, None)
     _check_context_or_nan(start, to_convert, to_not_convert_context, keep=False)
@@ -3185,16 +3042,8 @@ def test_unit_context_to_not_convert_has_existing_context(
     _check_context_or_nan(res, to_convert, context)
     _check_context_or_nan(res, to_not_convert, to_not_convert_context)
 
-    assert (
-        res.filter(variable=to_convert).get_unique_meta("unit", no_duplicates=True)
-        == "GJ/yr"
-    )
-    assert (
-        res.filter(variable=to_convert, keep=False).get_unique_meta(
-            "unit", no_duplicates=True
-        )
-        == "MJ/yr"
-    )
+    assert res.filter(variable=to_convert).get_unique_meta("unit", no_duplicates=True) == "GJ/yr"
+    assert res.filter(variable=to_convert, keep=False).get_unique_meta("unit", no_duplicates=True) == "MJ/yr"
 
 
 @pytest.mark.parametrize(
@@ -3211,9 +3060,7 @@ def test_unit_context_to_not_convert_has_existing_context(
     ),
 )
 @pytest.mark.parametrize("duplicated_meta_once_converted", [True, False])
-def test_convert_unit_multiple_units(
-    start_units, target_unit, duplicated_meta_once_converted
-):
+def test_convert_unit_multiple_units(start_units, target_unit, duplicated_meta_once_converted):
     if duplicated_meta_once_converted:
         climate_model = "climate_model"
     else:
@@ -3361,10 +3208,7 @@ def test_read_from_disk(test_file, test_kwargs, test_data_path, use_pathlib):
     if use_pathlib:
         fname = pathlib.Path(fname)
     loaded = ScmRun(fname, **test_kwargs)
-    assert (
-        loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze()
-        == 0.010116813
-    )
+    assert loaded.filter(variable="Emissions|N2O", year=1767).timeseries().values.squeeze() == 0.010116813
 
 
 def _write_two_timeseries_csv(tmp_path):
@@ -3422,9 +3266,7 @@ def test_read_csv_python_engine_omits_low_memory(tmp_path):
 
 
 def test_read_from_disk_different_number_of_digits_years(test_data_path):
-    loaded = ScmRun(
-        os.path.join(test_data_path, "different_number_of_digits_years.csv")
-    )
+    loaded = ScmRun(os.path.join(test_data_path, "different_number_of_digits_years.csv"))
 
     # make sure data sorts correctly
     assert loaded["year"].iloc[-1] == loaded["year"].max()
@@ -3479,22 +3321,15 @@ def test_get_meta(scm_run):
 @pytest.mark.parametrize("no_duplicates", [True, False])
 def test_get_meta_no_duplicates(scm_run, no_duplicates):
     if no_duplicates:
-        assert (
-            scm_run.get_unique_meta("climate_model", no_duplicates=no_duplicates)
-            == "a_model"
-        )
+        assert scm_run.get_unique_meta("climate_model", no_duplicates=no_duplicates) == "a_model"
 
         error_msg = re.escape(
-            "`variable` column is not unique (found values: {})".format(
-                scm_run["variable"].unique().tolist()
-            )
+            "`variable` column is not unique (found values: {})".format(scm_run["variable"].unique().tolist())
         )
         with pytest.raises(ValueError, match=error_msg):
             scm_run.get_unique_meta("variable", no_duplicates=no_duplicates)
     else:
-        assert scm_run.get_unique_meta(
-            "climate_model", no_duplicates=no_duplicates
-        ) == ["a_model"]
+        assert scm_run.get_unique_meta("climate_model", no_duplicates=no_duplicates) == ["a_model"]
         assert scm_run.get_unique_meta("variable", no_duplicates=no_duplicates) == [
             "Primary Energy",
             "Primary Energy|Coal",
@@ -3538,9 +3373,7 @@ def test_drop_meta_missing(scm_run, label):
     assert "variable" in scm_run.meta.columns
 
 
-@pytest.mark.parametrize(
-    "label", [["other", "climate_model"], ["climate_model", "other"]]
-)
+@pytest.mark.parametrize("label", [["other", "climate_model"], ["climate_model", "other"]])
 def test_drop_meta_missing_one(scm_run, label):
     with pytest.raises(KeyError):
         scm_run.drop_meta(label)
@@ -3684,9 +3517,7 @@ def test_lineplot_time_axis(scm_run, time_axis, mod_func):
         ),
     ),
 )
-def test_timeseries_time_axis_non_unique_raises(
-    method_to_call, time_axis, non_unique_vals, exp_raise
-):
+def test_timeseries_time_axis_non_unique_raises(method_to_call, time_axis, non_unique_vals, exp_raise):
     start = ScmRun(
         data=np.arange(len(non_unique_vals)),
         index=non_unique_vals,
@@ -3772,12 +3603,8 @@ def test_append_long_run(tax1, tax2):
         "unit": "GtC",
         "region": "World",
     }
-    run1 = ScmRun(
-        data=np.arange(len(tax1)), index=tax1, columns={"scenario": "run1", **mdata}
-    )
-    run2 = ScmRun(
-        data=np.arange(len(tax2)), index=tax2, columns={"scenario": "run2", **mdata}
-    )
+    run1 = ScmRun(data=np.arange(len(tax1)), index=tax1, columns={"scenario": "run1", **mdata})
+    run2 = ScmRun(data=np.arange(len(tax2)), index=tax2, columns={"scenario": "run2", **mdata})
 
     res = run_append([run1, run2])
 
@@ -3837,9 +3664,7 @@ def test_append_inplace(scm_run, inplace, use_cls_method):
 )
 @inplace_params
 @pytest.mark.parametrize("use_cls_method", [True, False])
-def test_append_metadata(
-    scm_run, metadata_1, metadata_2, metadata, expected, inplace, use_cls_method
-):
+def test_append_metadata(scm_run, metadata_1, metadata_2, metadata, expected, inplace, use_cls_method):
     run1 = scm_run.copy()
     run1["ensemble_member"] = 1
     run1.metadata = metadata_1
@@ -3920,10 +3745,7 @@ def test_non_unique_metadata_error_formatting():
     exp = exp[exp > 1]
     exp.name = "repeats"
     exp = exp.to_frame().reset_index()
-    error_msg = (
-        "Duplicate metadata (numbers show how many times the given "
-        f"metadata is repeated).\n{exp}"
-    )
+    error_msg = f"Duplicate metadata (numbers show how many times the given metadata is repeated).\n{exp}"
 
     with pytest.raises(NonUniqueMetadataError, match=re.escape(error_msg)):
         raise NonUniqueMetadataError(meta)

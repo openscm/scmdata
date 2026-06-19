@@ -37,21 +37,15 @@ def test_run_to_nc(scm_run, use_pathlib):
 
             npt.assert_allclose(
                 ds.variables["Primary_Energy"][0, :],
-                scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[
-                    0
-                ],
+                scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
             )
             npt.assert_allclose(
                 ds.variables["Primary_Energy"][1, :],
-                scm_run.filter(
-                    variable="Primary Energy", scenario="a_scenario2"
-                ).values[0],
+                scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
             )
             npt.assert_allclose(
                 ds.variables["Primary_Energy__Coal"][0, :],
-                scm_run.filter(
-                    variable="Primary Energy|Coal", scenario="a_scenario"
-                ).values[0],
+                scm_run.filter(variable="Primary Energy|Coal", scenario="a_scenario").values[0],
             )
 
 
@@ -209,9 +203,7 @@ def test_nc_to_run_4d(scm_run):
 
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
-        run_to_nc(
-            scm_run, out_fname, dimensions=("scenario", "climate_model", "run_id")
-        )
+        run_to_nc(scm_run, out_fname, dimensions=("scenario", "climate_model", "run_id"))
 
         assert exists(out_fname)
 
@@ -399,9 +391,7 @@ def test_run_to_nc_with_extras(scm_run, dtype):
 
         # make an extra column which maps 1:1 with scenario
         unique_scenarios = scm_run["scenario"].unique().tolist()
-        run_id = (
-            scm_run["scenario"].apply(lambda x: unique_scenarios.index(x)).astype(dtype)
-        )
+        run_id = scm_run["scenario"].apply(lambda x: unique_scenarios.index(x)).astype(dtype)
 
         scm_run["run_id"] = run_id
         run_to_nc(scm_run, out_fname, dimensions=("scenario",), extras=("run_id",))
@@ -421,21 +411,15 @@ def test_run_to_nc_with_extras(scm_run, dtype):
 
             npt.assert_allclose(
                 ds.variables["Primary_Energy"][0, :],
-                scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[
-                    0
-                ],
+                scm_run.filter(variable="Primary Energy", scenario="a_scenario").values[0],
             )
             npt.assert_allclose(
                 ds.variables["Primary_Energy"][1, :],
-                scm_run.filter(
-                    variable="Primary Energy", scenario="a_scenario2"
-                ).values[0],
+                scm_run.filter(variable="Primary Energy", scenario="a_scenario2").values[0],
             )
             npt.assert_allclose(
                 ds.variables["Primary_Energy__Coal"][0, :],
-                scm_run.filter(
-                    variable="Primary Energy|Coal", scenario="a_scenario"
-                ).values[0],
+                scm_run.filter(variable="Primary Energy|Coal", scenario="a_scenario").values[0],
             )
 
 
@@ -484,21 +468,15 @@ def test_nc_methods(scm_run):
 
 @patch("scmdata.netcdf.has_netcdf", False)
 def test_no_netcdf(scm_run):
-    with pytest.raises(
-        ImportError, match="netcdf4 is not installed. Run 'pip install netcdf4'"
-    ):
+    with pytest.raises(ImportError, match="netcdf4 is not installed. Run 'pip install netcdf4'"):
         run_to_nc(scm_run.__class__, "ignored")
 
-    with pytest.raises(
-        ImportError, match="netcdf4 is not installed. Run 'pip install netcdf4'"
-    ):
+    with pytest.raises(ImportError, match="netcdf4 is not installed. Run 'pip install netcdf4'"):
         nc_to_run(scm_run, "ignored")
 
 
 def test_nc_read_failure(scm_run, test_data_path, caplog):
-    test_fname = join(
-        test_data_path, "netcdf-scm_tas_Amon_bcc-csm1-1_rcp26_r1i1p1_209001-211012.nc"
-    )
+    test_fname = join(test_data_path, "netcdf-scm_tas_Amon_bcc-csm1-1_rcp26_r1i1p1_209001-211012.nc")
 
     with pytest.raises(Exception):
         nc_to_run(scm_run.__class__, test_fname)
@@ -665,9 +643,7 @@ def test_run_to_nc_loop_tricky_variable_name(scm_run, start_variable):
     scm_run["variable"] = scm_run["variable"].apply(
         lambda x: x.replace("Primary Energy|Coal", start_variable)
     )
-    scm_run["unit"] = scm_run["variable"].apply(
-        lambda x: "EJ/yr" if x != start_variable else "MJ / yr"
-    )
+    scm_run["unit"] = scm_run["variable"].apply(lambda x: "EJ/yr" if x != start_variable else "MJ / yr")
 
     with tempfile.TemporaryDirectory() as tempdir:
         out_fname = join(tempdir, "out.nc")
@@ -770,8 +746,6 @@ def test_nc_to_run_does_not_emit_use_cftime_futurewarning(scm_run):
             nc_to_run(scm_run.__class__, out_fname)
 
         use_cftime_warnings = [
-            w for w in caught
-            if issubclass(w.category, FutureWarning)
-            and "use_cftime" in str(w.message)
+            w for w in caught if issubclass(w.category, FutureWarning) and "use_cftime" in str(w.message)
         ]
     assert not use_cftime_warnings, [str(w.message) for w in use_cftime_warnings]

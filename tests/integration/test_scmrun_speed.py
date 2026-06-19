@@ -102,9 +102,7 @@ def test_append_other_time_axis(benchmark, big_scmrun):
     def append_runs_different_times(other):
         return scmdata.run_append([big_scmrun, other])
 
-    res = benchmark.pedantic(
-        append_runs_different_times, setup=setup, iterations=1, rounds=2
-    )
+    res = benchmark.pedantic(append_runs_different_times, setup=setup, iterations=1, rounds=2)
     assert len(res) == 2 * len(big_scmrun)
     assert res.shape[1] == 2 * big_scmrun.shape[1]
 
@@ -131,9 +129,7 @@ def test_set_meta_all_with_apply(benchmark, big_scmrun):
 
 def test_set_meta_reduce_uniqueness(benchmark, big_scmrun):
     def set_meta():
-        big_scmrun["to_squash"] = big_scmrun["to_squash"].apply(
-            lambda x: "a" if x.startswith("a") else "b"
-        )
+        big_scmrun["to_squash"] = big_scmrun["to_squash"].apply(lambda x: "a" if x.startswith("a") else "b")
 
         return big_scmrun
 
@@ -159,9 +155,7 @@ def test_append_multiple_same_time(benchmark, big_scmrun, n_to_append):
     to_append = []
     for i in range(n_to_append):
         tmp = big_scmrun.copy()
-        tmp["ensemble_member"] = range(
-            i * big_scmrun.shape[0], (i + 1) * big_scmrun.shape[0]
-        )
+        tmp["ensemble_member"] = range(i * big_scmrun.shape[0], (i + 1) * big_scmrun.shape[0])
         to_append.append(tmp)
 
     def append():
@@ -228,18 +222,12 @@ def test_to_from_nc(benchmark, tmpdir, n_models, n_ensemble_members):
         return res
 
     res = benchmark.pedantic(round_trip, iterations=1, rounds=1)
-    scmdata.testing.assert_scmdf_almost_equal(
-        start, res, allow_unordered=True, check_ts_names=False
-    )
+    scmdata.testing.assert_scmdf_almost_equal(start, res, allow_unordered=True, check_ts_names=False)
 
 
 @pytest.mark.parametrize("as_run", [True, False])
 def test_process_over(benchmark, big_scmrun, as_run):
     def round_trip(arr):
-        return arr.process_over(
-            "variable", "sum", as_run=as_run, op_cols={"variable": "squashed"}
-        )
+        return arr.process_over("variable", "sum", as_run=as_run, op_cols={"variable": "squashed"})
 
-    benchmark.pedantic(
-        lambda: big_scmrun.groupby("region").apply(round_trip), iterations=1, rounds=1
-    )
+    benchmark.pedantic(lambda: big_scmrun.groupby("region").apply(round_trip), iterations=1, rounds=1)

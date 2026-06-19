@@ -7,7 +7,8 @@ Based upon :mod:`pyam.utils`.
 import datetime
 import re
 import time
-from typing import Any, Iterable, List, Optional, Union
+from collections.abc import Iterable
+from typing import Any, Union
 
 import numpy as np
 import pandas as pd
@@ -44,7 +45,7 @@ def find_depth(
     s: str,
     level: Union[int, str],
     separator: str = HIERARCHY_SEPARATOR,
-) -> List[Any]:
+) -> list[Any]:
     """
     Find all values which match given depth from a filter keyword.
 
@@ -109,7 +110,7 @@ def find_depth(
 def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     meta_col: pd.Index,
     values: Union[Iterable[MetadataValue], MetadataValue],
-    level: Optional[MetadataValue] = None,
+    level: MetadataValue | None = None,
     regexp: bool = False,
     separator: str = HIERARCHY_SEPARATOR,
 ) -> np.ndarray:
@@ -153,9 +154,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
     """
     matches = np.array([False] * len(meta_col), dtype=bool)
     _values: Iterable[Any] = (
-        [values]
-        if not isinstance(values, Iterable) or isinstance(values, str)
-        else values
+        [values] if not isinstance(values, Iterable) or isinstance(values, str) else values
     )
 
     for s in _values:
@@ -164,8 +163,7 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
             comparison_value = np.nan
 
         use_string_comparison = isinstance(comparison_value, str) or (
-            not np.isnan(comparison_value)
-            and pd.api.types.is_string_dtype(meta_col.categories.dtype)
+            not np.isnan(comparison_value) and pd.api.types.is_string_dtype(meta_col.categories.dtype)
         )
 
         if use_string_comparison:
@@ -188,27 +186,21 @@ def pattern_match(  # pylint: disable=too-many-arguments,too-many-locals
                 subset = [m for m in meta_col.categories if pattern.match(str(m))]
 
                 if level is not None:
-                    depth = find_depth(
-                        meta_col, str(comparison_value), level, separator=separator
-                    )
+                    depth = find_depth(meta_col, str(comparison_value), level, separator=separator)
                     subset = set(subset).intersection(set(depth))
 
                 matches |= meta_col.isin(subset)
         else:
             s_float = float(comparison_value)
             if np.isnan(s_float):
-                matches |= [
-                    c == -1 for c in meta_col.codes
-                ]  # nan's are missing from categoricals
+                matches |= [c == -1 for c in meta_col.codes]  # nan's are missing from categoricals
             else:
                 matches |= np.isclose(s_float, meta_col.astype(float))
 
     return matches
 
 
-def years_match(
-    data: Iterable[Any], years: Union[Iterable[int], np.ndarray, int]
-) -> np.ndarray:
+def years_match(data: Iterable[Any], years: Union[Iterable[int], np.ndarray, int]) -> np.ndarray:
     """
     Match years in time columns for data filtering.
 
@@ -243,9 +235,7 @@ def years_match(
     return is_in(data, years)
 
 
-def month_match(
-    data: Iterable[Any], months: Union[Iterable[Union[str, int]], int, str]
-) -> np.ndarray:
+def month_match(data: Iterable[Any], months: Union[Iterable[Union[str, int]], int, str]) -> np.ndarray:
     """
     Match months in time columns for data filtering.
 
@@ -265,9 +255,7 @@ def month_match(
     return time_match(data, months, ["%b", "%B"], "tm_mon", "month")
 
 
-def day_match(
-    data: Iterable[Any], days: Union[List[str], List[int], int, str]
-) -> np.ndarray:
+def day_match(data: Iterable[Any], days: Union[list[str], list[int], int, str]) -> np.ndarray:
     """
     Match days in time columns for data filtering.
 
@@ -311,7 +299,7 @@ def hour_match(data: Iterable[Any], hours: Union[Iterable[int], int]) -> np.ndar
 def time_match(
     data: Iterable[Any],
     times: Union[Iterable[Union[str, int]], int, str],
-    conv_codes: List[str],
+    conv_codes: list[str],
     strptime_attr: str,
     name: str,
 ) -> np.ndarray:
@@ -350,18 +338,13 @@ def time_match(
         increasing integers (i.e. "Nov-Feb" will not work, one must use ["Nov-Dec",
         "Jan-Feb"] instead)
     """
-    times_list: List[Union[int, str]] = (
-        [times] if isinstance(times, (int, str)) else times
-    )
+    times_list: list[Union[int, str]] = [times] if isinstance(times, (int, str)) else times
 
     def conv_strs(strs_to_convert, conv_codes, name):
         res = None
         for conv_code in conv_codes:
             try:
-                res = [
-                    getattr(time.strptime(t, conv_code), strptime_attr)
-                    for t in strs_to_convert
-                ]
+                res = [getattr(time.strptime(t, conv_code), strptime_attr) for t in strs_to_convert]
                 break
             except ValueError:
                 continue
@@ -373,15 +356,14 @@ def time_match(
 
     if isinstance(times_list[0], str):
         to_delete = []
-        to_append: List[Any] = []
+        to_append: list[Any] = []
         for i, timeset in enumerate(times_list):
             # ignore type as already established we're looking at strings
             if "-" in timeset:  # type: ignore
                 ints = conv_strs(timeset.split("-"), conv_codes, name)  # type: ignore
                 if ints[0] > ints[1]:
                     error_msg = (
-                        "string ranges must lead to increasing integer ranges,"
-                        f" {timeset} becomes {ints}"
+                        f"string ranges must lead to increasing integer ranges, {timeset} becomes {ints}"
                     )
                     raise ValueError(error_msg)
 

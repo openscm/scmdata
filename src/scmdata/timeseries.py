@@ -6,7 +6,8 @@ Functionality for handling and storing individual time-series
 
 import copy
 import datetime as dt
-from typing import Any, Callable, List, Literal, Optional, Union
+from collections.abc import Callable
+from typing import Any, Literal, Union
 
 import numpy as np
 import pint
@@ -88,10 +89,7 @@ class TimeSeries(OpsMixin):
 
         if isinstance(data, xr.DataArray):
             if time is not None:
-                raise TypeError(
-                    "If data is an :class:`xarray.DataArray` instance, time must be "
-                    "`None`"
-                )
+                raise TypeError("If data is an :class:`xarray.DataArray` instance, time must be `None`")
 
             if data.dims != ("time",):
                 raise ValueError(
@@ -103,8 +101,7 @@ class TimeSeries(OpsMixin):
         else:
             if time is None:
                 raise TypeError(
-                    "If data is not an :class:`xarray.DataArray` instance, `time` "
-                    "must not be `None`"
+                    "If data is not an :class:`xarray.DataArray` instance, `time` must not be `None`"
                 )
 
             if "coords" in kwargs:
@@ -268,9 +265,9 @@ class TimeSeries(OpsMixin):
 
     def interpolate(
         self,
-        target_times: Union[np.ndarray, List[Union[dt.datetime, int]]],
+        target_times: Union[np.ndarray, list[Union[dt.datetime, int]]],
         interpolation_type: Literal["linear"] = "linear",
-        extrapolation_type: Optional[Literal["linear", "constant"]] = "linear",
+        extrapolation_type: Literal["linear", "constant"] | None = "linear",
     ) -> "TimeSeries":
         """
         Interpolate the timeseries onto a new time axis

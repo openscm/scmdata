@@ -1,0 +1,224 @@
+name: "Bump version"
+description: >
+  Bump a Python project's version using `uv version --bump`,
+  update the CHANGELOG via towncrier, commit, tag, push,
+  and optionally land a second commit bumping main onto a pre-release version.
+
+# Vendored from climate-resource/github-actions bump-version so this public repo
+# does not depend on a private actions repo. Keep behaviour in sync with the
+# upstream action when updating.
+
+inputs:
+  bump-rule:
+    description: >
+      Whitespace-separated list of segments passed to `uv version --bump`.
+      Each segment becomes a separate `--bump <segment>` argument,
+      so values like `patch`, `minor`, `major`, `stable`, `minor alpha`, `patch rc`, or `major beta` are all valid.
+      uv requires a release component (patch, minor, major, stable) alongside any prerelease segment (alpha, beta, rc, dev) when the current version is a stable release.
+    required: true
+  pre-release-bump:
+    description: >
+      Pre-release segment to bump main to after tagging, so future commits do not share the tagged version.
+
+      One of: dev, alpha, beta, rc, none.
+
+      Use 'none' to skip the second commit.
+    required: false
+    default: "dev"
+  pre-release-base:
+    description: >
+      Bump rule applied to the base version before adding the pre-release
+      segment in the second commit. Defaults to 'patch'.
+
+      Use 'none' to skip bumping the base (only add the pre-release segment).
+    required: false
+    default: "patch"
+  update-changelog:
+    description: "If 'true', run towncrier to build the CHANGELOG before tagging."
+    required: false
+    default: "true"
+  commit-email:
+    description: "Email for the CI commit author."
+    required: false
+    default: "ci-runner@climate-resource.invalid"
+  workspace-packages:
+    description: >
+      Optional newline-separated list of uv workspace package names to mirror
+      the bumped version onto (in addition to the root project).
+    required: false
+    default: ""
+  lock:
+    description: "If 'true', run `uv lock` after each version change."
+    required: false
+    default: "true"
+  pre-commit-command:
+    description: >
+      Optional shell command run after the changelog build and before each bump commit.
+
+      Use it to regenerate version-derived files (e.g. an OpenAPI schema) so they stay in sync in the tagged commit.
+      The commit uses `git commit -a`, so any files the command regenerates are picked up automatically.
+      The command must succeed; a non-zero exit aborts the bump.
+    required: false
+    default: ""
+  pre-commit-skip:
+    description: "If 'true', pass -n to git commit to skip pre-commit hooks."
+    required: false
+    default: "false"
+  push:
+    description: "If 'true', push the bump commit, tag, and pre-release commit."
+    required: false
+    default: "true"
+
+outputs:
+  base-version:
+    description: "The version before bumping."
+    value: ${{ steps.bump.outputs.base-version }}
+  new-version:
+    description: "The new tagged version (no 'v' prefix)."
+    value: ${{ steps.bump.outputs.new-version }}
+  tag:
+    description: "The new git tag (with 'v' prefix)."
+    value: ${{ steps.bump.outputs.tag }}
+  dev-version:
+    description: "The pre-release version landed on main after tagging (if any)."
+    value: ${{ steps.bump.outputs.dev-version }}
+  is-prerelease:
+    description: "'true' when the tagged version is a pre-release (a|b|rc|dev)."
+    value: ${{ steps.bump.outputs.is-prerelease }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure git identity
+      shell: bash
+      run: |
+        git config --global user.name "${GITHUB_ACTOR}"
+        git config --global user.email "${{ inputs.commit-email }}"
+
+    - name: Bump, changelog, commit, tag
+      id: bump
+      shell: bash
+      env:
+        BUMP_RULE: ${{ inputs.bump-rule }}
+        PRE_RELEASE_BUMP: ${{ inputs.pre-release-bump }}
+        PRE_RELEASE_BASE: ${{ inputs.pre-release-base }}
+        UPDATE_CHANGELOG: ${{ inputs.update-changelog }}
+        WORKSPACE_PACKAGES: ${{ inputs.workspace-packages }}
+        RUN_LOCK: ${{ inputs.lock }}
+        PRE_COMMIT_COMMAND: ${{ inputs.pre-commit-command }}
+        COMMIT_SKIP_HOOKS: ${{ inputs.pre-commit-skip }}
+        DO_PUSH: ${{ inputs.push }}
+      run: |
+        set -euo pipefail
+
+        commit_args=()
+        if [[ "${COMMIT_SKIP_HOOKS}" == "true" ]]; then
+          commit_args+=(-n)
+        fi
+
+        mirror_workspace() {
+          local version="$1"
+          if [[ -z "${WORKSPACE_PACKAGES//[[:space:]]/}" ]]; then
+            return 0
+          fi
+          while IFS= read -r pkg; do
+            pkg="${pkg// /}"
+            [[ -z "${pkg}" ]] && continue
+            echo "Mirroring version ${version} onto workspace package ${pkg}"
+            uv version --frozen --package "${pkg}" "${version}"
+          done <<< "${WORKSPACE_PACKAGES}"
+        }
+
+        maybe_lock() {
+          if [[ "${RUN_LOCK}" == "true" ]]; then
+            uv lock
+          fi
+        }
+
+        run_pre_commit_command() {
+          if [[ -n "${PRE_COMMIT_COMMAND}" ]]; then
+            echo "Running pre-commit command"
+            bash -c "${PRE_COMMIT_COMMAND}"
+          fi
+        }
+
+        BASE_VERSION="$(uv version --short)"
+        echo "Bumping from version ${BASE_VERSION}"
+
+        read -r -a bump_segments <<< "${BUMP_RULE}"
+        if [[ ${#bump_segments[@]} -eq 0 ]]; then
+          echo "bump-rule must not be empty" >&2
+          exit 1
+        fi
+        bump_cli_args=()
+        for seg in "${bump_segments[@]}"; do
+          bump_cli_args+=(--bump "${seg}")
+        done
+
+        uv version --frozen "${bump_cli_args[@]}"
+        NEW_VERSION="$(uv version --short)"
+        echo "Bumped to version ${NEW_VERSION}"
+
+        mirror_workspace "${NEW_VERSION}"
+        maybe_lock
+
+        if [[ "${UPDATE_CHANGELOG}" == "true" ]]; then
+          uv run towncrier build --yes --version "v${NEW_VERSION}"
+        else
+          echo "Skipping changelog update"
+        fi
+
+        run_pre_commit_command
+
+        git commit "${commit_args[@]}" -a -m "bump: version ${BASE_VERSION} -> ${NEW_VERSION}"
+        git tag "v${NEW_VERSION}"
+
+        if [[ "${DO_PUSH}" == "true" ]]; then
+          git push
+          git push --tags
+        fi
+
+        if [[ "${NEW_VERSION}" =~ (a|b|rc|dev) ]]; then
+          IS_PRERELEASE="true"
+        else
+          IS_PRERELEASE="false"
+        fi
+
+        echo "base-version=${BASE_VERSION}" >> "${GITHUB_OUTPUT}"
+        echo "new-version=${NEW_VERSION}" >> "${GITHUB_OUTPUT}"
+        echo "tag=v${NEW_VERSION}" >> "${GITHUB_OUTPUT}"
+        echo "is-prerelease=${IS_PRERELEASE}" >> "${GITHUB_OUTPUT}"
+
+        # Skip the dev bump if the tagged version is already a pre-release or
+        # the caller opted out.
+        if [[ "${PRE_RELEASE_BUMP}" == "none" ]]; then
+          echo "Skipping pre-release bump (pre-release-bump=none)"
+          exit 0
+        fi
+        if [[ "${IS_PRERELEASE}" == "true" ]]; then
+          echo "Skipping pre-release bump; tagged version is already a pre-release"
+          exit 0
+        fi
+
+        PREV_VERSION="${NEW_VERSION}"
+        bump_args=()
+        if [[ "${PRE_RELEASE_BASE}" != "none" ]]; then
+          bump_args+=(--bump "${PRE_RELEASE_BASE}")
+        fi
+        bump_args+=(--bump "${PRE_RELEASE_BUMP}")
+        uv version --frozen "${bump_args[@]}"
+
+        DEV_VERSION="$(uv version --short)"
+        echo "Bumping main onto pre-release ${PREV_VERSION} > ${DEV_VERSION}"
+
+        mirror_workspace "${DEV_VERSION}"
+        maybe_lock
+        run_pre_commit_command
+
+        git commit "${commit_args[@]}" -a -m "bump(${PRE_RELEASE_BUMP}): version ${PREV_VERSION} > ${DEV_VERSION}"
+
+        if [[ "${DO_PUSH}" == "true" ]]; then
+          git push
+        fi
+
+        echo "dev-version=${DEV_VERSION}" >> "${GITHUB_OUTPUT}"

@@ -3,6 +3,7 @@ Plotting helpers for :class:`ScmRun <scmdata.run.ScmRun>`
 
 See the example notebook 'plotting-with-seaborn.ipynb' for usage examples
 """
+
 import warnings
 from itertools import cycle
 
@@ -190,9 +191,7 @@ def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
 
     Pre-calculate the quantiles, then plot
 
-    >>> summary_stats = ScmRun(
-    ...     scmrun.quantiles_over("ensemble_member", quantiles=[0.05, 0.5, 0.95])
-    ... )
+    >>> summary_stats = ScmRun(scmrun.quantiles_over("ensemble_member", quantiles=[0.05, 0.5, 0.95]))
     >>> summary_stats.plumeplot(pre_calculated=True)  # doctest: +ELLIPSIS
     (<Axes: ylabel='K'>, ...)
 
@@ -207,9 +206,7 @@ def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
         import matplotlib.patches as mpatches
         import matplotlib.pyplot as plt
     except ImportError:  # pragma: no cover
-        raise ImportError(  # noqa:TRY200
-            "matplotlib is not installed. Run 'pip install matplotlib'"
-        )
+        raise ImportError("matplotlib is not installed. Run 'pip install matplotlib'")
 
     if not pre_calculated:
         quantiles = [v for qv in quantiles_plumes for v in qv[0]]
@@ -246,9 +243,7 @@ def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
                 missing_quantile = False
                 for qt in q:
                     if qt not in quantiles:
-                        warnings.warn(
-                            f"Quantile {qt} not available for {hue_value} {style_value}"
-                        )
+                        warnings.warn(f"Quantile {qt} not available for {hue_value} {style_value}")
                         missing_quantile = True
 
                 if missing_quantile:
@@ -273,12 +268,8 @@ def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
 
                     p = ax.fill_between(
                         xaxis,
-                        _get_1d_or_raise(
-                            hsdf.filter(quantile=q[0]), hue_var, style_var
-                        ),
-                        _get_1d_or_raise(
-                            hsdf.filter(quantile=q[1]), hue_var, style_var
-                        ),
+                        _get_1d_or_raise(hsdf.filter(quantile=q[0]), hue_var, style_var),
+                        _get_1d_or_raise(hsdf.filter(quantile=q[1]), hue_var, style_var),
                         label=label,
                         **pkwargs,
                     )
@@ -311,9 +302,7 @@ def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
 
                     p = ax.plot(
                         xaxis,
-                        _get_1d_or_raise(
-                            hsdf.filter(quantile=q[0]), hue_var, style_var
-                        ),
+                        _get_1d_or_raise(hsdf.filter(quantile=q[0]), hue_var, style_var),
                         label=label,
                         linewidth=linewidth,
                         **pkwargs,
@@ -326,18 +315,14 @@ def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
                         _palette[hue_value] = p.get_color()
 
                 else:
-                    raise ValueError(
-                        "quantiles to plot must be of length one or two, "
-                        f"received: {q}"
-                    )
+                    raise ValueError(f"quantiles to plot must be of length one or two, received: {q}")
 
                 if label not in quantile_labels:
                     quantile_labels[label] = p
 
     # Fake the line handles for the legend
     hue_val_lines = [
-        mlines.Line2D([0], [0], color=_palette[hue_value], label=hue_value)
-        for hue_value in plotted_hues
+        mlines.Line2D([0], [0], color=_palette[hue_value], label=hue_value) for hue_value in plotted_hues
     ]
 
     legend_items = [
@@ -364,10 +349,7 @@ def plumeplot(  # pragma: no cover # noqa: PLR0913, PLR0912, PLR0915
             *style_val_lines,
         ]
     elif dashes is not None:
-        warnings.warn(
-            "`dashes` was passed but no lines were plotted, the style settings "
-            "will not be used"
-        )
+        warnings.warn("`dashes` was passed but no lines were plotted, the style settings will not be used")
 
     ax.legend(handles=legend_items, loc="best")
 

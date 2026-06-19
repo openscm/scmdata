@@ -40,9 +40,7 @@ class DummyBackendBase(BaseDatabaseBackend):
         return self.keys  # not doing any filtering...
 
     def save(self, sr):
-        key = os.path.join(
-            *[sr.get_unique_meta(k, True) for k in self.kwargs["levels"]]
-        )
+        key = os.path.join(*[sr.get_unique_meta(k, True) for k in self.kwargs["levels"]])
         self.keys[key] = sr
         return key
 
@@ -228,9 +226,7 @@ class TestNetCDFBackend:
     def test_netcdf_save_duplicate_meta(self, tdb, start_scmrun):
         with tempfile.TemporaryDirectory() as tempdir:
             backend = NetCDFDatabaseBackend(levels=("climate_model",), root_dir=tempdir)
-            msg = re.escape(
-                "`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])"
-            )
+            msg = re.escape("`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])")
             with pytest.raises(ValueError, match=msg):
                 backend.save(start_scmrun)
 
@@ -248,9 +244,7 @@ class TestNetCDFBackend:
 
                 mock_get_out_filepath.assert_called_once()
                 mock_get_out_filepath.assert_called_with(
-                    climate_model=inp_scmrun.get_unique_meta(
-                        "climate_model", no_duplicates=True
-                    ),
+                    climate_model=inp_scmrun.get_unique_meta("climate_model", no_duplicates=True),
                     variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
                     region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
                     scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
@@ -262,9 +256,7 @@ class TestNetCDFBackend:
 
     @patch("scmdata.database.backends.netcdf.ensure_dir_exists")
     @patch.object(ScmRun, "to_nc")
-    def test_netcdf_save_non_unique_meta(
-        self, mock_to_nc, mock_ensure_dir_exists, tdb, start_scmrun
-    ):
+    def test_netcdf_save_non_unique_meta(self, mock_to_nc, mock_ensure_dir_exists, tdb, start_scmrun):
         with tempfile.TemporaryDirectory() as tempdir:
             backend = NetCDFDatabaseBackend(levels=tdb.levels, root_dir=tempdir)
 
@@ -280,9 +272,7 @@ class TestNetCDFBackend:
 
                 mock_get_out_filepath.assert_called_once()
                 mock_get_out_filepath.assert_called_with(
-                    climate_model=inp_scmrun.get_unique_meta(
-                        "climate_model", no_duplicates=True
-                    ),
+                    climate_model=inp_scmrun.get_unique_meta("climate_model", no_duplicates=True),
                     variable=inp_scmrun.get_unique_meta("variable", no_duplicates=True),
                     region=inp_scmrun.get_unique_meta("region", no_duplicates=True),
                     scenario=inp_scmrun.get_unique_meta("scenario", no_duplicates=True),
@@ -298,9 +288,7 @@ class TestNetCDFBackend:
 def test_save_to_database_single_file_non_unique_levels(tdb, start_scmrun):
     with pytest.raises(
         ValueError,
-        match=re.escape(
-            "`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])"
-        ),
+        match=re.escape("`climate_model` column is not unique (found values: ['cmodel_a', 'cmodel_b'])"),
     ):
         tdb._backend.save(start_scmrun)
 
@@ -310,11 +298,7 @@ def test_database_save(tdb, start_scmrun):
     tdb.save(start_scmrun)
 
     expected_calls = len(
-        list(
-            start_scmrun.groupby(
-                ["climate_model", "variable", "region", "scenario", "ensemble_member"]
-            )
-        )
+        list(start_scmrun.groupby(["climate_model", "variable", "region", "scenario", "ensemble_member"]))
     )
     assert len(tdb._backend.keys) == expected_calls
 
@@ -326,9 +310,7 @@ def test_database_save_weird(tdb, start_scmrun, ch):
     tdb.save(start_scmrun)
 
     assert len(start_scmrun.filter(variable=weird_var_name))
-    assert_scmdf_almost_equal(
-        tdb.load(variable=weird_var_name), start_scmrun.filter(variable=weird_var_name)
-    )
+    assert_scmdf_almost_equal(tdb.load(variable=weird_var_name), start_scmrun.filter(variable=weird_var_name))
 
     replace_ch = "-" if ch not in "." else ch
     exp = pd.DataFrame(
@@ -360,9 +342,7 @@ def test_database_save_weird_end(tdb, start_scmrun, ch):
     tdb.save(start_scmrun)
 
     assert len(start_scmrun.filter(variable=weird_var_name))
-    assert_scmdf_almost_equal(
-        tdb.load(variable=weird_var_name), start_scmrun.filter(variable=weird_var_name)
-    )
+    assert_scmdf_almost_equal(tdb.load(variable=weird_var_name), start_scmrun.filter(variable=weird_var_name))
 
     exp = pd.DataFrame(
         [
@@ -399,14 +379,10 @@ def test_database_save_weird_slash(tdb, start_scmrun):
 
 def test_database_loaded(tdb_with_data):
     assert os.path.exists(
-        os.path.join(
-            tdb_with_data._root_dir, "cmodel_a", "variable", "cmodel_a__variable.nc"
-        )
+        os.path.join(tdb_with_data._root_dir, "cmodel_a", "variable", "cmodel_a__variable.nc")
     )
     assert os.path.exists(
-        os.path.join(
-            tdb_with_data._root_dir, "cmodel_b", "variable", "cmodel_b__variable.nc"
-        )
+        os.path.join(tdb_with_data._root_dir, "cmodel_b", "variable", "cmodel_b__variable.nc")
     )
 
     out_names = glob(
@@ -432,9 +408,7 @@ def test_database_loaded(tdb_with_data):
 )
 def test_database_load_data(tdb_with_data, start_scmrun, filter):
     loaded_ts = tdb_with_data.load(**filter)
-    assert_scmdf_almost_equal(
-        loaded_ts, start_scmrun.filter(**filter), check_ts_names=False
-    )
+    assert_scmdf_almost_equal(loaded_ts, start_scmrun.filter(**filter), check_ts_names=False)
 
 
 def test_database_load_data_extras(tdb_with_data):
@@ -485,9 +459,7 @@ def test_database_overwriting(tdb_with_data, start_scmrun):
     )
 
     loaded_ts = tdb_with_data.load()
-    assert_scmdf_almost_equal(
-        loaded_ts, run_append([start_scmrun, start_scmrun_2]), check_ts_names=False
-    )
+    assert_scmdf_almost_equal(loaded_ts, run_append([start_scmrun, start_scmrun_2]), check_ts_names=False)
 
 
 def test_database_save_duplicates(tdb_with_data, start_scmrun):
