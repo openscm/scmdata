@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: ./.github/actions/setup-uv
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Install dependencies
         run: uv sync --all-extras
       # There are still a lot of mypy errors to resolve
@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: ./.github/actions/setup-uv
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Install dependencies
         run: uv sync --all-extras --group docs
       - name: docs
@@ -43,7 +43,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest" ]
-        python-version: [ "3.10", "3.11" ]
+        python-version: [ "3.11", "3.12", "3.13" ]
     runs-on: "${{ matrix.os }}"
     steps:
       - name: Check out repository
@@ -61,11 +61,14 @@ jobs:
         uses: codecov/codecov-action@v4
 
   test-xarray-versions:
+    # Guard the minimum supported xarray (see the floor in pyproject.toml).
+    # Older xarray is incompatible with pandas >= 3, so the floor tracks the
+    # first pandas-3-compatible release; the latest xarray is covered by `tests`.
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [ "3.11" ]
-        xarray-version: [ "0.18.2", "2025.01", "2025.03" ]
+        xarray-version: [ "2025.12.0" ]
 
     steps:
       - name: Checkout repository
@@ -85,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.11"]
 
     steps:
       - name: Checkout repository
@@ -104,7 +107,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest" ]
-        python-version: [ "3.10", "3.11" ]
+        python-version: [ "3.11", "3.13" ]
     runs-on: "${{ matrix.os }}"
     steps:
       - name: Check out repository
@@ -124,7 +127,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: ./.github/actions/setup-uv
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Build package
         run: uv build
       - name: Check build
@@ -138,7 +141,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: ./.github/actions/setup-uv
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Install dependencies
         run: uv sync --all-extras
       - name: Check licences of dependencies

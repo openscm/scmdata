@@ -20,6 +20,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     TypeVar,
     cast,
     overload,
@@ -32,7 +33,6 @@ import pandas as pd
 import pandas.io.common
 import pint
 from dateutil import parser
-from typing_extensions import Self
 
 import scmdata.units
 

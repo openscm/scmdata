@@ -7,13 +7,12 @@ Functionality for handling and storing individual time-series
 import copy
 import datetime as dt
 from collections.abc import Callable
-from typing import Any, Literal, Union
+from typing import Any, Literal, Self, Union
 
 import numpy as np
 import pint
 import xarray as xr
 from openscm_units import unit_registry as ur
-from typing_extensions import Self
 
 from ._base import OpsMixin
 from .time import TimePoints, TimeseriesConverter

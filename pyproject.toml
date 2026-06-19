@@ -9,8 +9,7 @@ authors = [
 ]
 readme = "README.md"
 license = { text = "BSD-3-Clause" }
-# TODO: get rid of this stupid upper level bound
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11"
 keywords = [
     "data",
     "simple climate model",
@@ -22,8 +21,9 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "cftime>=1.5",
@@ -36,7 +36,7 @@ dependencies = [
     "python-dateutil",
     "tqdm",
     "six",
-    "xarray",
+    "xarray>=2025.12",  # earlier xarray is incompatible with pandas>=3 round-trips
     "typing-extensions",
 ]
 
@@ -50,7 +50,7 @@ optional = [
     "netCDF4",
     "openpyxl",
     "xlrd",
-    "scipy",
+    "scipy>=1.13",  # first numpy-2-compatible scipy
     "pyam-iamc",
     "joblib",
 ]
@@ -141,7 +141,7 @@ doctest_optionflags ="NORMALIZE_WHITESPACE"
 
 [tool.ruff]
 src = ["src"]
-target-version = "py310"
+target-version = "py311"
 # Provide some leeway for long docstrings.
 line-length = 110
 
